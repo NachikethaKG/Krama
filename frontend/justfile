@@ -1,0 +1,31 @@
+# Frontend recipes (owner: Nachiketha). Run from the repo root as `just frontend <recipe>`.
+
+set windows-shell := ["powershell.exe", "-NoLogo", "-NoProfile", "-Command"]
+
+# Install workspace dependencies + Playwright's Chromium
+install:
+    pnpm install
+    pnpm exec playwright install chromium
+
+# Next.js dev server on :3000
+dev:
+    pnpm dev
+
+test *args:
+    pnpm test {{args}}
+
+# Browser e2e against mock API mode
+e2e:
+    pnpm e2e
+
+lint:
+    pnpm lint
+
+typecheck:
+    pnpm typecheck
+
+build:
+    pnpm build
+
+# Everything CI runs
+check: lint typecheck test build
