@@ -1,0 +1,29 @@
+# Backend recipes (owner: Vishwas). Run from the repo root as `just backend <recipe>`.
+
+set windows-shell := ["powershell.exe", "-NoLogo", "-NoProfile", "-Command"]
+
+# Install/sync dependencies from uv.lock
+install:
+    uv sync
+
+# API dev server with auto-reload on :8000
+dev:
+    uv run uvicorn app.main:app --reload --port 8000
+
+test *args:
+    uv run pytest {{args}}
+
+lint:
+    uv run ruff check .
+    uv run ruff format --check .
+
+# Auto-fix lint and formatting
+fmt:
+    uv run ruff check --fix .
+    uv run ruff format .
+
+typecheck:
+    uv run mypy .
+
+# Everything CI runs
+check: lint typecheck test

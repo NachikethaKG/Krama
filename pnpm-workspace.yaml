@@ -1,0 +1,8 @@
+packages:
+  - frontend
+  - packages/*
+
+# Native build scripts we don't need (from create-next-app)
+allowBuilds:
+  sharp: false
+  unrs-resolver: false

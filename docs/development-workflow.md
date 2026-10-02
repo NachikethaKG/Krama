@@ -25,14 +25,14 @@ Agent-specific rules: [`AGENTS.md`](../AGENTS.md). Ownership: [`OWNERSHIP.toml`]
 ## 2. The flow for every piece of work
 
 ```
-Issue  →  Branch  →  small commits  →  PR  →  CI  →  1 review  →  squash merge  →  issue closed
+Issue  →  Branch  →  small commits  →  PR  →  CI  →  1 review  →  rebase merge  →  issue closed
 ```
 
 1. **Issue first.** No branch without an issue.
 2. **Branch** from up-to-date `main`: `feat/<area>/<issue#>-<slug>`, e.g. `feat/verifier/34-aria-assertions`.
 3. **Commit small and often** (see §4) and push your branch regularly.
 4. **Open the PR early** as a draft if you want feedback. Mark it ready when the Definition of Done is met.
-5. **Squash merge** once CI is green and it's approved. Delete the branch.
+5. **Rebase and merge** once CI is green and it's approved (keeps every small commit on `main` with a linear history; never squash). Delete the branch. Because each commit lands on `main` individually, every commit must pass hooks and make sense on its own.
 
 Daily: `git switch main && git pull`, then `git rebase origin/main` on your branch *before* you start your AI agent session.
 
@@ -73,7 +73,7 @@ A task is done only when **all** of these hold:
 - [ ] Runs on **Nachiketha's laptop** (if it touches runtime behaviour, infra or deps)
 - [ ] Contract fixtures still validate; docs updated if behaviour or API changed
 - [ ] No secrets, unmasked credentials or real personal data in code, fixtures or screenshots
-- [ ] CI green, 1 review approved, squash-merged to `main`, issue closed
+- [ ] CI green, 1 review approved, rebase-merged to `main`, issue closed
 
 ## 6. Code review
 
@@ -129,19 +129,19 @@ push → PR → GitHub Actions
              ├─ backend:  ruff · mypy · pytest            (runs once backend/ exists)
              ├─ frontend: eslint · tsc · vitest · build  (runs once frontend/ exists)
              └─ contracts: regenerate types + diff        (runs once contracts/ exists)
-          → 1 review → squash merge
+          → 1 review → rebase merge
 ```
 
 ## 11. Environment setup (both laptops)
 
-Prerequisites: Git, Docker Desktop (WSL2), [uv](https://docs.astral.sh/uv/), Node 22 (via nvm), then `uv tool install rust-just` and `uv tool install pre-commit`.
+Prerequisites: Git, Docker Desktop (WSL2), [uv](https://docs.astral.sh/uv/), Node 22 (via nvm), then `corepack enable pnpm`, `uv tool install rust-just` and `uv tool install pre-commit`.
 
 ```powershell
 git clone https://github.com/NachikethaKG/Krama.git; cd Krama
 just setup     # copies .env.example → .env, installs git hooks, sets up both halves
 just up        # Postgres, Redis, Gitea in Docker
 just seed      # creates the Gitea demo users
-just dev       # backend + frontend dev servers (once they exist)
+just dev       # backend :8000 + frontend :3000
 ```
 
 Versions are pinned (`.python-version`, `.nvmrc`, Docker image tags, lockfiles), so nobody has to ask "which Python / Postgres / Redis are you on?".

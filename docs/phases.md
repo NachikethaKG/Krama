@@ -126,7 +126,7 @@ It reads `git config krama.owner` and rejects staged files outside that person's
 
 **Layer 4: GitHub enforcement**
 - `CODEOWNERS`: `/backend/ @vishwas` · `/frontend/ /packages/ @nachiketha` · `/contracts/ /infra/ /.github/ /AGENTS.md @vishwas @nachiketha`
-- Branch protection on `main`: PR required, 1 approval from a code owner, CI green, linear history (squash merge), branch up to date before merge, no force push.
+- Branch protection on `main`: PR required, 1 approval from a code owner, CI green, linear history (rebase merge, squash disabled), branch up to date before merge, no force push.
 - A CI job `ownership-check` labels a PR `cross-boundary` when it touches the other person's paths, and then requires that person's review.
 
 ---

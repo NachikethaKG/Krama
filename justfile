@@ -19,6 +19,15 @@ default:
 setup:
     uv run --no-project --python 3.12 scripts/dev_setup.py
 
+# Backend (:8000) and frontend (:3000) dev servers together
+dev:
+    uv run --no-project --python 3.12 scripts/dev.py
+
+# Lint, typecheck, test and build both halves (what CI runs)
+check:
+    just backend check
+    just frontend check
+
 # Start Postgres, Redis and Gitea, and wait until they are healthy
 up:
     {{compose}} up -d --wait
