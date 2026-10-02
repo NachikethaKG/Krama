@@ -13,10 +13,10 @@ git config krama.owner vishwas        # or: nachiketha
 
 ```powershell
 uv tool install pre-commit
-pre-commit install
+pre-commit install          # installs both the pre-commit and commit-msg hooks
 ```
 
-From then on, a commit that stages files outside your area is rejected.
+From then on, a commit is rejected if it stages files outside your area or if its message isn't a Conventional Commit.
 
 ## 3. Hard-block Claude Code from the other person's area
 
