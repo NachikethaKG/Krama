@@ -168,6 +168,9 @@ importers:
 
   frontend:
     dependencies:
+      '@krama/contracts-ts':
+        specifier: workspace:*
+        version: link:../packages/contracts-ts
       '@next/env':
         specifier: 16.3.8
         version: 16.3.8
@@ -226,6 +229,12 @@ importers:
       vitest:
         specifier: ^5.0.3
         version: 5.0.3(@types/node@20.19.43)(jsdom@30.1.1)(vite@8.3.2(@types/node@20.19.43)(jiti@2.7.0))
+
+  packages/contracts-ts:
+    devDependencies:
+      typescript:
+        specifier: ^5
+        version: 5.9.3
 
 packages:
 
