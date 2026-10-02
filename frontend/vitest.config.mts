@@ -7,6 +7,8 @@ export default defineConfig({
   resolve: { alias: { "@": path.resolve(__dirname) } },
   test: {
     environment: "jsdom",
+    // Forked workers sometimes time out while starting on Windows under load; threads start much faster
+    pool: "threads",
     setupFiles: ["./tests/setup.ts"],
     include: ["tests/unit/**/*.test.{ts,tsx}"],
   },
