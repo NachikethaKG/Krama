@@ -1,7 +1,8 @@
 # AGENTS.md — rules for every AI coding agent in this repo
 
 Read this fully before making any change. These rules apply to Claude Code, Antigravity, Cursor, Copilot, etc.
-Product context and phases: `docs/phases.md`.
+Product context and phases: `docs/phases.md`. Architecture and mock seams: `docs/architecture.md`.
+API: `docs/api-contract.md`. DB: `docs/database-schema.md`. Team process, commit scopes and Definition of Done: `docs/development-workflow.md`.
 
 ## 1. Who am I working for?
 
@@ -27,7 +28,9 @@ If it is unset, STOP and ask the human to run `git config krama.owner <name>`.
 5. **Dependencies:** never add/upgrade deps in the other half. Never edit the other half's lockfile (`backend/uv.lock` vs `pnpm-lock.yaml`). Never regenerate a lockfile you don't own.
 6. **Database:** never edit an Alembic migration that is already on `main`; add a new one. Only vishwas's area creates migrations.
 7. **Git:** never commit to `main`, never `git push --force` (use `--force-with-lease` only on your own branch), never rebase/merge someone else's branch, never skip hooks (`--no-verify`). One issue per branch; keep PRs small.
-8. **Branch names:** `feat/<area>/<issue#>-slug`, `fix/...`, `chore/...`, `contract/<issue#>-slug`. Commits use Conventional Commits: `feat(agent): ...`, `fix(player): ...`.
+8. **Branch names:** `feat/<area>/<issue#>-slug`, `fix/...`, `chore/...`, `contract/<issue#>-slug`. Commits use Conventional Commits with the scopes in `docs/development-workflow.md` §4 (a commit-msg hook enforces this). Make one small commit per logical change.
+8a. **Build against interfaces, not concrete classes.** If a dependency isn't ready, use or create its mock behind the interface (`docs/architecture.md` §4). Mocks must return contract-valid data.
+8b. **A task is done only when the Definition of Done is met** (`docs/development-workflow.md` §5). Never claim done when tests are failing or skipped.
 9. **Before committing:** run the checks for the area you touched (lint, types, tests) and `python scripts/check_ownership.py`.
 10. **No GPU assumptions.** Everything must run on a 16GB RAM, CPU-only laptop. Ollama/local models are opt-in only; default LLM is Gemini, tests use the fake LLM provider.
 11. **Secrets:** never commit `.env`, API keys, browser storage state, or screenshots containing real credentials.
