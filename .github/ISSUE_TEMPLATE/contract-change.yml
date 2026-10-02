@@ -1,0 +1,26 @@
+name: Contract change
+description: Propose a change to contracts/ (schemas, events, API). Needs approval from both.
+labels: ["contract-change"]
+body:
+  - type: textarea
+    id: change
+    attributes:
+      label: Proposed change
+      description: Which schema / event / endpoint, and the exact field changes.
+    validations: { required: true }
+  - type: textarea
+    id: why
+    attributes:
+      label: Why
+    validations: { required: true }
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Kind
+      options: ["additive (new optional field / new event) - minor bump", "breaking - major bump + ADR"]
+    validations: { required: true }
+  - type: textarea
+    id: impact
+    attributes:
+      label: Follow-up work on each side
+      placeholder: "Backend: ...\nFrontend: ..."
