@@ -3,6 +3,7 @@
 - checks required tools are installed
 - creates .env from .env.example if missing
 - installs git hooks (pre-commit + commit-msg)
+- installs backend and frontend dependencies
 - reminds you to set your owner identity
 """
 
@@ -20,6 +21,7 @@ TOOLS = {
     "docker": "Docker Desktop (WSL2): https://www.docker.com/products/docker-desktop/",
     "uv": "https://docs.astral.sh/uv/",
     "node": "Node 22 via nvm-windows: https://github.com/coreybutler/nvm-windows",
+    "pnpm": "corepack enable pnpm",
     "pre-commit": "uv tool install pre-commit",
     "just": "uv tool install rust-just",
 }
@@ -43,6 +45,13 @@ def main() -> int:
         print("created .env from .env.example - add your GEMINI_API_KEY")
 
     subprocess.run(["pre-commit", "install"], cwd=ROOT, check=True)
+
+    # shell=True on Windows so .cmd shims (pnpm, just) resolve
+    shell = sys.platform == "win32"
+    for name in ("backend", "frontend"):
+        if (ROOT / name / "justfile").exists():
+            print(f"\ninstalling {name} dependencies...")
+            subprocess.run(["just", f"{name}::install"], cwd=ROOT, check=True, shell=shell)
 
     owner = subprocess.run(["git", "config", "--get", "krama.owner"], cwd=ROOT, capture_output=True, text=True)
     if owner.stdout.strip() not in ("vishwas", "nachiketha"):
