@@ -1,0 +1,21 @@
+# Mirrors OWNERSHIP.toml. Later rules win, so the general rule comes first.
+*                              @Vishwas721 @NachikethaKG
+
+/backend/                      @Vishwas721
+/frontend/                     @NachikethaKG
+/packages/                     @NachikethaKG
+/package.json                  @NachikethaKG
+/pnpm-workspace.yaml           @NachikethaKG
+/pnpm-lock.yaml                @NachikethaKG
+
+# Contracts and generated code need both
+/contracts/                    @Vishwas721 @NachikethaKG
+/backend/app/contracts_gen/    @Vishwas721 @NachikethaKG
+/packages/contracts-ts/        @Vishwas721 @NachikethaKG
+
+# Shared infrastructure and agent rules
+/AGENTS.md                     @Vishwas721 @NachikethaKG
+/CLAUDE.md                     @Vishwas721 @NachikethaKG
+/OWNERSHIP.toml                @Vishwas721 @NachikethaKG
+/.github/                      @Vishwas721 @NachikethaKG
+/infra/                        @Vishwas721 @NachikethaKG
