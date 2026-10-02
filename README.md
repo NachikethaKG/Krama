@@ -6,15 +6,15 @@ Prompt → Plan → Human approval → Isolated browser execution → Per-step v
 
 ## Quick start (Windows, both laptops)
 
-Prerequisites: Git, Docker Desktop (WSL2), [uv](https://docs.astral.sh/uv/), Node 22. Then `uv tool install rust-just` and `uv tool install pre-commit`.
+Prerequisites: Git, Docker Desktop (WSL2), [uv](https://docs.astral.sh/uv/), Node 22. Then `corepack enable pnpm`, `uv tool install rust-just` and `uv tool install pre-commit`.
 
 ```powershell
 git clone https://github.com/NachikethaKG/Krama.git; cd Krama
-just setup    # checks tools, creates .env, installs git hooks
+just setup    # checks tools, creates .env, installs git hooks + all dependencies
 just up       # Postgres :5433, Redis :6379, Gitea :3001
 just seed     # Gitea users: krama-admin, demo (local-only passwords in .env)
 ```
-`just` lists every command. `just reset-gitea` wipes the test site back to a clean state.
+`just dev` starts the API (:8000) and web app (:3000). `just check` runs what CI runs. `just` lists every command. `just reset-gitea` wipes the test site back to a clean state.
 
 ## Docs
 
