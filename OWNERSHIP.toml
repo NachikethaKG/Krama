@@ -1,0 +1,30 @@
+# Single machine-readable source of who owns what.
+# Used by scripts/check_ownership.py (pre-commit + CI) and mirrored in .github/CODEOWNERS.
+# Changing this file is a SHARED change: small dedicated PR, both approve.
+# Patterns are gitignore-style globs relative to repo root; first match wins.
+
+[owners]
+vishwas = "Vishwas721"
+nachiketha = "NachikethaKG"
+
+# Generated code: nobody hand-edits. Regenerate with scripts/gen-contracts.
+[[rule]]
+paths = ["backend/app/contracts_gen/**", "packages/contracts-ts/**"]
+area = "generated"
+
+[[rule]]
+paths = ["contracts/**"]
+area = "contract"
+
+[[rule]]
+paths = ["backend/**"]
+area = "vishwas"
+
+[[rule]]
+paths = ["frontend/**", "packages/**", "pnpm-workspace.yaml", "pnpm-lock.yaml", "package.json"]
+area = "nachiketha"
+
+# Everything else (AGENTS.md, CLAUDE.md, .github/, infra/, docs/, scripts/, benchmarks/, root config)
+[[rule]]
+paths = ["**"]
+area = "shared"
