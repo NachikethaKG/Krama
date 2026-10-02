@@ -1,0 +1,34 @@
+name: Task
+description: A unit of work for one sprint, owned by one person
+labels: ["task"]
+body:
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options: ["backend (Vishwas)", "frontend (Nachiketha)", "compiler (Nachiketha)", "shared", "contracts"]
+    validations: { required: true }
+  - type: input
+    id: phase
+    attributes:
+      label: Phase / sprint
+      placeholder: "e.g. Phase 0 / Sprint 0.1"
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: What should exist when this is done?
+    validations: { required: true }
+  - type: textarea
+    id: scope
+    attributes:
+      label: Allowed files / folders
+      description: The AI agent may only touch these paths for this task.
+      placeholder: "backend/app/verifier/**, backend/tests/verifier/**"
+    validations: { required: true }
+  - type: textarea
+    id: done
+    attributes:
+      label: Done when
+      placeholder: "- tests pass\n- runs on Nachiketha's laptop"
+    validations: { required: true }
