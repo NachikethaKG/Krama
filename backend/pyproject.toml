@@ -19,3 +19,20 @@ dev = [
 
 [tool.uv]
 package = false
+
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF", "ASYNC"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+plugins = ["pydantic.mypy"]
+exclude = ["^\.venv/"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
