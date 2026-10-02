@@ -1,7 +1,7 @@
 // Thin API client seam (docs/architecture.md §4). `mock` mode serves fixtures, so the UI never waits on the backend.
-// Types move to the generated @krama/contracts-ts package in Sprint F2.
+import type { HealthResponse } from "@krama/contracts-ts";
 
-export type HealthResponse = { status: "ok"; version: string };
+export type { HealthResponse };
 
 export type ApiMode = "mock" | "http";
 
