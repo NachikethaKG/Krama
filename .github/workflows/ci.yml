@@ -80,5 +80,10 @@ jobs:
         run: pnpm -r lint && pnpm -r typecheck && pnpm -r test && pnpm -r build
         env:
           NEXT_PUBLIC_API_MODE: mock
+      - if: steps.exists.outputs.yes == 'true'
+        working-directory: frontend
+        run: pnpm exec playwright install --with-deps chromium && pnpm e2e
+        env:
+          NEXT_PUBLIC_API_MODE: mock
 
   # contracts-drift (regenerate types + git diff) is added together with contracts/ in Sprint F2.
