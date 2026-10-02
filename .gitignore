@@ -1,0 +1,37 @@
+# Secrets & local identity
+.env
+.env.*
+!.env.example
+.krama-owner
+*.storage-state.json
+
+# Per-machine agent settings (see docs/setup/agent-guardrails.md)
+.claude/settings.local.json
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Node
+node_modules/
+.next/
+dist/
+coverage/
+
+# Runtime artifacts
+data/
+benchmarks/results/*
+!benchmarks/results/.gitkeep
+playwright-report/
+test-results/
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+.idea/
