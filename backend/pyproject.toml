@@ -11,7 +11,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "httpx>=0.28.1",
+    "httpx2>=2.13.1",
     "mypy>=2.4.0",
     "pytest>=9.1.1",
     "ruff>=0.16.10",
@@ -31,7 +31,7 @@ select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF", "ASYNC"]
 python_version = "3.12"
 strict = true
 plugins = ["pydantic.mypy"]
-exclude = ["^\.venv/"]
+exclude = ['^\.venv/']
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
