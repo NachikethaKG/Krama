@@ -19,34 +19,7 @@ Decisions made:
 
 ## 1. Architecture and stack
 
-```
-Next.js UI (prompt / plan review / live view / player)
-      │  REST + SSE (contracts/openapi.json, contracts/events)
-FastAPI ── Run state machine ── Planner (LLM) ── Policy (risk/denylist)
-      │
-Browser Worker (Playwright Python, Chromium headless, CPU-only)
-      ├─ Observer: URL, DOM, ARIA snapshot, screenshot, network, rrweb events
-      ├─ Locator: role/text → accessibility → vision fallback (Gemini)
-      └─ Verifier: cheapest reliable signal first (URL/DOM → ARIA → network → vision)
-      │
-Postgres (workflows, steps, runs)  +  data/artifacts/ (screenshots, rrweb json)
-      │
-Verified Workflow JSON ──► tutorial-compiler (TS, pure function) ──► TutorialSpec ──► Player
-                                                                        └──► Remotion MP4 (Phase 5)
-```
-
-| Layer | Choice | Why |
-|---|---|---|
-| Backend | Python 3.12, **uv**, FastAPI, Pydantic v2, SQLAlchemy 2 + Alembic | PRD direction; uv is fast and identical on both machines |
-| Browser | **Playwright (Python)**, own thin agent layer | Runs headless on CPU. Stagehand/browser-use are evaluated in a Phase 0 spike, not committed to up front |
-| LLM | `LLMProvider` interface: `GeminiProvider`, `OllamaProvider`, `FakeProvider` (replays fixtures) | Same behaviour on both laptops; free tests |
-| Jobs | In-process asyncio task (Phases 0–2) → Redis + **arq** (Phase 3) | Avoids early infra; arq works on Windows |
-| Frontend | Next.js (App Router) + TS + Tailwind, **pnpm** | PRD |
-| Replay | **rrweb** recording (injected via `add_init_script`) + SVG overlay layer (cursor, click ripple, highlight, zoom) | Real UI and deterministic overlays |
-| TTS | Browser Web Speech API (MVP) → Piper (CPU) optional later | Zero GPU, zero cost |
-| Video | Remotion + FFmpeg (Phase 5, CPU render) | Reuses the same TutorialSpec |
-| DB | Postgres 16 in Docker | PRD |
-| CI | GitHub Actions on ubuntu (no GPU) | CI is effectively "Nachiketha's laptop" too |
+Moved to [`architecture.md`](architecture.md) (frozen v1): pipeline, pinned stack, backend module layout, mock seams, key decisions, hardware rules.
 
 **RAM budget on 16GB:** limit WSL2 to 4GB through `%UserProfile%\.wslconfig` (`memory=4GB`). Postgres, Redis and Gitea together use about 1.5GB. Next.js dev about 1GB, FastAPI about 0.4GB, headless Chromium about 0.5–1GB. That leaves room for VS Code and the AI agent.
 
@@ -58,7 +31,7 @@ Verified Workflow JSON ──► tutorial-compiler (TS, pure function) ──►
 krama/
 ├─ AGENTS.md                 # rules for ALL AI agents (Antigravity reads this)   [SHARED]
 ├─ CLAUDE.md                 # one line: @AGENTS.md  (Claude Code imports it)     [SHARED]
-├─ README.md, Makefile/justfile                                                   [SHARED]
+├─ README.md, justfile (imports backend/ + frontend/ justfiles)                                                  [SHARED]
 ├─ .github/  CODEOWNERS, workflows/ci.yml, pull_request_template.md, ISSUE_TEMPLATE/  [SHARED]
 ├─ contracts/                # SOURCE OF TRUTH between the two halves             [CONTRACT]
 │   ├─ schemas/*.schema.json   (task, plan, workflow, step, run, tutorial-spec, events)
@@ -100,7 +73,7 @@ krama/
 ```json
 {
   "id": "uuid", "version": "1.0", "task": "Create a repository",
-  "target": {"base_url": "http://localhost:3000", "app": "gitea"},
+  "target": {"base_url": "http://localhost:3001", "app": "gitea"},
   "status": "draft|approved|running|verified|failed|outdated",
   "steps": [{
     "id": "uuid", "seq": 1,
@@ -120,19 +93,11 @@ The other schemas are `task` (interpreted request), `plan` (proposed steps + ris
 
 **SSE event contract** (`events.schema.json`): `run.started`, `step.started`, `step.action_done`, `step.verified`, `step.failed`, `run.replanning`, `run.paused` (CAPTCHA/destructive/auth wall), `run.completed`, `run.failed`. Each event carries `run_id`, `seq`, `ts` and an optional `screenshot_url`.
 
-**API sketch:** `POST /tasks` → plan · `PATCH /plans/{id}` (edit) · `POST /plans/{id}/approve` → run · `GET /runs/{id}/events` (SSE) · `POST /runs/{id}/cancel` · `GET /workflows/{id}` · `GET /artifacts/{path}`.
+**API:** full endpoint list in [`api-contract.md`](api-contract.md).
 
-### 3.2 Contract-change protocol
-1. Open an issue labelled `contract-change` that describes the change and why.
-2. Open a **contract-only PR**: it touches only `contracts/**`, the regenerated output and `contracts/CHANGELOG.md`. No feature code in it.
-3. **Both** people approve it (enforced by CODEOWNERS: `contracts/` lists both).
-4. After merge, each person adapts their own side in separate PRs.
-5. Fixtures must be updated in the same contract PR, so the frontend can keep building against them.
+### 3.2 Contract-change protocol and mocks
 
-### 3.3 Mock boundaries (nobody blocks the other)
-- **Frontend without backend:** a mock mode (`NEXT_PUBLIC_API_MODE=mock`) serves `contracts/fixtures/*` and replays fixture SSE event streams with real timings.
-- **Backend without frontend:** a CLI (`uv run krama run "create a repo"`) plus pytest.
-- **No LLM:** `LLM_PROVIDER=fake` replays recorded responses from `backend/tests/llm_fixtures/`.
+See [`development-workflow.md` §7](development-workflow.md#7-contract-changes) for the contract-change protocol and [`architecture.md` §4](architecture.md#4-mock-seams-nobody-waits-for-anybody) for the full mock-seam table. Endpoint details: [`api-contract.md`](api-contract.md). Tables: [`database-schema.md`](database-schema.md).
 
 ---
 
@@ -151,8 +116,9 @@ Four layers. Each catches what the one before it misses.
 - If a change needs the other side, stop and write a note in the PR or issue instead of editing their files.
 
 **Layer 2: per-machine hard deny (git-ignored `.claude/settings.local.json`)**
-- Vishwas: `"permissions": {"deny": ["Edit(frontend/**)","Write(frontend/**)","Edit(packages/tutorial-compiler/**)","Write(packages/tutorial-compiler/**)"]}`
-- Nachiketha: the mirror (deny `backend/**`).
+- Vishwas: deny `Edit`/`Write` on `frontend/**`, `packages/**` and `backend/app/contracts_gen/**`.
+- Nachiketha: deny `Edit`/`Write` on `backend/**` and `packages/contracts-ts/**`.
+- Exact JSON: [`setup/agent-guardrails.md`](setup/agent-guardrails.md).
 - Antigravity has no hard deny like this, so it relies on Layer 1 plus Layers 3 and 4.
 
 **Layer 3: local pre-commit hook (`scripts/check-ownership`, installed via `pre-commit`)**
@@ -167,15 +133,9 @@ It reads `git config krama.owner` and rejects staged files outside that person's
 
 ## 5. GitHub workflow (the "real team" practice)
 
-- **Trunk-based development with short-lived branches:** `feat/<area>/<issue#>-slug`, `fix/...`, `chore/...`, `contract/...`. Each branch lives at most a few working sessions.
-- **Conventional Commits** (`feat(agent): ...`, `fix(player): ...`). Every PR body includes `Closes #N`.
-- **Daily habit:** `git fetch && git rebase origin/main` on your own branch, before starting your AI agent session.
-- **Squash merge** to `main`. Delete the branch after merge.
-- **PR template:** what/why, screenshots or GIF for UI, "Tested on: ☐ Vishwas laptop ☐ Nachiketha laptop", contract impact (none/additive/breaking).
-- **Shared files** (`docker-compose.yml`, CI, `AGENTS.md`, root configs) change only in tiny dedicated `chore/` PRs, announced in chat first. One person holds the "shared-file token" at a time.
-- **Project board** per phase: columns Backlog → Ready → In progress → In review → Done. Labels: `area:backend`, `area:frontend`, `area:compiler`, `contract-change`, `shared`, `phase:N`, `good-first-cross` (deliberate learning tasks in the other's area, done with the owner reviewing).
-- **ADRs** in `docs/adr/` for every non-trivial decision (e.g. "0001 Playwright vs Stagehand").
-- **Releases:** tag `v0.N` at the end of each phase, with GitHub Release notes.
+Moved to [`development-workflow.md`](development-workflow.md): issue → branch → PR flow, commit rules, code review, Definition of Done, contract changes, shared files, testing strategy, CI and environment setup.
+
+Releases: tag `v0.N` at the end of each phase, with GitHub Release notes and a demo GIF.
 
 ---
 

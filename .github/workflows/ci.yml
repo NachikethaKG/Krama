@@ -5,6 +5,10 @@ on:
   push:
     branches: [main]
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   ownership:
     name: Ownership report
@@ -19,4 +23,62 @@ jobs:
           python-version: "3.12"
       - run: python scripts/check_ownership.py --base origin/${{ github.base_ref }}
 
-  # backend, frontend and contracts-drift jobs are added by the PRs that create those folders.
+  hooks:
+    name: Hygiene hooks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pre-commit
+      # check-ownership needs a local identity, so CI uses the report job above instead
+      - run: SKIP=check-ownership pre-commit run --all-files --show-diff-on-failure
+
+  # The jobs below turn on automatically once their folder exists, so no shared CI edit is needed then.
+  backend:
+    name: Backend (ruff, mypy, pytest)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - id: exists
+        working-directory: .
+        run: echo "yes=$([ -f backend/pyproject.toml ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+      - if: steps.exists.outputs.yes == 'true'
+        uses: astral-sh/setup-uv@v6
+      - if: steps.exists.outputs.yes == 'true'
+        run: uv sync --frozen
+      - if: steps.exists.outputs.yes == 'true'
+        run: uv run ruff check . && uv run ruff format --check .
+      - if: steps.exists.outputs.yes == 'true'
+        run: uv run mypy .
+      - if: steps.exists.outputs.yes == 'true'
+        run: uv run pytest
+        env:
+          LLM_PROVIDER: fake
+
+  frontend:
+    name: Frontend (lint, typecheck, test, build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - id: exists
+        run: echo "yes=$([ -f pnpm-workspace.yaml ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+      - if: steps.exists.outputs.yes == 'true'
+        uses: pnpm/action-setup@v4
+      - if: steps.exists.outputs.yes == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - if: steps.exists.outputs.yes == 'true'
+        run: pnpm install --frozen-lockfile
+      - if: steps.exists.outputs.yes == 'true'
+        run: pnpm -r lint && pnpm -r typecheck && pnpm -r test && pnpm -r build
+        env:
+          NEXT_PUBLIC_API_MODE: mock
+
+  # contracts-drift (regenerate types + git diff) is added together with contracts/ in Sprint F2.

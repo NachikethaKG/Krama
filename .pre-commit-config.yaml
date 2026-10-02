@@ -1,10 +1,19 @@
-# Install once per laptop:  uv tool install pre-commit  &&  pre-commit install
+# Install once per laptop:
+#   uv tool install pre-commit
+#   pre-commit install --hook-type pre-commit --hook-type commit-msg
+default_install_hook_types: [pre-commit, commit-msg]
 repos:
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v4.0.0
+    hooks:
+      - id: conventional-pre-commit
+        stages: [commit-msg]
+        args: [--strict, feat, fix, refactor, test, docs, chore, perf, ci, build]
   - repo: local
     hooks:
       - id: check-ownership
         name: check ownership (OWNERSHIP.toml)
-        entry: python scripts/check_ownership.py
+        entry: uv run --no-project --python 3.12 scripts/check_ownership.py
         language: system
         pass_filenames: false
         always_run: true
