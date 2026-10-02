@@ -134,14 +134,14 @@ push → PR → GitHub Actions
 
 ## 11. Environment setup (both laptops)
 
-Prerequisites: Git, Docker Desktop (WSL2), [uv](https://docs.astral.sh/uv/), Node 22 (via nvm), then `uv tool install rust-just` and `uv tool install pre-commit`.
+Prerequisites: Git, Docker Desktop (WSL2), [uv](https://docs.astral.sh/uv/), Node 22 (via nvm), then `corepack enable pnpm`, `uv tool install rust-just` and `uv tool install pre-commit`.
 
 ```powershell
 git clone https://github.com/NachikethaKG/Krama.git; cd Krama
 just setup     # copies .env.example → .env, installs git hooks, sets up both halves
 just up        # Postgres, Redis, Gitea in Docker
 just seed      # creates the Gitea demo users
-just dev       # backend + frontend dev servers (once they exist)
+just dev       # backend :8000 + frontend :3000
 ```
 
 Versions are pinned (`.python-version`, `.nvmrc`, Docker image tags, lockfiles), so nobody has to ask "which Python / Postgres / Redis are you on?".
