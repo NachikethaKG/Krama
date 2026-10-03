@@ -1,7 +1,7 @@
-# Single machine-readable source of who owns what.
+# Single machine-readable source of who owns what (see docs/adr/0001-ownership-by-module.md).
 # Used by scripts/check_ownership.py (pre-commit + CI) and mirrored in .github/CODEOWNERS.
 # Changing this file is a SHARED change: small dedicated PR, both approve.
-# Patterns are gitignore-style globs relative to repo root; first match wins.
+# Patterns are glob patterns relative to repo root (`*` also matches `/`); FIRST match wins, so specific rules go first.
 
 [owners]
 vishwas = "Vishwas721"
@@ -12,10 +12,28 @@ nachiketha = "NachikethaKG"
 paths = ["backend/app/contracts_gen/**", "packages/contracts-ts/**"]
 area = "generated"
 
+# Contracts between the two owners: JSON schemas/API, and Python interfaces between backend modules.
 [[rule]]
-paths = ["contracts/**"]
+paths = ["contracts/**", "backend/app/ports/**"]
 area = "contract"
 
+# Shared backend build files and benchmark task definitions: either person, small dedicated PRs.
+[[rule]]
+paths = ["backend/pyproject.toml", "backend/uv.lock", "benchmarks/tasks/**"]
+area = "shared"
+
+# Nachiketha's backend modules (with their tests)
+[[rule]]
+paths = [
+  "backend/app/observer/**", "backend/tests/observer/**",
+  "backend/app/policy/**", "backend/tests/policy/**",
+  "backend/app/validation/**", "backend/tests/validation/**",
+  "backend/app/export/**", "backend/tests/export/**",
+  "benchmarks/**",
+]
+area = "nachiketha"
+
+# Everything else in the backend: agent, planner, verifier, runs, api, db, llm, storage, tts, alembic
 [[rule]]
 paths = ["backend/**"]
 area = "vishwas"
@@ -24,7 +42,7 @@ area = "vishwas"
 paths = ["frontend/**", "packages/**", "pnpm-workspace.yaml", "pnpm-lock.yaml", "package.json"]
 area = "nachiketha"
 
-# Everything else (AGENTS.md, CLAUDE.md, .github/, infra/, docs/, scripts/, benchmarks/, root config)
+# Everything else (AGENTS.md, CLAUDE.md, .github/, infra/, docs/, scripts/, root config)
 [[rule]]
 paths = ["**"]
 area = "shared"
