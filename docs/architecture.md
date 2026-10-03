@@ -1,6 +1,6 @@
 # Architecture (v1, frozen)
 
-> **Frozen:** changes need an ADR in `docs/adr/` and approval from both. Product roadmap: [`phases.md`](phases.md).
+> **Frozen:** changes need an ADR in `docs/adr/` and approval from both. Product roadmap: [`phases/`](phases/README.md).
 
 ## 1. Pipeline
 
@@ -40,19 +40,27 @@ Verified Workflow JSON ──► tutorial-compiler (TS, pure function) ──►
 
 ## 3. Backend module layout (`backend/app/`)
 
-| Module | Responsibility |
-|---|---|
-| `api/` | FastAPI routers. Thin: validate the request, call a service, return a contract model |
-| `runs/` | Run state machine `draft → approved → running → verified/failed/paused/cancelled`, executor |
-| `planner/` | Task interpretation + plan generation (`instruction_text`, `expected_state` per step) |
-| `agent/` | Browser session, action execution, locator fallback chain |
-| `observer/` | Captures page state after each action (URL, ARIA, screenshot, network, rrweb) |
-| `verifier/` | Compares expected vs observed state, returns result + method + confidence |
-| `policy/` | Risk classification, destructive-action pause, CAPTCHA/auth-wall stop, masking |
-| `llm/` | `LLMProvider` + Gemini / Ollama / Fake implementations, prompt templates |
-| `storage/` | `ArtifactStore` (local FS → S3 later) |
-| `db/` | SQLAlchemy models, repositories (schema: [`database-schema.md`](database-schema.md)) |
-| `contracts_gen/` | Generated Pydantic models. **Never hand-edit** |
+Ownership is by module ([ADR 0001](adr/0001-ownership-by-module.md)). Modules owned by different people talk **only through `ports/`**.
+
+| Module | Owner | Responsibility |
+|---|---|---|
+| `ports/` | both (contract) | Python `Protocol` interfaces between modules owned by different people (`Observer`, `Policy`, `Validator`, `Exporter`, …) |
+| `api/` | Vishwas | FastAPI routers. Thin: validate the request, call a service, return a contract model |
+| `runs/` | Vishwas | Run state machine `draft → approved → running → verified/failed/paused/cancelled`, executor |
+| `planner/` | Vishwas | Task interpretation + plan generation (`instruction_text`, `expected_state` per step) |
+| `agent/` | Vishwas | Browser session, action execution, locator fallback chain, self-healing (Phase 4) |
+| `verifier/` | Vishwas | Compares expected vs observed state, returns result + method + confidence |
+| `llm/` | Vishwas | `LLMProvider` + Gemini / Ollama / Fake implementations, prompt templates |
+| `db/` | Vishwas | SQLAlchemy models, repositories, Alembic migrations (schema: [`database-schema.md`](database-schema.md)) |
+| `storage/` | Vishwas | `ArtifactStore` (local FS → S3 later) |
+| `tts/` | Vishwas | Piper narration audio (Phase 5) |
+| `observer/` | Nachiketha | Captures page state after each action (URL, ARIA, screenshot, network) and the rrweb recording + timing alignment |
+| `policy/` | Nachiketha | Risk classification, destructive-action pause rules, CAPTCHA/auth-wall detection, sensitive-data masking, prompt-injection defense |
+| `validation/` | Nachiketha | Scheduled re-runs of stored workflows, UI drift detection (Phase 4) |
+| `export/` | Nachiketha | Video export jobs that drive `packages/video-exporter` (Phase 5) |
+| `contracts_gen/` | generated | Generated Pydantic models. **Never hand-edit** |
+
+Outside `backend/app/`: `benchmarks/` (harness, metrics, reports) is Nachiketha's; `benchmarks/tasks/` is shared.
 
 ## 4. Mock seams (nobody waits for anybody)
 
@@ -80,7 +88,8 @@ Every boundary is an interface with a mock that ships *before* the real implemen
 | Gemini as the reference LLM on both laptops | Same behaviour everywhere; no GPU on Nachiketha's laptop | — |
 | Gitea first, GitHub later | Resettable, deterministic, no bot walls or login | — |
 | Tutorial compiler in TypeScript | Shared by the player and the Remotion export | — |
-| DB migrations owned by backend only | Two people writing migrations is a classic source of conflicts | — |
+| DB migrations owned by Vishwas only | Two people writing migrations is a classic source of conflicts | — |
+| Ownership by module, cross-owner calls only via `ports/` | Both people work on the backend without sharing files | [0001](adr/0001-ownership-by-module.md) |
 
 ## 6. Hardware rules
 
