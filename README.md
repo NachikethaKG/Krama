@@ -18,7 +18,7 @@ just seed     # Gitea users: krama-admin, demo (local-only passwords in .env)
 
 ## Docs
 
-- Full plan, phases and sprints: [`docs/phases.md`](docs/phases.md)
+- Phases, sprints and per-person research lists: [`docs/phases/`](docs/phases/README.md) · research notes: [`docs/research/`](docs/research/README.md)
 - Architecture: [`docs/architecture.md`](docs/architecture.md) · API: [`docs/api-contract.md`](docs/api-contract.md) · DB: [`docs/database-schema.md`](docs/database-schema.md)
 - How we work (issues, commits, review, Definition of Done): [`docs/development-workflow.md`](docs/development-workflow.md)
 - Rules for AI agents and ownership: [`AGENTS.md`](AGENTS.md), [`OWNERSHIP.toml`](OWNERSHIP.toml)
