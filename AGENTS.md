@@ -1,7 +1,7 @@
 # AGENTS.md — rules for every AI coding agent in this repo
 
 Read this fully before making any change. These rules apply to Claude Code, Antigravity, Cursor, Copilot, etc.
-Product context and phases: `docs/phases.md`. Architecture and mock seams: `docs/architecture.md`.
+Product context and phases: `docs/phases/` (one file per phase). Research notes: `docs/research/`. Architecture and mock seams: `docs/architecture.md`.
 API: `docs/api-contract.md`. DB: `docs/database-schema.md`. Team process, commit scopes and Definition of Done: `docs/development-workflow.md`.
 
 ## 1. Who am I working for?
