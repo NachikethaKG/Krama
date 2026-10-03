@@ -1,6 +1,6 @@
 # One-time setup on each laptop
 
-Do this once after cloning. It sets up layers 2 and 3 of the guardrails (see `docs/phases.md` §4).
+Do this once after cloning. It sets up layers 2 and 3 of the guardrails (see `docs/phases/README.md` §4).
 
 ## 1. Tell git (and the AI agents) who you are
 
