@@ -13,11 +13,14 @@ If it is unset, STOP and ask the human to run `git config krama.owner <name>`.
 
 | Area | Paths | Owner |
 |---|---|---|
-| Backend / agent | `backend/**` | vishwas |
+| Backend core | `backend/**` except the modules below: agent, planner, verifier, runs, api, db, llm, storage, tts, alembic | vishwas |
+| Backend modules | `backend/app/{observer,policy,validation,export}/**` + matching `backend/tests/<module>/**`, `benchmarks/**` | nachiketha |
 | Frontend / tutorial | `frontend/**`, `packages/**`, `package.json`, `pnpm-*.yaml` | nachiketha |
-| Contracts | `contracts/**` | both (contract-change PRs only) |
+| Contracts | `contracts/**`, `backend/app/ports/**` (Python interfaces between backend modules) | both (contract-change PRs only) |
 | Generated | `backend/app/contracts_gen/**`, `packages/contracts-ts/**` | nobody — regenerate only |
-| Shared | `AGENTS.md`, `CLAUDE.md`, `.github/**`, `infra/**`, `docs/**`, `scripts/**`, `benchmarks/**`, root config | both, small dedicated PRs |
+| Shared | `backend/pyproject.toml`, `backend/uv.lock`, `benchmarks/tasks/**`, `AGENTS.md`, `CLAUDE.md`, `.github/**`, `infra/**`, `docs/**`, `scripts/**`, root config | both, small dedicated PRs |
+
+Backend modules owned by different people talk **only through `backend/app/ports/`**. Never import another owner's module internals.
 
 ## 3. Hard rules
 
@@ -25,7 +28,7 @@ If it is unset, STOP and ask the human to run `git config krama.owner <name>`.
 2. **Never edit the other owner's area.** If your task needs a change there, stop and write the request in the PR description or a new issue, then continue with a mock/fixture.
 3. **Never edit `contracts/**`** unless the task issue is labelled `contract-change`. Contract PRs contain only `contracts/**`, regenerated output and `contracts/CHANGELOG.md` — no feature code.
 4. **Never hand-edit generated folders.** Run `scripts/gen-contracts` instead.
-5. **Dependencies:** never add/upgrade deps in the other half. Never edit the other half's lockfile (`backend/uv.lock` vs `pnpm-lock.yaml`). Never regenerate a lockfile you don't own.
+5. **Dependencies:** frontend deps (`pnpm-lock.yaml`) are Nachiketha's only. Backend deps (`backend/pyproject.toml`, `backend/uv.lock`) are shared: change them only in a tiny separate `build(deps)` PR, never mixed into feature work. On a `uv.lock` conflict, re-run `uv lock`; never hand-merge a lockfile.
 6. **Database:** never edit an Alembic migration that is already on `main`; add a new one. Only vishwas's area creates migrations.
 7. **Git:** never commit to `main`, never `git push --force` (use `--force-with-lease` only on your own branch), never rebase/merge someone else's branch, never skip hooks (`--no-verify`). One issue per branch; keep PRs small.
 8. **Branch names:** `feat/<area>/<issue#>-slug`, `fix/...`, `chore/...`, `contract/<issue#>-slug`. Commits use Conventional Commits with the scopes in `docs/development-workflow.md` §4 (a commit-msg hook enforces this). Make one small commit per logical change.
