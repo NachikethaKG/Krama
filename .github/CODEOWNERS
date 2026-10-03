@@ -1,15 +1,36 @@
-# Mirrors OWNERSHIP.toml. Later rules win, so the general rule comes first.
+# Mirrors OWNERSHIP.toml (docs/adr/0001-ownership-by-module.md). In CODEOWNERS the LAST matching rule wins,
+# so general rules come first and specific ones after.
 *                              @Vishwas721 @NachikethaKG
 
+# Vishwas: backend core (agent, planner, verifier, runs, api, db, llm, storage, tts, alembic)
 /backend/                      @Vishwas721
+
+# Nachiketha: backend modules
+/backend/app/observer/         @NachikethaKG
+/backend/tests/observer/       @NachikethaKG
+/backend/app/policy/           @NachikethaKG
+/backend/tests/policy/         @NachikethaKG
+/backend/app/validation/       @NachikethaKG
+/backend/tests/validation/     @NachikethaKG
+/backend/app/export/           @NachikethaKG
+/backend/tests/export/         @NachikethaKG
+/benchmarks/                   @NachikethaKG
+
+# Nachiketha: frontend and packages
 /frontend/                     @NachikethaKG
 /packages/                     @NachikethaKG
 /package.json                  @NachikethaKG
 /pnpm-workspace.yaml           @NachikethaKG
 /pnpm-lock.yaml                @NachikethaKG
 
-# Contracts and generated code need both
+# Shared backend build files and benchmark tasks
+/backend/pyproject.toml        @Vishwas721 @NachikethaKG
+/backend/uv.lock               @Vishwas721 @NachikethaKG
+/benchmarks/tasks/             @Vishwas721 @NachikethaKG
+
+# Contracts (JSON schemas, API, backend ports) and generated code
 /contracts/                    @Vishwas721 @NachikethaKG
+/backend/app/ports/            @Vishwas721 @NachikethaKG
 /backend/app/contracts_gen/    @Vishwas721 @NachikethaKG
 /packages/contracts-ts/        @Vishwas721 @NachikethaKG
 
