@@ -65,7 +65,7 @@ The tutorial itself has **no endpoint**: the frontend compiles `Workflow → Tut
   "current_seq": 3, "retry_count": 1, "workflow_id": null, "error": null,
   "started_at": "…", "finished_at": null }
 ```
-`Workflow` and `Step` follow the sketch in [`phases.md` §3.1](phases.md) and [`database-schema.md`](database-schema.md).
+`Workflow` and `Step` follow the sketch in [`phases/README.md` §3.1](phases/README.md) and [`database-schema.md`](database-schema.md).
 
 ## Live view: SSE events (`GET /runs/{id}/events`)
 
