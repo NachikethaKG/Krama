@@ -5,10 +5,13 @@ Agent-specific rules: [`AGENTS.md`](../AGENTS.md). Ownership: [`OWNERSHIP.toml`]
 
 ## 1. Who owns what
 
+Ownership is by module, so **both of us work on the backend** without sharing files ([ADR 0001](adr/0001-ownership-by-module.md)).
+
 | Owned alone | Owner |
 |---|---|
-| `backend/`: agent, planner, verifier, policy, API, DB models and migrations | Vishwas |
-| `frontend/`, `packages/`: UI, tutorial compiler, player, video export | Nachiketha |
+| Backend core: `agent/`, `planner/`, `verifier/`, `runs/`, `api/`, `db/` + migrations, `llm/`, `storage/`, `tts/` | Vishwas |
+| Backend modules: `observer/` (capture + recording), `policy/` (safety), `validation/` (drift), `export/` (video jobs), plus `benchmarks/` | Nachiketha |
+| `frontend/`, `packages/`: UI, tutorial compiler, player, video exporter | Nachiketha |
 
 **Defined jointly** (changes need both to agree; PRs need both reviewers):
 
@@ -16,6 +19,8 @@ Agent-specific rules: [`AGENTS.md`](../AGENTS.md). Ownership: [`OWNERSHIP.toml`]
 |---|---|
 | Architecture | [`architecture.md`](architecture.md) + ADRs |
 | API contract | [`api-contract.md`](api-contract.md), `contracts/` |
+| Backend module interfaces | `backend/app/ports/` (Python `Protocol`s between modules owned by different people) |
+| Backend dependencies | `backend/pyproject.toml`, `backend/uv.lock`: tiny separate `build(deps)` PRs only |
 | Database schema (*what* the tables are) | [`database-schema.md`](database-schema.md) |
 | Docker / dev environment | `infra/`, `justfile`, `.env.example` |
 | Git workflow, review rules, Definition of Done | this file |
