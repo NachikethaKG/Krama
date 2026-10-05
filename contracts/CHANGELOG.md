@@ -2,6 +2,10 @@
 
 Every change to `contracts/` is listed here. Additive change = minor version bump; breaking change = major bump + ADR.
 
+## 1.1 (#22)
+
+- Added `health.schema.json`: `HealthResponse` (`status: "ok"`, `version`), the response of `GET /health`. Additive.
+
 ## 1.0 (#14)
 
 First version of the API schemas.
