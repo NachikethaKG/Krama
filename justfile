@@ -55,10 +55,15 @@ reset-gitea:
     {{compose}} up -d --wait gitea
     just seed
 
-# Regenerate typed models from contracts/schemas (Python now; TypeScript once scripts/gen_contracts_ts.mjs exists)
+# Regenerate everything derived from contracts: Python models, openapi.json, TypeScript types (once #17 adds them)
 gen-contracts:
     uv run --no-project --python 3.12 scripts/gen_contracts_py.py
+    just export-openapi
     {{ if path_exists("scripts/gen_contracts_ts.mjs") == "true" { "node scripts/gen_contracts_ts.mjs" } else { "echo 'TypeScript generator not added yet (#17)'" } }}
+
+# Write contracts/openapi.json from the FastAPI app
+export-openapi:
+    uv run --project backend python scripts/export_openapi.py
 
 # Research-chat prompt for a phase, copied to the clipboard, e.g. `just research-prompt 0 vishwas`
 research-prompt phase person:
