@@ -27,7 +27,7 @@ Backend modules owned by different people talk **only through `backend/app/ports
 1. **Only edit files in your owner's area.** Edit SHARED files only when the current task/issue explicitly says so.
 2. **Never edit the other owner's area.** If your task needs a change there, stop and write the request in the PR description or a new issue, then continue with a mock/fixture.
 3. **Never edit `contracts/**`** unless the task issue is labelled `contract-change`. Contract PRs contain only `contracts/**`, regenerated output and `contracts/CHANGELOG.md` — no feature code.
-4. **Never hand-edit generated folders.** Run `scripts/gen-contracts` instead.
+4. **Never hand-edit generated folders.** Run `just gen-contracts` instead, then commit the output with `KRAMA_GEN=1 git commit ...` (the ownership hook blocks generated files otherwise).
 5. **Dependencies:** frontend deps (`pnpm-lock.yaml`) are Nachiketha's only. Backend deps (`backend/pyproject.toml`, `backend/uv.lock`) are shared: change them only in a tiny separate `build(deps)` PR, never mixed into feature work. On a `uv.lock` conflict, re-run `uv lock`; never hand-merge a lockfile.
 6. **Database:** never edit an Alembic migration that is already on `main`; add a new one. Only vishwas's area creates migrations.
 7. **Git:** never commit to `main`, never `git push --force` (use `--force-with-lease` only on your own branch), never rebase/merge someone else's branch, never skip hooks (`--no-verify`). One issue per branch; keep PRs small.
