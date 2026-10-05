@@ -155,10 +155,10 @@ Each sprint ends with an integration PR merged to `main` and a demo **run on Nac
 | [6: Later](phase-6-later.md) | Backlog | — |
 
 ### How the research step works
-1. Before a phase starts, each person goes through **their** research list in the phase file.
-2. Write findings as a short note in [`docs/research/`](../research/README.md) (template there): question, findings, recommendation, links.
-3. Share the notes with the AI agent at the start of the phase ("read docs/research/phase-0-*.md"), so plans and code use what you found.
-4. If research changes a decision in `architecture.md`, write an ADR.
+1. Before a phase starts, each person runs `just research-prompt <phase> <name>` (e.g. `just research-prompt 0 nachiketha`). It copies a prompt built from **their** research list to the clipboard.
+2. Paste it into a new Gemini or Claude chat and research question by question. The chat teaches, cites sources, and gives you checks to run on your laptop.
+3. Type `HANDOFF`; paste the result to the coding agent, which commits it as notes in [`docs/research/`](../research/README.md).
+4. At the start of the phase, the agent reads those notes, so plans and code use what you found. If research changes a decision in `architecture.md`, write an ADR.
 
 ---
 
