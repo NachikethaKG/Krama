@@ -14,7 +14,7 @@ area = "generated"
 
 # Contracts between the two owners: JSON schemas/API, and Python interfaces between backend modules.
 [[rule]]
-paths = ["contracts/**", "backend/app/ports/**"]
+paths = ["contracts/**", "backend/app/ports/**", "backend/tests/ports/**"]
 area = "contract"
 
 # Shared backend build files and benchmark task definitions: either person, small dedicated PRs.
