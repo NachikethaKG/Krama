@@ -55,6 +55,11 @@ reset-gitea:
     {{compose}} up -d --wait gitea
     just seed
 
+# Regenerate typed models from contracts/schemas (Python now; TypeScript once scripts/gen_contracts_ts.mjs exists)
+gen-contracts:
+    uv run --no-project --python 3.12 scripts/gen_contracts_py.py
+    {{ if path_exists("scripts/gen_contracts_ts.mjs") == "true" { "node scripts/gen_contracts_ts.mjs" } else { "echo 'TypeScript generator not added yet (#17)'" } }}
+
 # Research-chat prompt for a phase, copied to the clipboard, e.g. `just research-prompt 0 vishwas`
 research-prompt phase person:
     uv run --no-project --python 3.12 scripts/research_prompt.py {{phase}} {{person}} --copy
