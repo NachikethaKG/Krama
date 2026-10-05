@@ -55,6 +55,10 @@ reset-gitea:
     {{compose}} up -d --wait gitea
     just seed
 
+# Research-chat prompt for a phase, copied to the clipboard, e.g. `just research-prompt 0 vishwas`
+research-prompt phase person:
+    uv run --no-project --python 3.12 scripts/research_prompt.py {{phase}} {{person}} --copy
+
 # Ownership check on staged files
 check-ownership:
     uv run --no-project --python 3.12 scripts/check_ownership.py
