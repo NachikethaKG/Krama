@@ -45,6 +45,14 @@ Backend modules owned by different people talk **only through `backend/app/ports
 - Mask sensitive fields (passwords, tokens, payment, personal info) before storing artifacts or sending screenshots to an LLM.
 - On CAPTCHA / bot challenge / automation restriction: stop. Never write bypass code.
 
-## 5. When unsure
+## 5. Research handoffs
+
+When the human pastes a research HANDOFF (from `just research-prompt`):
+1. Create a branch `chore/research/<issue#>-phase-<n>-<person>` (use the phase's research issue).
+2. Write each `=== FILE: <path> ===` block to that path **verbatim**. One commit per file: `docs(research): <topic>`.
+3. Don't apply the SUMMARY's suggested plan changes yourself. List them in the PR description, and change `docs/phases/` or `architecture.md` only after the human confirms (architecture changes need an ADR).
+4. Facts tagged `[unverified]` are guesses. Don't build on them without checking.
+
+## 6. When unsure
 
 Prefer: ask the human, or leave a `TODO(owner):` note in your own area, over touching files you don't own.
