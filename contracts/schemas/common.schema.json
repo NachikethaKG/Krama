@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "common.schema.json",
+  "title": "Common",
+  "$comment": "v1.0. Building blocks shared by plan, step, workflow and event schemas. See contracts/README.md for the schema rules.",
+  "$defs": {
+    "Risk": {
+      "title": "Risk",
+      "enum": ["low", "medium", "high"]
+    },
+    "ActionType": {
+      "title": "ActionType",
+      "enum": ["click", "fill", "select", "navigate", "press", "wait"]
+    },
+    "Action": {
+      "title": "Action",
+      "type": "object",
+      "required": ["type"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "$ref": "#/$defs/ActionType" },
+        "value": {
+          "type": ["string", "null"],
+          "description": "Text to fill, option to select, URL path to navigate to, or key to press. Null for click/wait."
+        }
+      }
+    },
+    "ElementRef": {
+      "title": "ElementRef",
+      "type": "object",
+      "description": "An element found by ARIA role and accessible name (name matched as a substring, e.g. 'Repository Name' matches 'Repository Name *').",
+      "required": ["role", "name"],
+      "additionalProperties": false,
+      "properties": {
+        "role": { "type": "string", "minLength": 1 },
+        "name": { "type": "string", "minLength": 1 }
+      }
+    },
+    "Target": {
+      "title": "Target",
+      "type": "object",
+      "description": "How to find the element to act on: role + name first, CSS selector as a fallback.",
+      "additionalProperties": false,
+      "properties": {
+        "role": { "type": ["string", "null"] },
+        "name": { "type": ["string", "null"] },
+        "selector": { "type": ["string", "null"] }
+      }
+    },
+    "FieldValue": {
+      "title": "FieldValue",
+      "type": "object",
+      "required": ["role", "name", "value"],
+      "additionalProperties": false,
+      "properties": {
+        "role": { "type": "string", "minLength": 1 },
+        "name": { "type": "string", "minLength": 1 },
+        "value": { "type": "string" }
+      }
+    },
+    "ExpectedState": {
+      "title": "ExpectedState",
+      "type": "object",
+      "description": "What must be true after a step. Every listed condition must hold.",
+      "minProperties": 1,
+      "additionalProperties": false,
+      "properties": {
+        "url_matches": {
+          "type": "string",
+          "description": "Regex on the URL path only (no scheme or host), e.g. ^/repo/create$"
+        },
+        "title_contains": { "type": "string" },
+        "visible": { "type": "array", "items": { "$ref": "#/$defs/ElementRef" } },
+        "absent": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/ElementRef" },
+          "description": "Elements that must NOT be present, e.g. an error banner."
+        },
+        "field_values": { "type": "array", "items": { "$ref": "#/$defs/FieldValue" } },
+        "checked": { "type": "array", "items": { "$ref": "#/$defs/ElementRef" } }
+      }
+    },
+    "VerificationMethod": {
+      "title": "VerificationMethod",
+      "enum": ["url", "dom", "aria", "network", "vision"]
+    },
+    "BoundingBox": {
+      "title": "BoundingBox",
+      "type": "array",
+      "description": "[x, y, width, height] in CSS pixels, page coordinates.",
+      "prefixItems": [{ "type": "number" }, { "type": "number" }, { "type": "number" }, { "type": "number" }],
+      "items": false,
+      "minItems": 4,
+      "maxItems": 4
+    },
+    "ErrorCode": {
+      "title": "ErrorCode",
+      "enum": [
+        "validation_error",
+        "not_found",
+        "conflict",
+        "plan_not_editable",
+        "run_not_active",
+        "rate_limited",
+        "llm_unavailable",
+        "internal"
+      ]
+    },
+    "ApiError": {
+      "title": "ApiError",
+      "type": "object",
+      "required": ["code", "message"],
+      "additionalProperties": false,
+      "properties": {
+        "code": { "$ref": "#/$defs/ErrorCode" },
+        "message": { "type": "string" },
+        "details": { "type": "object" }
+      }
+    },
+    "ErrorResponse": {
+      "title": "ErrorResponse",
+      "type": "object",
+      "description": "Body of every error response (docs/api-contract.md).",
+      "required": ["error"],
+      "additionalProperties": false,
+      "properties": {
+        "error": { "$ref": "#/$defs/ApiError" }
+      }
+    }
+  }
+}

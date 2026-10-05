@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "task.schema.json",
+  "title": "Task",
+  "$comment": "v1.0. A user's request, interpreted and turned into a plan (docs/api-contract.md: /tasks).",
+  "type": "object",
+  "required": ["id", "prompt", "target_url", "status", "created_at"],
+  "additionalProperties": false,
+  "properties": {
+    "id": { "type": "string", "format": "uuid" },
+    "prompt": { "type": "string", "minLength": 1 },
+    "target_url": { "type": "string", "format": "uri" },
+    "status": { "$ref": "#/$defs/TaskStatus" },
+    "interpretation": {
+      "oneOf": [{ "$ref": "#/$defs/Interpretation" }, { "type": "null" }]
+    },
+    "clarification_question": { "type": ["string", "null"] },
+    "plan_id": { "type": ["string", "null"], "format": "uuid" },
+    "error": {
+      "oneOf": [{ "$ref": "common.schema.json#/$defs/ApiError" }, { "type": "null" }]
+    },
+    "created_at": { "type": "string", "format": "date-time" }
+  },
+  "$defs": {
+    "TaskStatus": {
+      "title": "TaskStatus",
+      "enum": ["planning", "needs_clarification", "planned", "failed"]
+    },
+    "Interpretation": {
+      "title": "Interpretation",
+      "type": "object",
+      "required": ["app", "goal"],
+      "additionalProperties": false,
+      "properties": {
+        "app": { "type": "string", "minLength": 1, "description": "e.g. gitea, github" },
+        "goal": { "type": "string", "minLength": 1, "description": "snake_case, e.g. create_repository" },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": { "type": ["string", "number", "boolean"] },
+          "description": "e.g. {\"name\": \"demo-repo\"}"
+        }
+      }
+    },
+    "TaskCreateRequest": {
+      "title": "TaskCreateRequest",
+      "type": "object",
+      "required": ["prompt", "target_url"],
+      "additionalProperties": false,
+      "properties": {
+        "prompt": { "type": "string", "minLength": 1 },
+        "target_url": { "type": "string", "format": "uri" }
+      }
+    },
+    "TaskClarifyRequest": {
+      "title": "TaskClarifyRequest",
+      "type": "object",
+      "required": ["answer"],
+      "additionalProperties": false,
+      "properties": {
+        "answer": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

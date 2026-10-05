@@ -8,7 +8,7 @@
 - Base URL: `http://localhost:8000/api/v1` (`NEXT_PUBLIC_API_URL`).
 - JSON, `snake_case` fields, UUID ids, ISO-8601 UTC timestamps.
 - Long operations return **`202 Accepted`** with a resource the client polls, or streams over SSE.
-- Every error uses one shape:
+- Every error uses one shape (`ErrorResponse` in `contracts/schemas/common.schema.json`):
   ```json
   { "error": { "code": "plan_not_editable", "message": "Plan is already approved", "details": {} } }
   ```
@@ -30,7 +30,7 @@
 | 1 | GET | `/runs/{id}` | → `Run` | |
 | 1 | GET | `/runs/{id}/events` | → `text/event-stream` | Live view, see below. Supports `Last-Event-ID` |
 | 1 | POST | `/runs/{id}/cancel` | → `Run` | |
-| 1 | POST | `/runs/{id}/confirm` | `{step_id, decision: "allow"\|"deny"}` → `Run` | Resumes a run paused on a destructive step |
+| 1 | POST | `/runs/{id}/confirm` | `{step_seq, decision: "allow"\|"deny"}` → `Run` | Resumes a run paused on a destructive step |
 | 1 | GET | `/workflows/{id}` | → `Workflow` | The verified workflow (main output) |
 | 1 | GET | `/workflows` | `?target_app&limit&cursor` → page of `WorkflowSummary` | |
 | 2 | GET | `/workflows/{id}/recording` | → rrweb event JSON | Masked before storage |
@@ -82,4 +82,5 @@ Each message has `id: <seq>`, `event: <type>` and a JSON `data` field. Every `da
 | `run.paused` | `reason: "destructive_action"\|"captcha"\|"auth_wall"\|"rate_limited"`, `step_seq` |
 | `run.completed` | `workflow_id`, `verified_steps`, `failed_actions` |
 | `run.failed` | `error` |
-| `heartbeat` | every 15s, keeps proxies open |
+
+Keep-alive: every 15 s the server sends an SSE comment line (`: keep-alive`), not an event. `EventSource` ignores it.

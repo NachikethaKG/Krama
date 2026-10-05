@@ -1,0 +1,173 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "events.schema.json",
+  "title": "RunEvent",
+  "$comment": "v1.0. Live-view events sent over SSE on GET /runs/{id}/events. SSE `event:` = type, `id:` = seq. Keep-alives are SSE comment lines, not events.",
+  "type": "object",
+  "oneOf": [
+    { "$ref": "#/$defs/RunStartedEvent" },
+    { "$ref": "#/$defs/StepStartedEvent" },
+    { "$ref": "#/$defs/StepActionDoneEvent" },
+    { "$ref": "#/$defs/StepVerifiedEvent" },
+    { "$ref": "#/$defs/StepFailedEvent" },
+    { "$ref": "#/$defs/RunReplanningEvent" },
+    { "$ref": "#/$defs/RunPausedEvent" },
+    { "$ref": "#/$defs/RunCompletedEvent" },
+    { "$ref": "#/$defs/RunFailedEvent" }
+  ],
+  "discriminator": { "propertyName": "type" },
+  "$defs": {
+    "RunStartedEvent": {
+      "title": "RunStartedEvent",
+      "type": "object",
+      "required": ["type", "run_id", "seq", "ts", "plan_id", "total_steps"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "run.started" },
+        "run_id": { "type": "string", "format": "uuid" },
+        "seq": { "type": "integer", "minimum": 1 },
+        "ts": { "type": "string", "format": "date-time" },
+        "plan_id": { "type": "string", "format": "uuid" },
+        "total_steps": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "StepStartedEvent": {
+      "title": "StepStartedEvent",
+      "type": "object",
+      "required": ["type", "run_id", "seq", "ts", "step_seq", "instruction_text"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "step.started" },
+        "run_id": { "type": "string", "format": "uuid" },
+        "seq": { "type": "integer", "minimum": 1 },
+        "ts": { "type": "string", "format": "date-time" },
+        "step_seq": { "type": "integer", "minimum": 1 },
+        "instruction_text": { "type": "string" }
+      }
+    },
+    "StepActionDoneEvent": {
+      "title": "StepActionDoneEvent",
+      "type": "object",
+      "required": ["type", "run_id", "seq", "ts", "step_seq"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "step.action_done" },
+        "run_id": { "type": "string", "format": "uuid" },
+        "seq": { "type": "integer", "minimum": 1 },
+        "ts": { "type": "string", "format": "date-time" },
+        "step_seq": { "type": "integer", "minimum": 1 },
+        "screenshot_url": { "type": ["string", "null"] },
+        "bbox": {
+          "oneOf": [{ "$ref": "common.schema.json#/$defs/BoundingBox" }, { "type": "null" }]
+        }
+      }
+    },
+    "StepVerifiedEvent": {
+      "title": "StepVerifiedEvent",
+      "type": "object",
+      "required": ["type", "run_id", "seq", "ts", "step_seq", "method", "confidence"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "step.verified" },
+        "run_id": { "type": "string", "format": "uuid" },
+        "seq": { "type": "integer", "minimum": 1 },
+        "ts": { "type": "string", "format": "date-time" },
+        "step_seq": { "type": "integer", "minimum": 1 },
+        "method": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "common.schema.json#/$defs/VerificationMethod" }
+        },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "StepFailedEvent": {
+      "title": "StepFailedEvent",
+      "type": "object",
+      "required": ["type", "run_id", "seq", "ts", "step_seq", "expected", "observed"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "step.failed" },
+        "run_id": { "type": "string", "format": "uuid" },
+        "seq": { "type": "integer", "minimum": 1 },
+        "ts": { "type": "string", "format": "date-time" },
+        "step_seq": { "type": "integer", "minimum": 1 },
+        "expected": { "$ref": "common.schema.json#/$defs/ExpectedState" },
+        "observed": { "$ref": "#/$defs/ObservedSummary" },
+        "screenshot_url": { "type": ["string", "null"] }
+      }
+    },
+    "RunReplanningEvent": {
+      "title": "RunReplanningEvent",
+      "type": "object",
+      "required": ["type", "run_id", "seq", "ts", "reason", "attempt"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "run.replanning" },
+        "run_id": { "type": "string", "format": "uuid" },
+        "seq": { "type": "integer", "minimum": 1 },
+        "ts": { "type": "string", "format": "date-time" },
+        "reason": { "type": "string" },
+        "attempt": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "RunPausedEvent": {
+      "title": "RunPausedEvent",
+      "type": "object",
+      "required": ["type", "run_id", "seq", "ts", "reason", "step_seq"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "run.paused" },
+        "run_id": { "type": "string", "format": "uuid" },
+        "seq": { "type": "integer", "minimum": 1 },
+        "ts": { "type": "string", "format": "date-time" },
+        "reason": { "$ref": "#/$defs/PauseReason" },
+        "step_seq": { "type": "integer", "minimum": 1 },
+        "message": { "type": "string" }
+      }
+    },
+    "RunCompletedEvent": {
+      "title": "RunCompletedEvent",
+      "type": "object",
+      "required": ["type", "run_id", "seq", "ts", "workflow_id", "verified_steps", "failed_actions"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "run.completed" },
+        "run_id": { "type": "string", "format": "uuid" },
+        "seq": { "type": "integer", "minimum": 1 },
+        "ts": { "type": "string", "format": "date-time" },
+        "workflow_id": { "type": "string", "format": "uuid" },
+        "verified_steps": { "type": "integer", "minimum": 0 },
+        "failed_actions": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "RunFailedEvent": {
+      "title": "RunFailedEvent",
+      "type": "object",
+      "required": ["type", "run_id", "seq", "ts", "error"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "run.failed" },
+        "run_id": { "type": "string", "format": "uuid" },
+        "seq": { "type": "integer", "minimum": 1 },
+        "ts": { "type": "string", "format": "date-time" },
+        "error": { "$ref": "common.schema.json#/$defs/ApiError" }
+      }
+    },
+    "PauseReason": {
+      "title": "PauseReason",
+      "enum": ["destructive_action", "captcha", "auth_wall", "rate_limited"]
+    },
+    "ObservedSummary": {
+      "title": "ObservedSummary",
+      "type": "object",
+      "description": "Short version of what the page showed, for the live view.",
+      "required": ["url", "title"],
+      "additionalProperties": false,
+      "properties": {
+        "url": { "type": "string", "description": "Path only" },
+        "title": { "type": "string" }
+      }
+    }
+  }
+}

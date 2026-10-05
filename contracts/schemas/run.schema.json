@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "run.schema.json",
+  "title": "Run",
+  "$comment": "v1.0. One execution of an approved plan (docs/api-contract.md: /runs).",
+  "type": "object",
+  "required": ["id", "plan_id", "plan_revision", "status", "retry_count", "created_at"],
+  "additionalProperties": false,
+  "properties": {
+    "id": { "type": "string", "format": "uuid" },
+    "plan_id": { "type": "string", "format": "uuid" },
+    "plan_revision": { "type": "integer", "minimum": 1, "description": "The exact revision that was approved." },
+    "status": { "$ref": "#/$defs/RunStatus" },
+    "current_seq": { "type": ["integer", "null"], "minimum": 1 },
+    "retry_count": { "type": "integer", "minimum": 0 },
+    "workflow_id": { "type": ["string", "null"], "format": "uuid" },
+    "error": {
+      "oneOf": [{ "$ref": "common.schema.json#/$defs/ApiError" }, { "type": "null" }]
+    },
+    "created_at": { "type": "string", "format": "date-time" },
+    "started_at": { "type": ["string", "null"], "format": "date-time" },
+    "finished_at": { "type": ["string", "null"], "format": "date-time" }
+  },
+  "$defs": {
+    "RunStatus": {
+      "title": "RunStatus",
+      "enum": ["queued", "running", "paused", "verified", "failed", "cancelled"]
+    },
+    "RunPage": {
+      "title": "RunPage",
+      "type": "object",
+      "required": ["items"],
+      "additionalProperties": false,
+      "properties": {
+        "items": { "type": "array", "items": { "$ref": "#" } },
+        "next_cursor": { "type": ["string", "null"] }
+      }
+    },
+    "RunConfirmRequest": {
+      "title": "RunConfirmRequest",
+      "type": "object",
+      "description": "Resume a run paused on a destructive step.",
+      "required": ["step_seq", "decision"],
+      "additionalProperties": false,
+      "properties": {
+        "step_seq": { "type": "integer", "minimum": 1 },
+        "decision": { "enum": ["allow", "deny"] }
+      }
+    }
+  }
+}
