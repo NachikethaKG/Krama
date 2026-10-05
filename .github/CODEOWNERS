@@ -31,6 +31,7 @@
 # Contracts (JSON schemas, API, backend ports) and generated code
 /contracts/                    @Vishwas721 @NachikethaKG
 /backend/app/ports/            @Vishwas721 @NachikethaKG
+/backend/tests/ports/          @Vishwas721 @NachikethaKG
 /backend/app/contracts_gen/    @Vishwas721 @NachikethaKG
 /packages/contracts-ts/        @Vishwas721 @NachikethaKG
 
