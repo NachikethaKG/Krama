@@ -25,6 +25,8 @@ Done together on one laptop. Delivered: `AGENTS.md`, `OWNERSHIP.toml`, CODEOWNER
 
 ### Research before starting
 
+> **Research chat prompts:** copy yours from [#10 (Vishwas)](https://github.com/NachikethaKG/Krama/issues/10) or [#11 (Nachiketha)](https://github.com/NachikethaKG/Krama/issues/11), or run `just research-prompt f <name>`. Together questions: [#12](https://github.com/NachikethaKG/Krama/issues/12). How it works: [`docs/research/`](../research/README.md).
+
 **Vishwas**
 - **Pydantic generation:** how does `datamodel-code-generator` turn JSON Schema (draft 2020-12) into Pydantic v2 models? Which flags give clean output (`--output-model-type pydantic_v2.BaseModel`, `--use-annotated`, enums as `Literal`)? Does it handle `$ref` across files?
 - **OpenAPI from FastAPI:** how do you export `app.openapi()` to a file in a script? How do we make route response models *be* the generated models, so the OpenAPI output and the schemas can't drift?

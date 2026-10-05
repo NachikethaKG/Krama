@@ -12,6 +12,8 @@
 
 ## Research before starting
 
+> **Research chat prompts:** copy yours from [#117 (Vishwas)](https://github.com/NachikethaKG/Krama/issues/117) or [#118 (Nachiketha)](https://github.com/NachikethaKG/Krama/issues/118), or run `just research-prompt 5 <name>`. Together questions: [#119](https://github.com/NachikethaKG/Krama/issues/119). How it works: [`docs/research/`](../research/README.md).
+
 **Vishwas**
 - **Piper TTS:** voice quality, speed on CPU, and the **license of each voice model** (they differ). Can Piper output word or phoneme timings, so captions match the audio?
 - **Audio pipeline:** generate one clip per step, then join them with FFmpeg. How do you make step timing follow narration length?

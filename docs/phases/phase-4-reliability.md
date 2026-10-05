@@ -12,6 +12,8 @@
 
 ## Research before starting
 
+> **Research chat prompts:** copy yours from [#105 (Vishwas)](https://github.com/NachikethaKG/Krama/issues/105) or [#106 (Nachiketha)](https://github.com/NachikethaKG/Krama/issues/106), or run `just research-prompt 4 <name>`. Together questions: [#107](https://github.com/NachikethaKG/Krama/issues/107). How it works: [`docs/research/`](../research/README.md).
+
 **Vishwas**
 - **Self-healing locators:** how does Healenium score candidate elements when a locator breaks (attribute similarity, position, text)? When is LLM re-grounding (screenshot + ARIA) better? How do you avoid "healing" onto the wrong element?
 - **Versioning:** how do you store workflow versions (copy-on-write rows vs a JSON diff)? What counts as a new version vs the same one?

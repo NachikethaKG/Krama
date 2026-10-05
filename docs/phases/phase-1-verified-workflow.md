@@ -12,6 +12,8 @@
 
 ## Research before starting
 
+> **Research chat prompts:** copy yours from [#43 (Vishwas)](https://github.com/NachikethaKG/Krama/issues/43) or [#44 (Nachiketha)](https://github.com/NachikethaKG/Krama/issues/44), or run `just research-prompt 1 <name>`. Together questions: [#45](https://github.com/NachikethaKG/Krama/issues/45). How it works: [`docs/research/`](../research/README.md).
+
 **Vishwas**
 - **State machines in Python:** the `transitions` library vs a hand-rolled enum + transition table. How do you persist state safely so a crash mid-run doesn't corrupt it?
 - **SQLAlchemy 2 + Alembic:** async engine with psycopg 3, the session-per-request pattern in FastAPI, Alembic autogenerate and its limits (it misses some changes).

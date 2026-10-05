@@ -12,6 +12,8 @@
 
 ## Research before starting
 
+> **Research chat prompts:** copy yours from [#68 (Vishwas)](https://github.com/NachikethaKG/Krama/issues/68) or [#69 (Nachiketha)](https://github.com/NachikethaKG/Krama/issues/69), or run `just research-prompt 2 <name>`. Together questions: [#70](https://github.com/NachikethaKG/Krama/issues/70). How it works: [`docs/research/`](../research/README.md).
+
 **Vishwas**
 - **Instruction text:** what makes a good UI instruction? (Imperative, quote the exact label, say where on screen: "Click **New Repository** in the top-right `+` menu.") Write a prompt and compare outputs.
 - **Local model test:** run the same instruction-text prompt on your RTX 4050 with Ollama (Llama 3.1 8B / Qwen 2.5 7B) vs Gemini Flash. Is the local output good enough for this one cheap text job? (This decides whether `LLM_PROVIDER_TEXT=ollama` is worth keeping.)

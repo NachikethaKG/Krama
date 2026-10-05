@@ -12,6 +12,8 @@
 
 ## Research before starting
 
+> **Research chat prompts:** copy yours from [#25 (Vishwas)](https://github.com/NachikethaKG/Krama/issues/25) or [#26 (Nachiketha)](https://github.com/NachikethaKG/Krama/issues/26), or run `just research-prompt 0 <name>`. Together questions: [#27](https://github.com/NachikethaKG/Krama/issues/27). How it works: [`docs/research/`](../research/README.md).
+
 **Vishwas**
 - **Playwright for Python:** role-based locators (`get_by_role`, `get_by_label`), auto-waiting, `expect` assertions. What does `locator.aria_snapshot()` return, and how big is it on a Gitea page?
 - **Existing browser agents:** how do **browser-use** and **Stagehand** represent the page to the LLM (DOM, ARIA, screenshots) and its actions (click/fill/…)? Which runs from Python? Is either worth adopting, or do we copy ideas into our own thin layer? (This becomes ADR 0002.)
