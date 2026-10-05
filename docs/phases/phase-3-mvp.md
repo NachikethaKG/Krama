@@ -12,6 +12,8 @@
 
 ## Research before starting
 
+> **Research chat prompts:** copy yours from [#84 (Vishwas)](https://github.com/NachikethaKG/Krama/issues/84) or [#85 (Nachiketha)](https://github.com/NachikethaKG/Krama/issues/85), or run `just research-prompt 3 <name>`. Together questions: [#86](https://github.com/NachikethaKG/Krama/issues/86). How it works: [`docs/research/`](../research/README.md).
+
 **Vishwas**
 - **GitHub rules:** the GitHub Terms of Service and Acceptable Use Policies on automation. What is allowed for a dedicated test account doing low-volume UI automation? Note the limits we must respect.
 - **Logged-in sessions:** Playwright `storage_state`. How do you save it encrypted at rest (`cryptography` Fernet with a key from `.env`, or Windows DPAPI)? How long do GitHub sessions last? How do you detect that a session expired?
