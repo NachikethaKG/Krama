@@ -86,4 +86,32 @@ jobs:
         env:
           NEXT_PUBLIC_API_MODE: mock
 
-  # contracts-drift (regenerate types + git diff) is added together with contracts/ in Sprint F2.
+  contracts-drift:
+    name: Contracts drift (generated code up to date)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv tool install rust-just
+      - name: Install backend dependencies (Python generator + openapi export)
+        working-directory: backend
+        run: uv sync --frozen
+      # Node is only needed once the TypeScript generator exists (#17); `just gen-contracts` skips it otherwise.
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Regenerate everything derived from contracts/
+        run: just gen-contracts
+      - name: Fail if anything changed or appeared
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "::error::Generated contract code is out of date. Run 'just gen-contracts' and commit the result (KRAMA_GEN=1 git commit ...)."
+            git status --porcelain
+            git --no-pager diff --stat
+            git --no-pager diff | head -100
+            exit 1
+          fi
+          echo "Generated code matches contracts/."

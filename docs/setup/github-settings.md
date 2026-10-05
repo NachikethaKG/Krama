@@ -24,6 +24,7 @@ These can't go in code, so the repo owner applies them once in the GitHub UI.
   - `Hygiene hooks`
   - `Backend (ruff, mypy, pytest)`
   - `Frontend (lint, typecheck, test, build)`
+  - `Contracts drift (generated code up to date)`
   - ☑ Require branches to be up to date before merging
 - ☑ Block force pushes
 - Bypass list: **empty** (the rules apply to the owner too)
