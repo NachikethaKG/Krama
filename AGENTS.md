@@ -16,7 +16,7 @@ If it is unset, STOP and ask the human to run `git config krama.owner <name>`.
 | Backend core | `backend/**` except the modules below: agent, planner, verifier, runs, api, db, llm, storage, tts, alembic | vishwas |
 | Backend modules | `backend/app/{observer,policy,validation,export}/**` + matching `backend/tests/<module>/**`, `benchmarks/**` | nachiketha |
 | Frontend / tutorial | `frontend/**`, `packages/**`, `package.json`, `pnpm-*.yaml` | nachiketha |
-| Contracts | `contracts/**`, `backend/app/ports/**` (Python interfaces between backend modules) | both (contract-change PRs only) |
+| Contracts | `contracts/**`, `backend/app/ports/**` + `backend/tests/ports/**` (Python interfaces between backend modules) | both (contract-change PRs only) |
 | Generated | `backend/app/contracts_gen/**`, `packages/contracts-ts/**` | nobody — regenerate only |
 | Shared | `backend/pyproject.toml`, `backend/uv.lock`, `benchmarks/tasks/**`, `AGENTS.md`, `CLAUDE.md`, `.github/**`, `infra/**`, `docs/**`, `scripts/**`, root config | both, small dedicated PRs |
 
