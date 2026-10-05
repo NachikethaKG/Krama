@@ -1,16 +1,11 @@
-from typing import Annotated, Literal
+from typing import Annotated
 
 from fastapi import APIRouter, Depends
-from pydantic import BaseModel
 
 from app.config import Settings, get_settings
+from app.contracts_gen.health_schema import HealthResponse
 
 router = APIRouter(tags=["health"])
-
-
-class HealthResponse(BaseModel):
-    status: Literal["ok"]
-    version: str
 
 
 @router.get("/health")
