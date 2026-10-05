@@ -1,7 +1,7 @@
 # Naming conventions for contracts
 
 - **Phase:** F (Sprint F2)
-- **Researched by:** Together. **Proposed by Vishwas; needs Nachiketha's agreement** before the schema PRs (#14, #15) merge.
+- **Researched by:** Together. Proposed by Vishwas; **agreed by Nachiketha** (2026-10-05, see PR #141).
 - **Question(s):** Agree on naming: `snake_case` JSON, ids as UUID strings, timestamps as ISO-8601 UTC.
 
 ## Findings
@@ -10,7 +10,7 @@
 - The Gitea walkthrough showed that full URLs tie a workflow to one host (`localhost:3001`). Paths (`/repo/create`) work for any base URL [verified locally: all observed URLs are the same paths under the base URL]
 
 ## Recommendation
-Proposed by Vishwas:
+Agreed by Vishwas and Nachiketha:
 
 | Thing | Convention | Example |
 |---|---|---|
@@ -24,7 +24,7 @@ Proposed by Vishwas:
 | Schema version | `"version": "<major>.<minor>"` const | `"1.0"` |
 
 ## Open questions
-- Nachiketha: agree or change, especially camelCase vs snake_case for the TS side.
+- None. Nachiketha chose snake_case in TS too (generated types match fixtures 1:1, no conversion layer).
 
 ## Links
 - https://json-schema.org/understanding-json-schema/reference/string#dates-and-times
