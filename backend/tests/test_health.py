@@ -27,3 +27,13 @@ def test_cors_allows_frontend_origin() -> None:
     )
 
     assert response.headers["access-control-allow-origin"] == "http://localhost:3000"
+
+
+def test_health_response_matches_the_contract_model() -> None:
+    from app.contracts_gen.health_schema import HealthResponse
+
+    client = TestClient(create_app())
+
+    body = HealthResponse.model_validate(client.get("/api/v1/health").json())
+
+    assert body.status == "ok"

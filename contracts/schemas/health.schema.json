@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "health.schema.json",
+  "title": "HealthResponse",
+  "$comment": "v1.1. Response of GET /health (docs/api-contract.md).",
+  "type": "object",
+  "required": ["status", "version"],
+  "additionalProperties": false,
+  "properties": {
+    "status": { "const": "ok" },
+    "version": { "type": "string", "minLength": 1, "description": "Backend version, e.g. 0.1.0" }
+  }
+}
