@@ -5,7 +5,7 @@ The source of truth between `backend/` and `frontend/`. Changing anything here i
 | Path | What |
 |---|---|
 | `schemas/*.schema.json` | JSON Schema (draft 2020-12), hand-written. Pydantic and TypeScript types are generated from these. |
-| `openapi.json` | REST contract, exported from FastAPI (#18) |
+| `openapi.json` | REST contract, exported from FastAPI with `just export-openapi` (also run by `just gen-contracts`). Never edit by hand. |
 | `fixtures/` | Example data, validated against the schemas in CI (#20, #21) |
 | `CHANGELOG.md` | Every contract change, with its version |
 
