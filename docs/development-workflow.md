@@ -133,7 +133,7 @@ push → PR → GitHub Actions
              ├─ ownership report
              ├─ backend:  ruff · mypy · pytest            (runs once backend/ exists)
              ├─ frontend: eslint · tsc · vitest · build  (runs once frontend/ exists)
-             └─ contracts: regenerate types + diff        (runs once contracts/ exists)
+             └─ contracts drift: just gen-contracts, then fail on any change (models, openapi.json, TS types)
           → 1 review → rebase merge
 ```
 
