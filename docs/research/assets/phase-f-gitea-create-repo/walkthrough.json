@@ -1,0 +1,192 @@
+{
+  "precondition": {
+    "signed_in_as": "demo",
+    "login_page": {
+      "url": "/user/login",
+      "title": "Sign In - Gitea: Git with a cup of tea"
+    },
+    "start_state": {
+      "url": "/",
+      "title": "demo - Dashboard - Gitea: Git with a cup of tea",
+      "headings": [
+        "Repositories\n0",
+        "My Organizations 0"
+      ],
+      "aria_excerpt": "- main \"demo - Dashboard\":\n  - menu:\n    - img \"demo\"\n    - text: demo\n  - text: Repository Organization\n  - heading \"Repositories 0 New Repository\" [level=4]:\n    - text: Repositories 0\n    - link \"New Repository\":\n      - /url: /repo/create\n  - searchbox \"Search repos...\"\n  - combobox \"Other Filters\"\n  - navigation:"
+    }
+  },
+  "steps": [
+    {
+      "seq": 1,
+      "action": {
+        "type": "click",
+        "value": null
+      },
+      "target": {
+        "role": "menu",
+        "name": "Create…",
+        "bbox": [
+          1146,
+          6,
+          56,
+          36
+        ]
+      },
+      "url_before": "/",
+      "observed": {
+        "url": "/",
+        "title": "demo - Dashboard - Gitea: Git with a cup of tea",
+        "headings": [
+          "Repositories\n0",
+          "My Organizations 0"
+        ],
+        "aria_excerpt": "- main \"demo - Dashboard\":\n  - menu:\n    - img \"demo\"\n    - text: demo\n  - text: Repository Organization\n  - heading \"Repositories 0 New Repository\" [level=4]:\n    - text: Repositories 0\n    - link \"New Repository\":\n      - /url: /repo/create\n  - searchbox \"Search repos...\"\n  - combobox \"Other Filters\"\n  - navigation:"
+      },
+      "timing": {
+        "start_ms": 2718,
+        "end_ms": 3047
+      },
+      "screenshot": "step-1.png"
+    },
+    {
+      "seq": 2,
+      "action": {
+        "type": "click",
+        "value": null
+      },
+      "target": {
+        "role": "menuitem",
+        "name": "New Repository",
+        "bbox": [
+          1044,
+          44,
+          156,
+          38
+        ]
+      },
+      "url_before": "/",
+      "observed": {
+        "url": "/repo/create",
+        "title": "New Repository - Gitea: Git with a cup of tea",
+        "headings": [
+          "New Repository"
+        ],
+        "aria_excerpt": "- main \"New Repository\":\n  - heading \"New Repository\" [level=3]\n  - paragraph:\n    - text: A repository contains all project files, including revision history. Already hosting one elsewhere?\n    - link \"Migrate repository.\":\n      - /url: /repo/migrate\n  - text: Owner *\n  - combobox:\n    - img \"demo\"\n    - text: demo\n  - text: Some organizations may not show up in the dropdown due to a maximum repository count limit. Repository Name *\n  - textbox \"Repository Name *\""
+      },
+      "timing": {
+        "start_ms": 3110,
+        "end_ms": 3218
+      },
+      "screenshot": "step-2.png"
+    },
+    {
+      "seq": 3,
+      "action": {
+        "type": "fill",
+        "value": "demo-repo"
+      },
+      "target": {
+        "role": "textbox",
+        "name": "Repository Name",
+        "bbox": [
+          519,
+          262,
+          386,
+          38
+        ]
+      },
+      "url_before": "/repo/create",
+      "observed": {
+        "url": "/repo/create",
+        "title": "New Repository - Gitea: Git with a cup of tea",
+        "headings": [
+          "New Repository"
+        ],
+        "aria_excerpt": "- main \"New Repository\":\n  - heading \"New Repository\" [level=3]\n  - paragraph:\n    - text: A repository contains all project files, including revision history. Already hosting one elsewhere?\n    - link \"Migrate repository.\":\n      - /url: /repo/migrate\n  - text: Owner *\n  - combobox:\n    - img \"demo\"\n    - text: demo\n  - text: Some organizations may not show up in the dropdown due to a maximum repository count limit. Repository Name *\n  - textbox \"Repository Name *\": demo-repo"
+      },
+      "timing": {
+        "start_ms": 3312,
+        "end_ms": 3625
+      },
+      "screenshot": "step-3.png"
+    },
+    {
+      "seq": 4,
+      "action": {
+        "type": "click",
+        "value": null
+      },
+      "target": {
+        "role": "checkbox",
+        "name": "Initialize Repository (Adds .gitignore, License and README)",
+        "bbox": [
+          519,
+          936,
+          15,
+          15
+        ]
+      },
+      "url_before": "/repo/create",
+      "observed": {
+        "url": "/repo/create",
+        "title": "New Repository - Gitea: Git with a cup of tea",
+        "headings": [
+          "New Repository"
+        ],
+        "aria_excerpt": "- main \"New Repository\":\n  - heading \"New Repository\" [level=3]\n  - paragraph:\n    - text: A repository contains all project files, including revision history. Already hosting one elsewhere?\n    - link \"Migrate repository.\":\n      - /url: /repo/migrate\n  - text: Owner *\n  - combobox:\n    - img \"demo\"\n    - text: demo\n  - text: Some organizations may not show up in the dropdown due to a maximum repository count limit. Repository Name *\n  - textbox \"Repository Name *\": demo-repo"
+      },
+      "timing": {
+        "start_ms": 3687,
+        "end_ms": 4016
+      },
+      "screenshot": "step-4.png"
+    },
+    {
+      "seq": 5,
+      "action": {
+        "type": "click",
+        "value": null
+      },
+      "target": {
+        "role": "button",
+        "name": "Create Repository",
+        "bbox": [
+          519,
+          650,
+          154,
+          38
+        ]
+      },
+      "url_before": "/repo/create",
+      "observed": {
+        "url": "/demo/demo-repo",
+        "title": "demo/demo-repo - demo-repo - Gitea: Git with a cup of tea",
+        "headings": [
+          "README.md",
+          "demo-repo"
+        ],
+        "aria_excerpt": "- main \"demo/demo-repo\":\n  - link \"demo\":\n    - /url: /demo\n  - text: /\n  - link \"demo-repo\":\n    - /url: /demo/demo-repo\n  - link \"RSS Feed\":\n    - /url: /demo/demo-repo.rss\n  - button \"Unwatch\"\n  - link \"1\":\n    - /url: /demo/demo-repo/watchers\n  - button \"Star\""
+      },
+      "timing": {
+        "start_ms": 4077,
+        "end_ms": 4610
+      },
+      "screenshot": "step-5.png"
+    }
+  ],
+  "final_state": {
+    "url": "/demo/demo-repo",
+    "title": "demo/demo-repo - demo-repo - Gitea: Git with a cup of tea",
+    "headings": [
+      "README.md",
+      "demo-repo"
+    ],
+    "aria_excerpt": "- main \"demo/demo-repo\":\n  - link \"demo\":\n    - /url: /demo\n  - text: /\n  - link \"demo-repo\":\n    - /url: /demo/demo-repo\n  - link \"RSS Feed\":\n    - /url: /demo/demo-repo.rss\n  - button \"Unwatch\"\n  - link \"1\":\n    - /url: /demo/demo-repo/watchers\n  - button \"Star\""
+  },
+  "negative_duplicate_name": {
+    "url": "/repo/create",
+    "title": "New Repository - Gitea: Git with a cup of tea",
+    "error_text": "The repository name is already used.",
+    "aria_excerpt": "- paragraph: The repository name is already used."
+  }
+}
