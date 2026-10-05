@@ -8,6 +8,6 @@
   "additionalProperties": false,
   "properties": {
     "status": { "const": "ok" },
-    "version": { "type": "string", "minLength": 1, "description": "Backend version, e.g. 0.1.0" }
+    "version": { "type": "string", "minLength": 1, "description": "Backend version (semver), e.g. 0.1.0" }
   }
 }
