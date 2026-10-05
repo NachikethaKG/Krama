@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "plan.schema.json",
+  "title": "Plan",
+  "$comment": "v1.0. A proposed sequence of steps the user reviews, edits and approves (docs/api-contract.md: /plans).",
+  "type": "object",
+  "required": ["id", "task_id", "revision", "status", "risk", "expected_result", "steps", "created_at"],
+  "additionalProperties": false,
+  "properties": {
+    "id": { "type": "string", "format": "uuid" },
+    "task_id": { "type": "string", "format": "uuid" },
+    "revision": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Bumped on every edit; approve and edit requests must send the revision they saw."
+    },
+    "status": { "$ref": "#/$defs/PlanStatus" },
+    "risk": {
+      "$ref": "common.schema.json#/$defs/Risk",
+      "description": "Highest risk of any step."
+    },
+    "expected_result": { "type": "string", "minLength": 1 },
+    "steps": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/PlannedStep" } },
+    "created_at": { "type": "string", "format": "date-time" },
+    "approved_at": { "type": ["string", "null"], "format": "date-time" }
+  },
+  "$defs": {
+    "PlanStatus": {
+      "title": "PlanStatus",
+      "enum": ["proposed", "approved", "rejected"]
+    },
+    "PlannedStep": {
+      "title": "PlannedStep",
+      "type": "object",
+      "description": "One step before execution. The executed version (with observed state and verification) is Step in step.schema.json.",
+      "required": ["seq", "action", "target", "instruction_text", "expected_state", "risk"],
+      "additionalProperties": false,
+      "properties": {
+        "seq": { "type": "integer", "minimum": 1 },
+        "action": { "$ref": "common.schema.json#/$defs/Action" },
+        "target": { "$ref": "common.schema.json#/$defs/Target" },
+        "instruction_text": { "type": "string", "minLength": 1 },
+        "expected_state": { "$ref": "common.schema.json#/$defs/ExpectedState" },
+        "risk": { "$ref": "common.schema.json#/$defs/Risk" }
+      }
+    },
+    "PlanUpdateRequest": {
+      "title": "PlanUpdateRequest",
+      "type": "object",
+      "required": ["revision", "steps"],
+      "additionalProperties": false,
+      "properties": {
+        "revision": { "type": "integer", "minimum": 1 },
+        "steps": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/PlannedStep" } }
+      }
+    },
+    "PlanApproveRequest": {
+      "title": "PlanApproveRequest",
+      "type": "object",
+      "required": ["revision"],
+      "additionalProperties": false,
+      "properties": {
+        "revision": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "PlanRejectRequest": {
+      "title": "PlanRejectRequest",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "reason": { "type": ["string", "null"] }
+      }
+    }
+  }
+}
