@@ -1,0 +1,351 @@
+{
+  "id": "6f1c2a4e-1111-4b8a-9a1b-123456789abc",
+  "version": "1.0",
+  "task_id": "6f1c2a4e-0000-4b8a-9a1b-123456789abc",
+  "run_id": "6f1c2a4e-2222-4b8a-9a1b-123456789abc",
+  "title": "Create a repository in local Gitea",
+  "task": "Create a repository named demo-repo in local Gitea initialized with README, .gitignore, and license",
+  "target": {
+    "app": "gitea",
+    "base_url": "http://localhost:3001"
+  },
+  "target_app": "gitea",
+  "target_url": "http://localhost:3001",
+  "status": "verified",
+  "confidence": 1.0,
+  "preconditions": {
+    "logged_in_as": "demo"
+  },
+  "viewport": {
+    "width": 1280,
+    "height": 800,
+    "device_scale_factor": 1.0
+  },
+  "recording": {
+    "rrweb": "contracts/fixtures/rrweb.json",
+    "path": "contracts/fixtures/rrweb.json",
+    "event_count": 142,
+    "started_at": "2026-10-06T12:00:00Z",
+    "ended_at": "2026-10-06T12:00:05Z"
+  },
+  "recording_path": "contracts/fixtures/rrweb.json",
+  "steps": [
+    {
+      "id": "11111111-0001-4000-8000-000000000001",
+      "workflow_id": "6f1c2a4e-1111-4b8a-9a1b-123456789abc",
+      "seq": 1,
+      "action": {
+        "type": "click",
+        "value": null
+      },
+      "target": {
+        "role": "menu",
+        "name": "Create…",
+        "selector": null,
+        "bbox": [1146, 6, 56, 36]
+      },
+      "instruction_text": "Open the + menu at the top right.",
+      "before_state": {
+        "url": "/",
+        "title": "demo - Dashboard - Gitea: Git with a cup of tea",
+        "headings": [
+          "Repositories 0",
+          "My Organizations 0"
+        ],
+        "aria_excerpt": "- main \"demo - Dashboard\":\n  - menu:\n    - img \"demo\"\n    - text: demo\n  - text: Repository Organization\n  - heading \"Repositories 0 New Repository\" [level=4]:\n    - text: Repositories 0\n    - link \"New Repository\":\n      - /url: /repo/create\n  - searchbox \"Search repos...\"\n  - combobox \"Other Filters\"\n  - navigation:",
+        "screenshot": "contracts/fixtures/screenshots/step-0-dashboard.png",
+        "screenshot_path": "contracts/fixtures/screenshots/step-0-dashboard.png",
+        "captured_at": "2026-10-06T12:00:00Z"
+      },
+      "expected_state": {
+        "url_matches": "^/$",
+        "visible": [
+          {
+            "role": "menuitem",
+            "name": "New Repository"
+          }
+        ]
+      },
+      "observed_state": {
+        "url": "/",
+        "title": "demo - Dashboard - Gitea: Git with a cup of tea",
+        "headings": [
+          "Repositories 0",
+          "My Organizations 0"
+        ],
+        "aria_excerpt": "- main \"demo - Dashboard\":\n  - menu:\n    - img \"demo\"\n    - text: demo\n  - text: Repository Organization\n  - heading \"Repositories 0 New Repository\" [level=4]:\n    - text: Repositories 0\n    - link \"New Repository\":\n      - /url: /repo/create\n  - searchbox \"Search repos...\"\n  - combobox \"Other Filters\"\n  - navigation:",
+        "screenshot": "contracts/fixtures/screenshots/step-1.png",
+        "screenshot_path": "contracts/fixtures/screenshots/step-1.png",
+        "captured_at": "2026-10-06T12:00:01Z"
+      },
+      "verification": {
+        "result": "verified",
+        "method": ["aria"],
+        "confidence": 1.0
+      },
+      "risk": "low",
+      "sensitive": false,
+      "timing": {
+        "start_ms": 2718,
+        "end_ms": 3047
+      },
+      "start_ms": 2718,
+      "end_ms": 3047,
+      "screenshot_path": "contracts/fixtures/screenshots/step-1.png"
+    },
+    {
+      "id": "11111111-0002-4000-8000-000000000002",
+      "workflow_id": "6f1c2a4e-1111-4b8a-9a1b-123456789abc",
+      "seq": 2,
+      "action": {
+        "type": "click",
+        "value": null
+      },
+      "target": {
+        "role": "menuitem",
+        "name": "New Repository",
+        "selector": "a[href='/repo/create']",
+        "bbox": [1044, 44, 156, 38]
+      },
+      "instruction_text": "Click New Repository in the menu.",
+      "before_state": {
+        "url": "/",
+        "title": "demo - Dashboard - Gitea: Git with a cup of tea",
+        "headings": [
+          "Repositories 0",
+          "My Organizations 0"
+        ],
+        "aria_excerpt": "- main \"demo - Dashboard\":\n  - menu:\n    - img \"demo\"\n    - text: demo\n  - text: Repository Organization\n  - heading \"Repositories 0 New Repository\" [level=4]:\n    - text: Repositories 0\n    - link \"New Repository\":\n      - /url: /repo/create\n  - searchbox \"Search repos...\"\n  - combobox \"Other Filters\"\n  - navigation:",
+        "screenshot": "contracts/fixtures/screenshots/step-1.png",
+        "screenshot_path": "contracts/fixtures/screenshots/step-1.png",
+        "captured_at": "2026-10-06T12:00:01Z"
+      },
+      "expected_state": {
+        "url_matches": "^/repo/create$",
+        "title_contains": "New Repository",
+        "visible": [
+          {
+            "role": "heading",
+            "name": "New Repository"
+          }
+        ]
+      },
+      "observed_state": {
+        "url": "/repo/create",
+        "title": "New Repository - Gitea: Git with a cup of tea",
+        "headings": [
+          "New Repository"
+        ],
+        "aria_excerpt": "- main \"New Repository\":\n  - heading \"New Repository\" [level=3]\n  - paragraph:\n    - text: A repository contains all project files, including revision history. Already hosting one elsewhere?\n    - link \"Migrate repository.\":\n      - /url: /repo/migrate\n  - text: Owner *\n  - combobox:\n    - img \"demo\"\n    - text: demo\n  - text: Some organizations may not show up in the dropdown due to a maximum repository count limit. Repository Name *\n  - textbox \"Repository Name *\"",
+        "screenshot": "contracts/fixtures/screenshots/step-2.png",
+        "screenshot_path": "contracts/fixtures/screenshots/step-2.png",
+        "captured_at": "2026-10-06T12:00:02Z"
+      },
+      "verification": {
+        "result": "verified",
+        "method": ["url", "dom", "aria"],
+        "confidence": 1.0
+      },
+      "risk": "low",
+      "sensitive": false,
+      "timing": {
+        "start_ms": 3110,
+        "end_ms": 3218
+      },
+      "start_ms": 3110,
+      "end_ms": 3218,
+      "screenshot_path": "contracts/fixtures/screenshots/step-2.png"
+    },
+    {
+      "id": "11111111-0003-4000-8000-000000000003",
+      "workflow_id": "6f1c2a4e-1111-4b8a-9a1b-123456789abc",
+      "seq": 3,
+      "action": {
+        "type": "fill",
+        "value": "demo-repo"
+      },
+      "target": {
+        "role": "textbox",
+        "name": "Repository Name *",
+        "selector": "#repo_name",
+        "bbox": [519, 262, 386, 38]
+      },
+      "instruction_text": "Enter demo-repo as the repository name.",
+      "before_state": {
+        "url": "/repo/create",
+        "title": "New Repository - Gitea: Git with a cup of tea",
+        "headings": [
+          "New Repository"
+        ],
+        "screenshot": "contracts/fixtures/screenshots/step-2.png",
+        "screenshot_path": "contracts/fixtures/screenshots/step-2.png",
+        "captured_at": "2026-10-06T12:00:02Z"
+      },
+      "expected_state": {
+        "url_matches": "^/repo/create$",
+        "field_values": [
+          {
+            "role": "textbox",
+            "name": "Repository Name *",
+            "value": "demo-repo"
+          }
+        ]
+      },
+      "observed_state": {
+        "url": "/repo/create",
+        "title": "New Repository - Gitea: Git with a cup of tea",
+        "headings": [
+          "New Repository"
+        ],
+        "aria_excerpt": "- main \"New Repository\":\n  - heading \"New Repository\" [level=3]\n  - paragraph:\n    - text: A repository contains all project files, including revision history. Already hosting one elsewhere?\n    - link \"Migrate repository.\":\n      - /url: /repo/migrate\n  - text: Owner *\n  - combobox:\n    - img \"demo\"\n    - text: demo\n  - text: Some organizations may not show up in the dropdown due to a maximum repository count limit. Repository Name *\n  - textbox \"Repository Name *\": demo-repo",
+        "screenshot": "contracts/fixtures/screenshots/step-3.png",
+        "screenshot_path": "contracts/fixtures/screenshots/step-3.png",
+        "captured_at": "2026-10-06T12:00:03Z"
+      },
+      "verification": {
+        "result": "verified",
+        "method": ["dom"],
+        "confidence": 1.0
+      },
+      "risk": "low",
+      "sensitive": false,
+      "timing": {
+        "start_ms": 3312,
+        "end_ms": 3625
+      },
+      "start_ms": 3312,
+      "end_ms": 3625,
+      "screenshot_path": "contracts/fixtures/screenshots/step-3.png"
+    },
+    {
+      "id": "11111111-0004-4000-8000-000000000004",
+      "workflow_id": "6f1c2a4e-1111-4b8a-9a1b-123456789abc",
+      "seq": 4,
+      "action": {
+        "type": "click",
+        "value": null
+      },
+      "target": {
+        "role": "checkbox",
+        "name": "Initialize Repository (Adds .gitignore, License and README)",
+        "selector": "input[name='auto_init']",
+        "bbox": [519, 936, 15, 15]
+      },
+      "instruction_text": "Check Initialize Repository to add .gitignore, License and README.",
+      "before_state": {
+        "url": "/repo/create",
+        "title": "New Repository - Gitea: Git with a cup of tea",
+        "headings": [
+          "New Repository"
+        ],
+        "screenshot": "contracts/fixtures/screenshots/step-3.png",
+        "screenshot_path": "contracts/fixtures/screenshots/step-3.png",
+        "captured_at": "2026-10-06T12:00:03Z"
+      },
+      "expected_state": {
+        "url_matches": "^/repo/create$",
+        "checked": [
+          {
+            "role": "checkbox",
+            "name": "Initialize Repository (Adds .gitignore, License and README)"
+          }
+        ]
+      },
+      "observed_state": {
+        "url": "/repo/create",
+        "title": "New Repository - Gitea: Git with a cup of tea",
+        "headings": [
+          "New Repository"
+        ],
+        "aria_excerpt": "- main \"New Repository\":\n  - heading \"New Repository\" [level=3]\n  - paragraph:\n    - text: A repository contains all project files, including revision history. Already hosting one elsewhere?\n    - link \"Migrate repository.\":\n      - /url: /repo/migrate\n  - text: Owner *\n  - combobox:\n    - img \"demo\"\n    - text: demo\n  - text: Some organizations may not show up in the dropdown due to a maximum repository count limit. Repository Name *\n  - textbox \"Repository Name *\": demo-repo",
+        "screenshot": "contracts/fixtures/screenshots/step-4.png",
+        "screenshot_path": "contracts/fixtures/screenshots/step-4.png",
+        "captured_at": "2026-10-06T12:00:04Z"
+      },
+      "verification": {
+        "result": "verified",
+        "method": ["dom"],
+        "confidence": 1.0
+      },
+      "risk": "low",
+      "sensitive": false,
+      "timing": {
+        "start_ms": 3687,
+        "end_ms": 4016
+      },
+      "start_ms": 3687,
+      "end_ms": 4016,
+      "screenshot_path": "contracts/fixtures/screenshots/step-4.png"
+    },
+    {
+      "id": "11111111-0005-4000-8000-000000000005",
+      "workflow_id": "6f1c2a4e-1111-4b8a-9a1b-123456789abc",
+      "seq": 5,
+      "action": {
+        "type": "click",
+        "value": null
+      },
+      "target": {
+        "role": "button",
+        "name": "Create Repository",
+        "selector": "button.ui.primary.button",
+        "bbox": [519, 650, 154, 38]
+      },
+      "instruction_text": "Click Create Repository button to submit the form.",
+      "before_state": {
+        "url": "/repo/create",
+        "title": "New Repository - Gitea: Git with a cup of tea",
+        "headings": [
+          "New Repository"
+        ],
+        "screenshot": "contracts/fixtures/screenshots/step-4.png",
+        "screenshot_path": "contracts/fixtures/screenshots/step-4.png",
+        "captured_at": "2026-10-06T12:00:04Z"
+      },
+      "expected_state": {
+        "url_matches": "^/demo/demo-repo$",
+        "title_contains": "demo/demo-repo",
+        "visible": [
+          {
+            "role": "heading",
+            "name": "demo-repo"
+          }
+        ],
+        "absent": [
+          {
+            "role": "paragraph",
+            "name": "The repository name is already used."
+          }
+        ]
+      },
+      "observed_state": {
+        "url": "/demo/demo-repo",
+        "title": "demo/demo-repo - demo-repo - Gitea: Git with a cup of tea",
+        "headings": [
+          "README.md",
+          "demo-repo"
+        ],
+        "aria_excerpt": "- main \"demo/demo-repo\":\n  - link \"demo\":\n    - /url: /demo\n  - text: /\n  - link \"demo-repo\":\n    - /url: /demo/demo-repo\n  - link \"RSS Feed\":\n    - /url: /demo/demo-repo.rss\n  - button \"Unwatch\"\n  - link \"1\":\n    - /url: /demo/demo-repo/watchers\n  - button \"Star\"",
+        "screenshot": "contracts/fixtures/screenshots/step-5.png",
+        "screenshot_path": "contracts/fixtures/screenshots/step-5.png",
+        "captured_at": "2026-10-06T12:00:05Z"
+      },
+      "verification": {
+        "result": "verified",
+        "method": ["url", "dom", "aria"],
+        "confidence": 1.0
+      },
+      "risk": "low",
+      "sensitive": false,
+      "timing": {
+        "start_ms": 4077,
+        "end_ms": 4610
+      },
+      "start_ms": 4077,
+      "end_ms": 4610,
+      "screenshot_path": "contracts/fixtures/screenshots/step-5.png"
+    }
+  ],
+  "created_at": "2026-10-06T12:00:00Z",
+  "updated_at": "2026-10-06T12:00:05Z"
+}

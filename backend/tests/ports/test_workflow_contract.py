@@ -7,8 +7,9 @@ from pathlib import Path
 from uuid import UUID
 
 import pytest
-from pydantic import ValidationError
+from pydantic import TypeAdapter, ValidationError
 
+from app.contracts_gen.events_schema import RunEvent
 from app.contracts_gen.step_schema import Step, StepVerification
 from app.contracts_gen.workflow_schema import Workflow
 
@@ -185,3 +186,77 @@ def test_bounding_box_rejects_wrong_length() -> None:
     data["steps"][0]["target"]["bbox"] = [10, 20, 30]  # needs 4 elements
     with pytest.raises(ValidationError):
         Workflow.model_validate(data)
+
+
+def test_gitea_create_repo_workflow_fixture_validates() -> None:
+    fixture_path = FIXTURES_DIR / "gitea-create-repo-workflow.json"
+    assert fixture_path.exists(), "gitea-create-repo-workflow.json fixture must exist"
+
+    raw_data = json.loads(fixture_path.read_text(encoding="utf-8"))
+    workflow = Workflow.model_validate(raw_data)
+
+    assert workflow.title == "Create a repository in local Gitea"
+    assert workflow.status == "verified"
+    assert workflow.confidence == 1.0
+    assert workflow.target is not None
+    assert workflow.target.app == "gitea"
+    assert workflow.preconditions == {"logged_in_as": "demo"}
+    assert workflow.viewport is not None
+    assert workflow.viewport.width == 1280
+    assert workflow.viewport.height == 800
+    assert len(workflow.steps) == 5
+
+    expected_actions = ["click", "click", "fill", "click", "click"]
+    for i, step in enumerate(workflow.steps):
+        assert step.seq == i + 1
+        assert step.action.type == expected_actions[i]
+        assert step.verification.result == "verified"
+        assert step.verification.confidence == 1.0
+        assert step.risk == "low"
+        assert step.target.bbox is not None
+        assert len(step.target.bbox) == 4
+        if step.screenshot_path:
+            screenshot_file = ROOT / step.screenshot_path
+            assert screenshot_file.exists(), f"Screenshot {screenshot_file} must exist"
+
+
+def test_gitea_create_repo_sse_events_fixture_validates() -> None:
+    fixture_path = FIXTURES_DIR / "gitea-create-repo-events.sse"
+    assert fixture_path.exists(), "gitea-create-repo-events.sse fixture must exist"
+
+    raw_text = fixture_path.read_text(encoding="utf-8")
+    blocks = [b.strip() for b in raw_text.strip().split("\n\n") if b.strip()]
+    assert len(blocks) == 17, f"Expected 17 SSE event blocks, got {len(blocks)}"
+
+    adapter: TypeAdapter[RunEvent] = TypeAdapter(RunEvent)
+    parsed_events: list[RunEvent] = []
+
+    for block in blocks:
+        lines = block.splitlines()
+        event_type = None
+        event_id = None
+        data_str = None
+        for line in lines:
+            if line.startswith("event: "):
+                event_type = line[len("event: ") :].strip()
+            elif line.startswith("id: "):
+                event_id = int(line[len("id: ") :].strip())
+            elif line.startswith("data: "):
+                data_str = line[len("data: ") :].strip()
+
+        assert event_type is not None, f"Block missing 'event:': {block}"
+        assert event_id is not None, f"Block missing 'id:': {block}"
+        assert data_str is not None, f"Block missing 'data:': {block}"
+
+        data = json.loads(data_str)
+        assert data["type"] == event_type
+        assert data["seq"] == event_id
+
+        event_obj = adapter.validate_python(data)
+        parsed_events.append(event_obj)
+
+    assert parsed_events[0].type == "run.started"
+    assert parsed_events[0].total_steps == 5
+    assert parsed_events[-1].type == "run.completed"
+    assert parsed_events[-1].verified_steps == 5
+    assert parsed_events[-1].failed_actions == 0
