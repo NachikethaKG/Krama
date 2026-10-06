@@ -73,6 +73,11 @@ export async function* replayEvents(
       const delayMs = Math.max(0, (eventTime - prevTime) / speed);
       if (delayMs > 0) {
         await new Promise<void>((resolve, reject) => {
+          if (signal?.aborted) {
+            reject(new DOMException("aborted", "AbortError"));
+            return;
+          }
+
           const abortHandler = () => {
             clearTimeout(timer);
             reject(new DOMException("aborted", "AbortError"));
