@@ -1,9 +1,20 @@
 // Thin API client seam (docs/architecture.md §4). `mock` mode serves fixtures, so the UI never waits on the backend.
 import type { HealthResponse, RunEvent, Workflow } from "@krama/contracts-ts";
 
-import { giteaEventsFixture, giteaWorkflowFixture, workflowFixtures } from "./fixtures";
+import {
+  giteaEventsFixture,
+  giteaWorkflowFixture,
+  validWorkflowFixture,
+  workflowFixtures,
+} from "./fixtures";
 
 export type { HealthResponse, RunEvent, Workflow };
+export {
+  giteaEventsFixture,
+  giteaWorkflowFixture,
+  validWorkflowFixture,
+  workflowFixtures,
+};
 
 export interface StreamOptions {
   speed?: number;
@@ -12,10 +23,18 @@ export interface StreamOptions {
 
 export type ApiMode = "mock" | "http";
 
+/**
+ * API client interface for Krama frontend (docs/architecture.md §4).
+ * Decouples UI components and pages from whether the backend is live or mocked.
+ */
 export interface ApiClient {
+  /** Checks server/mock health status */
   health(): Promise<HealthResponse>;
+  /** Fetches a verified workflow by ID */
   getWorkflow(id: string): Promise<Workflow>;
+  /** Streams SSE run events for a workflow execution with timing and cancellation support */
   streamWorkflowEvents(id: string, options?: StreamOptions): AsyncIterable<RunEvent>;
+  /** Alias for streamWorkflowEvents using run ID */
   runEvents(runId: string, options?: StreamOptions): AsyncIterable<RunEvent>;
 }
 
