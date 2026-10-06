@@ -16,8 +16,8 @@
 Done together on one laptop. Delivered: `AGENTS.md`, `OWNERSHIP.toml`, CODEOWNERS, ownership and commit-message hooks, CI, Docker services (Postgres, Redis, Gitea), `just setup|up|seed|dev|check`, FastAPI `/health` skeleton, Next.js skeleton with mock/http API client, `@krama/contracts-ts` stub.
 
 **Still open from F1 (Nachiketha, repo owner):**
-- [ ] Run the README quick start on his laptop (the F1 exit gate)
-- [ ] Apply [`setup/github-settings.md`](../setup/github-settings.md): rebase-only merges, ruleset on `main`, required checks, Maintain role for Vishwas
+- [x] Run the README quick start on his laptop (the F1 exit gate)
+- [x] Apply [`setup/github-settings.md`](../setup/github-settings.md): rebase-only merges, ruleset on `main`, required checks, Maintain role for Vishwas
 
 ---
 
