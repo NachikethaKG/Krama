@@ -2,6 +2,20 @@
 
 Every change to `contracts/` is listed here. Additive change = minor version bump; breaking change = major bump + ADR.
 
+## 1.3 (#20)
+
+Added hand-crafted, realistic sample fixtures for the "create a repository in local Gitea" workflow.
+
+- Added `contracts/fixtures/gitea-create-repo-workflow.json`:
+  - Complete 5-step Verified Workflow (`Workflow` schema v1) based on Together research walkthrough (`assets/phase-f-gitea-create-repo/walkthrough.json`).
+  - Covers navigating the `+` menu, clicking "New Repository", filling repo name (`demo-repo`), selecting "Initialize Repository", and clicking "Create Repository".
+  - Full viewport bounding boxes, aria/url/dom verification states, and timings.
+- Added `contracts/fixtures/gitea-create-repo-events.sse`:
+  - Matching SSE event stream (`RunEvent` schema v1) in wire format (`event: <type>\nid: <seq>\ndata: {...}\n\n`).
+  - Spans `run.started`, per-step `step.started` -> `step.action_done` -> `step.verified`, and `run.completed`.
+- Added `contracts/fixtures/screenshots/*.png`:
+  - Hand-captured viewport screenshots for initial dashboard, steps 1-5, and duplicate-name negative case.
+
 ## 1.2 (#15)
 
 Initial release/v1 of the Verified Workflow and Step schemas.
