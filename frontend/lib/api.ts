@@ -34,6 +34,7 @@ export class HttpApiClient implements ApiClient {
     return (await response.json()) as Workflow;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async *streamWorkflowEvents(_id: string, _options?: StreamOptions): AsyncIterable<RunEvent> {
     // Live SSE streaming over fetch/EventSource will be wired with backend in Phase 1
     yield* [];
@@ -72,13 +73,12 @@ export async function* replayEvents(
       const delayMs = Math.max(0, (eventTime - prevTime) / speed);
       if (delayMs > 0) {
         await new Promise<void>((resolve, reject) => {
-          let timer: NodeJS.Timeout | undefined;
           const abortHandler = () => {
-            if (timer) clearTimeout(timer);
+            clearTimeout(timer);
             reject(new DOMException("aborted", "AbortError"));
           };
 
-          timer = setTimeout(() => {
+          const timer = setTimeout(() => {
             signal?.removeEventListener("abort", abortHandler);
             resolve();
           }, delayMs);

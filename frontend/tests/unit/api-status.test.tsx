@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { ApiStatus } from "@/components/api-status";
-import { type ApiClient, MockApiClient } from "@/lib/api";
+import { MockApiClient } from "@/lib/api";
 
 describe("ApiStatus", () => {
   it("shows the version when the API is healthy", async () => {

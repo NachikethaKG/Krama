@@ -6,8 +6,8 @@ export const giteaWorkflowFixture = giteaWorkflowJson as unknown as Workflow;
 export const validWorkflowFixture = validWorkflowJson as unknown as Workflow;
 
 export const workflowFixtures: Record<string, Workflow> = {
-  [giteaWorkflowFixture.id]: giteaWorkflowFixture,
   [validWorkflowFixture.id]: validWorkflowFixture,
+  [giteaWorkflowFixture.id]: giteaWorkflowFixture,
   "gitea": giteaWorkflowFixture,
   "default": giteaWorkflowFixture,
   "mock": giteaWorkflowFixture,
