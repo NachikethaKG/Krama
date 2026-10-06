@@ -2,6 +2,29 @@
 
 Every change to `contracts/` is listed here. Additive change = minor version bump; breaking change = major bump + ADR.
 
+## 1.2 (#15)
+
+Initial release/v1 of the Verified Workflow and Step schemas.
+
+- Added `step.schema.json`:
+  - `Step`: executed and verified step of a workflow.
+  - `StepVerification`: verification outcome with `result` enum (`verified`, `failed`, `skipped`), `method` array (`url`, `dom`, `aria`, `network`, `vision`), and numeric `confidence`.
+  - `StepTarget`: target element with optional `bbox` (referencing `common.schema.json#/$defs/BoundingBox`).
+  - `StepTiming`: execution timing offsets (`start_ms`, `end_ms`).
+  - `ObservedState`: captured page state (`url`, `title`, `headings`, `aria_excerpt`, `screenshot`, `screenshot_path`, `captured_at`).
+- Added `workflow.schema.json`:
+  - `Workflow`: core verified workflow object, referencing `step.schema.json` via `$ref` in `steps`.
+  - `WorkflowStatus` enum: `draft`, `approved`, `running`, `verified`, `failed`, `outdated`.
+  - `WorkflowTarget`: target application (`app`, `base_url`).
+  - `WorkflowViewport`: recording viewport dimensions (`width`, `height`, `device_scale_factor`).
+  - `WorkflowRecording`: recording artifact metadata (`rrweb`, `path`, `event_count`, `started_at`, `ended_at`).
+  - `WorkflowSummary` and `WorkflowPage`: paginated summary list models for `GET /workflows`.
+- Enums:
+  - `status`: `draft`, `approved`, `running`, `verified`, `failed`, `outdated`
+  - `action.type`: `click`, `fill`, `select`, `navigate`, `press`, `wait` (from `common.schema.json`)
+  - `verification.result`: `verified`, `failed`, `skipped`
+  - `risk`: `low`, `medium`, `high` (from `common.schema.json`)
+
 ## 1.1 (#22)
 
 - Added `health.schema.json`: `HealthResponse` (`status: "ok"`, `version`), the response of `GET /health`. Additive.

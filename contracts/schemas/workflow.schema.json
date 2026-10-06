@@ -1,0 +1,133 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "workflow.schema.json",
+  "title": "Workflow",
+  "$comment": "v1.0. The verified workflow, the core object of Krama (docs/phases/README.md §3.1, docs/database-schema.md).",
+  "type": "object",
+  "required": [
+    "id",
+    "title",
+    "status",
+    "steps"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "id": { "type": "string", "format": "uuid" },
+    "version": {
+      "type": "string",
+      "default": "1.0",
+      "description": "Workflow format version (e.g. 1.0)."
+    },
+    "task_id": { "type": ["string", "null"], "format": "uuid" },
+    "run_id": { "type": ["string", "null"], "format": "uuid" },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Human-readable title describing the workflow."
+    },
+    "task": {
+      "type": ["string", "null"],
+      "description": "Original task prompt or goal."
+    },
+    "target": {
+      "oneOf": [{ "$ref": "#/$defs/WorkflowTarget" }, { "type": "null" }]
+    },
+    "target_app": {
+      "type": ["string", "null"],
+      "description": "Application name, e.g. gitea, github."
+    },
+    "target_url": { "type": ["string", "null"], "format": "uri" },
+    "status": { "$ref": "#/$defs/WorkflowStatus" },
+    "confidence": {
+      "type": ["number", "null"],
+      "minimum": 0,
+      "maximum": 1,
+      "description": "Overall verification confidence score."
+    },
+    "preconditions": {
+      "type": ["object", "null"],
+      "description": "Required preconditions before running (e.g. {logged_in_as: 'demo'})."
+    },
+    "viewport": {
+      "oneOf": [{ "$ref": "#/$defs/WorkflowViewport" }, { "type": "null" }]
+    },
+    "recording": {
+      "oneOf": [{ "$ref": "#/$defs/WorkflowRecording" }, { "type": "null" }]
+    },
+    "recording_path": {
+      "type": ["string", "null"],
+      "description": "Relative artifact path to rrweb recording."
+    },
+    "steps": {
+      "type": "array",
+      "items": { "$ref": "step.schema.json" },
+      "description": "The ordered sequence of verified steps."
+    },
+    "created_at": { "type": ["string", "null"], "format": "date-time" },
+    "updated_at": { "type": ["string", "null"], "format": "date-time" }
+  },
+  "$defs": {
+    "WorkflowStatus": {
+      "title": "WorkflowStatus",
+      "enum": ["draft", "approved", "running", "verified", "failed", "outdated"]
+    },
+    "WorkflowTarget": {
+      "title": "WorkflowTarget",
+      "type": "object",
+      "required": ["app"],
+      "additionalProperties": false,
+      "properties": {
+        "app": { "type": "string", "minLength": 1 },
+        "base_url": { "type": ["string", "null"], "format": "uri" }
+      }
+    },
+    "WorkflowViewport": {
+      "title": "WorkflowViewport",
+      "type": "object",
+      "required": ["width", "height"],
+      "additionalProperties": false,
+      "properties": {
+        "width": { "type": "integer", "minimum": 1 },
+        "height": { "type": "integer", "minimum": 1 },
+        "device_scale_factor": { "type": ["number", "null"], "minimum": 0 }
+      }
+    },
+    "WorkflowRecording": {
+      "title": "WorkflowRecording",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "rrweb": { "type": ["string", "null"] },
+        "path": { "type": ["string", "null"] },
+        "event_count": { "type": ["integer", "null"], "minimum": 0 },
+        "started_at": { "type": ["string", "null"], "format": "date-time" },
+        "ended_at": { "type": ["string", "null"], "format": "date-time" }
+      }
+    },
+    "WorkflowSummary": {
+      "title": "WorkflowSummary",
+      "type": "object",
+      "required": ["id", "title", "status", "step_count"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "format": "uuid" },
+        "title": { "type": "string", "minLength": 1 },
+        "status": { "$ref": "#/$defs/WorkflowStatus" },
+        "target_app": { "type": ["string", "null"] },
+        "step_count": { "type": "integer", "minimum": 0 },
+        "confidence": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+        "created_at": { "type": ["string", "null"], "format": "date-time" }
+      }
+    },
+    "WorkflowPage": {
+      "title": "WorkflowPage",
+      "type": "object",
+      "required": ["items"],
+      "additionalProperties": false,
+      "properties": {
+        "items": { "type": "array", "items": { "$ref": "#/$defs/WorkflowSummary" } },
+        "next_cursor": { "type": ["string", "null"] }
+      }
+    }
+  }
+}
