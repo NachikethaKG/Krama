@@ -145,7 +145,7 @@ Each sprint ends with an integration PR merged to `main` and a demo **run on Nac
 
 | Phase | Goal | Status |
 |---|---|---|
-| [F: Foundation](phase-f-foundation.md) | Repo, guardrails, environment, contracts v1 | F1 ✅ done · F2 next |
+| [F: Foundation](phase-f-foundation.md) | Repo, guardrails, environment, contracts v1 | ✅ completed (tag: `v0.0-foundation`) |
 | [0: Technical spike](phase-0-spike.md) | Can an agent reliably do one task on one site? | — |
 | [1: Verified workflow](phase-1-verified-workflow.md) | Plan → approve → execute → verify → store, safely | — |
 | [2: Interactive tutorial](phase-2-interactive-tutorial.md) | Workflow → interactive tutorial player | — |
@@ -153,6 +153,18 @@ Each sprint ends with an integration PR merged to `main` and a demo **run on Nac
 | [4: Reliability](phase-4-reliability.md) | UI drift detection, self-healing, versioning | — |
 | [5: Video export](phase-5-video-export.md) | MP4 export with narration | — |
 | [6: Later](phase-6-later.md) | Backlog | — |
+
+### Phase F: Foundation (Contracts v1) — Acceptance & Completion Checklist
+
+All acceptance criteria for Phase F and Contracts v1 have been met:
+
+- [x] **F1 (Repo & Guardrails):** Skeletons, `AGENTS.md`, `OWNERSHIP.toml`, pre-commit hooks, Docker Compose infrastructure (Postgres, Redis, Gitea) verified.
+- [x] **Contract schemas:** Single source of truth JSON Schemas in `contracts/schemas/` (`workflow`, `step`, `task`, `plan`, `run`, `events`, `common`, `health`).
+- [x] **Generators & zero drift:** Python models generated in `backend/app/contracts_gen/` and TypeScript types in `packages/contracts-ts/`; `just gen-contracts` produces zero diff in CI `contracts-drift`.
+- [x] **Fixture validation:** Every fixture in `contracts/fixtures/` (`gitea-create-repo-workflow.json`, `valid_workflow.json`, `gitea-create-repo-events.sse`) strictly validates against schemas via Ajv (Draft 2020-12).
+- [x] **Dual-side consumption:** FastAPI backend uses generated models for endpoint responses (`/health`); Next.js frontend uses `@krama/contracts-ts` and provides `MockApiClient` with SSE replay generator.
+- [x] **Verification suite:** All unit, type, and lint checks pass clean across backend (`ruff`, `mypy`, `pytest`) and frontend (`eslint`, `tsc`, `vitest`, `playwright`).
+
 
 ### How the research step works
 1. Before a phase starts, each person runs `just research-prompt <phase> <name>` (e.g. `just research-prompt 0 nachiketha`). It copies a prompt built from **their** research list to the clipboard.
@@ -180,3 +192,62 @@ Each sprint ends with an integration PR merged to `main` and a demo **run on Nac
 - **E2E live:** `just e2e-live` runs the benchmark set with real Gemini and reports success rate, verification accuracy, recovery rate and latency into `benchmarks/results/`.
 - **Frontend:** Playwright e2e against mock mode (fixtures), plus one full-stack e2e.
 - **Phase gate:** each phase's Exit criteria demoed on Nachiketha's laptop from a fresh pull, recorded as a short GIF in the release notes.
+
+---
+
+## 9. Releases and tags
+
+### Release `v0.0-foundation` (Phase F Foundation & Contracts v1)
+
+- **Release Tag:** `v0.0-foundation`
+- **Milestone:** F2 · Contracts v1
+- **Tracking Issue:** [#24](https://github.com/NachikethaKG/Krama/issues/24)
+
+#### Release Summary
+The Foundation phase delivers the contract-driven development framework enabling parallel engineering between frontend and backend AI coding agents without code conflicts or contract drift.
+
+#### Highlights & Capabilities
+- **Domain JSON Schemas (`contracts/schemas/`):** Pinned draft 2020-12 specifications for `workflow`, `step`, `task`, `plan`, `run`, `events`, `common`, and `health`.
+- **Code Generation Pipelines:**
+  - Python Pydantic v2 models generated in `backend/app/contracts_gen/` via `scripts/gen_contracts_py.py`.
+  - TypeScript interfaces generated in `packages/contracts-ts/` via `scripts/gen_contracts_ts.mjs`.
+  - FastAPI OpenAPI export to `contracts/openapi.json` via `scripts/export_openapi.py`.
+- **Automated Drift Enforcement:** CI `contracts-drift` job ensures generated code and schemas never diverge.
+- **Fixture Validation (Ajv 2020):** Unit test suite validating `gitea-create-repo-workflow.json`, `valid_workflow.json`, and `gitea-create-repo-events.sse` against contract schemas.
+- **Mock Seams:** Frontend `MockApiClient` replaying realistic Gitea SSE events with timing controls, decoupling UI development from backend deployment.
+- **Guardrails:** Pre-commit hooks (`OWNERSHIP.toml` path enforcement, conventional commit linting), Docker Compose services (Postgres, Redis, Gitea).
+
+#### Release & Tag Verification Instructions
+To finalize and publish the release once the PR is merged:
+
+1. **Pull clean `main` on the reference machine:**
+   ```powershell
+   git switch main
+   git pull origin main
+   just check
+   ```
+
+2. **Run local demo:**
+   ```powershell
+   just dev
+   ```
+   Open `http://localhost:3000` to verify the UI loads the verified Gitea workflow and SSE replay runs smoothly.
+
+3. **Record demo GIF:**
+   Record a short capture showing the home page displaying API status, loading the verified workflow, and streaming events.
+
+4. **Tag the release:**
+   ```powershell
+   git tag -a v0.0-foundation -m "Release v0.0-foundation: Contracts v1 and repo foundation"
+   git push origin v0.0-foundation
+   ```
+
+5. **Publish GitHub Release:**
+   ```powershell
+   gh release create v0.0-foundation `
+     --title "v0.0-foundation · Contracts v1" `
+     --notes "Contracts v1 and repo foundation milestone complete. Full contract schema coverage, dual-sided code generation, fixture validation, and mock SSE replay."
+   ```
+
+6. **Attach demo GIF:**
+   Attach the recorded demo GIF to the GitHub Release assets.
