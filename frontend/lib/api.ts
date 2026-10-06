@@ -1,6 +1,8 @@
 // Thin API client seam (docs/architecture.md §4). `mock` mode serves fixtures, so the UI never waits on the backend.
 import type { HealthResponse, RunEvent, Workflow } from "@krama/contracts-ts";
 
+import { giteaWorkflowFixture, workflowFixtures } from "./fixtures";
+
 export type { HealthResponse, RunEvent, Workflow };
 
 export interface StreamOptions {
@@ -47,8 +49,12 @@ export class MockApiClient implements ApiClient {
     return { status: "ok", version: "mock" };
   }
 
-  async getWorkflow(_id: string): Promise<Workflow> {
-    throw new Error("Not implemented yet");
+  async getWorkflow(id: string): Promise<Workflow> {
+    const fixture = workflowFixtures[id] ?? (id === "" ? giteaWorkflowFixture : undefined);
+    if (!fixture) {
+      throw new Error(`Workflow not found: ${id}`);
+    }
+    return fixture;
   }
 
   async *streamWorkflowEvents(_id: string, _options?: StreamOptions): AsyncIterable<RunEvent> {

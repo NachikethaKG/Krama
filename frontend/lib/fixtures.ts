@@ -1,0 +1,106 @@
+import type { RunEvent, Workflow } from "@krama/contracts-ts";
+import giteaWorkflowJson from "../../contracts/fixtures/gitea-create-repo-workflow.json";
+import validWorkflowJson from "../../contracts/fixtures/valid_workflow.json";
+
+export const giteaWorkflowFixture = giteaWorkflowJson as unknown as Workflow;
+export const validWorkflowFixture = validWorkflowJson as unknown as Workflow;
+
+export const workflowFixtures: Record<string, Workflow> = {
+  [giteaWorkflowFixture.id]: giteaWorkflowFixture,
+  [validWorkflowFixture.id]: validWorkflowFixture,
+  "gitea": giteaWorkflowFixture,
+  "default": giteaWorkflowFixture,
+  "mock": giteaWorkflowFixture,
+};
+
+/**
+ * Parses raw SSE wire format string (`event: ...\nid: ...\ndata: ...\n\n`) into typed `RunEvent` objects.
+ */
+export function parseSseEvents(rawSse: string): RunEvent[] {
+  const blocks = rawSse
+    .trim()
+    .split("\n\n")
+    .map((b) => b.trim())
+    .filter(Boolean);
+
+  const events: RunEvent[] = [];
+  for (const block of blocks) {
+    const lines = block.split("\n");
+    const dataLine = lines.find((l) => l.startsWith("data: "));
+    if (dataLine) {
+      const payload = JSON.parse(dataLine.slice("data: ".length));
+      events.push(payload as RunEvent);
+    }
+  }
+  return events;
+}
+
+export const GITEA_CREATE_REPO_SSE = `event: run.started
+id: 1
+data: {"type":"run.started","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":1,"ts":"2026-10-06T12:00:00.000Z","plan_id":"6f1c2a4e-3333-4b8a-9a1b-123456789abc","total_steps":5}
+
+event: step.started
+id: 2
+data: {"type":"step.started","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":2,"ts":"2026-10-06T12:00:00.500Z","step_seq":1,"instruction_text":"Open the + menu at the top right."}
+
+event: step.action_done
+id: 3
+data: {"type":"step.action_done","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":3,"ts":"2026-10-06T12:00:00.829Z","step_seq":1,"screenshot_url":"contracts/fixtures/screenshots/step-1.png","bbox":[1146,6,56,36]}
+
+event: step.verified
+id: 4
+data: {"type":"step.verified","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":4,"ts":"2026-10-06T12:00:01.047Z","step_seq":1,"method":["aria"],"confidence":1.0}
+
+event: step.started
+id: 5
+data: {"type":"step.started","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":5,"ts":"2026-10-06T12:00:01.110Z","step_seq":2,"instruction_text":"Click New Repository in the menu."}
+
+event: step.action_done
+id: 6
+data: {"type":"step.action_done","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":6,"ts":"2026-10-06T12:00:01.218Z","step_seq":2,"screenshot_url":"contracts/fixtures/screenshots/step-2.png","bbox":[1044,44,156,38]}
+
+event: step.verified
+id: 7
+data: {"type":"step.verified","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":7,"ts":"2026-10-06T12:00:01.450Z","step_seq":2,"method":["url","dom","aria"],"confidence":1.0}
+
+event: step.started
+id: 8
+data: {"type":"step.started","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":8,"ts":"2026-10-06T12:00:01.512Z","step_seq":3,"instruction_text":"Enter demo-repo as the repository name."}
+
+event: step.action_done
+id: 9
+data: {"type":"step.action_done","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":9,"ts":"2026-10-06T12:00:01.825Z","step_seq":3,"screenshot_url":"contracts/fixtures/screenshots/step-3.png","bbox":[519,262,386,38]}
+
+event: step.verified
+id: 10
+data: {"type":"step.verified","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":10,"ts":"2026-10-06T12:00:02.100Z","step_seq":3,"method":["dom"],"confidence":1.0}
+
+event: step.started
+id: 11
+data: {"type":"step.started","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":11,"ts":"2026-10-06T12:00:02.187Z","step_seq":4,"instruction_text":"Check Initialize Repository to add .gitignore, License and README."}
+
+event: step.action_done
+id: 12
+data: {"type":"step.action_done","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":12,"ts":"2026-10-06T12:00:02.516Z","step_seq":4,"screenshot_url":"contracts/fixtures/screenshots/step-4.png","bbox":[519,936,15,15]}
+
+event: step.verified
+id: 13
+data: {"type":"step.verified","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":13,"ts":"2026-10-06T12:00:02.800Z","step_seq":4,"method":["dom"],"confidence":1.0}
+
+event: step.started
+id: 14
+data: {"type":"step.started","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":14,"ts":"2026-10-06T12:00:02.877Z","step_seq":5,"instruction_text":"Click Create Repository button to submit the form."}
+
+event: step.action_done
+id: 15
+data: {"type":"step.action_done","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":15,"ts":"2026-10-06T12:00:03.410Z","step_seq":5,"screenshot_url":"contracts/fixtures/screenshots/step-5.png","bbox":[519,650,154,38]}
+
+event: step.verified
+id: 16
+data: {"type":"step.verified","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":16,"ts":"2026-10-06T12:00:04.100Z","step_seq":5,"method":["url","dom","aria"],"confidence":1.0}
+
+event: run.completed
+id: 17
+data: {"type":"run.completed","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":17,"ts":"2026-10-06T12:00:04.610Z","workflow_id":"6f1c2a4e-1111-4b8a-9a1b-123456789abc","verified_steps":5,"failed_actions":0}`;
+
+export const giteaEventsFixture: RunEvent[] = parseSseEvents(GITEA_CREATE_REPO_SSE);
