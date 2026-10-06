@@ -1,7 +1,7 @@
 // Thin API client seam (docs/architecture.md §4). `mock` mode serves fixtures, so the UI never waits on the backend.
 import type { HealthResponse, RunEvent, Workflow } from "@krama/contracts-ts";
 
-import { giteaWorkflowFixture, workflowFixtures } from "./fixtures";
+import { giteaEventsFixture, giteaWorkflowFixture, workflowFixtures } from "./fixtures";
 
 export type { HealthResponse, RunEvent, Workflow };
 
@@ -44,21 +44,90 @@ export class HttpApiClient implements ApiClient {
   }
 }
 
+/**
+ * Replays an array of RunEvents asynchronously with realistic delays based on their timestamps (`ts`).
+ * Supports speed scaling and mid-stream cancellation through AbortSignal.
+ */
+export async function* replayEvents(
+  events: RunEvent[],
+  options: StreamOptions = {}
+): AsyncGenerator<RunEvent, void, unknown> {
+  const { signal } = options;
+  const rawSpeed = options.speed ?? Number(process.env.NEXT_PUBLIC_MOCK_SPEED);
+  const speed = Number.isFinite(rawSpeed) && rawSpeed > 0 ? rawSpeed : 1;
+
+  if (signal?.aborted) {
+    throw new DOMException("aborted", "AbortError");
+  }
+
+  let prevTime: number | undefined;
+
+  for (const event of events) {
+    if (signal?.aborted) {
+      throw new DOMException("aborted", "AbortError");
+    }
+
+    const eventTime = Date.parse(event.ts);
+    if (prevTime !== undefined && !Number.isNaN(eventTime) && !Number.isNaN(prevTime)) {
+      const delayMs = Math.max(0, (eventTime - prevTime) / speed);
+      if (delayMs > 0) {
+        await new Promise<void>((resolve, reject) => {
+          let timer: NodeJS.Timeout | undefined;
+          const abortHandler = () => {
+            if (timer) clearTimeout(timer);
+            reject(new DOMException("aborted", "AbortError"));
+          };
+
+          timer = setTimeout(() => {
+            signal?.removeEventListener("abort", abortHandler);
+            resolve();
+          }, delayMs);
+
+          signal?.addEventListener("abort", abortHandler, { once: true });
+        });
+      }
+    }
+    prevTime = eventTime;
+
+    if (signal?.aborted) {
+      throw new DOMException("aborted", "AbortError");
+    }
+
+    yield event;
+  }
+}
+
 export class MockApiClient implements ApiClient {
+  constructor(
+    private readonly events: RunEvent[] = giteaEventsFixture,
+    private readonly workflows: Record<string, Workflow> = workflowFixtures
+  ) {}
+
   async health(): Promise<HealthResponse> {
     return { status: "ok", version: "mock" };
   }
 
   async getWorkflow(id: string): Promise<Workflow> {
-    const fixture = workflowFixtures[id] ?? (id === "" ? giteaWorkflowFixture : undefined);
+    const fixture = this.workflows[id] ?? (id === "" ? giteaWorkflowFixture : undefined);
     if (!fixture) {
       throw new Error(`Workflow not found: ${id}`);
     }
     return fixture;
   }
 
-  async *streamWorkflowEvents(_id: string, _options?: StreamOptions): AsyncIterable<RunEvent> {
-    yield* [];
+  streamWorkflowEvents(id: string, options?: StreamOptions): AsyncIterable<RunEvent> {
+    const validIds = new Set([
+      giteaWorkflowFixture.id,
+      giteaWorkflowFixture.run_id ?? "",
+      "gitea",
+      "mock",
+      "default",
+      "",
+    ]);
+    if (!validIds.has(id) && !this.workflows[id]) {
+      throw new Error(`Workflow not found: ${id}`);
+    }
+    return replayEvents(this.events, options);
   }
 
   runEvents(runId: string, options?: StreamOptions): AsyncIterable<RunEvent> {
