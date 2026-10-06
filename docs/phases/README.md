@@ -192,3 +192,62 @@ All acceptance criteria for Phase F and Contracts v1 have been met:
 - **E2E live:** `just e2e-live` runs the benchmark set with real Gemini and reports success rate, verification accuracy, recovery rate and latency into `benchmarks/results/`.
 - **Frontend:** Playwright e2e against mock mode (fixtures), plus one full-stack e2e.
 - **Phase gate:** each phase's Exit criteria demoed on Nachiketha's laptop from a fresh pull, recorded as a short GIF in the release notes.
+
+---
+
+## 9. Releases and tags
+
+### Release `v0.0-foundation` (Phase F Foundation & Contracts v1)
+
+- **Release Tag:** `v0.0-foundation`
+- **Milestone:** F2 · Contracts v1
+- **Tracking Issue:** [#24](https://github.com/NachikethaKG/Krama/issues/24)
+
+#### Release Summary
+The Foundation phase delivers the contract-driven development framework enabling parallel engineering between frontend and backend AI coding agents without code conflicts or contract drift.
+
+#### Highlights & Capabilities
+- **Domain JSON Schemas (`contracts/schemas/`):** Pinned draft 2020-12 specifications for `workflow`, `step`, `task`, `plan`, `run`, `events`, `common`, and `health`.
+- **Code Generation Pipelines:**
+  - Python Pydantic v2 models generated in `backend/app/contracts_gen/` via `scripts/gen_contracts_py.py`.
+  - TypeScript interfaces generated in `packages/contracts-ts/` via `scripts/gen_contracts_ts.mjs`.
+  - FastAPI OpenAPI export to `contracts/openapi.json` via `scripts/export_openapi.py`.
+- **Automated Drift Enforcement:** CI `contracts-drift` job ensures generated code and schemas never diverge.
+- **Fixture Validation (Ajv 2020):** Unit test suite validating `gitea-create-repo-workflow.json`, `valid_workflow.json`, and `gitea-create-repo-events.sse` against contract schemas.
+- **Mock Seams:** Frontend `MockApiClient` replaying realistic Gitea SSE events with timing controls, decoupling UI development from backend deployment.
+- **Guardrails:** Pre-commit hooks (`OWNERSHIP.toml` path enforcement, conventional commit linting), Docker Compose services (Postgres, Redis, Gitea).
+
+#### Release & Tag Verification Instructions
+To finalize and publish the release once the PR is merged:
+
+1. **Pull clean `main` on the reference machine:**
+   ```powershell
+   git switch main
+   git pull origin main
+   just check
+   ```
+
+2. **Run local demo:**
+   ```powershell
+   just dev
+   ```
+   Open `http://localhost:3000` to verify the UI loads the verified Gitea workflow and SSE replay runs smoothly.
+
+3. **Record demo GIF:**
+   Record a short capture showing the home page displaying API status, loading the verified workflow, and streaming events.
+
+4. **Tag the release:**
+   ```powershell
+   git tag -a v0.0-foundation -m "Release v0.0-foundation: Contracts v1 and repo foundation"
+   git push origin v0.0-foundation
+   ```
+
+5. **Publish GitHub Release:**
+   ```powershell
+   gh release create v0.0-foundation `
+     --title "v0.0-foundation · Contracts v1" `
+     --notes "Contracts v1 and repo foundation milestone complete. Full contract schema coverage, dual-sided code generation, fixture validation, and mock SSE replay."
+   ```
+
+6. **Attach demo GIF:**
+   Attach the recorded demo GIF to the GitHub Release assets.
