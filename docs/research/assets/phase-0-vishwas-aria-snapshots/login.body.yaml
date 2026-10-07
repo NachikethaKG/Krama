@@ -1,0 +1,34 @@
+- navigation "Navigation Bar":
+  - link "Home":
+    - /url: /
+  - link "Explore":
+    - /url: /explore/repos
+  - link "Help":
+    - /url: https://docs.gitea.com
+  - link "Sign In":
+    - /url: /user/login
+- main "Sign In":
+  - heading "Sign In" [level=4]
+  - text: Username or Email Address *
+  - textbox "Username or Email Address *"
+  - text: Password *
+  - textbox "Password *"
+  - text: Remember This Device
+  - checkbox "Remember This Device"
+  - button "Sign In"
+  - link "Forgot password?":
+    - /url: /user/forgot_password
+- group "Footer":
+  - contentinfo "About Software":
+    - link "Powered by Gitea":
+      - /url: https://about.gitea.com
+    - text: "Version: 1.22.6 Page:"
+    - strong: 3ms
+    - text: "Template:"
+    - strong: 2ms
+  - group "Links":
+    - menu: English
+    - link "Licenses":
+      - /url: /assets/licenses.txt
+    - link "API":
+      - /url: /api/swagger

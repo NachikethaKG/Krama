@@ -1,0 +1,119 @@
+- navigation "Navigation Bar":
+  - link "Dashboard":
+    - /url: /
+  - link "Issues":
+    - /url: /issues
+  - link "Pull Requests":
+    - /url: /pulls
+  - link "Milestones":
+    - /url: /milestones
+  - link "Explore":
+    - /url: /explore/repos
+  - link "Notifications":
+    - /url: /notifications
+  - menu "Create…"
+  - menu "Profile and Settings…":
+    - img "demo"
+- main "demo/demo-repo":
+  - link "demo":
+    - /url: /demo
+  - text: /
+  - link "demo-repo":
+    - /url: /demo/demo-repo
+  - link "RSS Feed":
+    - /url: /demo/demo-repo.rss
+  - button "Unwatch"
+  - link "1":
+    - /url: /demo/demo-repo/watchers
+  - button "Star"
+  - link "0":
+    - /url: /demo/demo-repo/stars
+  - text: Fork
+  - link "0":
+    - /url: /demo/demo-repo/forks
+  - navigation:
+    - link "Code":
+      - /url: /demo/demo-repo
+    - link "Issues":
+      - /url: /demo/demo-repo/issues
+    - link "Pull Requests":
+      - /url: /demo/demo-repo/pulls
+    - link "Actions":
+      - /url: /demo/demo-repo/actions
+    - link "Packages":
+      - /url: /demo/demo-repo/packages
+    - link "Projects":
+      - /url: /demo/demo-repo/projects
+    - link "Releases":
+      - /url: /demo/demo-repo/releases
+    - link "Wiki":
+      - /url: /demo/demo-repo/wiki
+    - link "Activity":
+      - /url: /demo/demo-repo/activity
+    - link "Settings":
+      - /url: /demo/demo-repo/settings
+  - button "Manage Topics"
+  - link "1 Commit":
+    - /url: /demo/demo-repo/commits/branch/main
+  - link "1 Branch":
+    - /url: /demo/demo-repo/branches
+  - link "0 Tags":
+    - /url: /demo/demo-repo/tags
+  - text: 23 KiB
+  - strong: main
+  - button "New Pull Request"
+  - link "Go to file":
+    - /url: /demo/demo-repo/find/branch/main
+  - menu: Add File
+  - textbox "Search code..."
+  - button "Search..."
+  - button "HTTP"
+  - textbox: http://localhost:3001/demo/demo-repo.git
+  - button "Copy URL"
+  - menu "More Operations"
+  - table:
+    - rowgroup:
+      - row "demo demo 093e35769f Initial commit 2026-10-07 06:17:43 +00:00now":
+        - columnheader "demo demo 093e35769f Initial commit":
+          - img "demo"
+          - link "demo":
+            - /url: /demo
+            - strong: demo
+          - link "093e35769f":
+            - /url: /demo/demo-repo/commit/093e35769fe6f3a6c4bb84b11bbd9e4b9fad22f2
+          - link "Initial commit":
+            - /url: /demo/demo-repo/commit/093e35769fe6f3a6c4bb84b11bbd9e4b9fad22f2
+        - columnheader "2026-10-07 06:17:43 +00:00now"
+    - rowgroup:
+      - row "README.md Initial commit 2026-10-07 06:17:43 +00:00now":
+        - cell "README.md":
+          - link "README.md":
+            - /url: /demo/demo-repo/src/branch/main/README.md
+        - cell "Initial commit":
+          - link "Initial commit":
+            - /url: /demo/demo-repo/commit/093e35769fe6f3a6c4bb84b11bbd9e4b9fad22f2
+        - cell "2026-10-07 06:17:43 +00:00now"
+  - heading "README.md Edit File" [level=4]:
+    - strong:
+      - link "README.md":
+        - /url: "#readme"
+    - link "Edit File":
+      - /url: /demo/demo-repo/_edit/main//README.md
+  - heading "demo-repo" [level=1]:
+    - link:
+      - /url: "#demo-repo"
+    - text: demo-repo
+- group "Footer":
+  - contentinfo "About Software":
+    - link "Powered by Gitea":
+      - /url: https://about.gitea.com
+    - text: "Version: 1.22.6 Page:"
+    - strong: 60ms
+    - text: "Template:"
+    - strong: 21ms
+  - group "Links":
+    - menu: English
+    - link "Licenses":
+      - /url: /assets/licenses.txt
+    - link "API":
+      - /url: /api/swagger

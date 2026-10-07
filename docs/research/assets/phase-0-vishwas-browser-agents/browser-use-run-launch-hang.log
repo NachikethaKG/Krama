@@ -1,0 +1,137 @@
+INFO     [Agent] \U0001f517 Found URL in task: http://localhost:3001/user/login, adding as initial action...
+INFO     [Agent] \U0001f3af Task: Go to http://localhost:3001/user/login and sign in with username 'demo' and password 'demo-local-only'. Then create a new repository named 'bu-test-1' with 'Initialize Repository' checked. Done when the repository page /demo/bu-test-1 is shown.
+INFO     [Agent] Starting a browser-use agent with version 0.13.11, with provider=google and model=gemini-2.5-flash
+INFO     [utils] \U0001f4e6 Downloading uBlock Origin Lite extension...
+INFO     [utils] \U0001f4c2 Extracting uBlock Origin Lite extension...
+INFO     [utils] \U0001f4e6 Downloading I still don't care about cookies extension...
+INFO     [utils] \U0001f4c2 Extracting I still don't care about cookies extension...
+INFO     [utils] \U0001f4e6 Downloading Force Background Tab extension...
+INFO     [utils] \U0001f4c2 Extracting Force Background Tab extension...
+INFO     [utils] [BrowserProfile] \u2705 Cookie extension: nature.com, qatarairways.com pre-populated in storage
+WARNING  [bubus] \u26a0\ufe0f EventBus_ed3c5bde\U0001f7e2(\u23f3 0 | \u25b6\ufe0f 2 | \u2705 0 \u27a1\ufe0f 31 \U0001f442) handler browser_use.browser.watchdog_base.BrowserSession.on_BrowserStartEvent() has been running for >15s on event. Possible slow processing or deadlock.
+(handler could be trying to await its own result or could be blocked by another async task).
+browser_use.browser.watchdog_base.BrowserSession.on_BrowserStartEvent(?\u25b6 BrowserStartEvent#69dd \U0001f3c3)
+WARNING  [bubus] \u26a0\ufe0f EventBus_ed3c5bde\U0001f7e2(\u23f3 0 | \u25b6\ufe0f 2 | \u2705 0 \u27a1\ufe0f 31 \U0001f442) handler browser_use.browser.watchdog_base.LocalBrowserWatchdog.on_BrowserLaunchEvent() has been running for >15s on event. Possible slow processing or deadlock.
+(handler could be trying to await its own result or could be blocked by another async task).
+browser_use.browser.watchdog_base.LocalBrowserWatchdog.on_BrowserLaunchEvent(?\u25b6 BrowserLaunchEvent#ae4b \U0001f3c3)
+WARNING  [bubus] ================================================================================
+WARNING  [bubus] \u23f1\ufe0f  TIMEOUT ERROR - Handling took more than 30.0s for EventBus_ed3c5bde.browser_use.browser.watchdog_base.BrowserSession.on_BrowserStartEvent(?\u25b6 BrowserStartEvent#69dd \u2705)
+WARNING  [bubus] ================================================================================
+WARNING  [bubus] \U0001f4e3 BrowserStartEvent#69dd                                              323s
+WARNING  [bubus]    \u23f0 browser_use.browser.watchdog_base.BrowserSession.on_BrowserStartEvent(#69dd) \u231b\ufe0f 323s/30s   \u2b05\ufe0f TIMEOUT HERE \u23f0
+WARNING  [bubus]       \U0001f4e3 BrowserLaunchEvent#ae4b                                       323s
+WARNING  [bubus]          \u2611\ufe0f browser_use.browser.watchdog_base.DownloadsWatchdog.on_BrowserLaunchEvent(#ae4b)     0s/30s   \u2713
+WARNING  [bubus]          \u27a1\ufe0f browser_use.browser.watchdog_base.LocalBrowserWatchdog.on_BrowserLaunchEvent(#ae4b) \u231b\ufe0f 323s/30s   \u2620\ufe0f CancelledError
+WARNING  [bubus]
+================================================================================
+
+ERROR    [Agent] Agent run failed with exception: Event handler browser_use.browser.watchdog_base.BrowserSession.on_BrowserStartEvent#9888(?\u25b6 BrowserStartEvent#69dd \U0001f3c3) timed out after 30.0s and interrupted any processing of 1 child events
+Traceback (most recent call last):
+  File "<scratch>\bu\.venv\Lib\site-packages\bubus\service.py", line 1128, in execute_handler
+    result_value: Any = await asyncio.wait_for(handler_task, timeout=event_result.timeout)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<uv-python>\cpython-3.12-windows-x86_64-none\Lib\asyncio\tasks.py", line 520, in wait_for
+    return await fut
+           ^^^^^^^^^
+  File "<scratch>\bu\.venv\Lib\site-packages\browser_use\browser\watchdog_base.py", line 153, in unique_handler
+    result = await actual_handler(event)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<scratch>\bu\.venv\Lib\site-packages\browser_use\observability.py", line 73, in async_wrapper
+    return await func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<scratch>\bu\.venv\Lib\site-packages\browser_use\browser\watchdogs\local_browser_watchdog.py", line 56, in on_BrowserLaunchEvent
+    process, cdp_url = await self._launch_browser()
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<scratch>\bu\.venv\Lib\site-packages\browser_use\observability.py", line 73, in async_wrapper
+    return await func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<scratch>\bu\.venv\Lib\site-packages\browser_use\browser\watchdogs\local_browser_watchdog.py", line 146, in _launch_browser
+    subprocess = await asyncio.create_subprocess_exec(
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<uv-python>\cpython-3.12-windows-x86_64-none\Lib\asyncio\subprocess.py", line 224, in create_subprocess_exec
+    transport, protocol = await loop.subprocess_exec(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<uv-python>\cpython-3.12-windows-x86_64-none\Lib\asyncio\base_events.py", line 1756, in subprocess_exec
+    transport = await self._make_subprocess_transport(
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<uv-python>\cpython-3.12-windows-x86_64-none\Lib\asyncio\windows_events.py", line 405, in _make_subprocess_transport
+    await waiter
+asyncio.exceptions.CancelledError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "<uv-python>\cpython-3.12-windows-x86_64-none\Lib\asyncio\tasks.py", line 520, in wait_for
+    return await fut
+           ^^^^^^^^^
+  File "<scratch>\bu\.venv\Lib\site-packages\browser_use\browser\watchdog_base.py", line 153, in unique_handler
+    result = await actual_handler(event)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<scratch>\bu\.venv\Lib\site-packages\browser_use\observability.py", line 73, in async_wrapper
+    return await func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<scratch>\bu\.venv\Lib\site-packages\browser_use\browser\session.py", line 821, in on_BrowserStartEvent
+    await launch_event
+  File "<scratch>\bu\.venv\Lib\site-packages\bubus\models.py", line 313, in wait_for_handlers_to_complete_then_return_event
+    await bus.process_event(event)
+  File "<scratch>\bu\.venv\Lib\site-packages\bubus\service.py", line 976, in process_event
+    await self._execute_handlers(event, handlers=applicable_handlers, timeout=timeout)
+  File "<scratch>\bu\.venv\Lib\site-packages\bubus\service.py", line 1070, in _execute_handlers
+    await self.execute_handler(event, handler, timeout=timeout)
+  File "<scratch>\bu\.venv\Lib\site-packages\bubus\service.py", line 1174, in execute_handler
+    raise handler_interrupted_error from e
+asyncio.exceptions.CancelledError: Event handler browser_use.browser.watchdog_base.LocalBrowserWatchdog.on_BrowserLaunchEvent#6640(?\u25b6 BrowserLaunchEvent#ae4b \U0001f3c3) was interrupted because of a parent timeout
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "<scratch>\bu\.venv\Lib\site-packages\bubus\service.py", line 1128, in execute_handler
+    result_value: Any = await asyncio.wait_for(handler_task, timeout=event_result.timeout)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<uv-python>\cpython-3.12-windows-x86_64-none\Lib\asyncio\tasks.py", line 519, in wait_for
+    async with timeouts.timeout(timeout):
+               ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<uv-python>\cpython-3.12-windows-x86_64-none\Lib\asyncio\timeouts.py", line 115, in __aexit__
+    raise TimeoutError from exc_val
+TimeoutError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "<scratch>\bu\.venv\Lib\site-packages\browser_use\agent\service.py", line 2563, in run
+    await self.browser_session.start()
+  File "<scratch>\bu\.venv\Lib\site-packages\browser_use\observability.py", line 73, in async_wrapper
+    return await func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<scratch>\bu\.venv\Lib\site-packages\browser_use\browser\session.py", line 732, in start
+    await start_event.event_result(raise_if_any=True, raise_if_none=False)
+  File "<scratch>\bu\.venv\Lib\site-packages\bubus\models.py", line 574, in event_result
+    valid_results = await self.event_results_filtered(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<scratch>\bu\.venv\Lib\site-packages\bubus\models.py", line 516, in event_results_filtered
+    raise original_error
+  File "<scratch>\bu\.venv\Lib\site-packages\bubus\models.py", line 490, in event_results_filtered
+    await event_result
+  File "<scratch>\bu\.venv\Lib\site-packages\bubus\models.py", line 889, in wait_for_handler_to_complete_and_return_result
+    raise self.error if isinstance(self.error, BaseException) else Exception(self.error)  # pyright: ignore[reportUnnecessaryIsInstance]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<scratch>\bu\.venv\Lib\site-packages\bubus\service.py", line 1070, in _execute_handlers
+    await self.execute_handler(event, handler, timeout=timeout)
+  File "<scratch>\bu\.venv\Lib\site-packages\bubus\service.py", line 1194, in execute_handler
+    raise handler_timeout_error from e
+TimeoutError: Event handler browser_use.browser.watchdog_base.BrowserSession.on_BrowserStartEvent#9888(?\u25b6 BrowserStartEvent#69dd \U0001f3c3) timed out after 30.0s and interrupted any processing of 1 child events
+INFO     [Agent]
+INFO     [Agent] Did the Agent not work as expected? Let us fix this!
+INFO     [Agent]    Open a short issue on GitHub: https://github.com/browser-use/browser-use/issues
+INFO     [BrowserSession] \U0001f4e2 on_BrowserStopEvent - Calling reset() (force=True, keep_alive=None)
+INFO     [BrowserSession] \u2705 Browser session reset complete
+WARNING  [bubus] \u231b\ufe0f EventBus_ed3c5bde\U0001f7e2(\u23f3 0 | \u25b6\ufe0f 0 | \u2705 5 \u27a1\ufe0f 31 \U0001f442) Timeout waiting for event bus to be idle after 5s (processing: 0)
+INFO     [BrowserSession] \u2705 Browser session reset complete
+{
+  "model": "gemini-2.5-flash",
+  "wall_s": 329.0,
+  "llm_calls": 0,
+  "llm_errors": [],
+  "run_error": "TimeoutError: Event handler browser_use.browser.watchdog_base.BrowserSession.on_BrowserStartEvent#9888(?\u25b6 BrowserStartEvent#69dd \ud83c\udfc3) timed out after 30.0s and interrupted any processing of 1 child events",
+  "peak_rss_mb_python_plus_children": 189
+}

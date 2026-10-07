@@ -1,0 +1,14 @@
+- main "demo - Dashboard":
+  - menu:
+    - img "demo"
+    - text: demo
+  - text: Repository Organization
+  - heading "Repositories 0 New Repository" [level=4]:
+    - text: Repositories 0
+    - link "New Repository":
+      - /url: /repo/create
+  - searchbox "Search repos..."
+  - combobox "Other Filters"
+  - navigation:
+    - text: All 0 Sources Forks Mirrors
+    - button "More items"

@@ -1,0 +1,106 @@
+{
+  "snapshots": {
+    "login:body": {
+      "url": "/user/login",
+      "chars": 890,
+      "lines": 34,
+      "approx_tokens_chars_div_4": 222,
+      "ms": 41.9
+    },
+    "dashboard:body": {
+      "url": "/",
+      "chars": 1114,
+      "lines": 44,
+      "approx_tokens_chars_div_4": 278,
+      "ms": 67.7
+    },
+    "dashboard:main": {
+      "url": "/",
+      "chars": 385,
+      "lines": 14,
+      "approx_tokens_chars_div_4": 96,
+      "ms": 9.4
+    },
+    "menu-open:body": {
+      "url": "/",
+      "chars": 1178,
+      "lines": 46,
+      "approx_tokens_chars_div_4": 294,
+      "ms": 17.1
+    },
+    "repo-create-empty:body": {
+      "url": "/repo/create",
+      "chars": 2829,
+      "lines": 72,
+      "approx_tokens_chars_div_4": 707,
+      "ms": 50.3
+    },
+    "repo-create-empty:main": {
+      "url": "/repo/create",
+      "chars": 2100,
+      "lines": 42,
+      "approx_tokens_chars_div_4": 525,
+      "ms": 57.8
+    },
+    "repo-create-filled:main": {
+      "url": "/repo/create",
+      "chars": 2121,
+      "lines": 42,
+      "approx_tokens_chars_div_4": 530,
+      "ms": 22.1
+    },
+    "repo-home:body": {
+      "url": "/demo/demo-repo",
+      "chars": 3493,
+      "lines": 119,
+      "approx_tokens_chars_div_4": 873,
+      "ms": 29.4
+    },
+    "repo-home:main": {
+      "url": "/demo/demo-repo",
+      "chars": 2764,
+      "lines": 89,
+      "approx_tokens_chars_div_4": 691,
+      "ms": 10.5
+    },
+    "repo-create-duplicate:main": {
+      "url": "/repo/create",
+      "chars": 2138,
+      "lines": 43,
+      "approx_tokens_chars_div_4": 534,
+      "ms": 28.8
+    }
+  },
+  "checks": {
+    "role_textbox_substring_count": 1,
+    "role_textbox_exact_no_star_count": 0,
+    "role_textbox_exact_with_star_count": 1,
+    "label_substring_count": 1,
+    "snapshot_shows_textbox_value": true,
+    "snapshot_shows_checked": true,
+    "checkbox_lines": [
+      "- checkbox \"Initialize Repository (Adds .gitignore, License and README)\" [checked]",
+      "- text: Initialize Repository (Adds .gitignore, License and README) Default Branch"
+    ],
+    "name_lines": [
+      "- text: Some organizations may not show up in the dropdown due to a maximum repository count limit. Repository Name *",
+      "- textbox \"Repository Name *\": demo-repo"
+    ],
+    "expect_pass_ms": 22.4,
+    "expect_fail_raised": true,
+    "expect_fail_msg_first_line": "Page URL expected to be 'http://localhost:3001/demo/demo-repo'",
+    "expect_fail_ms_with_1s_timeout": 1006.2,
+    "to_match_aria_snapshot_partial": "pass",
+    "missing_click_error": "Locator.click: Timeout 2000ms exceeded.",
+    "missing_click_ms": 2002.5,
+    "create_btn_bbox": {
+      "x": 518.984375,
+      "y": 650.21875,
+      "width": 153.53125,
+      "height": 38
+    },
+    "duplicate_banner_in_snapshot": [
+      "- paragraph: The repository name is already used."
+    ]
+  }
+}
