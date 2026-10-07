@@ -29,7 +29,15 @@
 - **Measured:** a burst of back-to-back calls to `gemini-2.5-flash` got a 429 after 7 successes (calls from an earlier burst in the same minutes also counted). The error states the limit [verified locally: [`burst-429-gemini-2.5-flash.json`](assets/phase-0-vishwas-gemini/burst-429-gemini-2.5-flash.json)]:
   - `quotaId: GenerateRequestsPerMinutePerProjectPerModel-FreeTier`, `quotaValue: "5"`, so **5 requests per minute per project per model**
   - `RetryInfo.retryDelay: "9s"` and the message "Please retry in 9.546788189s"
-- Requests per day for the free tier: **not measured** [unverified]. Check https://ai.dev/rate-limit (AI Studio) for the project.
+- **Free-tier limits of Vishwas's project**, read from AI Studio (https://ai.dev/rate-limit) on 2026-10-07 [verified: AI Studio rate-limit page]:
+
+  | Model | RPM | TPM | **RPD** |
+  |---|---|---|---|
+  | `gemini-3.8-flash` | 5 | 250K | **20** |
+  | `gemini-3.5-flash` | 5 | 250K | **20** |
+  | `gemini-2.5-flash` | 5 | 250K | **20** |
+
+  **20 requests per day per model is the binding limit.** Failed calls count too: the ~10 `503`/`500` attempts on `gemini-3.8-flash` used 10 of its 20 for the day.
 - Gemini also returned **503 UNAVAILABLE** ("high demand") on `gemini-2.5-flash` during the burst and repeatedly on `gemini-3.8-flash`. These are transient server errors, not quota errors [verified locally]
 
 **429 / retry handling in the SDK**
@@ -38,20 +46,25 @@
 - The SDK **ignores the server's `RetryInfo.retryDelay`**; its backoff is its own exponential schedule [verified locally: no `retryDelay` handling in the SDK source]
 
 **Configuration pitfall**
-- A stale `GEMINI_API_KEY` set in the Windows user environment caused `400 API_KEY_INVALID` although the `.env` file had a valid key. Both python-dotenv (without `override=True`) and **pydantic-settings 2.15 let the OS environment win over `.env`** [verified locally]
+- A placeholder `GEMINI_API_KEY` left in the Windows user environment caused `400 API_KEY_INVALID` although the `.env` file had a valid key. Both python-dotenv (without `override=True`) and **pydantic-settings 2.15 let the OS environment win over `.env`** [verified locally]
 - `app/config.py` reads the **repo-root** `.env`, not `backend/.env` [verified locally]
 
 ## Recommendation
-Proposed (pending Vishwas's decision):
-- **Model:** `gemini-2.5-flash` as the default (`GEMINI_MODEL`, already in `.env.example`). It's stable, it produced a contract-valid plan, and it was the one Flash model that answered reliably today. Keep the model name in config, so switching to `gemini-3.5-flash` or newer is one line.
+Decisions (Vishwas, 2026-10-07):
+- **Models, in order:** `gemini-3.8-flash` → `gemini-3.5-flash` → `gemini-2.5-flash`. Configured as an ordered list (e.g. `GEMINI_MODELS=gemini-3.8-flash,gemini-3.5-flash,gemini-2.5-flash`, replacing the single `GEMINI_MODEL` in `.env.example`; that root-config change is shared, so it goes in its own small PR). Each model has its own quota, so the chain gives **60 requests per day** instead of 20. Note: `gemini-3.8-flash` never answered during this research (503/500), so it is untested for plan quality; the fallback covers that.
 - **Schema:** `GeminiProvider` (#34) passes `response_json_schema=<Pydantic model>.model_json_schema()` and validates the reply with `model_validate_json`. Never `response_schema` with our `extra="forbid"` models. LLM-facing models contain only what the model decides (steps); ids, status and timestamps are added by our code.
-- **Retry:** our own small retry in `GeminiProvider` instead of the SDK's: on 429, wait `RetryInfo.retryDelay` (fallback: exponential); on 500/503/504, exponential backoff with jitter; at most ~4 attempts; then raise a typed `LLMRateLimited` / `LLMUnavailable` error. Count every attempt for the benchmark's "LLM calls" metric. Optionally add a client-side limiter (5 requests/min) so the 10-run benchmark doesn't hit 429 at all.
-- **Keys:** keys go in the **repo-root** `.env`. Remove stale `GEMINI_API_KEY` / `GOOGLE_API_KEY` from the OS environment. Keep the pydantic-settings default (OS env wins), but log which source the key came from (never the key itself) at startup.
+- **Retry and fallback:** our own logic in `GeminiProvider` instead of the SDK's:
+  - **429 per-minute quota** (`...PerMinute...` quotaId): wait `RetryInfo.retryDelay`, then retry the **same** model. Plus a client-side limiter of 5 requests/min per model, so we rarely hit it.
+  - **429 per-day quota**, or **500/503/504** after one quick retry with backoff and jitter: move to the **next model** in the list. Keep retries low, because every failed attempt uses up the 20/day quota.
+  - All models failed: raise a typed `LLMUnavailable` / `LLMRateLimited` error.
+  - Record the model that produced each response, and count every attempt (including failures) for the benchmark's "LLM calls" metric.
+- **Quota budget:** development and tests use `FakeProvider` with recorded fixtures; live Gemini calls are for real checks and the benchmark only.
+- **Keys:** keys go in the **repo-root** `.env`. Remove any `GEMINI_API_KEY` / `GOOGLE_API_KEY` left in the OS environment. Keep the pydantic-settings default (OS env wins), but log which source the key came from (never the key itself) at startup.
 
 ## Open questions
-- Free-tier **requests per day** for `gemini-2.5-flash`: look up at https://ai.dev/rate-limit. It decides how many benchmark runs fit in a day.
+- The exit gate (10 runs) needs at least 10 planning calls, half of one model's daily quota. Plan the benchmark run for a fresh quota day (reset at midnight Pacific).
 - **For #27 (Together):** limits are per **project**, not per key. Two keys in the same Google Cloud project share one quota, so Vishwas and Nachiketha need keys in separate projects.
-- Does `gemini-3.8-flash` become reliable? Re-test before the exit gate; it's the model the current docs use in their examples.
+- Is `gemini-3.8-flash` reliable and does it plan as well as 2.5/3.5? Test it in #34/#35 once it answers; the run log will show how often the fallback was used.
 
 ## Links
 - https://ai.google.dev/gemini-api/docs/structured-output

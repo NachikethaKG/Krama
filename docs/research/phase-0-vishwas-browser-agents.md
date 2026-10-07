@@ -44,7 +44,7 @@ Both were installed in throwaway venvs (not in `backend/`) and each ran one live
 | Fit with Plan → Approve → Execute + verify | direct | poor: plans and acts on its own | partial: `act` per step, no expected state |
 
 ## Recommendation
-Proposed (pending Vishwas's decision; becomes **ADR 0002**, #30):
+Decisions (Vishwas, 2026-10-07; recorded in **ADR 0002**, #30):
 - **Build our own thin layer on raw Playwright.** Neither library fits the core flow: a plan approved by a human, executed step by step, each step checked mechanically by our verifier, and destructive actions paused by the policy layer. browser-use's prompt also contradicts our CAPTCHA and access rules. Both cost more tokens per task than one planning call plus deterministic execution.
 - **Copy these ideas:**
   1. A compact **numbered list of interactive elements** from the ARIA snapshot, for re-grounding a step whose target didn't resolve (SeeAct's best method). Phase 1.

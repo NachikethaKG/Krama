@@ -32,7 +32,7 @@
 - With this prompt, `gemini-2.5-flash` and `gemini-3.5-flash` both returned a contract-valid 4-step Gitea plan with correct expected states at temperature 0.
 
 ## Recommendation
-Proposed (pending Vishwas's decision):
+Decisions (Vishwas, 2026-10-07):
 - **Planner (#35): plan up front** (needed for Plan → Approve → Execute) with the tested prompt shape above. Few-shot later, from verified workflows.
 - **Ground with text, not pixels** (SeeAct): targets are ARIA `{role, name}`. If a planned target doesn't resolve at execution time, ask the LLM to pick from a **numbered list of candidate elements** from the current ARIA snapshot, keeping the step's intent and `expected_state`. That's a Phase 1 item (locator fallback chain), not Phase 0.
 - **Success is checked by our verifier, never by the LLM's opinion** (WebArena-style program checks). That's our main difference from browser-use and what makes a workflow "verified".

@@ -40,7 +40,7 @@
 - **`locator.bounding_box()` returns viewport coordinates** (`{x: 519, y: 650, width: 153.5, height: 38}` for "Create Repository", page not scrolled) [verified: https://playwright.dev/python/docs/api/class-locator#locator-bounding-box]. The contract's `BoundingBox` says **page coordinates**, so the executor must add the scroll offset.
 
 ## Recommendation
-Proposed (pending Vishwas's decision):
+Decisions (Vishwas, 2026-10-07):
 - **Executor (#28):** locate by `get_by_role(role, name=name)` with the default substring match; set a short per-action timeout (proposal: 5 s) instead of Playwright's 30 s; never wait for `networkidle` (Phase F finding); convert `bounding_box()` to page coordinates (`+ window.scrollX/scrollY`) so we keep the contract as it is.
 - **Verifier (#36):** check `url_matches` first (it catches the duplicate-name failure); check `visible` / `field_values` / `checked` against the ARIA snapshot text or with `expect` + short timeouts. Don't rely on `role="alert"` for errors.
 - **Observer (#31, Nachiketha):** request, not a decision for us. Store the **full** `get_by_role("main")` snapshot in `ObservedState.aria_excerpt` (≤ ~1.2k tokens on Gitea), not a trimmed one, because the verifier needs the textbox values and `[checked]` flags. No change to `ports/` needed.
