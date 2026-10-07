@@ -51,6 +51,7 @@ class GeminiProvider:
     - per-minute 429: wait the server's `retryDelay`, retry the same model (at most `max_rate_retries` times)
     - per-day 429: move to the next model at once
     - 500/502/503/504: one retry with backoff, then the next model
+    - no answer within `timeout_s`: the next model (retrying a stall would cost another `timeout_s`)
     - reply that doesn't validate against the schema: the next model
     - any other error (bad key, bad request): raise at once, since another model won't fix it
     """
@@ -66,6 +67,7 @@ class GeminiProvider:
         max_rate_wait_s: float = 60.0,
         max_rate_retries: int = 2,
         server_retry_delay_s: float = 2.0,
+        timeout_s: float = 60.0,
     ) -> None:
         if not models:
             raise ValueError("GeminiProvider needs at least one model")
@@ -78,6 +80,8 @@ class GeminiProvider:
         self._max_rate_wait_s = max_rate_wait_s
         self._max_rate_retries = max_rate_retries
         self._server_retry_delay_s = server_retry_delay_s
+        # The SDK has no timeout by default; one stalled request hung a run for over 10 minutes.
+        self._timeout_s = timeout_s
 
     async def generate[M: BaseModel](self, *, system: str, prompt: str, schema: type[M]) -> LLMResult[M]:
         config = types.GenerateContentConfig(
@@ -94,9 +98,20 @@ class GeminiProvider:
                 await self._limiter.wait(model)
                 t0 = time.perf_counter()
                 try:
-                    response = await self._client.aio.models.generate_content(
-                        model=model, contents=prompt, config=config
+                    async with asyncio.timeout(self._timeout_s):
+                        response = await self._client.aio.models.generate_content(
+                            model=model, contents=prompt, config=config
+                        )
+                except TimeoutError:
+                    attempts.append(
+                        LLMAttempt(
+                            model=model,
+                            status="unavailable",
+                            latency_ms=_ms_since(t0),
+                            message=f"no answer within {self._timeout_s:g} s",
+                        )
                     )
+                    break
                 except errors.APIError as e:
                     ms = _ms_since(t0)
                     if e.code == 429 and not _is_daily_quota(e) and rate_retries < self._max_rate_retries:
