@@ -1,3 +1,4 @@
+import asyncio
 from dataclasses import dataclass, field
 from types import SimpleNamespace
 from typing import Any
@@ -58,6 +59,10 @@ def bad_key() -> errors.ClientError:
     return errors.ClientError(400, body)
 
 
+HANG = object()
+"""A scripted outcome for a request that never answers."""
+
+
 @dataclass
 class FakeGenaiClient:
     """Mimics `genai.Client().aio.models.generate_content`: each call pops the next scripted outcome."""
@@ -71,6 +76,8 @@ class FakeGenaiClient:
     async def _generate(self, *, model: str, contents: str, config: Any) -> Any:
         self.calls.append((model, config))
         outcome = self.outcomes.pop(0)
+        if outcome is HANG:
+            await asyncio.sleep(3600)
         if isinstance(outcome, Exception):
             raise outcome
         return outcome

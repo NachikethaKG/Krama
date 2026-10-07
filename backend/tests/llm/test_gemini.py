@@ -13,6 +13,7 @@ from app.llm import (
 )
 from app.llm.gemini import RateLimiter
 from tests.llm.conftest import (
+    HANG,
     FakeGenaiClient,
     FakeSleep,
     PlanOut,
@@ -144,6 +145,30 @@ async def test_bad_key_raises_at_once_without_fallback() -> None:
 
     assert not isinstance(exc.value, LLMUnavailableError | LLMRateLimitedError)
     assert client.models_called == ["m1"]
+
+
+async def test_a_request_that_never_answers_times_out_and_falls_back() -> None:
+    client, sleep = FakeGenaiClient([HANG, ok(PLAN_JSON)]), FakeSleep()
+    p = GeminiProvider(
+        "unused", MODELS, client=client, sleep=sleep, limiter=RateLimiter(sleep=sleep), timeout_s=0.05
+    )
+
+    result = await p.generate(system="s", prompt="p", schema=PlanOut)
+
+    assert client.models_called == ["m1", "m2"]  # no retry of a stalled model
+    assert result.attempts[0].status == "unavailable"
+    assert result.attempts[0].message == "no answer within 0.05 s"
+    assert result.model == "m2"
+
+
+async def test_every_model_stalling_raises_unavailable() -> None:
+    client, sleep = FakeGenaiClient([HANG, HANG, HANG]), FakeSleep()
+    p = GeminiProvider(
+        "unused", MODELS, client=client, sleep=sleep, limiter=RateLimiter(sleep=sleep), timeout_s=0.05
+    )
+
+    with pytest.raises(LLMUnavailableError):
+        await p.generate(system="s", prompt="p", schema=PlanOut)
 
 
 def test_empty_api_key_is_a_clear_error() -> None:
