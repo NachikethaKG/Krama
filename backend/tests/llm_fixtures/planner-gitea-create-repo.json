@@ -1,12 +1,14 @@
 {
-  "name": "gitea-create-repo-plan",
-  "description": "Real gemini-2.5-flash reply (2026-10-07, #25 research) to 'Create a repository called demo-repo and initialize it with a README' from the Gitea dashboard.",
-  "schema_name": "PlanOut",
+  "name": "planner-gitea-create-repo",
+  "description": "Real gemini-2.5-flash reply (2026-10-07) to the #35 planner prompt: create demo-repo from the Gitea dashboard.",
+  "schema_name": "LLMPlan",
   "prompt_contains": [
-    "demo-repo"
+    "demo-repo",
+    "<page_snapshot"
   ],
   "model": "gemini-2.5-flash",
   "response": {
+    "expected_result": "A new repository named 'demo-repo' is created and initialized with a README.",
     "steps": [
       {
         "seq": 1,
@@ -28,10 +30,6 @@
             {
               "role": "checkbox",
               "name": "Initialize Repository (Adds .gitignore, License and README)"
-            },
-            {
-              "role": "button",
-              "name": "Create Repository"
             }
           ]
         },
@@ -47,7 +45,7 @@
           "role": "textbox",
           "name": "Repository Name *"
         },
-        "instruction_text": "Fill in 'demo-repo' as the repository name.",
+        "instruction_text": "Enter 'demo-repo' as the repository name.",
         "expected_state": {
           "field_values": [
             {
@@ -68,7 +66,7 @@
           "role": "checkbox",
           "name": "Initialize Repository (Adds .gitignore, License and README)"
         },
-        "instruction_text": "Check the 'Initialize Repository' checkbox to add a README.",
+        "instruction_text": "Check the 'Initialize Repository' checkbox.",
         "expected_state": {
           "checked": [
             {
@@ -88,13 +86,19 @@
           "role": "button",
           "name": "Create Repository"
         },
-        "instruction_text": "Click the 'Create Repository' button to finalize the creation.",
+        "instruction_text": "Click the 'Create Repository' button to create the new repository.",
         "expected_state": {
           "url_matches": "^/demo/demo-repo$",
-          "title_contains": "demo/demo-repo"
+          "visible": [
+            {
+              "role": "heading",
+              "name": "demo-repo"
+            }
+          ]
         },
         "risk": "medium"
       }
-    ]
+    ],
+    "clarification_question": null
   }
 }
