@@ -1,14 +1,17 @@
 """The executor against the real local Gitea (`just up` + `just seed`), following the Phase F walkthrough.
 
-These stop before "Create Repository", so they change nothing in Gitea; creating repos is #29.
+Most stop before "Create Repository". The hand-written run (#29) creates a repo with a random name.
 """
 
 import os
+import uuid
 from collections.abc import AsyncIterator
+from pathlib import Path
 
 import pytest
 
 from app.agent import ActionExecutor, PlaywrightSession, SessionConfig
+from app.agent.gitea_create_repo import run_once
 from app.contracts_gen.common_schema import Action, Target
 
 pytestmark = [pytest.mark.anyio, pytest.mark.gitea]
@@ -61,3 +64,20 @@ async def test_missing_element_on_gitea_is_target_not_found(signed_in: ActionExe
     assert result.error is not None
     assert result.error.code == "target_not_found"
     assert result.duration_ms < 10_000
+
+
+async def test_hand_written_create_repo_run(gitea: str, tmp_path: Path) -> None:
+    repo = f"test-{uuid.uuid4().hex[:8]}"
+
+    log = await run_once(
+        gitea,
+        repo,
+        user=os.environ.get("GITEA_DEMO_USER", "demo"),
+        password=os.environ.get("GITEA_DEMO_PASSWORD", "demo-local-only"),
+    )
+    text = log.write(tmp_path).read_text(encoding="utf-8")
+
+    assert log.ok, log.failed_entry
+    assert log.entries[-1].result.url_after == f"/demo/{repo}"
+    assert [e.section for e in log.entries].count("step") == 6
+    assert os.environ.get("GITEA_DEMO_PASSWORD", "demo-local-only") not in text
