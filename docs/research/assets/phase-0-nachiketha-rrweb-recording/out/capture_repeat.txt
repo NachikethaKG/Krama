@@ -1,0 +1,1 @@
+{"plain_jpeg": [441, 25, 18, 16], "mask_jpeg": [34, 22, 33, 31], "long_png_full": [599, 548, 552], "long_jpeg_full": [366, 351, 376], "long_jpeg_viewport": [27, 37, 35]}

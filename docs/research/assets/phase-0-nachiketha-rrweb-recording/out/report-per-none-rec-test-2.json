@@ -1,0 +1,118 @@
+{
+  "mode": "per",
+  "mask": "none",
+  "repo": "rec-test-2",
+  "duration_s": 49.7,
+  "marks": [
+    [
+      0.5,
+      "login page",
+      "http://localhost:3001/user/login"
+    ],
+    [
+      9.82,
+      "dashboard",
+      "http://localhost:3001/"
+    ],
+    [
+      22.22,
+      "repo/create",
+      "http://localhost:3001/repo/create"
+    ],
+    [
+      39.74,
+      "repo page",
+      "http://localhost:3001/demo/rec-test-2"
+    ]
+  ],
+  "events": 182,
+  "by_type": {
+    "Meta": 5,
+    "FullSnapshot": 5,
+    "DomContentLoaded": 4,
+    "Incremental": 164,
+    "Load": 4
+  },
+  "incremental_by_source": {
+    "Mutation": 75,
+    "MouseMove": 39,
+    "MouseInteraction": 31,
+    "Input": 18,
+    "Scroll": 1
+  },
+  "json_bytes": 2610528,
+  "gzip_bytes": 374901,
+  "binding_calls": 182,
+  "calls_by_reason": {
+    "ev": 182
+  },
+  "password_in_json": true,
+  "pages": [
+    {
+      "path": "blank",
+      "received": 2,
+      "emitted_in_page": null,
+      "lost": -2,
+      "full_snapshots": 1,
+      "meta": 1,
+      "bytes": 441,
+      "fullsnapshot_bytes": [
+        392
+      ],
+      "gzip_bytes": 233
+    },
+    {
+      "path": "/user/login",
+      "received": 23,
+      "emitted_in_page": 23,
+      "lost": 0,
+      "full_snapshots": 1,
+      "meta": 1,
+      "bytes": 476600,
+      "fullsnapshot_bytes": [
+        472889
+      ],
+      "gzip_bytes": 75981
+    },
+    {
+      "path": "/",
+      "received": 72,
+      "emitted_in_page": 72,
+      "lost": 0,
+      "full_snapshots": 1,
+      "meta": 1,
+      "bytes": 735480,
+      "fullsnapshot_bytes": [
+        502351
+      ],
+      "gzip_bytes": 97888
+    },
+    {
+      "path": "/repo/create",
+      "received": 45,
+      "emitted_in_page": 45,
+      "lost": 0,
+      "full_snapshots": 1,
+      "meta": 1,
+      "bytes": 823764,
+      "fullsnapshot_bytes": [
+        758690
+      ],
+      "gzip_bytes": 110135
+    },
+    {
+      "path": "/demo/rec-test-2",
+      "received": 40,
+      "emitted_in_page": 40,
+      "lost": 0,
+      "full_snapshots": 1,
+      "meta": 1,
+      "bytes": 574247,
+      "fullsnapshot_bytes": [
+        558051
+      ],
+      "gzip_bytes": 91878
+    }
+  ],
+  "docs_without_count": []
+}
