@@ -1,0 +1,89 @@
+- main "demo/rec-test-2":
+  - link "demo":
+    - /url: /demo
+  - text: /
+  - link "rec-test-2":
+    - /url: /demo/rec-test-2
+  - link "RSS Feed":
+    - /url: /demo/rec-test-2.rss
+  - button "Unwatch"
+  - link "1":
+    - /url: /demo/rec-test-2/watchers
+  - button "Star"
+  - link "0":
+    - /url: /demo/rec-test-2/stars
+  - text: Fork
+  - link "0":
+    - /url: /demo/rec-test-2/forks
+  - navigation:
+    - link "Code":
+      - /url: /demo/rec-test-2
+    - link "Issues":
+      - /url: /demo/rec-test-2/issues
+    - link "Pull Requests":
+      - /url: /demo/rec-test-2/pulls
+    - link "Actions":
+      - /url: /demo/rec-test-2/actions
+    - link "Packages":
+      - /url: /demo/rec-test-2/packages
+    - link "Projects":
+      - /url: /demo/rec-test-2/projects
+    - link "Releases":
+      - /url: /demo/rec-test-2/releases
+    - link "Wiki":
+      - /url: /demo/rec-test-2/wiki
+    - link "Activity":
+      - /url: /demo/rec-test-2/activity
+    - link "Settings":
+      - /url: /demo/rec-test-2/settings
+  - button "Manage Topics"
+  - link "1 Commit":
+    - /url: /demo/rec-test-2/commits/branch/main
+  - link "1 Branch":
+    - /url: /demo/rec-test-2/branches
+  - link "0 Tags":
+    - /url: /demo/rec-test-2/tags
+  - text: 23 KiB
+  - strong: main
+  - button "New Pull Request"
+  - link "Go to file":
+    - /url: /demo/rec-test-2/find/branch/main
+  - menu: Add File
+  - textbox "Search code..."
+  - button "Search..."
+  - button "HTTP"
+  - textbox: http://localhost:3001/demo/rec-test-2.git
+  - button "Copy URL"
+  - menu "More Operations"
+  - table:
+    - rowgroup:
+      - row "demo demo 051b63f1cf Initial commit 2026-10-07 14:36:29 +00:007 minutes ago":
+        - columnheader "demo demo 051b63f1cf Initial commit":
+          - img "demo"
+          - link "demo":
+            - /url: /demo
+            - strong: demo
+          - link "051b63f1cf":
+            - /url: /demo/rec-test-2/commit/051b63f1cf0511dca7ada4d3dc6ea8b980d0def4
+          - link "Initial commit":
+            - /url: /demo/rec-test-2/commit/051b63f1cf0511dca7ada4d3dc6ea8b980d0def4
+        - columnheader "2026-10-07 14:36:29 +00:007 minutes ago"
+    - rowgroup:
+      - row "README.md Initial commit 2026-10-07 14:36:29 +00:007 minutes ago":
+        - cell "README.md":
+          - link "README.md":
+            - /url: /demo/rec-test-2/src/branch/main/README.md
+        - cell "Initial commit":
+          - link "Initial commit":
+            - /url: /demo/rec-test-2/commit/051b63f1cf0511dca7ada4d3dc6ea8b980d0def4
+        - cell "2026-10-07 14:36:29 +00:007 minutes ago"
+  - heading "README.md Edit File" [level=4]:
+    - strong:
+      - link "README.md":
+        - /url: "#readme"
+    - link "Edit File":
+      - /url: /demo/rec-test-2/_edit/main//README.md
+  - heading "rec-test-2" [level=1]:
+    - link:
+      - /url: "#rec-test-2"
+    - text: rec-test-2

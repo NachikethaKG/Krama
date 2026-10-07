@@ -1,0 +1,17 @@
+{
+ "requests": [
+  [
+   "GET",
+   "/demo/rec-test-2",
+   200,
+   "document",
+   31
+  ]
+ ],
+ "assets": {
+  "script": 2,
+  "stylesheet": 2,
+  "image": 2
+ },
+ "total": 7
+}

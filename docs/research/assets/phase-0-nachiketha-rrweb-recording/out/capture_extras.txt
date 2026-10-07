@@ -1,0 +1,33 @@
+{
+ "login_aria_contains_password": true,
+ "login_aria_contains_username": true,
+ "login_aria": "- main \"Sign In\":\n  - heading \"Sign In\" [level=4]\n  - text: Username or Email Address *\n  - textbox \"Username or Email Address *\": demo\n  - text: Password *\n  - textbox \"Password *\": <REDACTED: was the demo password in the raw output>\n  - text: Remember This Device\n  - checkbox \"Remember This Device\"\n  - button \"Sign In\"\n  - link \"Forgot password?\":\n    - /url: /user/forgot_password",
+ "jpeg_with_mask_password_ms": 1507.3,
+ "jpeg_with_mask_selector_ms": 28.9,
+ "/api/swagger": {
+  "doc_height": 996,
+  "png_full": [
+   59.8,
+   41004
+  ],
+  "jpeg70_full": [
+   40.4,
+   48113
+  ],
+  "jpeg70_viewport": [
+   28.4,
+   39454
+  ]
+ },
+ "synthetic_long": {
+  "doc_height": 28000,
+  "png_full": [
+   2956.6,
+   492445
+  ],
+  "jpeg70_full": [
+   381.1,
+   609031
+  ]
+ }
+}
