@@ -1,0 +1,100 @@
+{
+  "name": "gitea-create-repo-plan",
+  "description": "Real gemini-2.5-flash reply (2026-10-07, #25 research) to 'Create a repository called demo-repo and initialize it with a README' from the Gitea dashboard.",
+  "schema_name": null,
+  "prompt_contains": [
+    "demo-repo"
+  ],
+  "model": "gemini-2.5-flash",
+  "response": {
+    "steps": [
+      {
+        "seq": 1,
+        "action": {
+          "type": "click"
+        },
+        "target": {
+          "role": "link",
+          "name": "New Repository"
+        },
+        "instruction_text": "Click the 'New Repository' link to go to the repository creation page.",
+        "expected_state": {
+          "url_matches": "^/repo/create$",
+          "visible": [
+            {
+              "role": "textbox",
+              "name": "Repository Name *"
+            },
+            {
+              "role": "checkbox",
+              "name": "Initialize Repository (Adds .gitignore, License and README)"
+            },
+            {
+              "role": "button",
+              "name": "Create Repository"
+            }
+          ]
+        },
+        "risk": "low"
+      },
+      {
+        "seq": 2,
+        "action": {
+          "type": "fill",
+          "value": "demo-repo"
+        },
+        "target": {
+          "role": "textbox",
+          "name": "Repository Name *"
+        },
+        "instruction_text": "Fill in 'demo-repo' as the repository name.",
+        "expected_state": {
+          "field_values": [
+            {
+              "role": "textbox",
+              "name": "Repository Name *",
+              "value": "demo-repo"
+            }
+          ]
+        },
+        "risk": "low"
+      },
+      {
+        "seq": 3,
+        "action": {
+          "type": "click"
+        },
+        "target": {
+          "role": "checkbox",
+          "name": "Initialize Repository (Adds .gitignore, License and README)"
+        },
+        "instruction_text": "Check the 'Initialize Repository' checkbox to add a README.",
+        "expected_state": {
+          "checked": [
+            {
+              "role": "checkbox",
+              "name": "Initialize Repository (Adds .gitignore, License and README)"
+            }
+          ]
+        },
+        "risk": "low"
+      },
+      {
+        "seq": 4,
+        "action": {
+          "type": "click"
+        },
+        "target": {
+          "role": "button",
+          "name": "Create Repository"
+        },
+        "instruction_text": "Click the 'Create Repository' button to finalize the creation.",
+        "expected_state": {
+          "url_matches": "^/demo/demo-repo$",
+          "title_contains": "demo/demo-repo"
+        },
+        "risk": "medium"
+      }
+    ]
+  }
+}
