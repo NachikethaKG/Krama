@@ -51,6 +51,9 @@ jobs:
         uses: astral-sh/setup-uv@v6
       - if: steps.exists.outputs.yes == 'true'
         run: uv sync --frozen
+      # Headless Chromium for the Playwright tests (backend/tests/agent). Tests marked `gitea` skip here.
+      - if: steps.exists.outputs.yes == 'true'
+        run: uv run playwright install --with-deps chromium
       - if: steps.exists.outputs.yes == 'true'
         run: uv run ruff check . && uv run ruff format --check .
       - if: steps.exists.outputs.yes == 'true'
