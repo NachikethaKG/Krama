@@ -1,0 +1,140 @@
+{
+  "model": "gemini-3.5-flash",
+  "token_counts": {
+    "dashboard.body.yaml": {
+      "chars": 1114,
+      "tokens": 378
+    },
+    "dashboard.main.yaml": {
+      "chars": 385,
+      "tokens": 119
+    },
+    "login.body.yaml": {
+      "chars": 890,
+      "tokens": 309
+    },
+    "menu-open.body.yaml": {
+      "chars": 1178,
+      "tokens": 397
+    },
+    "repo-create-duplicate.main.yaml": {
+      "chars": 2138,
+      "tokens": 528
+    },
+    "repo-create-empty.body.yaml": {
+      "chars": 2829,
+      "tokens": 778
+    },
+    "repo-create-empty.main.yaml": {
+      "chars": 2100,
+      "tokens": 519
+    },
+    "repo-create-filled.main.yaml": {
+      "chars": 2121,
+      "tokens": 526
+    },
+    "repo-home.body.yaml": {
+      "chars": 3493,
+      "tokens": 1384
+    },
+    "repo-home.main.yaml": {
+      "chars": 2764,
+      "tokens": 1125
+    }
+  },
+  "response_json_schema": {
+    "ms": 4626,
+    "usage": {
+      "candidates_token_count": 557,
+      "prompt_token_count": 701,
+      "prompt_tokens_details": [
+        {
+          "modality": "TEXT",
+          "token_count": 701
+        }
+      ],
+      "thoughts_token_count": 449,
+      "total_token_count": 1707
+    },
+    "valid_against_contract": true,
+    "steps": 4,
+    "empty_expected_state": [],
+    "plan": {
+      "steps": [
+        {
+          "seq": 1,
+          "action": {
+            "type": "click"
+          },
+          "target": {
+            "role": "link",
+            "name": "New Repository"
+          },
+          "instruction_text": "Click on the 'New Repository' link to open the repository creation page.",
+          "expected_state": {
+            "url_matches": "^/repo/create$",
+            "title_contains": "New Repository"
+          },
+          "risk": "low"
+        },
+        {
+          "seq": 2,
+          "action": {
+            "type": "fill",
+            "value": "demo-repo"
+          },
+          "target": {
+            "role": "textbox",
+            "name": "Repository Name *"
+          },
+          "instruction_text": "Enter 'demo-repo' as the repository name.",
+          "expected_state": {
+            "field_values": [
+              {
+                "role": "textbox",
+                "name": "Repository Name *",
+                "value": "demo-repo"
+              }
+            ]
+          },
+          "risk": "low"
+        },
+        {
+          "seq": 3,
+          "action": {
+            "type": "click"
+          },
+          "target": {
+            "role": "checkbox",
+            "name": "Initialize Repository (Adds .gitignore, License and README)"
+          },
+          "instruction_text": "Check the option to initialize the repository with a README.",
+          "expected_state": {
+            "checked": [
+              {
+                "role": "checkbox",
+                "name": "Initialize Repository (Adds .gitignore, License and README)"
+              }
+            ]
+          },
+          "risk": "low"
+        },
+        {
+          "seq": 4,
+          "action": {
+            "type": "click"
+          },
+          "target": {
+            "role": "button",
+            "name": "Create Repository"
+          },
+          "instruction_text": "Click the 'Create Repository' button to create the repository.",
+          "expected_state": {
+            "url_matches": "^/demo/demo-repo$"
+          },
+          "risk": "medium"
+        }
+      ]
+    }
+  }
+}
