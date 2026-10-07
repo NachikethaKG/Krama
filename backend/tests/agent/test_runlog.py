@@ -32,13 +32,13 @@ async def test_run_script_logs_every_action(executor: ActionExecutor) -> None:
     assert log.finished_at is not None and log.finished_at >= log.started_at
 
 
-async def test_run_script_stops_at_first_failure(executor: ActionExecutor) -> None:
+async def test_run_script_stops_at_first_failure(fast_fail_executor: ActionExecutor) -> None:
     steps = [
         ScriptedStep(action=Action(type="click"), target=Target(role="button", name="No such button")),
         ScriptedStep(action=Action(type="navigate", value="/form")),
     ]
 
-    log = await run_script(executor, steps, task="t", base_url="http://krama.test")
+    log = await run_script(fast_fail_executor, steps, task="t", base_url="http://krama.test")
 
     assert not log.ok
     assert len(log.entries) == 1
