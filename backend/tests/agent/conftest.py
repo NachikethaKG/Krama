@@ -50,18 +50,30 @@ async def _serve(route: Route) -> None:
         await route.fulfill(status=404, content_type="text/html", body="<title>Not found</title>")
 
 
-@pytest.fixture
-async def session() -> AsyncIterator[PlaywrightSession]:
-    # Short action timeout so failure cases stay fast.
-    async with PlaywrightSession(SessionConfig(base_url=FAKE_SITE, action_timeout_ms=1_000)) as s:
+async def _open_fake_site(action_timeout_ms: int) -> AsyncIterator[PlaywrightSession]:
+    async with PlaywrightSession(SessionConfig(base_url=FAKE_SITE, action_timeout_ms=action_timeout_ms)) as s:
         await s.context.route(f"{FAKE_SITE}/**", _serve)
         await s.page.goto("/")
         yield s
 
 
 @pytest.fixture
+async def session() -> AsyncIterator[PlaywrightSession]:
+    # The production timeout: Playwright's stability check can take over 1 s on a busy laptop.
+    async for s in _open_fake_site(SessionConfig.action_timeout_ms):
+        yield s
+
+
+@pytest.fixture
 def executor(session: PlaywrightSession) -> ActionExecutor:
     return ActionExecutor(session.page)
+
+
+@pytest.fixture
+async def fast_fail_executor() -> AsyncIterator[ActionExecutor]:
+    """A 1 s action timeout, only for tests whose action is meant to fail (keeps them fast)."""
+    async for s in _open_fake_site(1_000):
+        yield ActionExecutor(s.page)
 
 
 def gitea_url() -> str:

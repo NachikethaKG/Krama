@@ -98,8 +98,9 @@ async def test_selector_fallback(executor: ActionExecutor) -> None:
     assert result.ok, result.error
 
 
-async def test_missing_target_fails_with_target_not_found(executor: ActionExecutor) -> None:
-    result = await executor.execute(Action(type="click"), Target(role="button", name="Does not exist"))
+async def test_missing_target_fails_with_target_not_found(fast_fail_executor: ActionExecutor) -> None:
+    missing = Target(role="button", name="Does not exist")
+    result = await fast_fail_executor.execute(Action(type="click"), missing)
 
     assert not result.ok
     assert result.error is not None
@@ -115,9 +116,9 @@ async def test_ambiguous_target_is_reported_not_guessed(executor: ActionExecutor
     assert result.error.code == "ambiguous_target"
 
 
-async def test_hidden_element_times_out(executor: ActionExecutor) -> None:
+async def test_hidden_element_times_out(fast_fail_executor: ActionExecutor) -> None:
     # Present in the DOM but hidden, so it never becomes visible: a timeout, not "not found".
-    result = await executor.execute(Action(type="click"), Target(selector="#late"))
+    result = await fast_fail_executor.execute(Action(type="click"), Target(selector="#late"))
 
     assert not result.ok
     assert result.error is not None
