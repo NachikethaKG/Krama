@@ -1,0 +1,44 @@
+- navigation "Navigation Bar":
+  - link "Dashboard":
+    - /url: /
+  - link "Issues":
+    - /url: /issues
+  - link "Pull Requests":
+    - /url: /pulls
+  - link "Milestones":
+    - /url: /milestones
+  - link "Explore":
+    - /url: /explore/repos
+  - link "Notifications":
+    - /url: /notifications
+  - menu "Create…"
+  - menu "Profile and Settings…":
+    - img "demo"
+- main "demo - Dashboard":
+  - menu:
+    - img "demo"
+    - text: demo
+  - text: Repository Organization
+  - heading "Repositories 0 New Repository" [level=4]:
+    - text: Repositories 0
+    - link "New Repository":
+      - /url: /repo/create
+  - searchbox "Search repos..."
+  - combobox "Other Filters"
+  - navigation:
+    - text: All 0 Sources Forks Mirrors
+    - button "More items"
+- group "Footer":
+  - contentinfo "About Software":
+    - link "Powered by Gitea":
+      - /url: https://about.gitea.com
+    - text: "Version: 1.22.6 Page:"
+    - strong: 21ms
+    - text: "Template:"
+    - strong: 17ms
+  - group "Links":
+    - menu: English
+    - link "Licenses":
+      - /url: /assets/licenses.txt
+    - link "API":
+      - /url: /api/swagger
