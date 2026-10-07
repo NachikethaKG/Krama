@@ -1,0 +1,1442 @@
+[
+ {
+  "kind": "raw",
+  "scale": 1,
+  "dpr": 1,
+  "step": "title (no scroll)",
+  "sandbox": "allow-same-origin",
+  "effScale": 1,
+  "wrapperTransform": "matrix(1, 0, 0, 1, 0, 0)",
+  "replayScroll": [
+   0,
+   0
+  ],
+  "recordedScroll": [
+   0,
+   0
+  ],
+  "iframeBorder": 0,
+  "truth": [
+   700,
+   450,
+   231.171875,
+   37
+  ],
+  "inside": [
+   700,
+   450,
+   231.171875,
+   37
+  ],
+  "outside": [
+   700,
+   450,
+   231.171875,
+   37
+  ],
+  "errInside": 0,
+  "errOutside": 0,
+  "currentTime": 553,
+  "pageErrors": []
+ },
+ {
+  "kind": "raw",
+  "scale": 1,
+  "dpr": 1,
+  "step": "second (scrollY~1300)",
+  "sandbox": "allow-same-origin",
+  "effScale": 1,
+  "wrapperTransform": "matrix(1, 0, 0, 1, 0, 0)",
+  "replayScroll": [
+   0,
+   1300
+  ],
+  "recordedScroll": [
+   0,
+   1300
+  ],
+  "iframeBorder": 0,
+  "truth": [
+   1560,
+   620,
+   120,
+   40
+  ],
+  "inside": [
+   1560,
+   620,
+   120,
+   40
+  ],
+  "outside": [
+   1560,
+   620,
+   120,
+   40
+  ],
+  "errInside": 0,
+  "errOutside": 0,
+  "currentTime": 2852,
+  "pageErrors": []
+ },
+ {
+  "kind": "raw",
+  "scale": 1,
+  "dpr": 1,
+  "step": "target (scrolled)",
+  "sandbox": "allow-same-origin",
+  "effScale": 1,
+  "wrapperTransform": "matrix(1, 0, 0, 1, 0, 0)",
+  "replayScroll": [
+   0,
+   1824
+  ],
+  "recordedScroll": [
+   0,
+   1824
+  ],
+  "iframeBorder": 0,
+  "truth": [
+   960,
+   796,
+   180,
+   48
+  ],
+  "inside": [
+   960,
+   796,
+   180,
+   48
+  ],
+  "outside": [
+   960,
+   796,
+   180,
+   48
+  ],
+  "errInside": 0,
+  "errOutside": 0,
+  "currentTime": 3981,
+  "pageErrors": []
+ },
+ {
+  "kind": "raw",
+  "scale": 0.5,
+  "dpr": 1,
+  "step": "title (no scroll)",
+  "sandbox": "allow-same-origin",
+  "effScale": 0.5,
+  "wrapperTransform": "matrix(0.5, 0, 0, 0.5, 0, 0)",
+  "replayScroll": [
+   0,
+   0
+  ],
+  "recordedScroll": [
+   0,
+   0
+  ],
+  "iframeBorder": 0,
+  "truth": [
+   360,
+   235,
+   115.5859375,
+   18.5
+  ],
+  "inside": [
+   360,
+   235,
+   115.5859375,
+   18.5
+  ],
+  "outside": [
+   360,
+   235,
+   115.5859375,
+   18.5
+  ],
+  "errInside": 0,
+  "errOutside": 0,
+  "currentTime": 553,
+  "pageErrors": []
+ },
+ {
+  "kind": "raw",
+  "scale": 0.5,
+  "dpr": 1,
+  "step": "second (scrollY~1300)",
+  "sandbox": "allow-same-origin",
+  "effScale": 0.5,
+  "wrapperTransform": "matrix(0.5, 0, 0, 0.5, 0, 0)",
+  "replayScroll": [
+   0,
+   1300
+  ],
+  "recordedScroll": [
+   0,
+   1300
+  ],
+  "iframeBorder": 0,
+  "truth": [
+   790,
+   320,
+   60,
+   20
+  ],
+  "inside": [
+   790,
+   320,
+   60,
+   20
+  ],
+  "outside": [
+   790,
+   320,
+   60,
+   20
+  ],
+  "errInside": 0,
+  "errOutside": 0,
+  "currentTime": 2852,
+  "pageErrors": []
+ },
+ {
+  "kind": "raw",
+  "scale": 0.5,
+  "dpr": 1,
+  "step": "target (scrolled)",
+  "sandbox": "allow-same-origin",
+  "effScale": 0.5,
+  "wrapperTransform": "matrix(0.5, 0, 0, 0.5, 0, 0)",
+  "replayScroll": [
+   0,
+   1824
+  ],
+  "recordedScroll": [
+   0,
+   1824
+  ],
+  "iframeBorder": 0,
+  "truth": [
+   490,
+   408,
+   90,
+   24
+  ],
+  "inside": [
+   490,
+   408,
+   90,
+   24
+  ],
+  "outside": [
+   490,
+   408,
+   90,
+   24
+  ],
+  "errInside": 0,
+  "errOutside": 0,
+  "currentTime": 3981,
+  "pageErrors": []
+ },
+ {
+  "kind": "raw",
+  "scale": 0.37,
+  "dpr": 1,
+  "step": "title (no scroll)",
+  "sandbox": "allow-same-origin",
+  "effScale": 0.36999998092651365,
+  "wrapperTransform": "matrix(0.37, 0, 0, 0.37, 0, 0)",
+  "replayScroll": [
+   0,
+   0
+  ],
+  "recordedScroll": [
+   0,
+   0
+  ],
+  "iframeBorder": 0,
+  "truth": [
+   271.59687423706055,
+   179.0999994277954,
+   85.5335893407464,
+   13.689999294281005
+  ],
+  "inside": [
+   271.59687519073486,
+   179.10000014305115,
+   85.5335948523134,
+   13.690000176429749
+  ],
+  "outside": [
+   271.5968780517578,
+   179.10000610351562,
+   85.5335922241211,
+   13.6899995803833
+  ],
+  "errInside": 5.511566996574402e-06,
+  "errOutside": 6.67572021484375e-06,
+  "currentTime": 553,
+  "pageErrors": []
+ },
+ {
+  "kind": "raw",
+  "scale": 0.37,
+  "dpr": 1,
+  "step": "second (scrollY~1300)",
+  "sandbox": "allow-same-origin",
+  "effScale": 0.36999998092651365,
+  "wrapperTransform": "matrix(0.37, 0, 0, 0.37, 0, 0)",
+  "replayScroll": [
+   0,
+   1300
+  ],
+  "recordedScroll": [
+   0,
+   1300
+  ],
+  "iframeBorder": 0,
+  "truth": [
+   589.7968578338623,
+   241.99999618530273,
+   44.39999771118164,
+   14.799999237060547
+  ],
+  "inside": [
+   589.7968792915344,
+   242.00000095367432,
+   44.40000057220459,
+   14.800000190734863
+  ],
+  "outside": [
+   589.796875,
+   242,
+   44.39999771118164,
+   14.799999237060547
+  ],
+  "errInside": 2.1457672119140625e-05,
+  "errOutside": 1.71661376953125e-05,
+  "currentTime": 2852,
+  "pageErrors": []
+ },
+ {
+  "kind": "raw",
+  "scale": 0.37,
+  "dpr": 1,
+  "step": "target (scrolled)",
+  "sandbox": "allow-same-origin",
+  "effScale": 0.36999998092651365,
+  "wrapperTransform": "matrix(0.37, 0, 0, 0.37, 0, 0)",
+  "replayScroll": [
+   0,
+   1824
+  ],
+  "recordedScroll": [
+   0,
+   1824
+  ],
+  "iframeBorder": 0,
+  "truth": [
+   367.7968692779541,
+   307.11999282836916,
+   66.59999656677246,
+   17.759999084472653
+  ],
+  "inside": [
+   367.7968764305115,
+   307.1200017929077,
+   66.60000085830688,
+   17.760000228881836
+  ],
+  "outside": [
+   367.796875,
+   307.1199951171875,
+   66.5999984741211,
+   17.759998321533203
+  ],
+  "errInside": 8.964538551481382e-06,
+  "errOutside": 5.7220458984375e-06,
+  "currentTime": 3981,
+  "pageErrors": []
+ },
+ {
+  "kind": "player",
+  "scale": 1,
+  "dpr": 1,
+  "step": "title (no scroll)",
+  "sandbox": "allow-same-origin",
+  "effScale": 1,
+  "wrapperTransform": "matrix(1, 0, 0, 1, -640, -400)",
+  "replayScroll": [
+   0,
+   0
+  ],
+  "recordedScroll": [
+   0,
+   0
+  ],
+  "iframeBorder": 0,
+  "truth": [
+   60,
+   50,
+   231.171875,
+   37
+  ],
+  "inside": [
+   60,
+   50,
+   231.171875,
+   37
+  ],
+  "outside": [
+   60,
+   50,
+   231.171875,
+   37
+  ],
+  "errInside": 0,
+  "errOutside": 0,
+  "currentTime": 553,
+  "pageErrors": []
+ },
+ {
+  "kind": "player",
+  "scale": 1,
+  "dpr": 1,
+  "step": "second (scrollY~1300)",
+  "sandbox": "allow-same-origin",
+  "effScale": 1,
+  "wrapperTransform": "matrix(1, 0, 0, 1, -640, -400)",
+  "replayScroll": [
+   0,
+   1300
+  ],
+  "recordedScroll": [
+   0,
+   1300
+  ],
+  "iframeBorder": 0,
+  "truth": [
+   920,
+   220,
+   120,
+   40
+  ],
+  "inside": [
+   920,
+   220,
+   120,
+   40
+  ],
+  "outside": [
+   920,
+   220,
+   120,
+   40
+  ],
+  "errInside": 0,
+  "errOutside": 0,
+  "currentTime": 2852,
+  "pageErrors": []
+ },
+ {
+  "kind": "player",
+  "scale": 1,
+  "dpr": 1,
+  "step": "target (scrolled)",
+  "sandbox": "allow-same-origin",
+  "effScale": 1,
+  "wrapperTransform": "matrix(1, 0, 0, 1, -640, -400)",
+  "replayScroll": [
+   0,
+   1824
+  ],
+  "recordedScroll": [
+   0,
+   1824
+  ],
+  "iframeBorder": 0,
+  "truth": [
+   320,
+   396,
+   180,
+   48
+  ],
+  "inside": [
+   320,
+   396,
+   180,
+   48
+  ],
+  "outside": [
+   320,
+   396,
+   180,
+   48
+  ],
+  "errInside": 0,
+  "errOutside": 0,
+  "currentTime": 3981,
+  "pageErrors": []
+ },
+ {
+  "kind": "player",
+  "scale": 0.5,
+  "dpr": 1,
+  "step": "title (no scroll)",
+  "sandbox": "allow-same-origin",
+  "effScale": 0.5,
+  "wrapperTransform": "matrix(0.5, 0, 0, 0.5, -320, -200)",
+  "replayScroll": [
+   0,
+   0
+  ],
+  "recordedScroll": [
+   0,
+   0
+  ],
+  "iframeBorder": 0,
+  "truth": [
+   40,
+   35,
+   115.5859375,
+   18.5
+  ],
+  "inside": [
+   40,
+   35,
+   115.5859375,
+   18.5
+  ],
+  "outside": [
+   40,
+   35,
+   115.5859375,
+   18.5
+  ],
+  "errInside": 0,
+  "errOutside": 0,
+  "currentTime": 553,
+  "pageErrors": []
+ },
+ {
+  "kind": "player",
+  "scale": 0.5,
+  "dpr": 1,
+  "step": "second (scrollY~1300)",
+  "sandbox": "allow-same-origin",
+  "effScale": 0.5,
+  "wrapperTransform": "matrix(0.5, 0, 0, 0.5, -320, -200)",
+  "replayScroll": [
+   0,
+   1300
+  ],
+  "recordedScroll": [
+   0,
+   1300
+  ],
+  "iframeBorder": 0,
+  "truth": [
+   470,
+   120,
+   60,
+   20
+  ],
+  "inside": [
+   470,
+   120,
+   60,
+   20
+  ],
+  "outside": [
+   470,
+   120,
+   60,
+   20
+  ],
+  "errInside": 0,
+  "errOutside": 0,
+  "currentTime": 2852,
+  "pageErrors": []
+ },
+ {
+  "kind": "player",
+  "scale": 0.5,
+  "dpr": 1,
+  "step": "target (scrolled)",
+  "sandbox": "allow-same-origin",
+  "effScale": 0.5,
+  "wrapperTransform": "matrix(0.5, 0, 0, 0.5, -320, -200)",
+  "replayScroll": [
+   0,
+   1824
+  ],
+  "recordedScroll": [
+   0,
+   1824
+  ],
+  "iframeBorder": 0,
+  "truth": [
+   170,
+   208,
+   90,
+   24
+  ],
+  "inside": [
+   170,
+   208,
+   90,
+   24
+  ],
+  "outside": [
+   170,
+   208,
+   90,
+   24
+  ],
+  "errInside": 0,
+  "errOutside": 0,
+  "currentTime": 3981,
+  "pageErrors": []
+ },
+ {
+  "kind": "player",
+  "scale": 0.37,
+  "dpr": 1,
+  "step": "title (no scroll)",
+  "sandbox": "allow-same-origin",
+  "effScale": 0.36999998092651365,
+  "wrapperTransform": "matrix(0.37, 0, 0, 0.37, -236.8, -148)",
+  "replayScroll": [
+   0,
+   0
+  ],
+  "recordedScroll": [
+   0,
+   0
+  ],
+  "iframeBorder": 0,
+  "truth": [
+   34.796871185302734,
+   31.09999942779541,
+   85.5335893407464,
+   13.689999294281005
+  ],
+  "inside": [
+   34.79687213897705,
+   31.100000143051147,
+   85.5335948523134,
+   13.690000176429749
+  ],
+  "outside": [
+   34.796871185302734,
+   31.09999942779541,
+   85.5335922241211,
+   13.6899995803833
+  ],
+  "errInside": 5.511566996574402e-06,
+  "errOutside": 2.8833746910095215e-06,
+  "currentTime": 553,
+  "pageErrors": []
+ },
+ {
+  "kind": "player",
+  "scale": 0.37,
+  "dpr": 1,
+  "step": "second (scrollY~1300)",
+  "sandbox": "allow-same-origin",
+  "effScale": 0.36999998092651365,
+  "wrapperTransform": "matrix(0.37, 0, 0, 0.37, -236.8, -148)",
+  "replayScroll": [
+   0,
+   1300
+  ],
+  "recordedScroll": [
+   0,
+   1300
+  ],
+  "iframeBorder": 0,
+  "truth": [
+   352.9968547821045,
+   93.99999618530273,
+   44.39999771118164,
+   14.799999237060547
+  ],
+  "inside": [
+   352.9968762397766,
+   94.00000095367432,
+   44.40000057220459,
+   14.800000190734863
+  ],
+  "outside": [
+   352.9968566894531,
+   93.99999237060547,
+   44.39999771118164,
+   14.799999237060547
+  ],
+  "errInside": 2.1457672119140625e-05,
+  "errOutside": 3.814697265625e-06,
+  "currentTime": 2852,
+  "pageErrors": []
+ },
+ {
+  "kind": "player",
+  "scale": 0.37,
+  "dpr": 1,
+  "step": "target (scrolled)",
+  "sandbox": "allow-same-origin",
+  "effScale": 0.36999998092651365,
+  "wrapperTransform": "matrix(0.37, 0, 0, 0.37, -236.8, -148)",
+  "replayScroll": [
+   0,
+   1824
+  ],
+  "recordedScroll": [
+   0,
+   1824
+  ],
+  "iframeBorder": 0,
+  "truth": [
+   130.9968662261963,
+   159.11999282836913,
+   66.59999656677246,
+   17.759999084472653
+  ],
+  "inside": [
+   130.99687337875366,
+   159.12000179290771,
+   66.60000085830688,
+   17.760000228881836
+  ],
+  "outside": [
+   130.99686431884766,
+   159.1199951171875,
+   66.5999984741211,
+   17.759998321533203
+  ],
+  "errInside": 8.964538579903092e-06,
+  "errOutside": 2.288818365059342e-06,
+  "currentTime": 3981,
+  "pageErrors": []
+ },
+ {
+  "kind": "raw",
+  "scale": 1,
+  "dpr": 2,
+  "step": "title (no scroll)",
+  "sandbox": "allow-same-origin",
+  "effScale": 1,
+  "wrapperTransform": "matrix(1, 0, 0, 1, 0, 0)",
+  "replayScroll": [
+   0,
+   0
+  ],
+  "recordedScroll": [
+   0,
+   0
+  ],
+  "iframeBorder": 0,
+  "truth": [
+   700,
+   450,
+   231.171875,
+   37
+  ],
+  "inside": [
+   700,
+   450,
+   231.171875,
+   37
+  ],
+  "outside": [
+   700,
+   450,
+   231.171875,
+   37
+  ],
+  "errInside": 0,
+  "errOutside": 0,
+  "currentTime": 553,
+  "pageErrors": []
+ },
+ {
+  "kind": "raw",
+  "scale": 1,
+  "dpr": 2,
+  "step": "second (scrollY~1300)",
+  "sandbox": "allow-same-origin",
+  "effScale": 1,
+  "wrapperTransform": "matrix(1, 0, 0, 1, 0, 0)",
+  "replayScroll": [
+   0,
+   1300
+  ],
+  "recordedScroll": [
+   0,
+   1300
+  ],
+  "iframeBorder": 0,
+  "truth": [
+   1560,
+   620,
+   120,
+   40
+  ],
+  "inside": [
+   1560,
+   620,
+   120,
+   40
+  ],
+  "outside": [
+   1560,
+   620,
+   120,
+   40
+  ],
+  "errInside": 0,
+  "errOutside": 0,
+  "currentTime": 2852,
+  "pageErrors": []
+ },
+ {
+  "kind": "raw",
+  "scale": 1,
+  "dpr": 2,
+  "step": "target (scrolled)",
+  "sandbox": "allow-same-origin",
+  "effScale": 1,
+  "wrapperTransform": "matrix(1, 0, 0, 1, 0, 0)",
+  "replayScroll": [
+   0,
+   1824
+  ],
+  "recordedScroll": [
+   0,
+   1824
+  ],
+  "iframeBorder": 0,
+  "truth": [
+   960,
+   796,
+   180,
+   48
+  ],
+  "inside": [
+   960,
+   796,
+   180,
+   48
+  ],
+  "outside": [
+   960,
+   796,
+   180,
+   48
+  ],
+  "errInside": 0,
+  "errOutside": 0,
+  "currentTime": 3981,
+  "pageErrors": []
+ },
+ {
+  "kind": "raw",
+  "scale": 0.5,
+  "dpr": 2,
+  "step": "title (no scroll)",
+  "sandbox": "allow-same-origin",
+  "effScale": 0.5,
+  "wrapperTransform": "matrix(0.5, 0, 0, 0.5, 0, 0)",
+  "replayScroll": [
+   0,
+   0
+  ],
+  "recordedScroll": [
+   0,
+   0
+  ],
+  "iframeBorder": 0,
+  "truth": [
+   360,
+   235,
+   115.5859375,
+   18.5
+  ],
+  "inside": [
+   360,
+   235,
+   115.5859375,
+   18.5
+  ],
+  "outside": [
+   360,
+   235,
+   115.5859375,
+   18.5
+  ],
+  "errInside": 0,
+  "errOutside": 0,
+  "currentTime": 553,
+  "pageErrors": []
+ },
+ {
+  "kind": "raw",
+  "scale": 0.5,
+  "dpr": 2,
+  "step": "second (scrollY~1300)",
+  "sandbox": "allow-same-origin",
+  "effScale": 0.5,
+  "wrapperTransform": "matrix(0.5, 0, 0, 0.5, 0, 0)",
+  "replayScroll": [
+   0,
+   1300
+  ],
+  "recordedScroll": [
+   0,
+   1300
+  ],
+  "iframeBorder": 0,
+  "truth": [
+   790,
+   320,
+   60,
+   20
+  ],
+  "inside": [
+   790,
+   320,
+   60,
+   20
+  ],
+  "outside": [
+   790,
+   320,
+   60,
+   20
+  ],
+  "errInside": 0,
+  "errOutside": 0,
+  "currentTime": 2852,
+  "pageErrors": []
+ },
+ {
+  "kind": "raw",
+  "scale": 0.5,
+  "dpr": 2,
+  "step": "target (scrolled)",
+  "sandbox": "allow-same-origin",
+  "effScale": 0.5,
+  "wrapperTransform": "matrix(0.5, 0, 0, 0.5, 0, 0)",
+  "replayScroll": [
+   0,
+   1824
+  ],
+  "recordedScroll": [
+   0,
+   1824
+  ],
+  "iframeBorder": 0,
+  "truth": [
+   490,
+   408,
+   90,
+   24
+  ],
+  "inside": [
+   490,
+   408,
+   90,
+   24
+  ],
+  "outside": [
+   490,
+   408,
+   90,
+   24
+  ],
+  "errInside": 0,
+  "errOutside": 0,
+  "currentTime": 3981,
+  "pageErrors": []
+ },
+ {
+  "kind": "raw",
+  "scale": 0.37,
+  "dpr": 2,
+  "step": "title (no scroll)",
+  "sandbox": "allow-same-origin",
+  "effScale": 0.36999998092651365,
+  "wrapperTransform": "matrix(0.37, 0, 0, 0.37, 0, 0)",
+  "replayScroll": [
+   0,
+   0
+  ],
+  "recordedScroll": [
+   0,
+   0
+  ],
+  "iframeBorder": 0,
+  "truth": [
+   271.59687423706055,
+   179.0999994277954,
+   85.5335893407464,
+   13.689999294281005
+  ],
+  "inside": [
+   271.59687519073486,
+   179.10000014305115,
+   85.5335948523134,
+   13.690000176429749
+  ],
+  "outside": [
+   271.5968780517578,
+   179.10000610351562,
+   85.5335922241211,
+   13.6899995803833
+  ],
+  "errInside": 5.511566996574402e-06,
+  "errOutside": 6.67572021484375e-06,
+  "currentTime": 553,
+  "pageErrors": []
+ },
+ {
+  "kind": "raw",
+  "scale": 0.37,
+  "dpr": 2,
+  "step": "second (scrollY~1300)",
+  "sandbox": "allow-same-origin",
+  "effScale": 0.36999998092651365,
+  "wrapperTransform": "matrix(0.37, 0, 0, 0.37, 0, 0)",
+  "replayScroll": [
+   0,
+   1300
+  ],
+  "recordedScroll": [
+   0,
+   1300
+  ],
+  "iframeBorder": 0,
+  "truth": [
+   589.7968578338623,
+   241.99999618530273,
+   44.39999771118164,
+   14.799999237060547
+  ],
+  "inside": [
+   589.7968792915344,
+   242.00000095367432,
+   44.40000057220459,
+   14.800000190734863
+  ],
+  "outside": [
+   589.796875,
+   242,
+   44.39999771118164,
+   14.799999237060547
+  ],
+  "errInside": 2.1457672119140625e-05,
+  "errOutside": 1.71661376953125e-05,
+  "currentTime": 2852,
+  "pageErrors": []
+ },
+ {
+  "kind": "raw",
+  "scale": 0.37,
+  "dpr": 2,
+  "step": "target (scrolled)",
+  "sandbox": "allow-same-origin",
+  "effScale": 0.36999998092651365,
+  "wrapperTransform": "matrix(0.37, 0, 0, 0.37, 0, 0)",
+  "replayScroll": [
+   0,
+   1824
+  ],
+  "recordedScroll": [
+   0,
+   1824
+  ],
+  "iframeBorder": 0,
+  "truth": [
+   367.7968692779541,
+   307.11999282836916,
+   66.59999656677246,
+   17.759999084472653
+  ],
+  "inside": [
+   367.7968764305115,
+   307.1200017929077,
+   66.60000085830688,
+   17.760000228881836
+  ],
+  "outside": [
+   367.796875,
+   307.1199951171875,
+   66.5999984741211,
+   17.759998321533203
+  ],
+  "errInside": 8.964538551481382e-06,
+  "errOutside": 5.7220458984375e-06,
+  "currentTime": 3981,
+  "pageErrors": []
+ },
+ {
+  "kind": "player",
+  "scale": 1,
+  "dpr": 2,
+  "step": "title (no scroll)",
+  "sandbox": "allow-same-origin",
+  "effScale": 1,
+  "wrapperTransform": "matrix(1, 0, 0, 1, -640, -400)",
+  "replayScroll": [
+   0,
+   0
+  ],
+  "recordedScroll": [
+   0,
+   0
+  ],
+  "iframeBorder": 0,
+  "truth": [
+   60,
+   50,
+   231.171875,
+   37
+  ],
+  "inside": [
+   60,
+   50,
+   231.171875,
+   37
+  ],
+  "outside": [
+   60,
+   50,
+   231.171875,
+   37
+  ],
+  "errInside": 0,
+  "errOutside": 0,
+  "currentTime": 553,
+  "pageErrors": []
+ },
+ {
+  "kind": "player",
+  "scale": 1,
+  "dpr": 2,
+  "step": "second (scrollY~1300)",
+  "sandbox": "allow-same-origin",
+  "effScale": 1,
+  "wrapperTransform": "matrix(1, 0, 0, 1, -640, -400)",
+  "replayScroll": [
+   0,
+   1300
+  ],
+  "recordedScroll": [
+   0,
+   1300
+  ],
+  "iframeBorder": 0,
+  "truth": [
+   920,
+   220,
+   120,
+   40
+  ],
+  "inside": [
+   920,
+   220,
+   120,
+   40
+  ],
+  "outside": [
+   920,
+   220,
+   120,
+   40
+  ],
+  "errInside": 0,
+  "errOutside": 0,
+  "currentTime": 2852,
+  "pageErrors": []
+ },
+ {
+  "kind": "player",
+  "scale": 1,
+  "dpr": 2,
+  "step": "target (scrolled)",
+  "sandbox": "allow-same-origin",
+  "effScale": 1,
+  "wrapperTransform": "matrix(1, 0, 0, 1, -640, -400)",
+  "replayScroll": [
+   0,
+   1824
+  ],
+  "recordedScroll": [
+   0,
+   1824
+  ],
+  "iframeBorder": 0,
+  "truth": [
+   320,
+   396,
+   180,
+   48
+  ],
+  "inside": [
+   320,
+   396,
+   180,
+   48
+  ],
+  "outside": [
+   320,
+   396,
+   180,
+   48
+  ],
+  "errInside": 0,
+  "errOutside": 0,
+  "currentTime": 3981,
+  "pageErrors": []
+ },
+ {
+  "kind": "player",
+  "scale": 0.5,
+  "dpr": 2,
+  "step": "title (no scroll)",
+  "sandbox": "allow-same-origin",
+  "effScale": 0.5,
+  "wrapperTransform": "matrix(0.5, 0, 0, 0.5, -320, -200)",
+  "replayScroll": [
+   0,
+   0
+  ],
+  "recordedScroll": [
+   0,
+   0
+  ],
+  "iframeBorder": 0,
+  "truth": [
+   40,
+   35,
+   115.5859375,
+   18.5
+  ],
+  "inside": [
+   40,
+   35,
+   115.5859375,
+   18.5
+  ],
+  "outside": [
+   40,
+   35,
+   115.5859375,
+   18.5
+  ],
+  "errInside": 0,
+  "errOutside": 0,
+  "currentTime": 553,
+  "pageErrors": []
+ },
+ {
+  "kind": "player",
+  "scale": 0.5,
+  "dpr": 2,
+  "step": "second (scrollY~1300)",
+  "sandbox": "allow-same-origin",
+  "effScale": 0.5,
+  "wrapperTransform": "matrix(0.5, 0, 0, 0.5, -320, -200)",
+  "replayScroll": [
+   0,
+   1300
+  ],
+  "recordedScroll": [
+   0,
+   1300
+  ],
+  "iframeBorder": 0,
+  "truth": [
+   470,
+   120,
+   60,
+   20
+  ],
+  "inside": [
+   470,
+   120,
+   60,
+   20
+  ],
+  "outside": [
+   470,
+   120,
+   60,
+   20
+  ],
+  "errInside": 0,
+  "errOutside": 0,
+  "currentTime": 2852,
+  "pageErrors": []
+ },
+ {
+  "kind": "player",
+  "scale": 0.5,
+  "dpr": 2,
+  "step": "target (scrolled)",
+  "sandbox": "allow-same-origin",
+  "effScale": 0.5,
+  "wrapperTransform": "matrix(0.5, 0, 0, 0.5, -320, -200)",
+  "replayScroll": [
+   0,
+   1824
+  ],
+  "recordedScroll": [
+   0,
+   1824
+  ],
+  "iframeBorder": 0,
+  "truth": [
+   170,
+   208,
+   90,
+   24
+  ],
+  "inside": [
+   170,
+   208,
+   90,
+   24
+  ],
+  "outside": [
+   170,
+   208,
+   90,
+   24
+  ],
+  "errInside": 0,
+  "errOutside": 0,
+  "currentTime": 3981,
+  "pageErrors": []
+ },
+ {
+  "kind": "player",
+  "scale": 0.37,
+  "dpr": 2,
+  "step": "title (no scroll)",
+  "sandbox": "allow-same-origin",
+  "effScale": 0.36999998092651365,
+  "wrapperTransform": "matrix(0.37, 0, 0, 0.37, -236.8, -148)",
+  "replayScroll": [
+   0,
+   0
+  ],
+  "recordedScroll": [
+   0,
+   0
+  ],
+  "iframeBorder": 0,
+  "truth": [
+   34.796871185302734,
+   31.09999942779541,
+   85.5335893407464,
+   13.689999294281005
+  ],
+  "inside": [
+   34.79687213897705,
+   31.100000143051147,
+   85.5335948523134,
+   13.690000176429749
+  ],
+  "outside": [
+   34.796871185302734,
+   31.09999942779541,
+   85.5335922241211,
+   13.6899995803833
+  ],
+  "errInside": 5.511566996574402e-06,
+  "errOutside": 2.8833746910095215e-06,
+  "currentTime": 553,
+  "pageErrors": []
+ },
+ {
+  "kind": "player",
+  "scale": 0.37,
+  "dpr": 2,
+  "step": "second (scrollY~1300)",
+  "sandbox": "allow-same-origin",
+  "effScale": 0.36999998092651365,
+  "wrapperTransform": "matrix(0.37, 0, 0, 0.37, -236.8, -148)",
+  "replayScroll": [
+   0,
+   1300
+  ],
+  "recordedScroll": [
+   0,
+   1300
+  ],
+  "iframeBorder": 0,
+  "truth": [
+   352.9968547821045,
+   93.99999618530273,
+   44.39999771118164,
+   14.799999237060547
+  ],
+  "inside": [
+   352.9968762397766,
+   94.00000095367432,
+   44.40000057220459,
+   14.800000190734863
+  ],
+  "outside": [
+   352.9968566894531,
+   93.99999237060547,
+   44.39999771118164,
+   14.799999237060547
+  ],
+  "errInside": 2.1457672119140625e-05,
+  "errOutside": 3.814697265625e-06,
+  "currentTime": 2852,
+  "pageErrors": []
+ },
+ {
+  "kind": "player",
+  "scale": 0.37,
+  "dpr": 2,
+  "step": "target (scrolled)",
+  "sandbox": "allow-same-origin",
+  "effScale": 0.36999998092651365,
+  "wrapperTransform": "matrix(0.37, 0, 0, 0.37, -236.8, -148)",
+  "replayScroll": [
+   0,
+   1824
+  ],
+  "recordedScroll": [
+   0,
+   1824
+  ],
+  "iframeBorder": 0,
+  "truth": [
+   130.9968662261963,
+   159.11999282836913,
+   66.59999656677246,
+   17.759999084472653
+  ],
+  "inside": [
+   130.99687337875366,
+   159.12000179290771,
+   66.60000085830688,
+   17.760000228881836
+  ],
+  "outside": [
+   130.99686431884766,
+   159.1199951171875,
+   66.5999984741211,
+   17.759998321533203
+  ],
+  "errInside": 8.964538579903092e-06,
+  "errOutside": 2.288818365059342e-06,
+  "currentTime": 3981,
+  "pageErrors": []
+ }
+]
