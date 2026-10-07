@@ -1,0 +1,17 @@
+{
+ "requests": [
+  [
+   "GET",
+   "/repo/create",
+   200,
+   "document",
+   20
+  ]
+ ],
+ "assets": {
+  "script": 2,
+  "stylesheet": 2,
+  "image": 3
+ },
+ "total": 8
+}

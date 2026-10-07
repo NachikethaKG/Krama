@@ -1,0 +1,165 @@
+{
+ "/": {
+  "doc_height": 802,
+  "png_viewport": {
+   "ms": 33.9,
+   "bytes": 76373
+  },
+  "png_full": {
+   "ms": 51.2,
+   "bytes": 76393
+  },
+  "jpeg70_viewport": {
+   "ms": 16.8,
+   "bytes": 82917
+  },
+  "jpeg70_full": {
+   "ms": 35.7,
+   "bytes": 83117
+  },
+  "jpeg70_viewport_anim_off_caret_hide": {
+   "ms": 34.3,
+   "bytes": 82917
+  },
+  "png_viewport_anim_off_caret_hide": {
+   "ms": 33.1,
+   "bytes": 76373
+  },
+  "aria_main": {
+   "ms": 9.1,
+   "bytes": 2658
+  },
+  "aria_body": {
+   "ms": 9.1,
+   "bytes": 3389
+  },
+  "title": {
+   "ms": 2.5
+  },
+  "url": {
+   "ms": 0.0
+  },
+  "locator('main')": "TimeoutError after 2010 ms",
+  "step_capture_sequential_ms": 39.5,
+  "step_capture_gather_ms": 19.1,
+  "net_summary_bytes": 337,
+  "net_summary_total_requests": 13
+ },
+ "/repo/create": {
+  "doc_height": 1364,
+  "png_viewport": {
+   "ms": 33.3,
+   "bytes": 54693
+  },
+  "png_full": {
+   "ms": 64.9,
+   "bytes": 87775
+  },
+  "jpeg70_viewport": {
+   "ms": 33.2,
+   "bytes": 56794
+  },
+  "jpeg70_full": {
+   "ms": 50.6,
+   "bytes": 92270
+  },
+  "jpeg70_viewport_anim_off_caret_hide": {
+   "ms": 16.3,
+   "bytes": 56794
+  },
+  "png_viewport_anim_off_caret_hide": {
+   "ms": 32.2,
+   "bytes": 54693
+  },
+  "aria_main": {
+   "ms": 5.2,
+   "bytes": 2100
+  },
+  "aria_body": {
+   "ms": 5.6,
+   "bytes": 2831
+  },
+  "title": {
+   "ms": 0.9
+  },
+  "url": {
+   "ms": 0.0
+  },
+  "locator('main')": "TimeoutError after 2002 ms",
+  "step_capture_sequential_ms": 34.0,
+  "step_capture_gather_ms": 32.9,
+  "net_summary_bytes": 112,
+  "net_summary_total_requests": 8
+ },
+ "/demo/rec-test-2": {
+  "doc_height": 800,
+  "png_viewport": {
+   "ms": 30.9,
+   "bytes": 51105
+  },
+  "png_full": {
+   "ms": 35.2,
+   "bytes": 51105
+  },
+  "jpeg70_viewport": {
+   "ms": 33.5,
+   "bytes": 53840
+  },
+  "jpeg70_full": {
+   "ms": 32.8,
+   "bytes": 53840
+  },
+  "jpeg70_viewport_anim_off_caret_hide": {
+   "ms": 33.4,
+   "bytes": 53840
+  },
+  "png_viewport_anim_off_caret_hide": {
+   "ms": 33.5,
+   "bytes": 51105
+  },
+  "aria_main": {
+   "ms": 5.4,
+   "bytes": 2834
+  },
+  "aria_body": {
+   "ms": 5.9,
+   "bytes": 3566
+  },
+  "title": {
+   "ms": 1.0
+  },
+  "url": {
+   "ms": 0.0
+  },
+  "locator('main')": "TimeoutError after 2011 ms",
+  "step_capture_sequential_ms": 37.8,
+  "step_capture_gather_ms": 16.7,
+  "net_summary_bytes": 116,
+  "net_summary_total_requests": 7
+ },
+ "step_net_summary_click_new_repo": {
+  "requests": [
+   [
+    "GET",
+    "/repo/search?count_only=1&uid=2&team_id=undefined&q=&",
+    200,
+    "fetch",
+    null
+   ],
+   [
+    "GET",
+    "/repo/create",
+    200,
+    "document",
+    19
+   ]
+  ],
+  "assets": {
+   "script": 2,
+   "stylesheet": 2,
+   "image": 3
+  },
+  "total": 9
+ },
+ "step_net_summary_bytes": 193
+}

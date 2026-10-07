@@ -1,0 +1,119 @@
+{
+  "mode": "batch",
+  "mask": "all",
+  "repo": "rec-test-4",
+  "duration_s": 49.6,
+  "marks": [
+    [
+      0.45,
+      "login page",
+      "http://localhost:3001/user/login"
+    ],
+    [
+      9.79,
+      "dashboard",
+      "http://localhost:3001/"
+    ],
+    [
+      22.15,
+      "repo/create",
+      "http://localhost:3001/repo/create"
+    ],
+    [
+      39.64,
+      "repo page",
+      "http://localhost:3001/demo/rec-test-4"
+    ]
+  ],
+  "events": 228,
+  "by_type": {
+    "Meta": 5,
+    "FullSnapshot": 5,
+    "DomContentLoaded": 4,
+    "Incremental": 210,
+    "Load": 4
+  },
+  "incremental_by_source": {
+    "Mutation": 122,
+    "MouseMove": 39,
+    "MouseInteraction": 30,
+    "Input": 18,
+    "Scroll": 1
+  },
+  "json_bytes": 2631054,
+  "gzip_bytes": 376209,
+  "binding_calls": 57,
+  "calls_by_reason": {
+    "beforeunload": 4,
+    "timer": 53
+  },
+  "password_in_json": false,
+  "pages": [
+    {
+      "path": "blank",
+      "received": 2,
+      "emitted_in_page": null,
+      "lost": -2,
+      "full_snapshots": 1,
+      "meta": 1,
+      "bytes": 441,
+      "fullsnapshot_bytes": [
+        392
+      ],
+      "gzip_bytes": 233
+    },
+    {
+      "path": "/user/login",
+      "received": 23,
+      "emitted_in_page": 23,
+      "lost": 0,
+      "full_snapshots": 1,
+      "meta": 1,
+      "bytes": 476556,
+      "fullsnapshot_bytes": [
+        472889
+      ],
+      "gzip_bytes": 75966
+    },
+    {
+      "path": "/",
+      "received": 119,
+      "emitted_in_page": 119,
+      "lost": 0,
+      "full_snapshots": 1,
+      "meta": 1,
+      "bytes": 756171,
+      "fullsnapshot_bytes": [
+        508522
+      ],
+      "gzip_bytes": 99189
+    },
+    {
+      "path": "/repo/create",
+      "received": 44,
+      "emitted_in_page": 44,
+      "lost": 0,
+      "full_snapshots": 1,
+      "meta": 1,
+      "bytes": 823688,
+      "fullsnapshot_bytes": [
+        758689
+      ],
+      "gzip_bytes": 110109
+    },
+    {
+      "path": "/demo/rec-test-4",
+      "received": 40,
+      "emitted_in_page": 40,
+      "lost": 0,
+      "full_snapshots": 1,
+      "meta": 1,
+      "bytes": 574202,
+      "fullsnapshot_bytes": [
+        558051
+      ],
+      "gzip_bytes": 91875
+    }
+  ],
+  "docs_without_count": []
+}

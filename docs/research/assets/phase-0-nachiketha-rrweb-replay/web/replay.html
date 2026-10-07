@@ -1,0 +1,138 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Replay overlay test</title>
+<link rel="stylesheet" href="vendor/rrweb.css"><link rel="stylesheet" href="vendor/rrweb-player.css">
+<style>body{margin:20px;background:#ddd;font-family:sans-serif}
+#stage{position:relative;overflow:hidden;background:#fff;outline:1px solid #888}
+.ov{position:absolute;left:0;top:0;pointer-events:none;overflow:visible;z-index:10}
+.ov rect{fill:none;stroke-width:3}
+</style>
+<script src="vendor/rrweb.umd.js"></script><script src="vendor/rrweb-player.umd.js"></script></head>
+<body><div id="info"></div><div id="stage"></div>
+<script>
+const q = new URLSearchParams(location.search);
+const SCALE = +(q.get('scale') || 1), KIND = q.get('kind') || 'raw';  // raw = rrweb.Replayer, player = rrweb-player
+const NS = 'http://www.w3.org/2000/svg';
+let replayer, steps, current = null, rec = {w: 1280, h: 800};
+
+// --- current replayed document scroll (page -> viewport) ---
+function docScroll() { const w = replayer.iframe.contentWindow; return [w.scrollX, w.scrollY]; }
+
+// --- Option A: overlay INSIDE replayer.wrapper (unscaled coords; the wrapper transform scales it) ---
+let svgIn, rectIn;
+function mountInside() {
+  svgIn = document.createElementNS(NS, 'svg'); svgIn.classList.add('ov'); svgIn.id = 'ovIn';
+  svgIn.setAttribute('width', rec.w); svgIn.setAttribute('height', rec.h);
+  // align with the iframe's content box (iframe may have a border in raw mode)
+  const f = replayer.iframe; svgIn.style.left = (f.offsetLeft + f.clientLeft) + 'px'; svgIn.style.top = (f.offsetTop + f.clientTop) + 'px';
+  rectIn = document.createElementNS(NS, 'rect'); rectIn.setAttribute('stroke', 'red'); svgIn.appendChild(rectIn);
+  replayer.wrapper.appendChild(svgIn);
+}
+function drawInside(b) {
+  const [sx, sy] = docScroll();
+  rectIn.setAttribute('x', b[0] - sx); rectIn.setAttribute('y', b[1] - sy);
+  rectIn.setAttribute('width', b[2]); rectIn.setAttribute('height', b[3]);
+}
+
+// --- Option B: overlay OUTSIDE (sibling of the player in #stage, manual math) ---
+let svgOut, rectOut;
+function mountOutside(stage) {
+  svgOut = document.createElementNS(NS, 'svg'); svgOut.classList.add('ov'); svgOut.id = 'ovOut';
+  svgOut.setAttribute('width', stage.clientWidth); svgOut.setAttribute('height', stage.clientHeight);
+  rectOut = document.createElementNS(NS, 'rect'); rectOut.setAttribute('stroke', 'blue'); rectOut.setAttribute('stroke-dasharray', '6 4');
+  svgOut.appendChild(rectOut); stage.appendChild(svgOut);
+}
+// overlayPx = iframeOffsetInStage + (pagePx - docScroll) * scale
+function drawOutside(b, stage) {
+  const f = replayer.iframe, ir = f.getBoundingClientRect(), sr = stage.getBoundingClientRect();
+  const s = ir.width / f.offsetWidth;                    // effective scale (wrapper transform), = containerW / recordedW
+  const ox = ir.left - sr.left + f.clientLeft * s, oy = ir.top - sr.top + f.clientTop * s;
+  const [sx, sy] = docScroll();
+  rectOut.setAttribute('x', ox + (b[0] - sx) * s); rectOut.setAttribute('y', oy + (b[1] - sy) * s);
+  rectOut.setAttribute('width', b[2] * s); rectOut.setAttribute('height', b[3] * s);
+}
+
+function redraw() { if (!current) return; drawInside(current.bbox); drawOutside(current.bbox, document.getElementById('stage')); }
+
+async function init() {
+  const events = await (await fetch('events.json')).json();
+  steps = await (await fetch('steps.json')).json();
+  const meta = events.find(e => e.type === 4); rec = {w: meta.data.width, h: meta.data.height};
+  const stage = document.getElementById('stage');
+  stage.style.width = rec.w * SCALE + 'px'; stage.style.height = rec.h * SCALE + 'px';
+  if (KIND === 'raw') {
+    replayer = new rrweb.Replayer(events, {root: stage, mouseTail: false, skipInactive: false});
+    replayer.wrapper.style.transformOrigin = '0 0';
+    replayer.wrapper.style.transform = `scale(${SCALE})`;
+  } else {
+    window.player = new (rrwebPlayer.default || rrwebPlayer)({target: stage, props: {events, width: rec.w * SCALE, height: rec.h * SCALE,
+      autoPlay: false, showController: false, mouseTail: false}});
+    replayer = player.getReplayer();
+  }
+  // keep overlay in sync: scroll casts, viewport resize, and container resize
+  replayer.on('event-cast', e => { if (e.type === 3 && (e.data.source === 3 || e.data.source === 4)) redraw(); });
+  replayer.on('resize', () => requestAnimationFrame(redraw));
+  new ResizeObserver(() => redraw()).observe(stage);
+  const SYNC = q.get('sync') || 'cast';
+  window.__scrollFires = 0;
+  const hookScroll = () => replayer.iframe.contentWindow.addEventListener('scroll', () => { window.__scrollFires++; redraw(); });
+  if (SYNC === 'scroll') { replayer.on('fullsnapshot-rebuilded', hookScroll); }
+  if (SYNC === 'raf') { const loop = () => { redraw(); requestAnimationFrame(loop); }; requestAnimationFrame(loop); }
+  replayer.pause(0);
+  if (SYNC === 'scroll') hookScroll();
+  mountInside(); mountOutside(stage);
+  window.__ready = true;
+}
+// Seek to a step and draw. Returns measurements for verification.
+window.__goStep = async (i) => {
+  current = steps[i];
+  replayer.pause(current.timeOffset);
+  await new Promise(r => setTimeout(r, 200));
+  redraw();
+  await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+  const f = replayer.iframe, ir = f.getBoundingClientRect(), s = ir.width / f.offsetWidth;
+  const sel = '#' + current.name.split(' ')[0];
+  const el = f.contentDocument.querySelector(sel), er = el.getBoundingClientRect();
+  // ground truth: replayed element rect mapped to the top document
+  const truth = [ir.left + (f.clientLeft + er.x) * s, ir.top + (f.clientTop + er.y) * s, er.width * s, er.height * s];
+  const r2a = r => { const b = r.getBoundingClientRect(); return [b.x, b.y, b.width, b.height]; };
+  // SVG rect bbox includes half the stroke; use getBBox-based client box instead: compute from CTM
+  const box = (rect) => { const m = rect.getScreenCTM(), bb = rect.getBBox();
+    return [m.a * bb.x + m.e, m.d * bb.y + m.f, bb.width * m.a, bb.height * m.d]; };
+  const inside = box(rectIn), outside = box(rectOut);
+  const err = a => Math.max(...a.map((v, k) => Math.abs(v - truth[k])));
+  return {kind: KIND, scale: SCALE, dpr: devicePixelRatio, step: current.name, sandbox: f.getAttribute('sandbox'),
+    effScale: s, wrapperTransform: getComputedStyle(replayer.wrapper).transform,
+    replayScroll: docScroll(), recordedScroll: current.scroll, iframeBorder: f.clientLeft,
+    truth, inside, outside, errInside: err(inside), errOutside: err(outside), currentTime: replayer.getCurrentTime()};
+};
+
+// measure without forcing a redraw
+window.__measure = () => {
+  const f = replayer.iframe, ir = f.getBoundingClientRect(), s = ir.width / f.offsetWidth;
+  const el = f.contentDocument.querySelector('#' + current.name.split(' ')[0]), er = el.getBoundingClientRect();
+  const truth = [ir.left + (f.clientLeft + er.x) * s, ir.top + (f.clientTop + er.y) * s, er.width * s, er.height * s];
+  const box = (rect) => { const m = rect.getScreenCTM(), bb = rect.getBBox(); return [m.a * bb.x + m.e, m.d * bb.y + m.f, bb.width * m.a, bb.height * m.d]; };
+  const err = a => Math.max(...a.map((v, k) => Math.abs(v - truth[k])));
+  return {t: replayer.getCurrentTime(), scroll: docScroll(), effScale: s, errInside: err(box(rectIn)), errOutside: err(box(rectOut))};
+};
+// play across the scroll and check that event-cast-driven redraw keeps up
+window.__playTest = async () => {
+  current = steps[2]; replayer.pause(steps[1].timeOffset); await new Promise(r => setTimeout(r, 100)); redraw();
+  const before = __measure();
+  replayer.play(steps[1].timeOffset);
+  const t0 = performance.now(); const times = [];
+  while (replayer.getCurrentTime() < steps[2].timeOffset + 100 && performance.now() - t0 < 5000) { times.push(Math.round(replayer.getCurrentTime())); await new Promise(r => setTimeout(r, 200)); }
+  window.__times = times;
+  replayer.pause(); await new Promise(r => requestAnimationFrame(r));
+  return {before, after: __measure(), scrollFires: window.__scrollFires, times: window.__times, wall: Math.round(performance.now() - t0)};
+};
+// live re-scale of the container (simulates window resize) WITHOUT calling redraw()
+window.__rescaleTest = async (ns) => {
+  const stage = document.getElementById('stage');
+  if (KIND === 'raw') replayer.wrapper.style.transform = 'scale(' + ns + ')';
+  stage.style.width = rec.w * ns + 'px'; stage.style.height = rec.h * ns + 'px';
+  if (KIND !== 'raw') { player.$set({width: rec.w * ns, height: rec.h * ns}); player.triggerResize(); }
+  await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+  return __measure();
+};
+init();
+</script></body></html>

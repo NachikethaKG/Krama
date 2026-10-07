@@ -1,0 +1,54 @@
+[
+  {
+    "config": "baseline(slimDOM all, inlineCSS)",
+    "events": 89,
+    "full_snapshots": 8,
+    "json_bytes": 4633263,
+    "gzip6": 655705,
+    "xz(long window)": 117080,
+    "takeFullSnapshot_ms(/, create, repo)": [
+      15.5,
+      34.8,
+      13
+    ]
+  },
+  {
+    "config": "no slimDOM",
+    "events": 72,
+    "full_snapshots": 8,
+    "json_bytes": 4650657,
+    "gzip6": 659238,
+    "xz(long window)": 117564,
+    "takeFullSnapshot_ms(/, create, repo)": [
+      15,
+      17.3,
+      17
+    ]
+  },
+  {
+    "config": "inlineStylesheet=false",
+    "events": 72,
+    "full_snapshots": 8,
+    "json_bytes": 1471014,
+    "gzip6": 158160,
+    "xz(long window)": 60956,
+    "takeFullSnapshot_ms(/, create, repo)": [
+      6.9,
+      9.4,
+      4.3
+    ]
+  },
+  {
+    "config": "checkoutEveryNms=3000",
+    "events": 72,
+    "full_snapshots": 8,
+    "json_bytes": 4627959,
+    "gzip6": 655353,
+    "xz(long window)": 116812,
+    "takeFullSnapshot_ms(/, create, repo)": [
+      17.9,
+      22.2,
+      15.6
+    ]
+  }
+]
