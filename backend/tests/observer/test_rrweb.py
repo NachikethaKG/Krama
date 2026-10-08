@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import gzip
 import json
 from pathlib import Path
@@ -179,3 +180,89 @@ async def test_rrweb_recording_against_live_gitea(gitea_live_url: str, tmp_path:
 
         await context.close()
         await browser.close()
+
+
+async def test_rrweb_recording_on_empty_page(mock_gitea_page: Page) -> None:
+    """Verify recorder handles blank and minimal empty pages gracefully without crashing."""
+    recorder = RRWebRecorder()
+    await recorder.start(mock_gitea_page)
+    await mock_gitea_page.goto("about:blank")
+    events = await recorder.stop()
+    assert isinstance(events, list)
+    assert not recorder.is_recording
+
+
+async def test_rrweb_rapid_navigation(mock_gitea_page: Page) -> None:
+    """Verify recording survives rapid successive navigations without unhandled errors."""
+    recorder = RRWebRecorder()
+    await recorder.start(mock_gitea_page)
+
+    for _ in range(4):
+        await mock_gitea_page.goto("http://gitea.local/")
+        await mock_gitea_page.goto("http://gitea.local/repo/create")
+
+    events = await recorder.stop()
+    assert len(events) >= 4
+    assert not recorder.is_recording
+
+
+async def test_rrweb_script_error_resilience(mock_gitea_page: Page) -> None:
+    """Verify client-side page errors and failed network responses do not crash recording."""
+    recorder = RRWebRecorder()
+    await recorder.start(mock_gitea_page)
+    await mock_gitea_page.goto("http://gitea.local/")
+
+    # Inject page-level javascript runtime error
+    with contextlib.suppress(Exception):
+        await mock_gitea_page.evaluate("() => { throw new Error('Simulated page error'); }")
+
+    # Call error API
+    with contextlib.suppress(Exception):
+        await mock_gitea_page.evaluate("async () => { await fetch('/api/error'); }")
+
+    events = await recorder.stop()
+    assert len(events) >= 1
+    assert not recorder.is_recording
+
+
+async def test_rrweb_closed_context_clean_teardown(mock_gitea_page: Page) -> None:
+    """Verify clean teardown when pages or contexts are closed abruptly during recording."""
+    recorder = RRWebRecorder()
+    await recorder.start(mock_gitea_page)
+    await mock_gitea_page.goto("http://gitea.local/")
+
+    # Close page abruptly while recording is active
+    await mock_gitea_page.close()
+
+    events = await recorder.stop()
+    assert isinstance(events, list)
+    assert not recorder.is_recording
+
+
+def test_rrweb_clear_and_lifecycle_state() -> None:
+    """Verify recorder state cleanup via clear() resets in-memory buffers and timestamps."""
+    recorder = RRWebRecorder()
+    recorder._events.append({"type": 2, "timestamp": 123})
+    recorder._raw_records.append({"doc_id": "test", "seq": 1})
+    assert recorder.event_count == 1
+
+    recorder.clear()
+    assert recorder.event_count == 0
+    assert recorder.get_events() == []
+    assert recorder.get_raw_records() == []
+    assert recorder.started_at is None
+    assert recorder.ended_at is None
+
+
+async def test_page_observer_multiple_start_calls(mock_gitea_page: Page) -> None:
+    """Verify multiple calls to start_recording on same page don't throw binding conflicts."""
+    observer = PageObserver()
+    await observer.start_recording(mock_gitea_page)
+    await mock_gitea_page.goto("http://gitea.local/")
+
+    # Second start call without stopping first
+    await observer.start_recording(mock_gitea_page)
+    await mock_gitea_page.goto("http://gitea.local/repo/create")
+
+    ref = await observer.stop_recording()
+    assert ref.event_count >= 1
