@@ -1,9 +1,13 @@
 """Value types used in port signatures.
 
-PROVISIONAL: these exist because the generated contract models (#15, #16) don't exist yet.
-When they do, every model here that overlaps a contract schema (StepRef, PlanDraft, ObservedState)
-is replaced by an import from `app.contracts_gen`. Keep field names and shapes aligned with
-docs/api-contract.md and docs/research/phase-f-together-gitea-create-repo-walkthrough.md.
+`Action`, `Target`, `ActionType` and `Risk` are the generated contract types (app.contracts_gen), re-exported
+here so callers pass contract objects straight through a port. The models below have no contract schema of the
+same shape and stay port-specific:
+
+- `StepRef` is the part of a contract `PlannedStep` an Observer needs (no expected_state or risk).
+- `PlanDraft`, `PageState`, `RiskReport`, `PolicyDecision`: inputs/outputs of the Policy port only.
+- `ObservedState` is stricter than the contract `step_schema.ObservedState` (title and captured_at are always
+  set by a capture). Convert at the API boundary.
 """
 
 from datetime import datetime
@@ -11,8 +15,25 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-ActionType = Literal["click", "fill", "select", "navigate", "press", "wait"]
-Risk = Literal["low", "medium", "high"]
+from app.contracts_gen.common_schema import Action, ActionType, Risk, Target
+
+__all__ = [
+    "Action",
+    "ActionType",
+    "DecisionReason",
+    "ObservedState",
+    "PageState",
+    "PlanDraft",
+    "PolicyDecision",
+    "RecordingRef",
+    "Risk",
+    "RiskReport",
+    "StepRef",
+    "StepRisk",
+    "Target",
+    "Verdict",
+]
+
 Verdict = Literal["allow", "pause", "stop"]
 # Same values as the `run.paused` event's `reason` in docs/api-contract.md, plus the non-pausing cases.
 DecisionReason = Literal[
@@ -24,19 +45,6 @@ _RISK_ORDER: dict[Risk, int] = {"low": 0, "medium": 1, "high": 2}
 
 class _Model(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
-
-
-class Action(_Model):
-    type: ActionType
-    value: str | None = None
-
-
-class Target(_Model):
-    """How to find the element: ARIA role + accessible name first, CSS selector as a fallback."""
-
-    role: str | None = None
-    name: str | None = None
-    selector: str | None = None
 
 
 class StepRef(_Model):
