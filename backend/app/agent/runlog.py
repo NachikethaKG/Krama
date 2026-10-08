@@ -67,9 +67,14 @@ class RunLog(BaseModel):
         return path
 
 
+def looks_sensitive(field_name: str | None) -> bool:
+    """True for field names like "Password *", "API key" or "Card number": never log what is typed there."""
+    return bool(field_name and _SENSITIVE_NAME.search(field_name))
+
+
 def is_sensitive(step: ScriptedStep) -> bool:
     name = step.target.name if step.target is not None else None
-    return step.sensitive or bool(name and _SENSITIVE_NAME.search(name))
+    return step.sensitive or looks_sensitive(name)
 
 
 async def run_script(
