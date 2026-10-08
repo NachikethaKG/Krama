@@ -1,11 +1,11 @@
 # Verified UI Tutorial Engine
 ## Product Requirements Document (PRD)
 
-**Status:** Draft for team discussion
-**Product Type:** AI-powered software workflow discovery and tutorial generation
-**Initial Platform:** Web applications
-**Initial Team:** 2 engineers
-**Primary Output:** Interactive, visually grounded software tutorials
+**Status:** Draft for team discussion\
+**Product Type:** AI-powered software workflow discovery and tutorial generation\
+**Initial Platform:** Web applications\
+**Initial Team:** 2 engineers\
+**Primary Output:** Interactive, visually grounded software tutorials\
 **Secondary Output:** Exportable video
 
 ---
