@@ -64,7 +64,8 @@ class Observation(ObservedState):
     ) -> Observation:
         """Helper constructor ensuring valid defaults and field values."""
         now = captured_at or datetime.now(UTC)
-        excerpt = aria_excerpt or (aria_snapshot[:500] if aria_snapshot else "")
+        # Full masked snapshot: the verifier reads `aria_excerpt` through the port and needs every element.
+        excerpt = aria_excerpt or aria_snapshot
         return cls(
             url=url,
             title=title,
