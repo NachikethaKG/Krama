@@ -83,7 +83,9 @@ class PageObserver(Observer):
         self._recording = False
         record_path = ""
         if self._artifacts_dir:
-            record_path = str(self._artifacts_dir / "recording.json")
+            out_file = self._artifacts_dir / "recording.json"
+            self._recorder.save_to_json(out_file)
+            record_path = str(out_file)
 
         event_count = len(events) if events else summary.request_count
 
