@@ -7,7 +7,7 @@ from pydantic import ValidationError
 
 from app.ports import ObservedState, PageState, PlanDraft, PolicyDecision, StepRef
 from app.ports.fakes import FakeObserver, FakePolicy
-from app.ports.models import Action, RiskReport, StepRisk, Target
+from app.ports.models import RiskReport, StepRisk, Target
 
 pytestmark = pytest.mark.anyio
 
@@ -104,9 +104,10 @@ def test_step_ref_rejects_invalid_data(bad: dict[str, object]) -> None:
         StepRef.model_validate(bad)
 
 
-def test_models_are_immutable() -> None:
+def test_port_models_are_immutable() -> None:
+    # Action/Target are the generated contract types, which aren't frozen; the port's own models are.
     with pytest.raises(ValidationError):
-        Action(type="click").type = "fill"  # type: ignore[misc]
+        step(1).seq = 2  # type: ignore[misc]
 
 
 def test_policy_decision_rejects_unknown_verdict() -> None:
