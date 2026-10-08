@@ -16,12 +16,13 @@ import uuid
 from app.agent.executor import ActionExecutor
 from app.agent.runlog import RunLog, ScriptedStep, run_script
 from app.agent.session import PlaywrightSession, SessionConfig
-from app.config import REPO_ROOT, get_settings
+from app.config import get_settings
 from app.contracts_gen.common_schema import Action, Target
 
 
-def create_repo_steps(repo: str, *, user: str, password: str) -> list[ScriptedStep]:
-    login: list[ScriptedStep] = [
+def login_steps(*, user: str, password: str) -> list[ScriptedStep]:
+    """Sign in to Gitea: a precondition of every task, not a task step."""
+    return [
         ScriptedStep(action=Action(type="navigate", value="/user/login"), section="precondition"),
         ScriptedStep(
             action=Action(type="fill", value=user),
@@ -41,6 +42,9 @@ def create_repo_steps(repo: str, *, user: str, password: str) -> list[ScriptedSt
             action=Action(type="wait"), target=Target(role="main", name="Dashboard"), section="precondition"
         ),
     ]
+
+
+def create_repo_steps(repo: str, *, user: str, password: str) -> list[ScriptedStep]:
     task: list[ScriptedStep] = [
         ScriptedStep(action=Action(type="click"), target=Target(role="menu", name="Create…")),
         ScriptedStep(action=Action(type="click"), target=Target(role="menuitem", name="New Repository")),
@@ -54,7 +58,7 @@ def create_repo_steps(repo: str, *, user: str, password: str) -> list[ScriptedSt
         # The repo page's README heading: the run only counts once the new repo is really shown.
         ScriptedStep(action=Action(type="wait"), target=Target(role="heading", name=f"{repo}")),
     ]
-    return login + task
+    return login_steps(user=user, password=password) + task
 
 
 async def run_once(base_url: str, repo: str, *, user: str, password: str, headless: bool = True) -> RunLog:
@@ -83,9 +87,6 @@ async def _main(argv: list[str]) -> int:
     user = os.environ.get("GITEA_DEMO_USER", "demo")
     password = os.environ.get("GITEA_DEMO_PASSWORD", "demo-local-only")
     artifacts = get_settings().artifacts_dir
-    if not artifacts.is_absolute():
-        # `.env` uses a path relative to the repo root (./data/artifacts), not to the current folder.
-        artifacts = REPO_ROOT / artifacts
     passed = 0
     for i in range(1, args.runs + 1):
         repo = args.repo if args.repo and args.runs == 1 else f"baseline-{uuid.uuid4().hex[:8]}"

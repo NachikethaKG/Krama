@@ -22,9 +22,19 @@ class Settings(BaseSettings):
 
     llm_provider: Literal["fake", "gemini"] = "fake"
     gemini_api_key: str = ""
+    # Tried in order; each model has its own free-tier quota (docs/research/phase-0-vishwas-gemini-*).
+    gemini_models: str = "gemini-3.8-flash,gemini-3.5-flash,gemini-2.5-flash"
+
+    # Local-only demo account on the test Gitea (`just seed`).
+    gitea_demo_user: str = "demo"
+    gitea_demo_password: str = "demo-local-only"
 
     artifacts_dir: Path = REPO_ROOT / "data" / "artifacts"
     max_concurrent_runs: int = 1
+
+    @property
+    def gemini_model_list(self) -> list[str]:
+        return [m.strip() for m in self.gemini_models.split(",") if m.strip()]
 
     @field_validator("artifacts_dir")
     @classmethod

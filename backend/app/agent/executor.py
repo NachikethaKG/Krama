@@ -88,9 +88,13 @@ class ActionExecutor:
             started_at=started_at,
             duration_ms=round((time.perf_counter() - t0) * 1000),
             bbox=bbox,
-            url_after=urlsplit(self._page.url).path or "/",
+            url_after=self.current_path(),
             error=error,
         )
+
+    def current_path(self) -> str:
+        """The page's URL path (no scheme or host)."""
+        return urlsplit(self._page.url).path or "/"
 
     def _locate(self, target: Target) -> Locator:
         if target.role:

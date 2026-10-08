@@ -16,7 +16,7 @@ from app.llm.gemini import DEFAULT_MODELS, GeminiProvider
 def create_provider(settings: Settings) -> LLMProvider:
     """The provider selected by `LLM_PROVIDER` (`fake` or `gemini`)."""
     if settings.llm_provider == "gemini":
-        return GeminiProvider(settings.gemini_api_key, DEFAULT_MODELS)
+        return GeminiProvider(settings.gemini_api_key, settings.gemini_model_list or DEFAULT_MODELS)
     return FakeProvider.from_dir()
 
 

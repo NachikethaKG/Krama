@@ -193,3 +193,9 @@ async def test_static_planner_returns_the_fixed_plan_with_fresh_ids() -> None:
     assert result.plan.task_id == req.task_id
     assert result.plan.id != base.id
     assert result.llm_attempts == []
+
+
+def test_system_prompt_forbids_changing_existing_data_unasked() -> None:
+    # Live finding (#37): asked to create a repo that already existed, Gemini planned to delete it first.
+    assert "Never delete, overwrite" in SYSTEM_PROMPT
+    assert "already exists" in SYSTEM_PROMPT
