@@ -17,19 +17,22 @@ def format_plan(plan: Plan) -> str:
     return "\n".join(lines)
 
 
-def console_approver(*, auto_approve: bool, ask: Ask = input, show: Callable[[str], None] = print) -> Approve:
+def console_approver(
+    *, auto_approve: bool, ask: Ask | None = None, show: Callable[[str], None] = print
+) -> Approve:
     """Plan → approve → execute. `--yes` approves low/medium plans; a high-risk step (delete, transfer,
     publish, send, pay, security changes; AGENTS.md §4) always needs a typed "yes"."""
 
     async def approve(plan: Plan) -> bool:
+        read = ask or input  # looked up at call time, so tests and other front-ends can replace it
         show(format_plan(plan))
         high = [s.seq for s in plan.steps if s.risk == "high"]
         if auto_approve and not high:
             show("Approved (--yes).")
             return True
         if high:
-            answer = ask(f"Steps {high} are HIGH risk. Type 'yes' to run this plan: ")
+            answer = read(f"Steps {high} are HIGH risk. Type 'yes' to run this plan: ")
             return answer.strip().lower() == "yes"
-        return ask("Run this plan? [y/N] ").strip().lower() in ("y", "yes")
+        return read("Run this plan? [y/N] ").strip().lower() in ("y", "yes")
 
     return approve
