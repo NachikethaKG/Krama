@@ -152,33 +152,26 @@ class PageObserver(Observer):
             return ""
 
     async def _safe_aria_snapshot(self, page: Page) -> str:
-        # Prefer landmark role='main' to avoid redundant headers/footers
+        # Prefer landmark role='main' to capture relevant content first
         try:
-            main_locator = page.get_by_role("main").first
-            if await main_locator.count() > 0:
-                return await main_locator.aria_snapshot(timeout=800)
+            return await page.get_by_role("main").first.aria_snapshot(timeout=600)
         except Exception:
             pass
 
         # Fallback to full body snapshot
         try:
-            return await page.locator("body").aria_snapshot(timeout=800)
+            return await page.locator("body").aria_snapshot(timeout=600)
         except Exception:
-            pass
-
-        return ""
+            return ""
 
     async def _safe_screenshot(self, page: Page, step: StepRef | None) -> bytes:
         try:
-            # Mask password inputs to avoid capturing raw credentials in screenshot
-            password_locators = page.locator('input[type="password"]')
-            mask = [password_locators] if await password_locators.count() > 0 else []
-
+            # Mask password inputs directly during capture without extra count queries
             return await page.screenshot(
                 type="png",
                 animations="disabled",
                 caret="hide",
-                mask=mask,
+                mask=[page.locator('input[type="password"]')],
                 timeout=2000,
             )
         except Exception:
