@@ -114,6 +114,12 @@ class SessionRecorder(Protocol):
         """Return all recorded events collected so far."""
         ...
 
-    def save_to_json(self, file_path: Path | str) -> Path:
-        """Save accumulated events to a JSON file."""
+    def save_to_json(
+        self,
+        file_path: Path | str,
+        *,
+        indent: int | None = None,
+        compress_gzip: bool = False,
+    ) -> Path:
+        """Save accumulated events to a JSON file (optionally gzip compressed)."""
         ...
