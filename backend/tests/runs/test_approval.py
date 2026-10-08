@@ -98,3 +98,12 @@ def test_plan_printout_masks_password_values() -> None:
 
     assert "hunter2" not in text
     assert "'***'" in text
+
+
+async def test_no_terminal_input_counts_as_rejection() -> None:
+    def no_terminal(_prompt: str) -> str:
+        raise EOFError
+
+    approver = console_approver(auto_approve=True, ask=no_terminal, show=lambda _: None)
+
+    assert not await approver(plan("high"))

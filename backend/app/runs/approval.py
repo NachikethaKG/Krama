@@ -24,7 +24,7 @@ def console_approver(
     publish, send, pay, security changes; AGENTS.md §4) always needs a typed "yes"."""
 
     async def approve(plan: Plan) -> bool:
-        read = ask or input  # looked up at call time, so tests and other front-ends can replace it
+        read = _safe(ask or input)  # looked up at call time, so tests and other front-ends can replace it
         show(format_plan(plan))
         high = [s.seq for s in plan.steps if s.risk == "high"]
         if auto_approve and not high:
@@ -36,3 +36,15 @@ def console_approver(
         return read("Run this plan? [y/N] ").strip().lower() in ("y", "yes")
 
     return approve
+
+
+def _safe(ask: Ask) -> Ask:
+    """No terminal to answer (a script, a benchmark): treat it as "no" instead of crashing."""
+
+    def read(prompt: str) -> str:
+        try:
+            return ask(prompt)
+        except (EOFError, KeyboardInterrupt):
+            return ""
+
+    return read
