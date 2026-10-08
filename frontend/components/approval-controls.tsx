@@ -102,7 +102,8 @@ export function ApprovalControls({
   };
 
   return (
-    <div
+    <section
+      role="region"
       data-testid="approval-controls"
       aria-label="Workflow approval controls"
       className={`flex flex-col gap-3 ${className}`}
@@ -230,6 +231,7 @@ export function ApprovalControls({
           <button
             type="button"
             data-testid="approve-btn"
+            aria-busy={pending}
             disabled={pending || disabled || isTerminal}
             onClick={handleApprove}
             className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-5 py-2 text-sm font-medium text-white shadow-xs transition-colors hover:bg-emerald-700 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-emerald-600 dark:hover:bg-emerald-500"
@@ -276,6 +278,6 @@ export function ApprovalControls({
           </button>
         </div>
       </div>
-    </div>
+    </section>
   );
 }
