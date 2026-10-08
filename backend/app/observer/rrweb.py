@@ -3,12 +3,15 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
+import json
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import Any
 
 from playwright.async_api import BrowserContext, Page
 
-from app.observer.recorder import SessionRecorder
+from app.observer.recorder import SessionRecorder, get_rrweb_init_script
 
 BINDING_NAME = "__krama_rrweb_emit__"
 
@@ -68,25 +71,51 @@ class RRWebRecorder(SessionRecorder):
     async def attach_binding(self, target: BrowserContext | Page) -> None:
         """Expose the python bridge binding to a browser context or page."""
         if isinstance(target, BrowserContext) and target not in self._bound_contexts:
-            try:
+            with contextlib.suppress(Exception):
                 await target.expose_binding(BINDING_NAME, self._handle_browser_event)
                 self._bound_contexts.add(target)
-            except Exception:
-                # Binding may already be exposed in this context
-                pass
         elif isinstance(target, Page) and target not in self._bound_pages:
-            try:
+            with contextlib.suppress(Exception):
                 await target.expose_binding(BINDING_NAME, self._handle_browser_event)
                 self._bound_pages.add(target)
-            except Exception:
-                pass
 
     async def start(self, target: BrowserContext | Page) -> None:
-        """Start listening and attach event binding."""
+        """Start listening, expose bridge binding, and inject init script across navigations."""
         self._is_recording = True
         self._started_at = datetime.now(UTC)
         self._ended_at = None
-        await self.attach_binding(target)
+
+        init_script = get_rrweb_init_script()
+
+        context = target if isinstance(target, BrowserContext) else getattr(target, "context", None)
+
+        if context is not None:
+            if context not in self._bound_contexts:
+                with contextlib.suppress(Exception):
+                    await context.expose_binding(BINDING_NAME, self._handle_browser_event)
+                    self._bound_contexts.add(context)
+                with contextlib.suppress(Exception):
+                    await context.add_init_script(script=init_script)
+
+            # Inject into all currently open pages in this context
+            for page in context.pages:
+                await self._inject_into_page(page, init_script)
+
+        elif isinstance(target, Page):
+            if target not in self._bound_pages:
+                with contextlib.suppress(Exception):
+                    await target.expose_binding(BINDING_NAME, self._handle_browser_event)
+                    self._bound_pages.add(target)
+                with contextlib.suppress(Exception):
+                    await target.add_init_script(script=init_script)
+
+            await self._inject_into_page(target, init_script)
+
+    async def _inject_into_page(self, page: Page, script: str) -> None:
+        """Safely evaluate the init script on a live page if not already recording."""
+        with contextlib.suppress(Exception):
+            if not page.is_closed():
+                await page.evaluate(script)
 
     async def stop(self) -> list[dict[str, Any]]:
         """Stop listening and return recorded events in chronological order."""
@@ -111,3 +140,15 @@ class RRWebRecorder(SessionRecorder):
         self._raw_records.clear()
         self._started_at = None
         self._ended_at = None
+
+    def save_to_json(self, file_path: Path | str, *, indent: int | None = None) -> Path:
+        """Save accumulated events to a JSON file.
+
+        Creates parent directories if necessary and writes the events array as JSON.
+        """
+        path = Path(file_path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        events = self.get_events()
+        with path.open("w", encoding="utf-8") as f:
+            json.dump(events, f, indent=indent)
+        return path
