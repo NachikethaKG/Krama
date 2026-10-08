@@ -13,6 +13,7 @@ from playwright.async_api import Page
 
 from app.observer.models import Observation
 from app.observer.network import NetworkTracker
+from app.observer.rrweb import RRWebRecorder
 from app.ports.models import RecordingRef, StepRef
 from app.ports.observer import Observer
 
@@ -35,12 +36,19 @@ class PageObserver(Observer):
         *,
         artifacts_dir: Path | None = None,
         network_tracker: NetworkTracker | None = None,
+        recorder: RRWebRecorder | None = None,
     ) -> None:
         self._artifacts_dir = artifacts_dir
         self._tracker = network_tracker or NetworkTracker()
+        self._recorder = recorder or RRWebRecorder()
         self._recording: bool = False
         self._recording_started_at: datetime | None = None
         self._attached_page: Page | None = None
+
+    @property
+    def recorder(self) -> RRWebRecorder:
+        """Access the underlying rrweb session recorder."""
+        return self._recorder
 
     @property
     def network_tracker(self) -> NetworkTracker:
@@ -62,22 +70,28 @@ class PageObserver(Observer):
         self.attach(page)
         self._recording = True
         self._recording_started_at = datetime.now(UTC)
+        await self._recorder.start(page.context or page)
 
     async def stop_recording(self) -> RecordingRef:
         """Stop tracking and return recording metadata."""
         if not self._recording or self._recording_started_at is None:
             raise RuntimeError("stop_recording() called before start_recording()")
 
+        events = await self._recorder.stop()
         now = datetime.now(UTC)
         summary = self._tracker.get_summary()
         self._recording = False
         record_path = ""
         if self._artifacts_dir:
-            record_path = str(self._artifacts_dir / "recording.json")
+            out_file = self._artifacts_dir / "recording.json"
+            self._recorder.save_to_json(out_file)
+            record_path = str(out_file)
+
+        event_count = len(events) if events else summary.request_count
 
         return RecordingRef(
             path=record_path or "observer/recording.json",
-            event_count=summary.request_count,
+            event_count=event_count,
             started_at=self._recording_started_at,
             ended_at=now,
         )
