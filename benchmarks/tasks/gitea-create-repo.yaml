@@ -1,0 +1,11 @@
+name: gitea-create-repo
+prompt: "Create a new public repository named 'test-repo' with a README in local Gitea."
+target: "http://localhost:3000"
+setup:
+  command: "curl -s -X DELETE http://localhost:3000/api/v1/repos/krama-user/test-repo || true"
+success_check:
+  type: api
+  assertion:
+    method: GET
+    url: "http://localhost:3000/api/v1/repos/krama-user/test-repo"
+    expected_status: 200
