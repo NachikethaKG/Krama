@@ -21,6 +21,33 @@ export interface ScaleAndOffsetResult {
 }
 
 /**
+ * Extracts recorded viewport width and height from rrweb Meta event (type 4),
+ * falling back to default dimensions if unavailable.
+ */
+export function extractRecordedDimensions(
+  events?: Array<{ type: number; data?: unknown }> | null,
+  fallback = { width: 1280, height: 720 }
+): { width: number; height: number } {
+  if (!events || !Array.isArray(events)) {
+    return fallback;
+  }
+  for (const ev of events) {
+    if (ev && ev.type === 4 && ev.data && typeof ev.data === 'object') {
+      const data = ev.data as { width?: number; height?: number };
+      if (
+        typeof data.width === 'number' &&
+        typeof data.height === 'number' &&
+        data.width > 0 &&
+        data.height > 0
+      ) {
+        return { width: data.width, height: data.height };
+      }
+    }
+  }
+  return fallback;
+}
+
+/**
  * Calculates scaling factors and letterbox centering offsets.
  *
  * In rrweb-player, the replayer wrapper is centered via `left: 50%; top: 50%; transform: translate(-50%, -50%) scale(...)`.

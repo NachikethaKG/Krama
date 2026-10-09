@@ -121,4 +121,6 @@ export interface ReplayViewerProps {
   height?: number | string;
   autoPlay?: boolean;
   className?: string;
+  showControls?: boolean;
+  showOverlay?: boolean;
 }
