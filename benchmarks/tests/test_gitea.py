@@ -33,7 +33,9 @@ class MockHTTPResponse:
 def test_reset_gitea_api_happy_path() -> None:
     calls: list[str] = []
 
-    def fake_urlopen(req: urllib.request.Request, timeout: float = 10.0) -> MockHTTPResponse:
+    def fake_urlopen(
+        req: urllib.request.Request, timeout: float = 10.0
+    ) -> MockHTTPResponse:
         url = req.full_url
         method = req.get_method()
         calls.append(f"{method} {url}")
@@ -53,12 +55,18 @@ def test_reset_gitea_api_happy_path() -> None:
         deleted = reset_gitea_api(base_url="http://localhost:3001", user="demo")
         assert deleted == ["repo-a", "repo-b"]
 
-    assert any("DELETE http://localhost:3001/api/v1/repos/demo/repo-a" in c for c in calls)
-    assert any("DELETE http://localhost:3001/api/v1/repos/demo/repo-b" in c for c in calls)
+    assert any(
+        "DELETE http://localhost:3001/api/v1/repos/demo/repo-a" in c for c in calls
+    )
+    assert any(
+        "DELETE http://localhost:3001/api/v1/repos/demo/repo-b" in c for c in calls
+    )
 
 
 def test_reset_gitea_api_specific_repo() -> None:
-    def fake_urlopen(req: urllib.request.Request, timeout: float = 10.0) -> MockHTTPResponse:
+    def fake_urlopen(
+        req: urllib.request.Request, timeout: float = 10.0
+    ) -> MockHTTPResponse:
         url = req.full_url
         if url.endswith("/api/v1/version"):
             return MockHTTPResponse(200, b"{}")
@@ -72,7 +80,9 @@ def test_reset_gitea_api_specific_repo() -> None:
 
 
 def test_reset_gitea_api_timeout_raises_gitea_timeout_error() -> None:
-    def fake_urlopen(req: urllib.request.Request, timeout: float = 10.0) -> MockHTTPResponse:
+    def fake_urlopen(
+        req: urllib.request.Request, timeout: float = 10.0
+    ) -> MockHTTPResponse:
         raise TimeoutError("The read operation timed out")
 
     with (
@@ -83,7 +93,9 @@ def test_reset_gitea_api_timeout_raises_gitea_timeout_error() -> None:
 
 
 def test_reset_gitea_api_unreachable_raises_gitea_reset_error() -> None:
-    def fake_urlopen(req: urllib.request.Request, timeout: float = 10.0) -> MockHTTPResponse:
+    def fake_urlopen(
+        req: urllib.request.Request, timeout: float = 10.0
+    ) -> MockHTTPResponse:
         raise urllib.error.URLError("Connection refused")
 
     with (
@@ -94,7 +106,9 @@ def test_reset_gitea_api_unreachable_raises_gitea_reset_error() -> None:
 
 
 def test_reset_gitea_api_ignores_404_on_delete() -> None:
-    def fake_urlopen(req: urllib.request.Request, timeout: float = 10.0) -> MockHTTPResponse:
+    def fake_urlopen(
+        req: urllib.request.Request, timeout: float = 10.0
+    ) -> MockHTTPResponse:
         url = req.full_url
         if url.endswith("/api/v1/version"):
             return MockHTTPResponse(200, b"{}")
@@ -109,7 +123,9 @@ def test_reset_gitea_api_ignores_404_on_delete() -> None:
 
 
 def test_reset_gitea_api_delete_error_raises() -> None:
-    def fake_urlopen(req: urllib.request.Request, timeout: float = 10.0) -> MockHTTPResponse:
+    def fake_urlopen(
+        req: urllib.request.Request, timeout: float = 10.0
+    ) -> MockHTTPResponse:
         url = req.full_url
         if url.endswith("/api/v1/version"):
             return MockHTTPResponse(200, b"{}")

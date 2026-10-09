@@ -111,7 +111,9 @@ def test_runner_main_success_returns_zero(tmp_path: Path) -> None:
             return_value=(mock_report, tmp_path / "result.json"),
         ),
     ):
-        code = main(["--task", "Task Success", "--runs", "1", "--results-dir", str(tmp_path)])
+        code = main(
+            ["--task", "Task Success", "--runs", "1", "--results-dir", str(tmp_path)]
+        )
         assert code == 0
 
 
@@ -134,5 +136,7 @@ def test_runner_main_failure_returns_one(tmp_path: Path) -> None:
             return_value=(mock_report, tmp_path / "result.json"),
         ),
     ):
-        code = main(["--task", "Task Failed", "--runs", "2", "--results-dir", str(tmp_path)])
+        code = main(
+            ["--task", "Task Failed", "--runs", "2", "--results-dir", str(tmp_path)]
+        )
         assert code == 1

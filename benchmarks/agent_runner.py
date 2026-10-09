@@ -21,7 +21,9 @@ class AgentProcessError(Exception):
     """Raised when the agent CLI execution encounters a system error."""
 
 
-def extract_metrics_from_log(log_path: Path) -> dict[str, int | float | bool | str | None]:
+def extract_metrics_from_log(
+    log_path: Path,
+) -> dict[str, int | float | bool | str | None]:
     """Parse a written run-log.json artifact and extract benchmark metrics."""
     data = json.loads(log_path.read_text(encoding="utf-8"))
     status = data.get("status", "error")
@@ -116,7 +118,9 @@ class AgentRunner:
         backend_dir = str(self.repo_root / "backend")
         current_pythonpath = env.get("PYTHONPATH", "")
         env["PYTHONPATH"] = (
-            f"{backend_dir}{os.pathsep}{current_pythonpath}" if current_pythonpath else backend_dir
+            f"{backend_dir}{os.pathsep}{current_pythonpath}"
+            if current_pythonpath
+            else backend_dir
         )
         env.update(self.env_overrides)
 
@@ -162,7 +166,9 @@ class AgentRunner:
                 return RunTrial(
                     run_index=run_index,
                     success=bool(metrics["success"]) and result.returncode == 0,
-                    duration_seconds=round(float(metrics["duration_seconds"] or wall_clock), 3),
+                    duration_seconds=round(
+                        float(metrics["duration_seconds"] or wall_clock), 3
+                    ),
                     steps_taken=int(metrics["steps_taken"] or 0),
                     retries_count=int(metrics["retries_count"] or 0),
                     llm_call_count=int(metrics["llm_call_count"] or 0),
@@ -170,7 +176,11 @@ class AgentRunner:
                     tokens_out=int(metrics["tokens_out"] or 0),
                     error_message=str(metrics["error_message"])
                     if metrics["error_message"]
-                    else (None if result.returncode == 0 else f"Process exited with code {result.returncode}"),
+                    else (
+                        None
+                        if result.returncode == 0
+                        else f"Process exited with code {result.returncode}"
+                    ),
                 )
             except (json.JSONDecodeError, OSError, KeyError, ValueError):
                 pass
@@ -179,7 +189,11 @@ class AgentRunner:
         is_success = result.returncode == 0
         error_msg = None
         if not is_success:
-            error_msg = result.stderr.strip() or result.stdout.strip() or f"Exited with code {result.returncode}"
+            error_msg = (
+                result.stderr.strip()
+                or result.stdout.strip()
+                or f"Exited with code {result.returncode}"
+            )
 
         return RunTrial(
             run_index=run_index,

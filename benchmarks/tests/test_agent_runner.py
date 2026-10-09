@@ -123,7 +123,9 @@ def test_agent_runner_process_failure_exit_code() -> None:
 
 
 def test_agent_runner_timeout_handled_gracefully() -> None:
-    def fake_timeout(*args: object, **kwargs: object) -> subprocess.CompletedProcess[str]:
+    def fake_timeout(
+        *args: object, **kwargs: object
+    ) -> subprocess.CompletedProcess[str]:
         raise subprocess.TimeoutExpired(cmd=["krama", "run"], timeout=5.0)
 
     runner = AgentRunner(timeout=5.0)

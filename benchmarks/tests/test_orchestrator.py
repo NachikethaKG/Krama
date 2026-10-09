@@ -58,7 +58,9 @@ def test_orchestrator_happy_path(tmp_path: Path) -> None:
     assert saved_path.exists()
 
 
-def test_orchestrator_handles_agent_crash_without_crashing_benchmark(tmp_path: Path) -> None:
+def test_orchestrator_handles_agent_crash_without_crashing_benchmark(
+    tmp_path: Path,
+) -> None:
     mock_runner = MagicMock(spec=AgentRunner)
     mock_runner.run.side_effect = [
         RunTrial(

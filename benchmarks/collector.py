@@ -27,9 +27,15 @@ class MetricsCollector:
         successful_runs = sum(1 for t in self.trials if t.success)
         success_rate = (successful_runs / total_runs) if total_runs > 0 else 0.0
         avg_duration = (
-            sum(t.duration_seconds for t in self.trials) / total_runs if total_runs > 0 else 0.0
+            sum(t.duration_seconds for t in self.trials) / total_runs
+            if total_runs > 0
+            else 0.0
         )
-        avg_steps = (sum(t.steps_taken for t in self.trials) / total_runs) if total_runs > 0 else 0.0
+        avg_steps = (
+            (sum(t.steps_taken for t in self.trials) / total_runs)
+            if total_runs > 0
+            else 0.0
+        )
         min_steps = min((t.steps_taken for t in self.trials), default=0)
         max_steps = max((t.steps_taken for t in self.trials), default=0)
         total_llm = sum(t.llm_call_count for t in self.trials)

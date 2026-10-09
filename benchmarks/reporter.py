@@ -26,9 +26,7 @@ class ConsoleReporter:
         wall_time_str = f"{report.total_duration_seconds:.2f}s"
         avg_time_str = f"{report.average_duration_seconds:.2f}s"
 
-        step_dist = (
-            f"min: {report.min_steps} | max: {report.max_steps} | mean: {report.average_steps:.1f}"
-        )
+        step_dist = f"min: {report.min_steps} | max: {report.max_steps} | mean: {report.average_steps:.1f}"
 
         out.write(f"\n{sep}\n")
         out.write(f"{'BENCHMARK SUMMARY REPORT':^80}\n")
@@ -36,8 +34,12 @@ class ConsoleReporter:
         out.write(f"Task:                    {report.task_name}\n")
         out.write(f"Total Runs:              {report.total_runs}\n")
         out.write(f"Successful Runs:         {report.successful_runs}\n")
-        out.write(f"Success Rate:            {success_pct:.1f}% ({report.successful_runs}/{report.total_runs})\n")
-        out.write(f"Wall-Clock Duration:     {wall_time_str} (avg: {avg_time_str}/run)\n")
+        out.write(
+            f"Success Rate:            {success_pct:.1f}% ({report.successful_runs}/{report.total_runs})\n"
+        )
+        out.write(
+            f"Wall-Clock Duration:     {wall_time_str} (avg: {avg_time_str}/run)\n"
+        )
         out.write(f"Step Distribution:       {step_dist}\n")
         out.write(f"Total Retries:           {report.total_retries}\n")
         out.write(
@@ -53,8 +55,12 @@ class ConsoleReporter:
                 f"{trial.steps_taken} steps, {trial.retries_count} retries, "
                 f"{trial.duration_seconds:.2f}s, {trial.llm_call_count} LLM calls"
             )
-            err_suffix = f" -> Error: {trial.error_message}" if trial.error_message else ""
-            out.write(f"  Run #{trial.run_index:<3} [{status:^6}]  {details}{err_suffix}\n")
+            err_suffix = (
+                f" -> Error: {trial.error_message}" if trial.error_message else ""
+            )
+            out.write(
+                f"  Run #{trial.run_index:<3} [{status:^6}]  {details}{err_suffix}\n"
+            )
 
         out.write(f"{sep}\n")
         if saved_path:

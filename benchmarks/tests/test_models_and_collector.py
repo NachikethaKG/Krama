@@ -102,7 +102,9 @@ def test_save_report_persists_json(tmp_path: Path) -> None:
     )
     fixed_time = datetime(2026, 10, 9, 12, 0, 0, tzinfo=UTC)
     report = collector.aggregate(timestamp=fixed_time)
-    saved_file = collector.save_report(report, results_dir=tmp_path, timestamp=fixed_time)
+    saved_file = collector.save_report(
+        report, results_dir=tmp_path, timestamp=fixed_time
+    )
 
     assert saved_file.exists()
     assert saved_file.name == "create_repo_demo_20261009_120000.json"

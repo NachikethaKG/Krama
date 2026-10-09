@@ -22,10 +22,18 @@ def build_parser() -> argparse.ArgumentParser:
         prog="benchmarks.runner",
         description="Run repeatable benchmark trials for Krama web agents.",
     )
-    parser.add_argument("pos_task", nargs="?", default=None, help="Task description or identifier")
-    parser.add_argument("pos_runs", nargs="?", default=None, help="Number of benchmark trials")
-    parser.add_argument("--task", dest="flag_task", help="Task description or identifier")
-    parser.add_argument("--runs", dest="flag_runs", type=int, help="Number of benchmark trials")
+    parser.add_argument(
+        "pos_task", nargs="?", default=None, help="Task description or identifier"
+    )
+    parser.add_argument(
+        "pos_runs", nargs="?", default=None, help="Number of benchmark trials"
+    )
+    parser.add_argument(
+        "--task", dest="flag_task", help="Task description or identifier"
+    )
+    parser.add_argument(
+        "--runs", dest="flag_runs", type=int, help="Number of benchmark trials"
+    )
     parser.add_argument(
         "--target",
         default="http://localhost:3001",
@@ -68,7 +76,9 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def parse_args(argv: Sequence[str] | None = None) -> tuple[str, int, argparse.Namespace]:
+def parse_args(
+    argv: Sequence[str] | None = None,
+) -> tuple[str, int, argparse.Namespace]:
     parser = build_parser()
     args = parser.parse_args(argv)
 

@@ -48,10 +48,14 @@ def reset_gitea_api(
     try:
         with urllib.request.urlopen(version_req, timeout=timeout) as resp:
             if resp.status != 200:
-                raise GiteaResetError(f"Gitea healthcheck failed with HTTP status {resp.status}")
+                raise GiteaResetError(
+                    f"Gitea healthcheck failed with HTTP status {resp.status}"
+                )
     except (TimeoutError, urllib.error.URLError) as e:
         if isinstance(e, TimeoutError) or "timed out" in str(e).lower():
-            raise GiteaTimeoutError(f"Gitea healthcheck timed out connecting to {clean_url}: {e}") from e
+            raise GiteaTimeoutError(
+                f"Gitea healthcheck timed out connecting to {clean_url}: {e}"
+            ) from e
         raise GiteaResetError(f"Cannot reach Gitea at {clean_url}: {e}") from e
 
     # 2. Determine repositories to delete
@@ -59,15 +63,23 @@ def reset_gitea_api(
     if repo_name:
         repos_to_delete.append(repo_name)
     else:
-        list_req = urllib.request.Request(f"{clean_url}/api/v1/users/{user}/repos", headers=headers)
+        list_req = urllib.request.Request(
+            f"{clean_url}/api/v1/users/{user}/repos", headers=headers
+        )
         try:
             with urllib.request.urlopen(list_req, timeout=timeout) as resp:
                 data = json.loads(resp.read().decode("utf-8"))
-                repos_to_delete = [r["name"] for r in data if isinstance(r, dict) and "name" in r]
+                repos_to_delete = [
+                    r["name"] for r in data if isinstance(r, dict) and "name" in r
+                ]
         except (TimeoutError, urllib.error.URLError) as e:
             if isinstance(e, TimeoutError) or "timed out" in str(e).lower():
-                raise GiteaTimeoutError(f"Listing repos timed out for user {user}: {e}") from e
-            raise GiteaResetError(f"Failed to list repositories for user {user}: {e}") from e
+                raise GiteaTimeoutError(
+                    f"Listing repos timed out for user {user}: {e}"
+                ) from e
+            raise GiteaResetError(
+                f"Failed to list repositories for user {user}: {e}"
+            ) from e
 
     # 3. Delete each repository
     deleted: list[str] = []
@@ -85,10 +97,14 @@ def reset_gitea_api(
             if e.code == 404:
                 # Repo does not exist, state is already clean
                 continue
-            raise GiteaResetError(f"Failed to delete repo '{r_name}' (HTTP {e.code}): {e.reason}") from e
+            raise GiteaResetError(
+                f"Failed to delete repo '{r_name}' (HTTP {e.code}): {e.reason}"
+            ) from e
         except (TimeoutError, urllib.error.URLError) as e:
             if isinstance(e, TimeoutError) or "timed out" in str(e).lower():
-                raise GiteaTimeoutError(f"Deleting repo '{r_name}' timed out: {e}") from e
+                raise GiteaTimeoutError(
+                    f"Deleting repo '{r_name}' timed out: {e}"
+                ) from e
             raise GiteaResetError(f"Network error deleting repo '{r_name}': {e}") from e
 
     return deleted
@@ -125,7 +141,9 @@ def reset_gitea_cli(repo_root: Path | None = None, timeout: float = 30.0) -> Non
         if res.returncode != 0:
             raise GiteaResetError(f"Gitea admin CLI failed: {res.stderr}")
     except subprocess.TimeoutExpired as e:
-        raise GiteaTimeoutError(f"Gitea admin CLI timed out after {timeout}s: {e}") from e
+        raise GiteaTimeoutError(
+            f"Gitea admin CLI timed out after {timeout}s: {e}"
+        ) from e
     except Exception as e:
         raise GiteaResetError(f"Gitea CLI invocation error: {e}") from e
 
