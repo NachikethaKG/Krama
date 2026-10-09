@@ -1,9 +1,13 @@
 from pathlib import Path
 
+import pytest
+from pydantic import ValidationError
+
 from benchmarks.tasks import (
     BenchmarkTask,
     SetupConfig,
     SuccessCheckConfig,
+    TaskFormatError,
     TaskSpec,
     load_all_tasks,
     load_task_from_yaml,
@@ -81,3 +85,71 @@ success_check:
     assert task.setup is None
     assert task.success_check.type == "command"
     assert task.success_check.assertion == "exit 0"
+
+
+def test_validation_error_missing_required_fields() -> None:
+    # Missing prompt
+    with pytest.raises(ValidationError, match="Field required"):
+        BenchmarkTask.model_validate(
+            {
+                "name": "no-prompt",
+                "target": "http://localhost:3000",
+                "success_check": {"type": "command", "assertion": "exit 0"},
+            }
+        )
+
+    # Missing target
+    with pytest.raises(ValidationError, match="Field required"):
+        BenchmarkTask.model_validate(
+            {
+                "name": "no-target",
+                "prompt": "Do it",
+                "success_check": {"type": "command", "assertion": "exit 0"},
+            }
+        )
+
+    # Missing success_check
+    with pytest.raises(ValidationError, match="Field required"):
+        BenchmarkTask.model_validate(
+            {
+                "name": "no-check",
+                "prompt": "Do it",
+                "target": "http://localhost:3000",
+            }
+        )
+
+
+def test_validation_error_invalid_success_check_type() -> None:
+    with pytest.raises(ValidationError, match="Unsupported success_check type"):
+        BenchmarkTask.model_validate(
+            {
+                "name": "invalid-type",
+                "prompt": "Do it",
+                "target": "http://localhost:3000",
+                "success_check": {"type": "magic_check", "assertion": "ok"},
+            }
+        )
+
+
+def test_validation_error_extra_forbidden_fields() -> None:
+    with pytest.raises(ValidationError, match="Extra inputs are not permitted"):
+        BenchmarkTask.model_validate(
+            {
+                "name": "extra-fields",
+                "prompt": "Do it",
+                "target": "http://localhost:3000",
+                "extra_field": "not_allowed",
+                "success_check": {"type": "command", "assertion": "exit 0"},
+            }
+        )
+
+
+def test_validation_error_malformed_yaml() -> None:
+    bad_yaml = "name: broken\n  prompt: indentation_error\n    bad:"
+    with pytest.raises(TaskFormatError, match="Malformed YAML"):
+        load_task_from_yaml(bad_yaml)
+
+
+def test_validation_error_non_dictionary_yaml() -> None:
+    with pytest.raises(TaskFormatError, match="mapping/dictionary"):
+        load_task_from_yaml("- a\n- list\n- instead")
