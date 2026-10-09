@@ -55,6 +55,11 @@ reset-gitea:
     {{compose}} up -d --wait gitea
     just seed
 
+# Run benchmark trials on a task (resets Gitea and executes the agent N times)
+bench task runs="1" *extra:
+    uv run --project backend python -m benchmarks.runner --task {{task}} --runs {{ if runs == "--runs" { extra } else if replace(runs, "--runs=", "") != runs { replace(runs, "--runs=", "") } else { runs } }}
+
+
 # Regenerate everything derived from contracts: Python models, openapi.json, TypeScript types (once #17 adds them)
 gen-contracts:
     uv run --no-project --python 3.12 scripts/gen_contracts_py.py
