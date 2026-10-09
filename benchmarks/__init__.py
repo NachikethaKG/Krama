@@ -8,10 +8,14 @@ from benchmarks.agent_runner import (
 from benchmarks.collector import MetricsCollector
 from benchmarks.gitea import GiteaResetError, GiteaTimeoutError, reset_gitea
 from benchmarks.models import BenchmarkReport, RunTrial
+from benchmarks.orchestrator import BenchmarkOrchestrator
+from benchmarks.reporter import ConsoleReporter
 
 __all__ = [
     "AgentRunner",
+    "BenchmarkOrchestrator",
     "BenchmarkReport",
+    "ConsoleReporter",
     "GiteaResetError",
     "GiteaTimeoutError",
     "MetricsCollector",
