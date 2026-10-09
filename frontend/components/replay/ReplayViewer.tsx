@@ -200,6 +200,16 @@ export function ReplayViewer({
     );
   }
 
+  const handleTimelineKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'ArrowRight' && activeIndex < steps.length - 1) {
+      e.preventDefault();
+      handleStepSelect(activeIndex + 1);
+    } else if (e.key === 'ArrowLeft' && activeIndex > 0) {
+      e.preventDefault();
+      handleStepSelect(activeIndex - 1);
+    }
+  };
+
   return (
     <div
       ref={containerRef}
@@ -230,15 +240,19 @@ export function ReplayViewer({
       {/* Interactive Step Timeline Bar */}
       {showControls && steps.length > 0 && (
         <div
-          className="absolute bottom-3 left-3 right-3 z-30 flex items-center justify-between bg-slate-900/90 backdrop-blur border border-slate-700/60 rounded-md px-3 py-2 text-xs text-slate-300"
+          className="absolute bottom-3 left-3 right-3 z-30 flex items-center justify-between bg-slate-900/90 backdrop-blur border border-slate-700/60 rounded-md px-3 py-2 text-xs text-slate-300 focus:outline-hidden focus:ring-1 focus:ring-blue-500"
           data-testid="step-navigation-bar"
+          tabIndex={0}
+          role="region"
+          aria-label="Step timeline navigation"
+          onKeyDown={handleTimelineKeyDown}
         >
           <div className="flex items-center space-x-2">
             <button
               type="button"
               onClick={() => handleStepSelect(activeIndex - 1)}
               disabled={activeIndex === 0}
-              className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:hover:bg-slate-800 transition font-medium"
+              className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:hover:bg-slate-800 transition font-medium focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-hidden"
               data-testid="prev-step-btn"
             >
               &larr; Prev
@@ -250,7 +264,7 @@ export function ReplayViewer({
               type="button"
               onClick={() => handleStepSelect(activeIndex + 1)}
               disabled={activeIndex === steps.length - 1}
-              className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:hover:bg-slate-800 transition font-medium"
+              className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:hover:bg-slate-800 transition font-medium focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-hidden"
               data-testid="next-step-btn"
             >
               Next &rarr;
