@@ -18,7 +18,9 @@ class SetupConfig(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    command: str | None = Field(default=None, description="Shell command for pre-run reset")
+    command: str | None = Field(
+        default=None, description="Shell command for pre-run reset"
+    )
     api_call: dict[str, Any] | None = Field(
         default=None, description="Structured API request parameters for reset"
     )
@@ -30,7 +32,9 @@ class SuccessCheckConfig(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     type: str = Field(description="Verification type: api, command, or dom")
-    assertion: dict[str, Any] | str = Field(description="Assertion definition for success check")
+    assertion: dict[str, Any] | str = Field(
+        description="Assertion definition for success check"
+    )
 
     @field_validator("type")
     @classmethod
@@ -39,7 +43,9 @@ class SuccessCheckConfig(BaseModel):
         if not clean:
             raise ValueError("success_check type must not be empty")
         if clean not in {"api", "command", "dom"}:
-            raise ValueError(f"Unsupported success_check type '{v}', expected 'api', 'command', or 'dom'")
+            raise ValueError(
+                f"Unsupported success_check type '{v}', expected 'api', 'command', or 'dom'"
+            )
         return clean
 
 
@@ -50,9 +56,15 @@ class BenchmarkTask(BaseModel):
 
     name: str = Field(min_length=1, description="Unique task identifier")
     prompt: str = Field(min_length=1, description="Instructions provided to the agent")
-    target: str = Field(min_length=1, description="Target application URL or identifier")
-    setup: SetupConfig | None = Field(default=None, description="Pre-run environment reset hook")
-    success_check: SuccessCheckConfig = Field(description="Independent functional verification check")
+    target: str = Field(
+        min_length=1, description="Target application URL or identifier"
+    )
+    setup: SetupConfig | None = Field(
+        default=None, description="Pre-run environment reset hook"
+    )
+    success_check: SuccessCheckConfig = Field(
+        description="Independent functional verification check"
+    )
 
 
 TaskSpec = BenchmarkTask

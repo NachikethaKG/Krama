@@ -22,7 +22,11 @@ def test_task_model_direct_instantiation() -> None:
         setup=SetupConfig(command="echo reset"),
         success_check=SuccessCheckConfig(
             type="api",
-            assertion={"method": "GET", "url": "http://localhost:3000/api", "expected_status": 200},
+            assertion={
+                "method": "GET",
+                "url": "http://localhost:3000/api",
+                "expected_status": 200,
+            },
         ),
     )
     assert task.name == "custom-task"
