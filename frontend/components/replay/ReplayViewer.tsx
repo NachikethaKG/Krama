@@ -54,13 +54,19 @@ export function ReplayViewer({
   const playerRef = useRef<PlayerInstance | null>(null);
 
   const isClient = useIsClient();
-  const [uncontrolledIndex, setUncontrolledIndex] = useState(0);
+  const [prevPropIndex, setPrevPropIndex] = useState(currentStepIndex);
+  const [internalIndex, setInternalIndex] = useState(currentStepIndex);
+
+  if (currentStepIndex !== prevPropIndex) {
+    setPrevPropIndex(currentStepIndex);
+    setInternalIndex(currentStepIndex);
+  }
 
   const activeIndex = Math.max(
     0,
     Math.min(
       steps.length > 0 ? steps.length - 1 : 0,
-      onStepChange !== undefined ? currentStepIndex : uncontrolledIndex
+      onStepChange !== undefined ? currentStepIndex : internalIndex
     )
   );
   const currentStep = steps[activeIndex] ?? null;
@@ -166,7 +172,7 @@ export function ReplayViewer({
 
   const handleStepSelect = (newIndex: number) => {
     if (newIndex < 0 || newIndex >= steps.length) return;
-    setUncontrolledIndex(newIndex);
+    setInternalIndex(newIndex);
     onStepChange?.(newIndex);
   };
 

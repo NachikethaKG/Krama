@@ -3,6 +3,7 @@
  */
 
 import type { eventWithTime } from '@rrweb/types';
+export type { eventWithTime };
 
 /**
  * Bounding box represented as a 4-tuple [x, y, width, height] in page coordinates (CSS px).
