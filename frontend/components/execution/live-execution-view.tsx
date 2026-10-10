@@ -28,7 +28,6 @@ export function LiveExecutionView({
     runStatus,
     workflow,
     steps,
-    activeStepSeq: _activeStepSeq,
     pauseDetails,
     runError,
     elapsedSeconds,

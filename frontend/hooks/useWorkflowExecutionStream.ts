@@ -63,6 +63,27 @@ export interface UseWorkflowExecutionStreamResult {
   reset: () => void;
 }
 
+function buildInitialStepStates(wf?: Workflow | null): {
+  states: Record<number, StepExecutionState>;
+  total: number;
+} {
+  if (!wf) return { states: {}, total: 0 };
+  const map: Record<number, StepExecutionState> = {};
+  const stepsList = wf.steps || [];
+  stepsList.forEach((s: Step) => {
+    map[s.seq] = {
+      seq: s.seq,
+      status: "pending",
+      instructionText: s.instruction_text,
+      actionType: s.action?.type,
+      targetRole: s.target?.role,
+      targetName: s.target?.name,
+      risk: s.risk,
+    };
+  });
+  return { states: map, total: stepsList.length };
+}
+
 export function useWorkflowExecutionStream({
   workflowId,
   client,
@@ -76,8 +97,12 @@ export function useWorkflowExecutionStream({
   const [activeStepSeq, setActiveStepSeq] = useState<number | null>(null);
   const [pauseDetails, setPauseDetails] = useState<PauseDetails | null>(null);
   const [runError, setRunError] = useState<ApiError | null>(null);
-  const [stepStates, setStepStates] = useState<Record<number, StepExecutionState>>({});
-  const [totalSteps, setTotalSteps] = useState<number>(0);
+  const [stepStates, setStepStates] = useState<Record<number, StepExecutionState>>(
+    () => buildInitialStepStates(initialWorkflow).states
+  );
+  const [totalSteps, setTotalSteps] = useState<number>(
+    () => buildInitialStepStates(initialWorkflow).total
+  );
   const [elapsedSeconds, setElapsedSeconds] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(!initialWorkflow);
   const [error, setError] = useState<string | null>(null);
@@ -86,42 +111,22 @@ export function useWorkflowExecutionStream({
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const isStreamingRef = useRef<boolean>(false);
 
-  // Initialize step states from workflow
-  const initStepStates = useCallback((wf: Workflow) => {
-    const map: Record<number, StepExecutionState> = {};
-    const stepsList = wf.steps || [];
-    stepsList.forEach((s: Step) => {
-      map[s.seq] = {
-        seq: s.seq,
-        status: "pending",
-        instructionText: s.instruction_text,
-        actionType: s.action?.type,
-        targetRole: s.target?.role,
-        targetName: s.target?.name,
-        risk: s.risk,
-      };
-    });
-    setStepStates(map);
-    setTotalSteps(stepsList.length);
-  }, []);
-
   // Fetch workflow details if not supplied
   useEffect(() => {
     if (initialWorkflow) {
-      initStepStates(initialWorkflow);
-      setIsLoading(false);
       return;
     }
 
     let isMounted = true;
-    setIsLoading(true);
 
     apiClient
       .getWorkflow(workflowId)
       .then((data) => {
         if (isMounted) {
           setWorkflow(data);
-          initStepStates(data);
+          const { states, total } = buildInitialStepStates(data);
+          setStepStates(states);
+          setTotalSteps(total);
           setIsLoading(false);
         }
       })
@@ -135,7 +140,7 @@ export function useWorkflowExecutionStream({
     return () => {
       isMounted = false;
     };
-  }, [apiClient, initialWorkflow, workflowId, initStepStates]);
+  }, [apiClient, initialWorkflow, workflowId]);
 
   // Live timer tick
   useEffect(() => {
@@ -302,15 +307,29 @@ export function useWorkflowExecutionStream({
     setRunError(null);
     setElapsedSeconds(0);
     if (workflow) {
-      initStepStates(workflow);
+      const { states, total } = buildInitialStepStates(workflow);
+      setStepStates(states);
+      setTotalSteps(total);
     }
-  }, [initStepStates, workflow]);
+  }, [workflow]);
 
   // Auto-start stream once workflow is loaded
   useEffect(() => {
-    if (autoStart && !isLoading && !error && runStatus === "idle") {
-      startStream();
+    if (!autoStart || isLoading || error || runStatus !== "idle") {
+      return;
     }
+
+    let isMounted = true;
+    const timer = setTimeout(() => {
+      if (isMounted) {
+        startStream();
+      }
+    }, 0);
+
+    return () => {
+      isMounted = false;
+      clearTimeout(timer);
+    };
   }, [autoStart, isLoading, error, runStatus, startStream]);
 
   // Cleanup abort controller on unmount
