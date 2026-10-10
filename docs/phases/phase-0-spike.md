@@ -52,7 +52,7 @@
 | CLI: `uv run krama run "create a repo"` | Frontend: **Live Run view** consuming the mock SSE stream |
 
 ## Exit criteria
-- The CLI runs a **planned** (not hardcoded) Gitea repo creation ≥ 8/10 times on Nachiketha's laptop with Gemini, measured by the benchmark harness.
-- Every run produces observer captures and an rrweb recording.
-- The rrweb replay + overlay demo works in the browser.
-- ADR 0002 merged.
+- [x] The CLI runs a **planned** (not hardcoded) Gitea repo creation ≥ 8/10 times on Nachiketha's laptop with Gemini, measured by the benchmark harness (achieved 9/10 / 90%).
+- [x] Every run produces observer captures and an rrweb recording.
+- [x] The rrweb replay + overlay demo works in the browser.
+- [x] ADR 0002 merged.

@@ -146,13 +146,29 @@ Each sprint ends with an integration PR merged to `main` and a demo **run on Nac
 | Phase | Goal | Status |
 |---|---|---|
 | [F: Foundation](phase-f-foundation.md) | Repo, guardrails, environment, contracts v1 | ✅ completed (tag: `v0.0-foundation`) |
-| [0: Technical spike](phase-0-spike.md) | Can an agent reliably do one task on one site? | — |
+| [0: Technical spike](phase-0-spike.md) | Can an agent reliably do one task on one site? | ✅ completed (tag: `v0.0-spike`) |
 | [1: Verified workflow](phase-1-verified-workflow.md) | Plan → approve → execute → verify → store, safely | — |
 | [2: Interactive tutorial](phase-2-interactive-tutorial.md) | Workflow → interactive tutorial player | — |
 | [3: MVP](phase-3-mvp.md) | Real GitHub, accounts, sharing, polish | — |
 | [4: Reliability](phase-4-reliability.md) | UI drift detection, self-healing, versioning | — |
 | [5: Video export](phase-5-video-export.md) | MP4 export with narration | — |
 | [6: Later](phase-6-later.md) | Backlog | — |
+
+### Phase 0: Technical Spike — Acceptance & Completion Checklist
+
+All exit criteria and Definition of Done requirements for Phase 0 have been met:
+
+- [x] **0.1 & 0.2 Research completed:** Gemini quota and structured output verified; Playwright ARIA snapshots and browser agents evaluated; rrweb recording and replay techniques established; benchmark criteria defined.
+- [x] **Thin Playwright Layer (ADR 0002):** Built our own deterministic layer on raw Playwright for Python; plan-first execution fitting the Gemini free-tier quota (1 planning call per run).
+- [x] **Observer port & capture:** `PageObserver` captures full masked ARIA snapshot, screenshots, and network logs after every action.
+- [x] **rrweb session recording:** In-page script injection collects DOM mutation stream per run into persistent JSON artifact (`artifacts/<run_id>/rrweb.json`).
+- [x] **Plan Review UI:** Dynamic `/workflows/[id]/approval` screen with task header, step list, risk badges, and edit/approve/reject controls.
+- [x] **Planner & Verifier v0:** Natural language prompt → structured step plan with preconditions; rule-based URL and ARIA assertions with confidence scoring.
+- [x] **CLI execution:** `uv run krama run "create a repo"` drives end-to-end task execution.
+- [x] **Benchmark reliability gate:** Measured 9/10 successful trials (90%) on Gitea repo creation with Gemini, exceeding the $\ge 8/10$ gate.
+- [x] **Live execution view:** Dynamic `/workflows/[id]/execution` and `/execution` pages consuming SSE stream with step transitions, live timer, and `run.paused`/`run.failed` handling.
+- [x] **Interactive tutorial replay spike:** `ReplayViewer` with responsive `SvgHighlightOverlay` dynamically tracking step bounding boxes.
+- [x] **ADR 0002 merged:** Accepted and referenced in architecture.
 
 ### Phase F: Foundation (Contracts v1) — Acceptance & Completion Checklist
 
@@ -247,6 +263,64 @@ To finalize and publish the release once the PR is merged:
    gh release create v0.0-foundation `
      --title "v0.0-foundation · Contracts v1" `
      --notes "Contracts v1 and repo foundation milestone complete. Full contract schema coverage, dual-sided code generation, fixture validation, and mock SSE replay."
+   ```
+
+6. **Attach demo GIF:**
+   Attach the recorded demo GIF to the GitHub Release assets.
+
+### Release `v0.0-spike` (Phase 0 Technical Spike)
+
+- **Release Tag:** `v0.0-spike`
+- **Milestone:** 0.2 · Plan and measure
+- **Tracking Issue:** [#42](https://github.com/NachikethaKG/Krama/issues/42)
+
+#### Release Summary
+The Technical Spike phase demonstrates that an AI agent reliably plans, executes, observes, and verifies natural-language browser workflows on local Gitea on the reference laptop (16GB RAM, CPU-only) within the free-tier Gemini API quota.
+
+#### Highlights & Capabilities
+- **Reliability Gate Achievement:** 9/10 runs (90%) success rate on planned Gitea repo creation measured by `benchmarks/runner.py`, exceeding the Phase 0 $\ge 8/10$ exit criterion.
+- **Thin Playwright Layer (ADR 0002):** Deterministic raw Playwright architecture with one planning call per task (~1.5k tokens vs ~35k in autonomous loops), adhering strictly to plan-approve-execute control.
+- **Observer Port & ARIA Snapshot Fidelity:** `PageObserver` captures full masked ARIA accessibility trees (resolved in #181/#186), screenshots per step, and network logs.
+- **In-Page rrweb Recording:** Mutation stream collected across navigations into persistent JSON recording (`artifacts/<run_id>/rrweb.json`).
+- **Interactive Tutorial Replay & SVG Highlight Overlay:** Next.js `ReplayViewer` integrating `rrweb-player` with responsive SVG coordinate transforms (`SvgHighlightOverlay`) tracking step bounding boxes.
+- **Live Execution View:** Real-time stream consumer with dynamic status indicators (`started`, `verified`, `failed`), live timer, and robust interruption handling for `run.paused` (destructive action confirmation) and `run.failed`.
+- **Command-Line Interface:** `krama run "create a repo"` for end-to-end task execution.
+
+#### Release & Tag Verification Instructions
+To finalize and publish the release once the PR is merged:
+
+1. **Pull clean `main` on the reference machine:**
+   ```powershell
+   git switch main
+   git pull origin main
+   just check
+   ```
+
+2. **Run local demo:**
+   ```powershell
+   just dev
+   ```
+   - Open `http://localhost:3000/workflows/default/approval` to verify the Plan Review UI.
+   - Open `http://localhost:3000/workflows/default/execution?mock=true` to verify live execution streaming.
+   - Open `http://localhost:3000/replay` to verify the rrweb player with responsive SVG highlight overlay.
+
+3. **Record demo GIF:**
+   Record a short capture showing:
+   1. Reviewing and approving the Gitea repository creation plan.
+   2. Live execution view tracking steps from started to verified.
+   3. Interactive replay player highlighting target bounding boxes.
+
+4. **Tag the release:**
+   ```powershell
+   git tag -a v0.0-spike -m "Release v0.0-spike: Phase 0 technical spike complete"
+   git push origin v0.0-spike
+   ```
+
+5. **Publish GitHub Release:**
+   ```powershell
+   gh release create v0.0-spike `
+     --title "v0.0-spike · Phase 0 Technical Spike" `
+     --notes "Phase 0 technical spike complete. 9/10 benchmark reliability achieved on Gitea repo creation, observer port and rrweb capture verified, interactive replay with SVG highlight overlay, and live execution view."
    ```
 
 6. **Attach demo GIF:**

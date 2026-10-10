@@ -90,6 +90,7 @@ Every boundary is an interface with a mock that ships *before* the real implemen
 | Tutorial compiler in TypeScript | Shared by the player and the Remotion export | — |
 | DB migrations owned by Vishwas only | Two people writing migrations is a classic source of conflicts | — |
 | Ownership by module, cross-owner calls only via `ports/` | Both people work on the backend without sharing files | [0001](adr/0001-ownership-by-module.md) |
+| Thin Playwright layer over browser-use/Stagehand | Deterministic execution, fits free-tier quota (1 planning call), strict plan-approve-execute control | [0002](adr/0002-own-playwright-layer.md) |
 
 ## 6. Hardware rules
 
