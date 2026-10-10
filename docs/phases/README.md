@@ -146,13 +146,29 @@ Each sprint ends with an integration PR merged to `main` and a demo **run on Nac
 | Phase | Goal | Status |
 |---|---|---|
 | [F: Foundation](phase-f-foundation.md) | Repo, guardrails, environment, contracts v1 | ✅ completed (tag: `v0.0-foundation`) |
-| [0: Technical spike](phase-0-spike.md) | Can an agent reliably do one task on one site? | — |
+| [0: Technical spike](phase-0-spike.md) | Can an agent reliably do one task on one site? | ✅ completed (tag: `v0.0-spike`) |
 | [1: Verified workflow](phase-1-verified-workflow.md) | Plan → approve → execute → verify → store, safely | — |
 | [2: Interactive tutorial](phase-2-interactive-tutorial.md) | Workflow → interactive tutorial player | — |
 | [3: MVP](phase-3-mvp.md) | Real GitHub, accounts, sharing, polish | — |
 | [4: Reliability](phase-4-reliability.md) | UI drift detection, self-healing, versioning | — |
 | [5: Video export](phase-5-video-export.md) | MP4 export with narration | — |
 | [6: Later](phase-6-later.md) | Backlog | — |
+
+### Phase 0: Technical Spike — Acceptance & Completion Checklist
+
+All exit criteria and Definition of Done requirements for Phase 0 have been met:
+
+- [x] **0.1 & 0.2 Research completed:** Gemini quota and structured output verified; Playwright ARIA snapshots and browser agents evaluated; rrweb recording and replay techniques established; benchmark criteria defined.
+- [x] **Thin Playwright Layer (ADR 0002):** Built our own deterministic layer on raw Playwright for Python; plan-first execution fitting the Gemini free-tier quota (1 planning call per run).
+- [x] **Observer port & capture:** `PageObserver` captures full masked ARIA snapshot, screenshots, and network logs after every action.
+- [x] **rrweb session recording:** In-page script injection collects DOM mutation stream per run into persistent JSON artifact (`artifacts/<run_id>/rrweb.json`).
+- [x] **Plan Review UI:** Dynamic `/workflows/[id]/approval` screen with task header, step list, risk badges, and edit/approve/reject controls.
+- [x] **Planner & Verifier v0:** Natural language prompt → structured step plan with preconditions; rule-based URL and ARIA assertions with confidence scoring.
+- [x] **CLI execution:** `uv run krama run "create a repo"` drives end-to-end task execution.
+- [x] **Benchmark reliability gate:** Measured 9/10 successful trials (90%) on Gitea repo creation with Gemini, exceeding the $\ge 8/10$ gate.
+- [x] **Live execution view:** Dynamic `/workflows/[id]/execution` and `/execution` pages consuming SSE stream with step transitions, live timer, and `run.paused`/`run.failed` handling.
+- [x] **Interactive tutorial replay spike:** `ReplayViewer` with responsive `SvgHighlightOverlay` dynamically tracking step bounding boxes.
+- [x] **ADR 0002 merged:** Accepted and referenced in architecture.
 
 ### Phase F: Foundation (Contracts v1) — Acceptance & Completion Checklist
 
