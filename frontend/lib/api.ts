@@ -3,15 +3,23 @@ import type { HealthResponse, RunEvent, Workflow } from "@krama/contracts-ts";
 
 import {
   giteaEventsFixture,
+  giteaFailedEventsFixture,
+  giteaPausedEventsFixture,
   giteaWorkflowFixture,
+  failedWorkflowFixture,
+  pausedWorkflowFixture,
   validWorkflowFixture,
   workflowFixtures,
 } from "./fixtures";
 
 export type { HealthResponse, RunEvent, Workflow };
 export {
+  failedWorkflowFixture,
   giteaEventsFixture,
+  giteaFailedEventsFixture,
+  giteaPausedEventsFixture,
   giteaWorkflowFixture,
+  pausedWorkflowFixture,
   validWorkflowFixture,
   workflowFixtures,
 };
@@ -146,11 +154,21 @@ export class MockApiClient implements ApiClient {
       "gitea",
       "mock",
       "default",
+      "paused",
+      "failed",
       "",
     ]);
     if (!validIds.has(id) && !this.workflows[id]) {
       throw new Error(`Workflow not found: ${id}`);
     }
+
+    if (id === "paused" || id.includes("paused")) {
+      return replayEvents(giteaPausedEventsFixture, options);
+    }
+    if (id === "failed" || id.includes("failed")) {
+      return replayEvents(giteaFailedEventsFixture, options);
+    }
+
     return replayEvents(this.events, options);
   }
 

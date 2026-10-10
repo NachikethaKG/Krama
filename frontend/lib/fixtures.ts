@@ -104,3 +104,78 @@ id: 17
 data: {"type":"run.completed","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":17,"ts":"2026-10-06T12:00:04.610Z","workflow_id":"6f1c2a4e-1111-4b8a-9a1b-123456789abc","verified_steps":5,"failed_actions":0}`;
 
 export const giteaEventsFixture: RunEvent[] = parseSseEvents(GITEA_CREATE_REPO_SSE);
+
+export const GITEA_PAUSED_RUN_SSE = `event: run.started
+id: 1
+data: {"type":"run.started","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":1,"ts":"2026-10-06T12:00:00.000Z","plan_id":"6f1c2a4e-3333-4b8a-9a1b-123456789abc","total_steps":5}
+
+event: step.started
+id: 2
+data: {"type":"step.started","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":2,"ts":"2026-10-06T12:00:00.500Z","step_seq":1,"instruction_text":"Open the + menu at the top right."}
+
+event: step.action_done
+id: 3
+data: {"type":"step.action_done","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":3,"ts":"2026-10-06T12:00:00.829Z","step_seq":1,"screenshot_url":"contracts/fixtures/screenshots/step-1.png","bbox":[1146,6,56,36]}
+
+event: step.verified
+id: 4
+data: {"type":"step.verified","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":4,"ts":"2026-10-06T12:00:01.047Z","step_seq":1,"method":["aria"],"confidence":1.0}
+
+event: step.started
+id: 5
+data: {"type":"step.started","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":5,"ts":"2026-10-06T12:00:01.110Z","step_seq":2,"instruction_text":"Click New Repository in the menu."}
+
+event: run.paused
+id: 6
+data: {"type":"run.paused","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":6,"ts":"2026-10-06T12:00:01.300Z","reason":"destructive_action","step_seq":2,"message":"Destructive action requires confirmation before proceeding"}
+`;
+
+export const giteaPausedEventsFixture: RunEvent[] = parseSseEvents(GITEA_PAUSED_RUN_SSE);
+
+export const GITEA_FAILED_RUN_SSE = `event: run.started
+id: 1
+data: {"type":"run.started","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":1,"ts":"2026-10-06T12:00:00.000Z","plan_id":"6f1c2a4e-3333-4b8a-9a1b-123456789abc","total_steps":5}
+
+event: step.started
+id: 2
+data: {"type":"step.started","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":2,"ts":"2026-10-06T12:00:00.500Z","step_seq":1,"instruction_text":"Open the + menu at the top right."}
+
+event: step.action_done
+id: 3
+data: {"type":"step.action_done","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":3,"ts":"2026-10-06T12:00:00.829Z","step_seq":1,"screenshot_url":"contracts/fixtures/screenshots/step-1.png","bbox":[1146,6,56,36]}
+
+event: step.verified
+id: 4
+data: {"type":"step.verified","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":4,"ts":"2026-10-06T12:00:01.047Z","step_seq":1,"method":["aria"],"confidence":1.0}
+
+event: step.started
+id: 5
+data: {"type":"step.started","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":5,"ts":"2026-10-06T12:00:01.110Z","step_seq":2,"instruction_text":"Click New Repository in the menu."}
+
+event: step.failed
+id: 6
+data: {"type":"step.failed","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":6,"ts":"2026-10-06T12:00:01.400Z","step_seq":2,"expected":{"url_matches":"^/repo/create$"},"observed":{"url":"/repo/error","title":"500 Internal Server Error"}}
+
+event: run.failed
+id: 7
+data: {"type":"run.failed","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":7,"ts":"2026-10-06T12:00:01.500Z","error":{"code":"validation_error","message":"Step 2 failed verification: target URL did not match expected path","details":{}}}
+`;
+
+export const giteaFailedEventsFixture: RunEvent[] = parseSseEvents(GITEA_FAILED_RUN_SSE);
+
+export const pausedWorkflowFixture: Workflow = {
+  ...giteaWorkflowFixture,
+  id: "paused",
+  title: "Create repository in local Gitea (Paused)",
+  status: "running",
+};
+
+export const failedWorkflowFixture: Workflow = {
+  ...giteaWorkflowFixture,
+  id: "failed",
+  title: "Create repository in local Gitea (Failed)",
+  status: "failed",
+};
+
+workflowFixtures["paused"] = pausedWorkflowFixture;
+workflowFixtures["failed"] = failedWorkflowFixture;
