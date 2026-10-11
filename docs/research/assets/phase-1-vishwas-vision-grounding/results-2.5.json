@@ -1,0 +1,422 @@
+[
+  {
+    "model": "gemini-2.5-flash",
+    "page": "dashboard",
+    "target": "link New Repository",
+    "hit": true,
+    "err": 7.1,
+    "iou": 0.27,
+    "real": [
+      1217,
+      184,
+      16,
+      16
+    ],
+    "pred": [
+      1211,
+      186,
+      14,
+      11
+    ],
+    "secs": 10.8
+  },
+  {
+    "model": "gemini-2.5-flash",
+    "page": "dashboard",
+    "target": "link Explore",
+    "hit": true,
+    "err": 13.1,
+    "iou": 0.11,
+    "real": [
+      349,
+      6,
+      72,
+      36
+    ],
+    "pred": [
+      388,
+      16,
+      20,
+      14
+    ],
+    "secs": 10.8
+  },
+  {
+    "model": "gemini-2.5-flash",
+    "page": "dashboard",
+    "target": "link Milestones",
+    "hit": true,
+    "err": 14.4,
+    "iou": 0.18,
+    "real": [
+      252,
+      6,
+      93,
+      36
+    ],
+    "pred": [
+      292,
+      16,
+      41,
+      14
+    ],
+    "secs": 10.8
+  },
+  {
+    "model": "gemini-2.5-flash",
+    "page": "dashboard",
+    "target": "link Notifications",
+    "hit": true,
+    "err": 1.6,
+    "iou": 0.18,
+    "real": [
+      1099,
+      6,
+      42,
+      36
+    ],
+    "pred": [
+      1111,
+      16,
+      19,
+      14
+    ],
+    "secs": 10.8
+  },
+  {
+    "model": "gemini-2.5-flash",
+    "page": "dashboard",
+    "target": "menu Create\u2026",
+    "hit": true,
+    "err": 2.0,
+    "iou": 0.28,
+    "real": [
+      1146,
+      6,
+      56,
+      36
+    ],
+    "pred": [
+      1156,
+      16,
+      38,
+      14
+    ],
+    "secs": 10.8
+  },
+  {
+    "model": "gemini-2.5-flash",
+    "page": "dashboard",
+    "target": "combobox Other Filters",
+    "hit": true,
+    "err": 0.4,
+    "iou": 0.25,
+    "real": [
+      1193,
+      227,
+      40,
+      37
+    ],
+    "pred": [
+      1201,
+      238,
+      24,
+      15
+    ],
+    "secs": 10.8
+  },
+  {
+    "model": "gemini-2.5-flash",
+    "page": "dashboard",
+    "target": "link Dashboard",
+    "hit": true,
+    "err": 15.2,
+    "iou": 0.22,
+    "real": [
+      10,
+      6,
+      56,
+      36
+    ],
+    "pred": [
+      35,
+      16,
+      37,
+      14
+    ],
+    "secs": 10.8
+  },
+  {
+    "model": "gemini-2.5-flash",
+    "page": "repo-create",
+    "target": "textbox Repository Name *",
+    "hit": true,
+    "err": 0.4,
+    "iou": 0.98,
+    "real": [
+      519,
+      262,
+      386,
+      38
+    ],
+    "pred": [
+      518,
+      262,
+      387,
+      38
+    ],
+    "secs": 8.2
+  },
+  {
+    "model": "gemini-2.5-flash",
+    "page": "repo-create",
+    "target": "checkbox Make repository private",
+    "hit": true,
+    "err": 2.8,
+    "iou": 0.62,
+    "real": [
+      519,
+      344,
+      15,
+      15
+    ],
+    "pred": [
+      520,
+      346,
+      18,
+      15
+    ],
+    "secs": 8.2
+  },
+  {
+    "model": "gemini-2.5-flash",
+    "page": "repo-create",
+    "target": "textbox Description",
+    "hit": true,
+    "err": 1.0,
+    "iou": 0.98,
+    "real": [
+      519,
+      424,
+      386,
+      60
+    ],
+    "pred": [
+      518,
+      424,
+      385,
+      61
+    ],
+    "secs": 8.2
+  },
+  {
+    "model": "gemini-2.5-flash",
+    "page": "repo-create",
+    "target": "link Migrate repository.",
+    "hit": true,
+    "err": 11.0,
+    "iou": 0.67,
+    "real": [
+      877,
+      127,
+      118,
+      19
+    ],
+    "pred": [
+      879,
+      131,
+      134,
+      15
+    ],
+    "secs": 8.2
+  },
+  {
+    "model": "gemini-2.5-flash",
+    "page": "repo-home",
+    "target": "link Settings",
+    "hit": true,
+    "err": 3.2,
+    "iou": 0.27,
+    "real": [
+      1152,
+      99,
+      96,
+      44
+    ],
+    "pred": [
+      1162,
+      111,
+      70,
+      16
+    ],
+    "secs": 4.3
+  },
+  {
+    "model": "gemini-2.5-flash",
+    "page": "repo-home",
+    "target": "button Star",
+    "hit": true,
+    "err": 8.7,
+    "iou": 0.36,
+    "real": [
+      1029,
+      62,
+      73,
+      33
+    ],
+    "pred": [
+      1029,
+      72,
+      55,
+      16
+    ],
+    "secs": 4.3
+  },
+  {
+    "model": "gemini-2.5-flash",
+    "page": "repo-home",
+    "target": "button Unwatch",
+    "hit": true,
+    "err": 8.3,
+    "iou": 0.25,
+    "real": [
+      893,
+      62,
+      101,
+      33
+    ],
+    "pred": [
+      925,
+      72,
+      52,
+      16
+    ],
+    "secs": 4.3
+  },
+  {
+    "model": "gemini-2.5-flash",
+    "page": "repo-home",
+    "target": "link Wiki",
+    "hit": true,
+    "err": 2.5,
+    "iou": 0.25,
+    "real": [
+      711,
+      99,
+      73,
+      44
+    ],
+    "pred": [
+      721,
+      111,
+      51,
+      16
+    ],
+    "secs": 4.3
+  },
+  {
+    "model": "gemini-2.5-flash",
+    "page": "repo-home",
+    "target": "button New Pull Request",
+    "hit": false,
+    "err": 1023.2,
+    "iou": 0.0,
+    "real": [
+      140,
+      219,
+      38,
+      30
+    ],
+    "pred": [
+      1143,
+      72,
+      55,
+      16
+    ],
+    "secs": 4.3
+  },
+  {
+    "model": "gemini-2.5-flash",
+    "page": "repo-home",
+    "target": "button Copy URL",
+    "hit": true,
+    "err": 0.9,
+    "iou": 0.23,
+    "real": [
+      1175,
+      219,
+      36,
+      30
+    ],
+    "pred": [
+      1184,
+      227,
+      17,
+      15
+    ],
+    "secs": 4.3
+  },
+  {
+    "model": "gemini-2.5-flash",
+    "page": "repo-home",
+    "target": "link Go to file",
+    "hit": true,
+    "err": 2.8,
+    "iou": 0.39,
+    "real": [
+      185,
+      219,
+      79,
+      30
+    ],
+    "pred": [
+      197,
+      227,
+      60,
+      15
+    ],
+    "secs": 4.3
+  },
+  {
+    "model": "gemini-2.5-flash",
+    "page": "repo-home",
+    "target": "textbox Search code...",
+    "hit": true,
+    "err": 66.1,
+    "iou": 0.17,
+    "real": [
+      362,
+      219,
+      236,
+      30
+    ],
+    "pred": [
+      374,
+      227,
+      81,
+      15
+    ],
+    "secs": 4.3
+  },
+  {
+    "model": "gemini-2.5-flash",
+    "page": "repo-home",
+    "target": "link 1 Commit",
+    "hit": true,
+    "err": 54.6,
+    "iou": 0.12,
+    "real": [
+      33,
+      180,
+      304,
+      30
+    ],
+    "pred": [
+      205,
+      187,
+      69,
+      16
+    ],
+    "secs": 4.3
+  }
+]
