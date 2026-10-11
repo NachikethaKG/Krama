@@ -1,0 +1,772 @@
+[
+ {
+  "page": "/demo/policy-fixture",
+  "tag": "a",
+  "name": "Sign Out",
+  "visible": false,
+  "href": "",
+  "data_url": "/user/logout",
+  "form": null,
+  "modal": false
+ },
+ {
+  "page": "/demo/policy-fixture",
+  "tag": "button",
+  "name": "Unwatch",
+  "visible": true,
+  "href": null,
+  "data_url": null,
+  "form": "POST /demo/policy-fixture/action/unwatch",
+  "modal": false
+ },
+ {
+  "page": "/demo/policy-fixture",
+  "tag": "button",
+  "name": "Cancel",
+  "visible": false,
+  "href": null,
+  "data_url": null,
+  "form": null,
+  "modal": false
+ },
+ {
+  "page": "/demo/policy-fixture/settings",
+  "tag": "a",
+  "name": "Sign Out",
+  "visible": false,
+  "href": "",
+  "data_url": "/user/logout",
+  "form": null,
+  "modal": false
+ },
+ {
+  "page": "/demo/policy-fixture/settings",
+  "tag": "button",
+  "name": "Unwatch",
+  "visible": true,
+  "href": null,
+  "data_url": null,
+  "form": "POST /demo/policy-fixture/action/unwatch",
+  "modal": false
+ },
+ {
+  "page": "/demo/policy-fixture/settings",
+  "tag": "button",
+  "name": "Delete Current Avatar",
+  "visible": true,
+  "href": null,
+  "data_url": "/demo/policy-fixture/settings/avatar/delete",
+  "form": "POST /demo/policy-fixture/settings/avatar",
+  "modal": false
+ },
+ {
+  "page": "/demo/policy-fixture/settings",
+  "tag": "a",
+  "name": "How do I mirror repositories?",
+  "visible": true,
+  "href": "https://docs.gitea.com/usage/repo-mirror#pushing-to-a-remote-repository",
+  "data_url": null,
+  "form": null,
+  "modal": false
+ },
+ {
+  "page": "/demo/policy-fixture/settings",
+  "tag": "button",
+  "name": "Add Push Mirror",
+  "visible": true,
+  "href": null,
+  "data_url": null,
+  "form": "POST ",
+  "modal": false
+ },
+ {
+  "page": "/demo/policy-fixture/settings",
+  "tag": "div",
+  "name": "Create merge commit",
+  "visible": false,
+  "href": null,
+  "data_url": null,
+  "form": "POST ",
+  "modal": false
+ },
+ {
+  "page": "/demo/policy-fixture/settings",
+  "tag": "div",
+  "name": "Rebase then create merge commit",
+  "visible": false,
+  "href": null,
+  "data_url": null,
+  "form": "POST ",
+  "modal": false
+ },
+ {
+  "page": "/demo/policy-fixture/settings",
+  "tag": "button",
+  "name": "Transfer Ownership",
+  "visible": true,
+  "href": null,
+  "data_url": null,
+  "form": null,
+  "modal": false
+ },
+ {
+  "page": "/demo/policy-fixture/settings",
+  "tag": "button",
+  "name": "Delete Wiki Data",
+  "visible": true,
+  "href": null,
+  "data_url": null,
+  "form": null,
+  "modal": false
+ },
+ {
+  "page": "/demo/policy-fixture/settings",
+  "tag": "button",
+  "name": "Delete This Repository",
+  "visible": true,
+  "href": null,
+  "data_url": null,
+  "form": null,
+  "modal": false
+ },
+ {
+  "page": "/demo/policy-fixture/settings",
+  "tag": "button",
+  "name": "Archive Repo",
+  "visible": true,
+  "href": null,
+  "data_url": null,
+  "form": null,
+  "modal": false
+ },
+ {
+  "page": "/demo/policy-fixture/settings",
+  "tag": "button",
+  "name": "Cancel",
+  "visible": false,
+  "href": null,
+  "data_url": null,
+  "form": "POST /demo/policy-fixture/settings",
+  "modal": true
+ },
+ {
+  "page": "/demo/policy-fixture/settings",
+  "tag": "button",
+  "name": "Perform Transfer",
+  "visible": false,
+  "href": null,
+  "data_url": null,
+  "form": "POST /demo/policy-fixture/settings",
+  "modal": true
+ },
+ {
+  "page": "/demo/policy-fixture/settings",
+  "tag": "button",
+  "name": "Delete Repository",
+  "visible": false,
+  "href": null,
+  "data_url": null,
+  "form": "POST /demo/policy-fixture/settings",
+  "modal": true
+ },
+ {
+  "page": "/demo/policy-fixture/settings",
+  "tag": "button",
+  "name": "Delete Wiki Data",
+  "visible": false,
+  "href": null,
+  "data_url": null,
+  "form": "POST /demo/policy-fixture/settings",
+  "modal": true
+ },
+ {
+  "page": "/demo/policy-fixture/settings",
+  "tag": "button",
+  "name": "Cancel",
+  "visible": false,
+  "href": null,
+  "data_url": null,
+  "form": "POST ",
+  "modal": true
+ },
+ {
+  "page": "/demo/policy-fixture/settings/collaboration",
+  "tag": "a",
+  "name": "Sign Out",
+  "visible": false,
+  "href": "",
+  "data_url": "/user/logout",
+  "form": null,
+  "modal": false
+ },
+ {
+  "page": "/demo/policy-fixture/settings/collaboration",
+  "tag": "button",
+  "name": "Unwatch",
+  "visible": true,
+  "href": null,
+  "data_url": null,
+  "form": "POST /demo/policy-fixture/action/unwatch",
+  "modal": false
+ },
+ {
+  "page": "/demo/policy-fixture/settings/branches",
+  "tag": "a",
+  "name": "Sign Out",
+  "visible": false,
+  "href": "",
+  "data_url": "/user/logout",
+  "form": null,
+  "modal": false
+ },
+ {
+  "page": "/demo/policy-fixture/settings/branches",
+  "tag": "button",
+  "name": "Unwatch",
+  "visible": true,
+  "href": null,
+  "data_url": null,
+  "form": "POST /demo/policy-fixture/action/unwatch",
+  "modal": false
+ },
+ {
+  "page": "/demo/policy-fixture/settings/hooks",
+  "tag": "a",
+  "name": "Sign Out",
+  "visible": false,
+  "href": "",
+  "data_url": "/user/logout",
+  "form": null,
+  "modal": false
+ },
+ {
+  "page": "/demo/policy-fixture/settings/hooks",
+  "tag": "button",
+  "name": "Unwatch",
+  "visible": true,
+  "href": null,
+  "data_url": null,
+  "form": "POST /demo/policy-fixture/action/unwatch",
+  "modal": false
+ },
+ {
+  "page": "/demo/policy-fixture/settings/keys",
+  "tag": "a",
+  "name": "Sign Out",
+  "visible": false,
+  "href": "",
+  "data_url": "/user/logout",
+  "form": null,
+  "modal": false
+ },
+ {
+  "page": "/demo/policy-fixture/settings/keys",
+  "tag": "button",
+  "name": "Unwatch",
+  "visible": true,
+  "href": null,
+  "data_url": null,
+  "form": "POST /demo/policy-fixture/action/unwatch",
+  "modal": false
+ },
+ {
+  "page": "/demo/policy-fixture/settings/keys",
+  "tag": "button",
+  "name": "Cancel",
+  "visible": false,
+  "href": null,
+  "data_url": null,
+  "form": "POST /demo/policy-fixture/settings/keys",
+  "modal": false
+ },
+ {
+  "page": "/demo/policy-fixture/branches",
+  "tag": "a",
+  "name": "Sign Out",
+  "visible": false,
+  "href": "",
+  "data_url": "/user/logout",
+  "form": null,
+  "modal": false
+ },
+ {
+  "page": "/demo/policy-fixture/branches",
+  "tag": "button",
+  "name": "Unwatch",
+  "visible": true,
+  "href": null,
+  "data_url": null,
+  "form": "POST /demo/policy-fixture/action/unwatch",
+  "modal": false
+ },
+ {
+  "page": "/demo/policy-fixture/branches",
+  "tag": "button",
+  "name": "Rename Branch \"main\"",
+  "visible": true,
+  "href": null,
+  "data_url": null,
+  "form": null,
+  "modal": false
+ },
+ {
+  "page": "/demo/policy-fixture/branches",
+  "tag": "button",
+  "name": "Rename Branch \"feature-x\"",
+  "visible": true,
+  "href": null,
+  "data_url": null,
+  "form": null,
+  "modal": false
+ },
+ {
+  "page": "/demo/policy-fixture/branches",
+  "tag": "button",
+  "name": "Delete Branch \"feature-x\"",
+  "visible": true,
+  "href": null,
+  "data_url": "/demo/policy-fixture/branches/delete?name=feature-x&page=1",
+  "form": null,
+  "modal": false
+ },
+ {
+  "page": "/demo/policy-fixture/branches",
+  "tag": "button",
+  "name": "Cancel",
+  "visible": false,
+  "href": null,
+  "data_url": null,
+  "form": "POST ",
+  "modal": true
+ },
+ {
+  "page": "/demo/policy-fixture/branches",
+  "tag": "button",
+  "name": "Cancel",
+  "visible": false,
+  "href": null,
+  "data_url": null,
+  "form": "POST /demo/policy-fixture/branches/rename",
+  "modal": true
+ },
+ {
+  "page": "/demo/policy-fixture/releases",
+  "tag": "a",
+  "name": "Sign Out",
+  "visible": false,
+  "href": "",
+  "data_url": "/user/logout",
+  "form": null,
+  "modal": false
+ },
+ {
+  "page": "/demo/policy-fixture/releases",
+  "tag": "button",
+  "name": "Unwatch",
+  "visible": true,
+  "href": null,
+  "data_url": null,
+  "form": "POST /demo/policy-fixture/action/unwatch",
+  "modal": false
+ },
+ {
+  "page": "/demo/policy-fixture/issues/1",
+  "tag": "a",
+  "name": "Sign Out",
+  "visible": false,
+  "href": "",
+  "data_url": "/user/logout",
+  "form": null,
+  "modal": false
+ },
+ {
+  "page": "/demo/policy-fixture/issues/1",
+  "tag": "button",
+  "name": "Unwatch",
+  "visible": true,
+  "href": null,
+  "data_url": null,
+  "form": "POST /demo/policy-fixture/action/unwatch",
+  "modal": false
+ },
+ {
+  "page": "/demo/policy-fixture/issues/1",
+  "tag": "button",
+  "name": "Cancel",
+  "visible": false,
+  "href": null,
+  "data_url": null,
+  "form": null,
+  "modal": false
+ },
+ {
+  "page": "/demo/policy-fixture/issues/1",
+  "tag": "div",
+  "name": "Delete",
+  "visible": false,
+  "href": null,
+  "data_url": "/demo/policy-fixture/comments/1/delete",
+  "form": null,
+  "modal": false
+ },
+ {
+  "page": "/demo/policy-fixture/issues/1",
+  "tag": "button",
+  "name": "Drop files or click here to upload.",
+  "visible": true,
+  "href": null,
+  "data_url": null,
+  "form": "POST /demo/policy-fixture/issues/1/comments",
+  "modal": false
+ },
+ {
+  "page": "/demo/policy-fixture/issues/1",
+  "tag": "button",
+  "name": "Close Issue",
+  "visible": true,
+  "href": null,
+  "data_url": null,
+  "form": "POST /demo/policy-fixture/issues/1/comments",
+  "modal": false
+ },
+ {
+  "page": "/demo/policy-fixture/issues/1",
+  "tag": "a",
+  "name": "Clear labels",
+  "visible": false,
+  "href": "#",
+  "data_url": null,
+  "form": null,
+  "modal": false
+ },
+ {
+  "page": "/demo/policy-fixture/issues/1",
+  "tag": "div",
+  "name": "Clear projects",
+  "visible": false,
+  "href": null,
+  "data_url": null,
+  "form": null,
+  "modal": false
+ },
+ {
+  "page": "/demo/policy-fixture/issues/1",
+  "tag": "button",
+  "name": "Remove",
+  "visible": false,
+  "href": null,
+  "data_url": null,
+  "form": null,
+  "modal": true
+ },
+ {
+  "page": "/demo/policy-fixture/issues/1",
+  "tag": "button",
+  "name": "Lock conversation",
+  "visible": true,
+  "href": null,
+  "data_url": null,
+  "form": null,
+  "modal": false
+ },
+ {
+  "page": "/demo/policy-fixture/issues/1",
+  "tag": "button",
+  "name": "Cancel",
+  "visible": false,
+  "href": null,
+  "data_url": null,
+  "form": "POST /demo/policy-fixture/issues/1/lock",
+  "modal": true
+ },
+ {
+  "page": "/demo/policy-fixture/issues/1",
+  "tag": "button",
+  "name": "Lock",
+  "visible": false,
+  "href": null,
+  "data_url": null,
+  "form": "POST /demo/policy-fixture/issues/1/lock",
+  "modal": true
+ },
+ {
+  "page": "/demo/policy-fixture/issues/1",
+  "tag": "button",
+  "name": "Cancel",
+  "visible": false,
+  "href": null,
+  "data_url": null,
+  "form": "POST ",
+  "modal": true
+ },
+ {
+  "page": "/demo/policy-fixture/issues/1",
+  "tag": "button",
+  "name": "Block",
+  "visible": false,
+  "href": null,
+  "data_url": null,
+  "form": "POST ",
+  "modal": true
+ },
+ {
+  "page": "/demo/policy-fixture/labels",
+  "tag": "a",
+  "name": "Sign Out",
+  "visible": false,
+  "href": "",
+  "data_url": "/user/logout",
+  "form": null,
+  "modal": false
+ },
+ {
+  "page": "/demo/policy-fixture/labels",
+  "tag": "button",
+  "name": "Unwatch",
+  "visible": true,
+  "href": null,
+  "data_url": null,
+  "form": "POST /demo/policy-fixture/action/unwatch",
+  "modal": false
+ },
+ {
+  "page": "/demo/policy-fixture/labels",
+  "tag": "button",
+  "name": "Cancel",
+  "visible": false,
+  "href": null,
+  "data_url": null,
+  "form": null,
+  "modal": true
+ },
+ {
+  "page": "/demo/policy-fixture/labels",
+  "tag": "a",
+  "name": "Delete",
+  "visible": true,
+  "href": "#",
+  "data_url": "/demo/policy-fixture/labels/delete",
+  "form": null,
+  "modal": false
+ },
+ {
+  "page": "/demo/policy-fixture/milestones",
+  "tag": "a",
+  "name": "Sign Out",
+  "visible": false,
+  "href": "",
+  "data_url": "/user/logout",
+  "form": null,
+  "modal": false
+ },
+ {
+  "page": "/demo/policy-fixture/milestones",
+  "tag": "button",
+  "name": "Unwatch",
+  "visible": true,
+  "href": null,
+  "data_url": null,
+  "form": "POST /demo/policy-fixture/action/unwatch",
+  "modal": false
+ },
+ {
+  "page": "/demo/policy-fixture/milestones",
+  "tag": "a",
+  "name": "Close",
+  "visible": true,
+  "href": "",
+  "data_url": "/demo/policy-fixture/milestones/1/close",
+  "form": null,
+  "modal": false
+ },
+ {
+  "page": "/demo/policy-fixture/milestones",
+  "tag": "a",
+  "name": "Delete",
+  "visible": true,
+  "href": "#",
+  "data_url": "/demo/policy-fixture/milestones/delete",
+  "form": null,
+  "modal": false
+ },
+ {
+  "page": "/demo/policy-fixture/src/branch/main/README.md",
+  "tag": "a",
+  "name": "Sign Out",
+  "visible": false,
+  "href": "",
+  "data_url": "/user/logout",
+  "form": null,
+  "modal": false
+ },
+ {
+  "page": "/demo/policy-fixture/src/branch/main/README.md",
+  "tag": "button",
+  "name": "Unwatch",
+  "visible": true,
+  "href": null,
+  "data_url": null,
+  "form": "POST /demo/policy-fixture/action/unwatch",
+  "modal": false
+ },
+ {
+  "page": "/demo/policy-fixture/src/branch/main/README.md",
+  "tag": "button",
+  "name": "Cancel",
+  "visible": false,
+  "href": null,
+  "data_url": null,
+  "form": null,
+  "modal": false
+ },
+ {
+  "page": "/demo/policy-fixture/settings/hooks/1",
+  "tag": "a",
+  "name": "Sign Out",
+  "visible": false,
+  "href": "",
+  "data_url": "/user/logout",
+  "form": null,
+  "modal": false
+ },
+ {
+  "page": "/demo/policy-fixture/settings/hooks/1",
+  "tag": "button",
+  "name": "Unwatch",
+  "visible": true,
+  "href": null,
+  "data_url": null,
+  "form": "POST /demo/policy-fixture/action/unwatch",
+  "modal": false
+ },
+ {
+  "page": "/demo/policy-fixture/settings/hooks/1",
+  "tag": "a",
+  "name": "Remove Webhook",
+  "visible": true,
+  "href": null,
+  "data_url": "/demo/policy-fixture/settings/hooks/delete",
+  "form": "POST /demo/policy-fixture/settings/hooks/gitea/1",
+  "modal": false
+ },
+ {
+  "page": "/user/settings",
+  "tag": "a",
+  "name": "Sign Out",
+  "visible": false,
+  "href": "",
+  "data_url": "/user/logout",
+  "form": null,
+  "modal": false
+ },
+ {
+  "page": "/user/settings",
+  "tag": "button",
+  "name": "Delete Current Avatar",
+  "visible": true,
+  "href": null,
+  "data_url": "/user/settings/avatar/delete",
+  "form": "POST /user/settings/avatar",
+  "modal": false
+ },
+ {
+  "page": "/user/settings/account",
+  "tag": "a",
+  "name": "Sign Out",
+  "visible": false,
+  "href": "",
+  "data_url": "/user/logout",
+  "form": null,
+  "modal": false
+ },
+ {
+  "page": "/user/settings/account",
+  "tag": "button",
+  "name": "Update Password",
+  "visible": true,
+  "href": null,
+  "data_url": null,
+  "form": "POST /user/settings/account",
+  "modal": false
+ },
+ {
+  "page": "/user/settings/security",
+  "tag": "a",
+  "name": "Sign Out",
+  "visible": false,
+  "href": "",
+  "data_url": "/user/logout",
+  "form": null,
+  "modal": false
+ },
+ {
+  "page": "/user/settings/applications",
+  "tag": "a",
+  "name": "Sign Out",
+  "visible": false,
+  "href": "",
+  "data_url": "/user/logout",
+  "form": null,
+  "modal": false
+ },
+ {
+  "page": "/user/settings/keys",
+  "tag": "a",
+  "name": "Sign Out",
+  "visible": false,
+  "href": "",
+  "data_url": "/user/logout",
+  "form": null,
+  "modal": false
+ },
+ {
+  "page": "/user/settings/keys",
+  "tag": "button",
+  "name": "Cancel",
+  "visible": false,
+  "href": null,
+  "data_url": null,
+  "form": "POST /user/settings/keys",
+  "modal": false
+ },
+ {
+  "page": "/user/settings/repos",
+  "tag": "a",
+  "name": "Sign Out",
+  "visible": false,
+  "href": "",
+  "data_url": "/user/logout",
+  "form": null,
+  "modal": false
+ },
+ {
+  "page": "/notifications",
+  "tag": "a",
+  "name": "Sign Out",
+  "visible": false,
+  "href": "",
+  "data_url": "/user/logout",
+  "form": null,
+  "modal": false
+ },
+ {
+  "page": "/",
+  "tag": "a",
+  "name": "Sign Out",
+  "visible": false,
+  "href": "",
+  "data_url": "/user/logout",
+  "form": null,
+  "modal": false
+ },
+ {
+  "page": "/",
+  "tag": "a",
+  "name": "Private",
+  "visible": false,
+  "href": null,
+  "data_url": null,
+  "form": null,
+  "modal": false
+ }
+]
