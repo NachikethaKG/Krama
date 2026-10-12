@@ -52,8 +52,14 @@ export type RunEvent =
   | RunReplanningEvent
   | RunPausedEvent
   | RunCompletedEvent
-  | RunFailedEvent;
+  | RunFailedEvent
+  | RunCancelledEvent
+  | RunResumedEvent;
 export type PauseReason = "destructive_action" | "captcha" | "auth_wall" | "rate_limited";
+/**
+ * `user`: POST /runs/{id}/cancel. `confirmation_denied`: POST /runs/{id}/confirm with decision deny.
+ */
+export type CancelReason = "user" | "confirmation_denied";
 /**
  * This interface was referenced by `Plan`'s JSON-Schema
  * via the `definition` "PlanStatus".
@@ -261,6 +267,31 @@ export interface RunFailedEvent {
   seq: number;
   ts: string;
   error: ApiError;
+}
+/**
+ * Final event: the run ended as `cancelled`. The stream closes after it.
+ */
+export interface RunCancelledEvent {
+  type: "run.cancelled";
+  run_id: string;
+  seq: number;
+  ts: string;
+  reason: CancelReason;
+  /**
+   * The step the run was on; null if it was cancelled before the first step
+   */
+  step_seq?: number | null;
+}
+/**
+ * A paused run continues after POST /runs/{id}/confirm with decision allow.
+ */
+export interface RunResumedEvent {
+  type: "run.resumed";
+  run_id: string;
+  seq: number;
+  ts: string;
+  step_seq: number;
+  decision: "allow";
 }
 export interface HealthResponse {
   status: "ok";

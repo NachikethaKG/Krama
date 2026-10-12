@@ -6,21 +6,28 @@ same shape and stay port-specific:
 
 - `StepRef` is the part of a contract `PlannedStep` an Observer needs (no expected_state or risk).
 - `PlanDraft`, `PageState`, `RiskReport`, `PolicyDecision`: inputs/outputs of the Policy port only.
+- `ArtifactRef`, `StoredArtifact`, `validate_artifact_key`: values of the ArtifactStore port only.
 - `ObservedState` is stricter than the contract `step_schema.ObservedState` (title and captured_at are always
   set by a capture). Convert at the API boundary.
 """
 
+import re
 from datetime import datetime
-from typing import Literal
+from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import AfterValidator, BaseModel, ConfigDict, Field
 
 from app.contracts_gen.common_schema import Action, ActionType, Risk, Target
 
 __all__ = [
     "Action",
     "ActionType",
+    "ArtifactContentType",
+    "ArtifactKey",
+    "ArtifactNotFoundError",
+    "ArtifactRef",
     "DecisionReason",
+    "InvalidArtifactKeyError",
     "ObservedState",
     "PageState",
     "PlanDraft",
@@ -30,8 +37,10 @@ __all__ = [
     "RiskReport",
     "StepRef",
     "StepRisk",
+    "StoredArtifact",
     "Target",
     "Verdict",
+    "validate_artifact_key",
 ]
 
 Verdict = Literal["allow", "pause", "stop"]
@@ -115,3 +124,50 @@ class PolicyDecision(_Model):
     verdict: Verdict
     reason: DecisionReason = "ok"
     message: str = ""
+
+
+# Only types the browser renders as data. Never text/html or image/svg+xml: a stored file must not run script.
+ArtifactContentType = Literal["image/png", "image/jpeg", "application/json"]
+
+_KEY_SEGMENT = re.compile(r"[A-Za-z0-9._-]+")
+_MAX_KEY_LENGTH = 512
+
+
+class InvalidArtifactKeyError(ValueError):
+    """The key isn't a safe relative path (absolute, `..`, backslash, odd characters, ...)."""
+
+
+class ArtifactNotFoundError(LookupError):
+    """No artifact is stored under this key."""
+
+
+def validate_artifact_key(key: str) -> str:
+    """Return `key` if it is a safe relative POSIX path like `runs/<run_id>/steps/3-after.png`, else raise.
+
+    Every ArtifactStore implementation calls this before touching storage, so a path-traversal key fails the
+    same way in tests (fake) and in production (local FS, S3 later).
+    """
+    if not key or len(key) > _MAX_KEY_LENGTH:
+        raise InvalidArtifactKeyError(f"artifact key must be 1-{_MAX_KEY_LENGTH} characters")
+    for segment in key.split("/"):
+        if segment in ("", ".", "..") or not _KEY_SEGMENT.fullmatch(segment):
+            raise InvalidArtifactKeyError(f"unsafe artifact key: {key!r}")
+    return key
+
+
+ArtifactKey = Annotated[str, AfterValidator(validate_artifact_key)]
+
+
+class ArtifactRef(_Model):
+    """Where an artifact was stored. `key` is what goes into `screenshot_path` / `recording_path`."""
+
+    key: ArtifactKey
+    content_type: ArtifactContentType
+    size_bytes: int = Field(ge=0)
+
+
+class StoredArtifact(_Model):
+    """An artifact read back from the store."""
+
+    ref: ArtifactRef
+    data: bytes

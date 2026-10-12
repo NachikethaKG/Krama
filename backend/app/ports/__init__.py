@@ -4,7 +4,11 @@ Changing anything here is a contract change: both owners review. Implementations
 other's modules; they only depend on these protocols and their value types.
 """
 
+from app.ports.artifacts import ArtifactStore
 from app.ports.models import (
+    ArtifactNotFoundError,
+    ArtifactRef,
+    InvalidArtifactKeyError,
     ObservedState,
     PageState,
     PlanDraft,
@@ -13,11 +17,16 @@ from app.ports.models import (
     RiskReport,
     StepRef,
     StepRisk,
+    StoredArtifact,
 )
 from app.ports.observer import Observer
 from app.ports.policy import Policy
 
 __all__ = [
+    "ArtifactNotFoundError",
+    "ArtifactRef",
+    "ArtifactStore",
+    "InvalidArtifactKeyError",
     "ObservedState",
     "Observer",
     "PageState",
@@ -28,4 +37,5 @@ __all__ = [
     "RiskReport",
     "StepRef",
     "StepRisk",
+    "StoredArtifact",
 ]

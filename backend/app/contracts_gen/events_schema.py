@@ -97,8 +97,29 @@ class RunFailedEvent(BaseModel):
     error: common_schema.ApiError
 
 
+class RunResumedEvent(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+    type: Literal["run.resumed"]
+    run_id: UUID
+    seq: Annotated[int, Field(ge=1)]
+    ts: AwareDatetime
+    step_seq: Annotated[int, Field(ge=1)]
+    decision: Literal["allow"]
+
+
 type PauseReason = Annotated[
     Literal["destructive_action", "captcha", "auth_wall", "rate_limited"], Field(title="PauseReason")
+]
+
+
+type CancelReason = Annotated[
+    Literal["user", "confirmation_denied"],
+    Field(
+        description="`user`: POST /runs/{id}/cancel. `confirmation_denied`: POST /runs/{id}/confirm with decision deny.",
+        title="CancelReason",
+    ),
 ]
 
 
@@ -137,6 +158,21 @@ class RunPausedEvent(BaseModel):
     message: str | None = None
 
 
+class RunCancelledEvent(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+    type: Literal["run.cancelled"]
+    run_id: UUID
+    seq: Annotated[int, Field(ge=1)]
+    ts: AwareDatetime
+    reason: CancelReason
+    step_seq: Annotated[
+        int | None,
+        Field(description="The step the run was on; null if it was cancelled before the first step", ge=1),
+    ] = None
+
+
 type RunEvent = Annotated[
     RunStartedEvent
     | StepStartedEvent
@@ -146,6 +182,8 @@ type RunEvent = Annotated[
     | RunReplanningEvent
     | RunPausedEvent
     | RunCompletedEvent
-    | RunFailedEvent,
+    | RunFailedEvent
+    | RunCancelledEvent
+    | RunResumedEvent,
     Field(discriminator="type", title="RunEvent"),
 ]

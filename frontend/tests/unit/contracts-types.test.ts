@@ -89,6 +89,10 @@ describe("Contracts TypeScript Types", () => {
           return `completed ${event.workflow_id}`;
         case "run.failed":
           return `failed: ${event.error.code}`;
+        case "run.cancelled":
+          return `cancelled: ${event.reason}`;
+        case "run.resumed":
+          return `resumed at step ${event.step_seq}`;
         default: {
           const _exhaustiveCheck: never = event;
           return _exhaustiveCheck;
