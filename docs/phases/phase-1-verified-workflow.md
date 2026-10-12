@@ -16,7 +16,7 @@
 
 **Vishwas**
 - **State machines in Python:** the `transitions` library vs a hand-rolled enum + transition table. How do you persist state safely so a crash mid-run doesn't corrupt it?
-- **SQLAlchemy 2 + Alembic:** async engine with psycopg 3, the session-per-request pattern in FastAPI, Alembic autogenerate and its limits (it misses some changes).
+- **SQLAlchemy 2 + Alembic:** async engine with asyncpg (decided in [phase-1-vishwas-database](../research/phase-1-vishwas-database.md): psycopg 3's async mode can't share Windows's Proactor loop with Playwright), the session-per-request pattern in FastAPI, Alembic autogenerate and its limits (it misses some changes).
 - **SSE in FastAPI:** `sse-starlette` vs `StreamingResponse`. How do you resume with `Last-Event-ID` (we store events in `run_events`)? Do you need heartbeats?
 - **Agent recovery:** how do browser-use, Agent-E and SeeAct handle a failed step (retry the same action, re-locate the element, replan the rest)? What retry budget is sensible?
 - **Vision grounding with Gemini:** how does Gemini return bounding boxes (normalized 0–1000, `[ymin, xmin, ymax, xmax]`)? How accurate is it on a Gitea screenshot? Turn a box into a Playwright click position.
