@@ -31,14 +31,19 @@ class FakeProvider:
         self._responses = list(responses)
         self.calls: list[tuple[str, str, str]] = []
         """(system, prompt, schema name) of every call, for assertions in tests."""
+        self.images: list[bytes | None] = []
+        """The image sent with each call (None for text-only calls), in the same order as `calls`."""
 
     @classmethod
     def from_dir(cls, fixtures_dir: Path = DEFAULT_FIXTURES_DIR) -> "FakeProvider":
         files = sorted(fixtures_dir.glob("*.json"))
         return cls([FakeResponse.model_validate(json.loads(f.read_text(encoding="utf-8"))) for f in files])
 
-    async def generate[M: BaseModel](self, *, system: str, prompt: str, schema: type[M]) -> LLMResult[M]:
+    async def generate[M: BaseModel](
+        self, *, system: str, prompt: str, schema: type[M], image: bytes | None = None
+    ) -> LLMResult[M]:
         self.calls.append((system, prompt, schema.__name__))
+        self.images.append(image)
         for r in self._responses:
             if r.schema_name not in (None, schema.__name__):
                 continue
