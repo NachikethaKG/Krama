@@ -17,7 +17,9 @@ class Settings(BaseSettings):
     api_port: int = 8000
     cors_origins: list[str] = ["http://localhost:3000"]
 
-    database_url: str = "postgresql+psycopg://krama:krama-local-only@localhost:5433/krama"
+    # 127.0.0.1, not localhost: on Windows + Docker Desktop, localhost tries IPv6 first and asyncpg waits
+    # ~21 s for it to time out before falling back to IPv4.
+    database_url: str = "postgresql+asyncpg://krama:krama-local-only@127.0.0.1:5433/krama"
     redis_url: str = "redis://localhost:6379/0"
 
     llm_provider: Literal["fake", "gemini"] = "fake"

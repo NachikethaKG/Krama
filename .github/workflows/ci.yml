@@ -39,6 +39,21 @@ jobs:
   backend:
     name: Backend (ruff, mypy, pytest)
     runs-on: ubuntu-latest
+    # Same Postgres as infra/docker-compose.yml, so the DB tests (backend/tests/db) run here instead of skipping.
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: krama
+          POSTGRES_PASSWORD: krama-local-only
+          POSTGRES_DB: krama
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U krama"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
     defaults:
       run:
         working-directory: backend
@@ -62,6 +77,9 @@ jobs:
         run: uv run pytest
         env:
           LLM_PROVIDER: fake
+          DATABASE_URL: postgresql+asyncpg://krama:krama-local-only@localhost:5433/krama
+          # A missing database fails the DB tests here instead of skipping them (locally they skip).
+          KRAMA_REQUIRE_DB: "1"
 
   frontend:
     name: Frontend (lint, typecheck, test, build)
