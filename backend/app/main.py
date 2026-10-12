@@ -3,7 +3,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import health
+from app.api import artifacts, health
 from app.api.errors import ERROR_RESPONSES, install_error_handlers
 from app.config import get_settings
 
@@ -21,6 +21,7 @@ def create_app() -> FastAPI:
     )
     install_error_handlers(app)
     app.include_router(health.router, prefix=API_PREFIX)
+    app.include_router(artifacts.router, prefix=API_PREFIX)
     return app
 
 
