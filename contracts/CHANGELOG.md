@@ -2,6 +2,15 @@
 
 Every change to `contracts/` is listed here. Additive change = minor version bump; breaking change = major bump + ADR.
 
+## 1.4 (#203)
+
+Two new live-view events and looser keep-alive wording. Additive: no existing event changed.
+
+- `events.schema.json` v1.1:
+  - `RunCancelledEvent` (`run.cancelled`): `reason` (new enum `CancelReason`: `user` | `confirmation_denied`), optional `step_seq` (null before the first step). Final event.
+  - `RunResumedEvent` (`run.resumed`): `step_seq`, `decision: "allow"`. A paused run continues after `POST /runs/{id}/confirm`.
+- `docs/api-contract.md`: the keep-alive is "an SSE comment line", not the exact text `: keep-alive` (FastAPI's built-in SSE sends `: ping`). Lists which events are final.
+
 ## 1.3 (#20)
 
 Added hand-crafted, realistic sample fixtures for the "create a repository in local Gitea" workflow.

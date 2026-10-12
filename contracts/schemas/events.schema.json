@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "events.schema.json",
   "title": "RunEvent",
-  "$comment": "v1.0. Live-view events sent over SSE on GET /runs/{id}/events. SSE `event:` = type, `id:` = seq. Keep-alives are SSE comment lines, not events.",
+  "$comment": "v1.1. Live-view events sent over SSE on GET /runs/{id}/events. SSE `event:` = type, `id:` = seq. Keep-alives are SSE comment lines, not events.",
   "type": "object",
   "oneOf": [
     { "$ref": "#/$defs/RunStartedEvent" },
@@ -13,7 +13,9 @@
     { "$ref": "#/$defs/RunReplanningEvent" },
     { "$ref": "#/$defs/RunPausedEvent" },
     { "$ref": "#/$defs/RunCompletedEvent" },
-    { "$ref": "#/$defs/RunFailedEvent" }
+    { "$ref": "#/$defs/RunFailedEvent" },
+    { "$ref": "#/$defs/RunCancelledEvent" },
+    { "$ref": "#/$defs/RunResumedEvent" }
   ],
   "discriminator": { "propertyName": "type" },
   "$defs": {
@@ -154,9 +156,48 @@
         "error": { "$ref": "common.schema.json#/$defs/ApiError" }
       }
     },
+    "RunCancelledEvent": {
+      "title": "RunCancelledEvent",
+      "type": "object",
+      "description": "Final event: the run ended as `cancelled`. The stream closes after it.",
+      "required": ["type", "run_id", "seq", "ts", "reason"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "run.cancelled" },
+        "run_id": { "type": "string", "format": "uuid" },
+        "seq": { "type": "integer", "minimum": 1 },
+        "ts": { "type": "string", "format": "date-time" },
+        "reason": { "$ref": "#/$defs/CancelReason" },
+        "step_seq": {
+          "type": ["integer", "null"],
+          "minimum": 1,
+          "description": "The step the run was on; null if it was cancelled before the first step"
+        }
+      }
+    },
+    "RunResumedEvent": {
+      "title": "RunResumedEvent",
+      "type": "object",
+      "description": "A paused run continues after POST /runs/{id}/confirm with decision allow.",
+      "required": ["type", "run_id", "seq", "ts", "step_seq", "decision"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "run.resumed" },
+        "run_id": { "type": "string", "format": "uuid" },
+        "seq": { "type": "integer", "minimum": 1 },
+        "ts": { "type": "string", "format": "date-time" },
+        "step_seq": { "type": "integer", "minimum": 1 },
+        "decision": { "const": "allow" }
+      }
+    },
     "PauseReason": {
       "title": "PauseReason",
       "enum": ["destructive_action", "captcha", "auth_wall", "rate_limited"]
+    },
+    "CancelReason": {
+      "title": "CancelReason",
+      "description": "`user`: POST /runs/{id}/cancel. `confirmation_denied`: POST /runs/{id}/confirm with decision deny.",
+      "enum": ["user", "confirmation_denied"]
     },
     "ObservedSummary": {
       "title": "ObservedSummary",

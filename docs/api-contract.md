@@ -82,5 +82,9 @@ Each message has `id: <seq>`, `event: <type>` and a JSON `data` field. Every `da
 | `run.paused` | `reason: "destructive_action"\|"captcha"\|"auth_wall"\|"rate_limited"`, `step_seq` |
 | `run.completed` | `workflow_id`, `verified_steps`, `failed_actions` |
 | `run.failed` | `error` |
+| `run.cancelled` | `reason: "user"\|"confirmation_denied"`, `step_seq` (null before the first step) |
+| `run.resumed` | `step_seq`, `decision: "allow"` (after `/runs/{id}/confirm` allowed a paused step) |
 
-Keep-alive: every 15 s the server sends an SSE comment line (`: keep-alive`), not an event. `EventSource` ignores it.
+`run.completed`, `run.failed` and `run.cancelled` are final: the server closes the stream after them.
+
+Keep-alive: after 15 s of silence the server sends an SSE comment line (a line starting with `:`), not an event. `EventSource` ignores it. Clients must not depend on the comment's text.
