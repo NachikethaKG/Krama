@@ -1,0 +1,5 @@
+Database migrations (#47). Async template (`alembic init -t async`).
+
+- Apply: `just backend migrate`. New one: `just backend migration "<what changed>"`, then review it by hand.
+- Autogenerate misses changed CHECK constraints and renames (docs/research/phase-1-vishwas-database.md).
+- Never edit a migration that is already on main; add a new one (AGENTS.md rule 6).
