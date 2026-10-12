@@ -40,6 +40,7 @@ PostgreSQL 16. All ids are UUID, timestamps are `timestamptz` (UTC), and every t
 | status | text | `queued\|running\|paused\|verified\|failed\|cancelled` |
 | current_seq | int | |
 | retry_count | int | |
+| last_event_seq | int not null default 0 | seq of the last `run_events` row for this run, bumped in the same UPDATE that writes the event (gapless, race-free) |
 | browser_session | text null | worker/session id |
 | error | jsonb null | |
 | started_at / finished_at | timestamptz null | |
@@ -50,7 +51,7 @@ The persisted SSE stream, so the live view can resume and old runs can be replay
 | column | type | notes |
 |---|---|---|
 | run_id | uuid fk → runs | pk part 1 |
-| seq | int | pk part 2, monotonic |
+| seq | int | pk part 2, monotonic, taken from `runs.last_event_seq` |
 | type | text | event type from the API contract |
 | data | jsonb | |
 | ts | timestamptz | |
