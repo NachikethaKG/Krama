@@ -10,6 +10,14 @@ install:
 dev:
     uv run uvicorn app.main:app --reload --port 8000
 
+# Apply all database migrations (Postgres from `just up`; DATABASE_URL in the repo-root .env)
+migrate:
+    uv run alembic upgrade head
+
+# New migration from model changes. Review it by hand: autogenerate misses CHECK changes and renames
+migration name:
+    uv run alembic revision --autogenerate -m "{{name}}"
+
 test *args:
     uv run pytest {{args}}
 
