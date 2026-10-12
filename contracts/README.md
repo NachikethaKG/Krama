@@ -17,7 +17,7 @@ The source of truth between `backend/` and `frontend/`. Changing anything here i
 | `task.schema.json` | `Task` + request bodies | #14 |
 | `plan.schema.json` | `Plan`, `PlannedStep` + request bodies | #14 |
 | `run.schema.json` | `Run`, `RunPage`, `RunConfirmRequest` | #14 |
-| `events.schema.json` | `RunEvent`: union of the 9 live-view event types | #14 |
+| `events.schema.json` | `RunEvent`: union of the 11 live-view event types | #14 |
 | `health.schema.json` | `HealthResponse` for `GET /health` | #22 |
 | `workflow.schema.json`, `step.schema.json` | Verified workflow and executed steps | #15 |
 
