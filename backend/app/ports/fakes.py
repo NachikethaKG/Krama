@@ -6,7 +6,11 @@ from datetime import UTC, datetime
 
 from playwright.async_api import Page
 
+from app.ports.artifacts import ArtifactStore
 from app.ports.models import (
+    ArtifactContentType,
+    ArtifactNotFoundError,
+    ArtifactRef,
     ObservedState,
     PageState,
     PlanDraft,
@@ -16,6 +20,8 @@ from app.ports.models import (
     RiskReport,
     StepRef,
     StepRisk,
+    StoredArtifact,
+    validate_artifact_key,
 )
 from app.ports.observer import Observer
 from app.ports.policy import Policy
@@ -79,6 +85,28 @@ class FakePolicy:
         return observed
 
 
+class FakeArtifactStore:
+    """Keeps artifacts in memory. Checks keys exactly like a real store, so unsafe keys fail in tests too."""
+
+    def __init__(self) -> None:
+        self.artifacts: dict[str, StoredArtifact] = {}
+
+    async def put(self, key: str, data: bytes, content_type: ArtifactContentType) -> ArtifactRef:
+        ref = ArtifactRef(key=validate_artifact_key(key), content_type=content_type, size_bytes=len(data))
+        self.artifacts[key] = StoredArtifact(ref=ref, data=data)
+        return ref
+
+    async def get(self, key: str) -> StoredArtifact:
+        try:
+            return self.artifacts[validate_artifact_key(key)]
+        except KeyError:
+            raise ArtifactNotFoundError(key) from None
+
+    async def exists(self, key: str) -> bool:
+        return validate_artifact_key(key) in self.artifacts
+
+
 # Typed conformance: strict mypy fails here if a fake drifts from its port.
 _observer: Observer = FakeObserver()
 _policy: Policy = FakePolicy()
+_artifacts: ArtifactStore = FakeArtifactStore()
