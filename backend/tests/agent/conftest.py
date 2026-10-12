@@ -30,6 +30,18 @@ PAGES: dict[str, str] = {
         </form>
     </main>""",
     "/done": "<title>Done</title><main><h1>Done</h1></main>",
+    # Elements that drifted away from what a plan says (#54): the locator chain must still find them.
+    "/locate": """<title>Locate</title><main>
+        <button aria-label="Add a repo" onclick="document.title = 'renamed'">
+          New Repository</button>
+        <a href="#" onclick="document.title = 'link'; return false">Open settings</a>
+        <input aria-label="Repository Name">
+        <section><h2>Draft</h2><button onclick="document.title = 'draft saved'">Save</button></section>
+        <div style="height: 120px"></div>
+        <section><h2>Publish</h2><button onclick="document.title = 'published'">Save</button></section>
+        <label>Password <input type="password" name="password" value="hunter2"></label>
+        <label>Notes <input name="notes" value="visible"></label>
+    </main>""",
 }
 
 

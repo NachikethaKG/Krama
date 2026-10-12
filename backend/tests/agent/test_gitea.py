@@ -81,3 +81,20 @@ async def test_hand_written_create_repo_run(gitea: str, tmp_path: Path) -> None:
     assert log.entries[-1].result.url_after == f"/demo/{repo}"
     assert [e.section for e in log.entries].count("step") == 6
     assert os.environ.get("GITEA_DEMO_PASSWORD", "demo-local-only") not in text
+
+
+async def test_renamed_link_on_the_real_dashboard_is_found_by_its_text(signed_in: ActionExecutor) -> None:
+    # Simulate a Gitea upgrade that changed the nav link's accessible name but kept its visible text (#54).
+    page = signed_in._page
+    await page.goto("/")
+    await (
+        page.get_by_role("navigation")
+        .get_by_role("link", name="Explore")
+        .evaluate("el => el.setAttribute('aria-label', 'Browse everything')")
+    )
+
+    result = await signed_in.execute(Action(type="click"), Target(role="link", name="Explore"))
+
+    assert result.ok, result.error
+    assert result.strategy == "text"
+    assert result.url_after.startswith("/explore")
