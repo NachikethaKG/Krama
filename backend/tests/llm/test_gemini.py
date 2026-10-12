@@ -65,6 +65,25 @@ async def test_structured_output_config() -> None:
     assert config.temperature == 0
 
 
+async def test_text_only_prompt_is_sent_as_is() -> None:
+    client, sleep = FakeGenaiClient([ok(PLAN_JSON)]), FakeSleep()
+
+    await generate(provider(client, sleep))
+
+    assert client.contents == ["create demo-repo"]
+
+
+async def test_image_is_sent_as_a_png_part_before_the_prompt() -> None:
+    client, sleep = FakeGenaiClient([ok(PLAN_JSON)]), FakeSleep()
+    png = b"\x89PNG\r\n\x1a\nfake"
+
+    await provider(client, sleep).generate(system="s", prompt="find it", schema=PlanOut, image=png)
+
+    image, text = client.contents[0]
+    assert (image.inline_data.mime_type, image.inline_data.data) == ("image/png", png)
+    assert text == "find it"
+
+
 async def test_server_error_retries_once_then_falls_back() -> None:
     client = FakeGenaiClient([server_error(503), server_error(503), ok(PLAN_JSON)])
     sleep = FakeSleep()

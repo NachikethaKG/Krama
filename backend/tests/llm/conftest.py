@@ -69,12 +69,14 @@ class FakeGenaiClient:
 
     outcomes: list[Any]
     calls: list[tuple[str, Any]] = field(default_factory=list)
+    contents: list[Any] = field(default_factory=list)
 
     def __post_init__(self) -> None:
         self.aio = SimpleNamespace(models=SimpleNamespace(generate_content=self._generate))
 
-    async def _generate(self, *, model: str, contents: str, config: Any) -> Any:
+    async def _generate(self, *, model: str, contents: Any, config: Any) -> Any:
         self.calls.append((model, config))
+        self.contents.append(contents)
         outcome = self.outcomes.pop(0)
         if outcome is HANG:
             await asyncio.sleep(3600)
