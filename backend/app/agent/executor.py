@@ -4,15 +4,20 @@ from typing import Literal
 from urllib.parse import urlsplit
 
 from playwright.async_api import Error as PlaywrightError
-from playwright.async_api import Locator, Page
+from playwright.async_api import FloatRect, Locator, Page
 from playwright.async_api import TimeoutError as PlaywrightTimeoutError
 from pydantic import BaseModel, ConfigDict
 
+from app.agent.vision import VisionLocator
 from app.contracts_gen.common_schema import Action, ActionType, BoundingBox, Target
+from app.llm import LLMAttempt
 
 type ActionErrorCode = Literal[
     "invalid_action", "target_not_found", "ambiguous_target", "timeout", "action_failed"
 ]
+type LocatorStrategy = Literal["role", "label", "text", "selector", "vision"]
+"""How the target was found: ARIA role + name, aria-label/<label>, visible text, CSS selector, or a
+vision pick among several role/text matches."""
 
 _NEEDS_TARGET: frozenset[str] = frozenset({"click", "fill", "select"})
 _NEEDS_VALUE: frozenset[str] = frozenset({"fill", "select", "navigate", "press"})
@@ -39,6 +44,10 @@ class ActionResult(BaseModel):
     """The resolved element in page coordinates (CSS px), measured just before acting. None without target."""
     url_after: str
     """URL path after the action (no scheme or host), like `url_matches` in the contract."""
+    strategy: LocatorStrategy | None = None
+    """Which locator strategy found the target. None without target, or if nothing was found."""
+    llm_attempts: list[LLMAttempt] = []
+    """LLM requests made by the vision fallback (for the run log and the benchmark)."""
     error: ActionError | None = None
 
 
@@ -46,38 +55,55 @@ class _InvalidActionError(Exception):
     pass
 
 
+class _UnresolvedTargetError(Exception):
+    def __init__(self, code: ActionErrorCode, message: str) -> None:
+        super().__init__(message)
+        self.code: ActionErrorCode = code
+
+
 class ActionExecutor:
     """Runs contract actions (click / fill / select / navigate / press / wait) on one page.
 
-    Elements are found by ARIA role + accessible name (substring match, so "Repository Name" finds
-    "Repository Name *"), falling back to the CSS selector. Failures come back as `ActionResult(ok=False)`
-    with a typed error code; the executor never raises for a failed action.
+    The target is found by a fallback chain, one try per strategy
+    (docs/research/phase-1-vishwas-agent-recovery.md): ARIA role + name → aria-label/<label> → visible
+    text → CSS selector. Names match as substrings, so "Repository Name" finds "Repository Name *".
+    A strategy counts only if it matches exactly ONE visible element. If role or text matched several,
+    the optional vision locator picks the one Gemini points at. Vision never acts on an element that
+    didn't match the planned role/name or text, and the action itself still goes through Playwright's
+    actionability checks (no raw mouse clicks, no JS clicks).
 
-    It does not decide whether an action is allowed: destructive actions must pass the policy layer
-    before they reach `execute`.
+    Failures come back as `ActionResult(ok=False)` with a typed error code; the executor never raises for a
+    failed action. It does not decide whether an action is allowed: destructive actions must pass the
+    policy layer before they reach `execute`.
     """
 
-    def __init__(self, page: Page) -> None:
+    def __init__(self, page: Page, vision: VisionLocator | None = None) -> None:
         self._page = page
+        self._vision = vision
 
-    async def execute(self, action: Action, target: Target | None = None) -> ActionResult:
+    async def execute(
+        self, action: Action, target: Target | None = None, *, instruction: str | None = None
+    ) -> ActionResult:
+        """`instruction` (the step's instruction_text) helps the vision fallback tell candidates apart."""
         started_at = datetime.now(UTC)
         t0 = time.perf_counter()
         bbox: BoundingBox | None = None
         locator: Locator | None = None
+        strategy: LocatorStrategy | None = None
+        attempts: list[LLMAttempt] = []
         error: ActionError | None = None
         try:
             _validate(action, target)
             if target is not None and (target.role or target.selector):
-                locator = self._locate(target)
-                await locator.wait_for(state="visible")
+                locator, strategy = await self._resolve(target, instruction, attempts)
                 bbox = await self._page_bbox(locator)
             await self._perform(action, locator)
         except _InvalidActionError as e:
             error = ActionError(code="invalid_action", message=str(e))
+        except _UnresolvedTargetError as e:
+            error = ActionError(code=e.code, message=str(e))
         except PlaywrightTimeoutError as e:
-            missing = locator is not None and await locator.count() == 0
-            error = ActionError(code="target_not_found" if missing else "timeout", message=_first_line(e))
+            error = ActionError(code="timeout", message=_first_line(e))
         except PlaywrightError as e:
             ambiguous = "strict mode violation" in str(e)
             code: ActionErrorCode = "ambiguous_target" if ambiguous else "action_failed"
@@ -89,6 +115,8 @@ class ActionExecutor:
             duration_ms=round((time.perf_counter() - t0) * 1000),
             bbox=bbox,
             url_after=self.current_path(),
+            strategy=strategy,
+            llm_attempts=attempts,
             error=error,
         )
 
@@ -96,12 +124,71 @@ class ActionExecutor:
         """The page's URL path (no scheme or host)."""
         return urlsplit(self._page.url).path or "/"
 
-    def _locate(self, target: Target) -> Locator:
+    def _strategies(self, target: Target) -> list[tuple[LocatorStrategy, Locator]]:
+        page, name = self._page, target.name
+        found: list[tuple[LocatorStrategy, Locator]] = []
         if target.role:
             # Roles come from ARIA snapshots / the LLM as plain strings; Playwright checks them at runtime.
-            return self._page.get_by_role(target.role, name=target.name)  # type: ignore[arg-type]
-        assert target.selector is not None
-        return self._page.locator(target.selector)
+            found.append(("role", page.get_by_role(target.role, name=name)))  # type: ignore[arg-type]
+            if name:
+                found += [("label", page.get_by_label(name)), ("text", page.get_by_text(name))]
+        if target.selector:
+            found.append(("selector", page.locator(target.selector)))
+        return found
+
+    async def _resolve(
+        self, target: Target, instruction: str | None, attempts: list[LLMAttempt]
+    ) -> tuple[Locator, LocatorStrategy]:
+        strategies = self._strategies(target)
+        # Wait (up to the action timeout) until ANY strategy shows something, then try them in order
+        # without waiting again: a renamed element costs one timeout at most, not one per strategy.
+        anything = strategies[0][1]
+        for _, loc in strategies[1:]:
+            anything = anything.or_(loc)
+        try:
+            await anything.filter(visible=True).first.wait_for(state="visible")
+        except PlaywrightTimeoutError:
+            hidden = any([await loc.count() > 0 for _, loc in strategies])
+            code: ActionErrorCode = "timeout" if hidden else "target_not_found"
+            raise _UnresolvedTargetError(code, f"no visible element for {_describe(target)}") from None
+
+        several: list[Locator] = []
+        for strategy, loc in strategies:
+            visible = loc.filter(visible=True)
+            count = await visible.count()
+            if count == 1:
+                return visible, strategy
+            if count > 1 and strategy in ("role", "text"):
+                several.append(visible)
+        if not several:
+            raise _UnresolvedTargetError("target_not_found", f"no visible element for {_describe(target)}")
+        picked = await self._pick_with_vision(target, instruction, several, attempts)
+        if picked is None:
+            raise _UnresolvedTargetError(
+                "ambiguous_target", f"several elements match {_describe(target)} and none could be picked"
+            )
+        return picked, "vision"
+
+    async def _pick_with_vision(
+        self, target: Target, instruction: str | None, several: list[Locator], attempts: list[LLMAttempt]
+    ) -> Locator | None:
+        """The one candidate whose box contains the point Gemini chose, or None."""
+        if self._vision is None:
+            return None
+        result = await self._vision.point(self._page, target, instruction)
+        attempts += result.attempts
+        if result.point is None:
+            return None
+        x, y = result.point
+        for candidates in several:  # role matches first, then text matches
+            hits = []
+            for i in range(await candidates.count()):
+                box = await candidates.nth(i).bounding_box()  # viewport coordinates, like the screenshot
+                if box and _contains(box, x, y):
+                    hits.append(candidates.nth(i))
+            if len(hits) == 1:
+                return hits[0]
+        return None
 
     async def _perform(self, action: Action, locator: Locator | None) -> None:
         value = action.value
@@ -151,6 +238,16 @@ def _validate(action: Action, target: Target | None) -> None:
         raise _InvalidActionError("navigate takes a URL path starting with '/', not a full URL")
     if action.type == "navigate" and (action.value or "").startswith("//"):
         raise _InvalidActionError("navigate takes a URL path, not a protocol-relative URL")
+
+
+def _contains(box: FloatRect, x: float, y: float) -> bool:
+    return box["x"] <= x <= box["x"] + box["width"] and box["y"] <= y <= box["y"] + box["height"]
+
+
+def _describe(target: Target) -> str:
+    parts = [f"role={target.role}" if target.role else "", f"name={target.name!r}" if target.name else ""]
+    parts.append(f"selector={target.selector!r}" if target.selector else "")
+    return " ".join(p for p in parts if p)
 
 
 def _first_line(e: Exception) -> str:

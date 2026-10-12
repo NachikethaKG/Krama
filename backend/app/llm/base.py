@@ -50,10 +50,13 @@ class LLMUnavailableError(LLMError):
 class LLMProvider(Protocol):
     """One interface for every LLM call (docs/architecture.md §4). Gemini in real runs, Fake in tests."""
 
-    async def generate[M: BaseModel](self, *, system: str, prompt: str, schema: type[M]) -> LLMResult[M]:
+    async def generate[M: BaseModel](
+        self, *, system: str, prompt: str, schema: type[M], image: bytes | None = None
+    ) -> LLMResult[M]:
         """Return a reply that validates against `schema`.
 
         `system` holds trusted instructions only. Untrusted page content belongs in `prompt`, inside clearly
-        delimited blocks (AGENTS.md §4).
+        delimited blocks (AGENTS.md §4). `image` is an optional PNG (a screenshot), sent before the prompt;
+        mask sensitive fields in it before calling.
         """
         ...

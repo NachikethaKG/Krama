@@ -83,7 +83,9 @@ class GeminiProvider:
         # The SDK has no timeout by default; one stalled request hung a run for over 10 minutes.
         self._timeout_s = timeout_s
 
-    async def generate[M: BaseModel](self, *, system: str, prompt: str, schema: type[M]) -> LLMResult[M]:
+    async def generate[M: BaseModel](
+        self, *, system: str, prompt: str, schema: type[M], image: bytes | None = None
+    ) -> LLMResult[M]:
         config = types.GenerateContentConfig(
             system_instruction=system,
             temperature=0,
@@ -91,6 +93,9 @@ class GeminiProvider:
             # Not `response_schema`: it rejects our extra="forbid" models (additionalProperties: false).
             response_json_schema=schema.model_json_schema(),
         )
+        contents: Any = prompt
+        if image is not None:
+            contents = [types.Part.from_bytes(data=image, mime_type="image/png"), prompt]
         attempts: list[LLMAttempt] = []
         for model in self._models:
             rate_retries = server_retries = 0
@@ -100,7 +105,7 @@ class GeminiProvider:
                 try:
                     async with asyncio.timeout(self._timeout_s):
                         response = await self._client.aio.models.generate_content(
-                            model=model, contents=prompt, config=config
+                            model=model, contents=contents, config=config
                         )
                 except TimeoutError:
                     attempts.append(
