@@ -120,8 +120,9 @@ async def _run_step(
     options: RunOptions,
     page: Page,
 ) -> StepReport:
-    # ports/models.py still has provisional copies of Action/Target, so cross the port as plain data.
-    ref = StepRef.model_validate(step.model_dump(include={"seq", "action", "target", "instruction_text"}))
+    ref = StepRef(
+        seq=step.seq, action=step.action, target=step.target, instruction_text=step.instruction_text
+    )
     result = await executor.execute(step.action, step.target)
     logged_action = step.action
     if step.action.value is not None and looks_sensitive(step.target.name):
