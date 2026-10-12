@@ -11,6 +11,7 @@ from app.llm.base import (
 )
 from app.llm.fake import FakeProvider, FakeResponse
 from app.llm.gemini import DEFAULT_MODELS, GeminiProvider
+from app.llm.untrusted import UNTRUSTED_DATA_RULE, neutralize_tags, untrusted_block
 
 
 def create_provider(settings: Settings) -> LLMProvider:
@@ -22,6 +23,7 @@ def create_provider(settings: Settings) -> LLMProvider:
 
 __all__ = [
     "DEFAULT_MODELS",
+    "UNTRUSTED_DATA_RULE",
     "FakeProvider",
     "FakeResponse",
     "GeminiProvider",
@@ -32,4 +34,6 @@ __all__ = [
     "LLMResult",
     "LLMUnavailableError",
     "create_provider",
+    "neutralize_tags",
+    "untrusted_block",
 ]
