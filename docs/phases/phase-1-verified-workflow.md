@@ -38,7 +38,7 @@
 
 | Vishwas | Nachiketha |
 |---|---|
-| `runs/`: state machine (`draft → approved → running → verified/failed/paused/cancelled`) + in-process executor | `observer/`: persist captures and recordings through the `ArtifactStore` port |
+| `runs/`: run state machine (`queued → running → verified/failed/paused/cancelled`; `draft/approved` is the **plan's** status, `proposed → approved/rejected`) + in-process executor | `observer/`: persist captures and recordings through the `ArtifactStore` port |
 | `api/`: `/tasks`, `/plans`, `/plans/{id}/approve`, `/runs`, SSE `/runs/{id}/events` | Frontend: switch from mock to the real API behind `NEXT_PUBLIC_API_MODE` |
 | `db/`: models + first Alembic migrations, `run_events` table | Frontend: plan editing (reorder / delete / edit text), cancel button, error and paused states |
 | `storage/`: `LocalFsStore` + `/artifacts` endpoint, export `openapi.json` | |
