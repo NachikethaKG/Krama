@@ -34,6 +34,9 @@ class Settings(BaseSettings):
 
     artifacts_dir: Path = REPO_ROOT / "data" / "artifacts"
     max_concurrent_runs: int = 1
+    # Recovery budget per run (phase-1-vishwas-agent-recovery.md). Running time only: pauses not counted.
+    run_timeout_seconds: float = 600.0
+    max_replans_per_run: int = 3
 
     @property
     def gemini_model_list(self) -> list[str]:

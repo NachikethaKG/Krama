@@ -48,10 +48,14 @@ PLAN = [
 
 
 async def queued_run(
-    sessions: Sessions, site: str, steps: list[dict[str, Any]], status: str = "queued"
+    sessions: Sessions,
+    site: str,
+    steps: list[dict[str, Any]],
+    status: str = "queued",
+    prompt: str = "Create the item demo-item",
 ) -> UUID:
     async with sessions.begin() as s:
-        task = TaskRow(prompt="Create the item demo-item", target_url=site, status="planned")
+        task = TaskRow(prompt=prompt, target_url=site, status="planned")
         s.add(task)
         await s.flush()
         plan = PlanRow(task_id=task.id, status="approved", risk="low", expected_result="done", steps=steps)
@@ -84,6 +88,14 @@ async def events(sessions: Sessions, run_id: UUID) -> list[dict[str, Any]]:
     for p in payloads:
         EVENTS.validate_python(p)  # every stored event is a contract event
     return payloads
+
+
+async def until_paused(sessions: Sessions, run_id: UUID, timeout_s: float = 30) -> None:
+    for _ in range(int(timeout_s / 0.05)):
+        if (await run_row(sessions, run_id)).status == "paused":
+            return
+        await asyncio.sleep(0.05)
+    raise AssertionError(f"run never paused: {(await run_row(sessions, run_id)).status}")
 
 
 async def run_row(sessions: Sessions, run_id: UUID) -> RunRow:
@@ -154,22 +166,25 @@ ALL_EXECUTOR_ROWS = """
 """
 
 
-async def test_a_step_that_does_not_verify_fails_the_run(
+async def test_a_failed_step_without_a_planner_pauses_for_the_human(
     sessions: Sessions, site: str, tmp_path: Path
 ) -> None:
     wrong = [{**GOOD_PLAN["steps"][0], "expected_state": {"url_matches": "^/nowhere$"}}]
     run_id = await queued_run(sessions, site, wrong)
-    env = environment(tmp_path, verify_timeout_s=0.5)
+    executor = InProcessExecutor(RunStore(sessions), environment(tmp_path, verify_timeout_s=0.5))
 
-    await run_to_end(InProcessExecutor(RunStore(sessions), env), run_id)
+    await executor.submit(run_id)
+    await until_paused(sessions, run_id)
+    assert await executor.confirm(run_id, 1, "deny")
+    await asyncio.wait_for(executor.wait(run_id), timeout=10)
 
-    run = await run_row(sessions, run_id)
-    assert run.status == "failed"
-    assert run.error is not None and run.error["details"] == {"reason": "step_not_verified", "step_seq": 1}
+    assert (await run_row(sessions, run_id)).status == "cancelled"
     stream = await events(sessions, run_id)
     assert [e["type"] for e in stream] == [
-        "run.started", "step.started", "step.action_done", "step.failed", "run.failed",
+        "run.started", "step.started", "step.action_done", "step.failed", "run.replanning", "run.paused",
+        "run.cancelled",
     ]  # fmt: skip
+    assert stream[5]["reason"] == "recovery_exhausted"  # a click is never retried; no planner to replan
     assert stream[3]["expected"] == {"url_matches": "^/nowhere$"} and stream[3]["observed"]["url"] == "/form"
     async with sessions() as s:
         assert await s.scalar(select(func.count()).select_from(WorkflowRow)) == 0  # never a workflow
@@ -353,11 +368,15 @@ async def test_a_duplicate_create_on_real_gitea_never_verifies(sessions: Session
     # Same name again, with the weak expectations the old verifier accepted.
     weak = {"visible": [{"role": "button", "name": "Create Repository"}], "title_contains": "Gitea"}
     second = await queued_run(sessions, GITEA, plan(weak))
-    await run_to_end(InProcessExecutor(RunStore(sessions), env), second)
+    executor = InProcessExecutor(RunStore(sessions), env)
+    await executor.submit(second)
+    await until_paused(sessions, second)
 
-    run = await run_row(sessions, second)
-    assert run.status == "failed" and run.error is not None
-    assert run.error["details"] == {"reason": "verification_unclear", "step_seq": 3}
+    paused = (await events(sessions, second))[-1]
+    assert (paused["reason"], paused["step_seq"]) == ("verification_unclear", 3)  # a human looks
+    assert await executor.confirm(second, 3, "deny")
+    await asyncio.wait_for(executor.wait(second), timeout=10)
+    assert (await run_row(sessions, second)).status == "cancelled"
     async with sessions() as s:
         assert (
             await s.scalar(select(func.count()).select_from(WorkflowRow).where(WorkflowRow.run_id == second))

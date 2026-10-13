@@ -13,23 +13,27 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Literal, Protocol
+from urllib.parse import urlsplit
 from uuid import UUID
 
 from playwright.async_api import Page
 
-from app.agent import ActionExecutor, PlaywrightSession, SessionConfig
+from app.agent import ActionExecutor, PlaywrightSession, SessionConfig, page_snapshot
 from app.agent.runlog import MASK, ScriptedStep, looks_sensitive, mask_expected, run_script
 from app.agent.vision import VisionLocator
 from app.contracts_gen.events_schema import PauseReason
 from app.contracts_gen.plan_schema import PlannedStep
 from app.db import WorkflowStepRow
 from app.db.base import literal_values
+from app.llm import LLMError
+from app.planner.planner import Planner, PlannerError, PlanRequest
 from app.ports.models import ObservedState, PageState, PolicyDecision
 from app.ports.observer import Observer
 from app.ports.policy import Policy
 from app.runs.states import RunStatus
 from app.runs.steps import StepOutcome, act_and_verify, step_ref
 from app.runs.store import RunJob, RunNotFoundError, RunStore
+from app.targets import TargetSetup
 from app.verifier import StepVerifier
 
 logger = logging.getLogger(__name__)
@@ -78,6 +82,13 @@ class RunEnvironment:
     verify_interval_s: float = 0.25
     pause_timeout_s: float = 1800.0
     """How long a paused run keeps its browser open waiting for /confirm before it gives up."""
+    planner: Planner | None = None
+    """For replanning after a failed step. None: no replans, the run pauses for the human instead."""
+    target: Callable[[RunJob], TargetSetup] = lambda _job: TargetSetup()
+    """Site hints and sign-in identity for the replan prompt."""
+    run_timeout_s: float = 600.0
+    """Time a run may spend running (pauses don't count). Then it fails."""
+    max_replans_per_run: int = 3
 
 
 class InProcessExecutor:
@@ -90,6 +101,8 @@ class InProcessExecutor:
         self._tasks: dict[UUID, asyncio.Task[None]] = {}
         self._answers: dict[UUID, asyncio.Future[None]] = {}
         """Paused runs waiting for /confirm allow."""
+        self._paused_s: dict[UUID, float] = {}
+        """Seconds each run spent paused (they don't count toward run_timeout_s)."""
 
     @property
     def artifacts_dir(self) -> Path:
@@ -199,15 +212,12 @@ class InProcessExecutor:
                     return
             observer = env.observer_for(run_id)
             await observer.start_recording(page)
-            rows: list[WorkflowStepRow] = []
             try:
-                for step in job.steps:
-                    row = await self._step(job, step, executor, observer, page)
-                    if row is None:
-                        return  # failed or cancelled; the store already says so
-                    rows.append(row)
+                rows = await self._steps(job, executor, observer, page)
             finally:
                 recording = await observer.stop_recording()
+        if rows is None:
+            return  # failed, paused out or cancelled; the store already says so
         await self._store.complete(
             job,
             rows,
@@ -217,14 +227,84 @@ class InProcessExecutor:
             duration_ms=round((time.perf_counter() - t0) * 1000),
         )
 
-    async def _step(
-        self, job: RunJob, step: PlannedStep, executor: ActionExecutor, observer: Observer, page: Page
-    ) -> WorkflowStepRow | None:
-        """Run one step and announce it. The verified step's row, or None if the run must stop."""
+    async def _steps(
+        self, job: RunJob, executor: ActionExecutor, observer: Observer, page: Page
+    ) -> list[WorkflowStepRow] | None:
+        """Every step in order, with recovery (docs/research/phase-1-vishwas-agent-recovery.md): retry an
+        idempotent step once, else replan the rest (a human re-approves it), else pause for the human.
+        The rows of the finished steps, or None if the run stopped."""
+        env, store = self._env, self._store
+        steps = list(job.steps)
+        rows: list[WorkflowStepRow] = []
+        budget = _Recovery(max_replans=env.max_replans_per_run)
+        self._paused_s[job.run_id] = 0.0
+        t0 = time.perf_counter()
+        i = 0
+        while i < len(steps):
+            step = steps[i]
+            if time.perf_counter() - t0 - self._paused_s[job.run_id] > env.run_timeout_s:
+                await store.fail(
+                    job.run_id, from_=RunStatus.RUNNING, reason="run_timeout", step_seq=step.seq,
+                    message=f"The run took longer than {env.run_timeout_s:g} s (pauses not counted)",
+                )  # fmt: skip
+                return None
+            out = await self._attempt(job, step, executor, observer, page, budget.retry_count)
+            if out is None:
+                return None  # stopped by the policy, or cancelled
+            if out.verified:
+                rows.append(self._row(step, out))
+                budget.succeeded()
+                i += 1
+                continue
+            if out.unclear:
+                message = (
+                    "Nothing proved this step worked. Check the page: allow accepts the step, deny cancels."
+                )
+                if not await self._pause(job, step.seq, "verification_unclear", message):
+                    return None
+                rows.append(self._row(step, out))  # a human accepted it; its confidence stays below 0.8
+                budget.succeeded()
+                i += 1
+                continue
+
+            move, why = budget.after_failure(step, out)
+            if move == "retry":
+                continue  # same step again; budget.retry_count already counts it
+            if move == "replan":
+                replanned = await self._replan(job, steps, i, out, page, budget)
+                if replanned is not None:
+                    new_steps, plan_id = replanned
+                    message = "The agent proposes new remaining steps. Allow runs them, deny cancels."
+                    if not await self._pause(job, step.seq, "replan_review", message, plan_id=plan_id):
+                        return None
+                    await store.adopt_plan(job.run_id, plan_id)
+                    steps = [*steps[:i], *new_steps]
+                    continue
+                why = "the replan didn't produce new steps"
+            if not await self._pause(
+                job,
+                step.seq,
+                "recovery_exhausted",
+                f"Step {step.seq} failed: {why}. Allow tries it once more.",
+            ):
+                return None
+            budget.retry_count += 1  # the human asked for one more try
+        return rows
+
+    async def _attempt(
+        self,
+        job: RunJob,
+        step: PlannedStep,
+        executor: ActionExecutor,
+        observer: Observer,
+        page: Page,
+        retry_count: int,
+    ) -> StepOutcome | None:
+        """One try of one step, announced on the live view. None if the run stopped (policy, cancel)."""
         store, seq = self._store, step.seq
         if not await store.event(
             job.run_id, "step.started", {"step_seq": seq, "instruction_text": step.instruction_text},
-            current_seq=seq,
+            current_seq=seq, retry_count=retry_count,
         ):  # fmt: skip
             return None  # cancelled meanwhile
         before = await observer.capture(page, step_ref(step))
@@ -242,34 +322,65 @@ class InProcessExecutor:
         )
         shot = self._artifact_url(out.observed.screenshot_path)
         bbox = list(out.result.bbox) if out.result.bbox else None
-        done = {"step_seq": seq, "screenshot_url": shot, "bbox": bbox}
-        if not await store.event(job.run_id, "step.action_done", done):
+        if not await store.event(
+            job.run_id, "step.action_done", {"step_seq": seq, "screenshot_url": shot, "bbox": bbox}
+        ):
             return None
         if out.verified and out.verification is not None:
             v = out.verification.verification
             verified = {"step_seq": seq, "method": list(v.method), "confidence": v.confidence}
-            if not await store.event(job.run_id, "step.verified", verified):
-                return None
-            return self._row(step, out)
+            return out if await store.event(job.run_id, "step.verified", verified) else None
         failed = {
             "step_seq": seq,
             "expected": mask_expected(step.expected_state).model_dump(mode="json", exclude_none=True),
             "observed": {"url": out.observed.url, "title": out.observed.title},
             "screenshot_url": shot,
         }
-        if await store.event(job.run_id, "step.failed", failed):
-            if out.unclear:
-                # Agreed (#45): an unclear step pauses for a human. Until the contract has a pause reason for
-                # it and /confirm can resume (#59), the run stops here instead; it never passes silently.
-                reason, why = "verification_unclear", "nothing proved the step worked"
-            else:
-                reason = "step_not_verified"
-                why = out.result.error.code if out.result.error else "expected state not reached"
-            await store.fail(
-                job.run_id, from_=RunStatus.RUNNING, message=f"Step {seq} did not verify ({why})",
-                reason=reason, step_seq=seq,
-            )  # fmt: skip
-        return None
+        return out if await store.event(job.run_id, "step.failed", failed) else None
+
+    async def _replan(
+        self,
+        job: RunJob,
+        steps: list[PlannedStep],
+        i: int,
+        out: StepOutcome,
+        page: Page,
+        budget: "_Recovery",
+    ) -> tuple[list[PlannedStep], UUID] | None:
+        """Ask the planner for new remaining steps after steps[i] failed, and store them as a proposed plan.
+        Returns the new steps (numbered from steps[i].seq) and the plan's id, or None."""
+        env, failed = self._env, steps[i]
+        budget.replans += 1
+        budget.retry_count += 1
+        reason = f"step {failed.seq} failed: {_failure_reason(out)}"
+        if not await self._store.event(
+            job.run_id, "run.replanning", {"reason": reason, "attempt": budget.replans},
+            retry_count=budget.retry_count,
+        ):  # fmt: skip
+            return None
+        if env.planner is None:
+            return None
+        setup = env.target(job)
+        request = PlanRequest(
+            task_id=job.task_id,
+            task=job.prompt,
+            start_path=urlsplit(page.url).path or "/",
+            page_snapshot=await page_snapshot(page),
+            site=setup.site,
+            signed_in_as=setup.signed_in_as,
+            done=[s.instruction_text for s in steps[:i]],
+            failure=_failure_text(failed, out),
+        )
+        try:
+            result = await env.planner.plan(request)
+        except (PlannerError, LLMError) as e:
+            logger.info("replan for run %s failed: %s", job.run_id, e)
+            return None
+        new_steps = [s.model_copy(update={"seq": failed.seq + k}) for k, s in enumerate(result.plan.steps)]
+        plan_id = await self._store.propose_plan(
+            job, [*steps[:i], *new_steps], expected_result=result.plan.expected_result
+        )
+        return new_steps, plan_id
 
     async def _allowed(self, job: RunJob, step: PlannedStep, before: ObservedState) -> bool:
         """Ask the policy before acting (AGENTS.md §4). True to go ahead; False if the run stopped."""
@@ -284,8 +395,8 @@ class InProcessExecutor:
         if decision.verdict == "allow":
             return True
         if decision.verdict == "pause" and decision.reason in PAUSE_REASONS:
-            return await self._pause(job, step, decision)
-        # A stop, or a pause the contract can't express yet: never continue.
+            return await self._pause(job, step.seq, decision.reason, decision.message or None)
+        # A stop, or a pause the contract can't express: never continue.
         await self._store.fail(
             job.run_id,
             from_=RunStatus.RUNNING,
@@ -296,14 +407,25 @@ class InProcessExecutor:
         )
         return False
 
-    async def _pause(self, job: RunJob, step: PlannedStep, decision: PolicyDecision) -> bool:
-        """Pause with the browser open until /confirm. True if a human allowed the step."""
+    async def _pause(
+        self,
+        job: RunJob,
+        step_seq: int,
+        reason: str,
+        message: str | None = None,
+        *,
+        plan_id: UUID | None = None,
+    ) -> bool:
+        """Pause with the browser open until /confirm. True if a human allowed it (deny cancels the task)."""
         answer: asyncio.Future[None] = asyncio.get_running_loop().create_future()
         self._answers[job.run_id] = answer
+        t0 = time.perf_counter()
         try:
-            paused: dict[str, Any] = {"reason": decision.reason, "step_seq": step.seq}
-            if decision.message:
-                paused["message"] = decision.message
+            paused: dict[str, Any] = {"reason": reason, "step_seq": step_seq}
+            if message:
+                paused["message"] = message
+            if plan_id is not None:
+                paused["plan_id"] = str(plan_id)
             if not await self._store.transition(
                 job.run_id, RunStatus.PAUSED, paused, from_=RunStatus.RUNNING
             ):
@@ -316,12 +438,14 @@ class InProcessExecutor:
                     from_=RunStatus.PAUSED,
                     message="Nobody answered the pause in time",
                     reason="pause_timeout",
-                    step_seq=step.seq,
+                    step_seq=step_seq,
                 )
                 return False
             return True  # confirm() already moved the run back to running
         finally:
             self._answers.pop(job.run_id, None)
+            if job.run_id in self._paused_s:
+                self._paused_s[job.run_id] += time.perf_counter() - t0
 
     def _row(self, step: PlannedStep, out: StepOutcome) -> WorkflowStepRow:
         """The stored step. Sensitive fill values are masked; the ARIA text stays out (it can hold typed
@@ -375,3 +499,71 @@ def _summary(state: ObservedState) -> dict[str, Any]:
         "headings": state.headings,
         "captured_at": state.captured_at.isoformat(),
     }
+
+
+IDEMPOTENT = frozenset({"navigate", "wait", "fill", "select"})
+"""Safe to repeat. A click or key press is never repeated automatically: the first one may already have
+worked (a second "Create Repository" could make a duplicate)."""
+
+type Move = Literal["retry", "replan", "pause"]
+
+
+class _Recovery:
+    """The recovery budget of one run (agreed in #43): retry an idempotent step once, at most one replan per
+    step and `max_replans` per run, and a pause for the human after 2 failed steps in a row."""
+
+    def __init__(self, *, max_replans: int) -> None:
+        self.max_replans = max_replans
+        self.replans = 0
+        self.retry_count = 0
+        """Step retries plus replans (runs.retry_count, shown in the UI)."""
+        self._retried: set[int] = set()
+        self._replanned: set[int] = set()
+        self._failed_in_a_row = 0
+
+    def succeeded(self) -> None:
+        self._failed_in_a_row = 0
+
+    def after_failure(self, step: PlannedStep, out: StepOutcome) -> tuple[Move, str]:
+        code = out.result.error.code if out.result.error else None
+        if step.risk == "high":
+            return "pause", "a high-risk step is never retried or replanned automatically"
+        if code == "ambiguous_target":
+            return "pause", "several elements match the target and none could be picked"
+        if step.action.type in IDEMPOTENT and id(step) not in self._retried:
+            self._retried.add(id(step))
+            self.retry_count += 1
+            return "retry", "retrying once"
+        self._failed_in_a_row += 1
+        if self._failed_in_a_row >= 2:
+            return "pause", "two steps failed in a row"
+        if id(step) in self._replanned or self.replans >= self.max_replans:
+            return "pause", "the replan budget is used up"
+        self._replanned.add(id(step))
+        return "replan", _failure_reason(out)
+
+
+def _failure_reason(out: StepOutcome) -> str:
+    if out.result.error is not None:
+        return f"the action failed ({out.result.error.code})"
+    return "the expected state wasn't reached"
+
+
+def _target_text(step: PlannedStep) -> str:
+    target = step.target
+    return " ".join(p for p in (target.role, target.name or target.selector) if p) or "the page"
+
+
+def _failure_text(step: PlannedStep, out: StepOutcome) -> str:
+    """For the replan prompt. Contains page text, so the planner puts it in an untrusted block."""
+    expected = mask_expected(step.expected_state).model_dump(mode="json", exclude_none=True)
+    lines = [
+        f"Step: {step.instruction_text}",
+        f"Action: {step.action.type} on {_target_text(step)}",
+        f"Problem: {_failure_reason(out)}",
+        f"Expected: {expected}",
+        f"Observed: URL path {out.observed.url}, title {out.observed.title!r}",
+    ]
+    if out.verification is not None:
+        lines += [f"- {c.kind} {c.expected}: {c.detail}" for c in out.verification.failures()]
+    return "\n".join(lines)

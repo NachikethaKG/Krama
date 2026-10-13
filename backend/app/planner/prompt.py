@@ -80,14 +80,32 @@ def build_prompt(
     site: str | None = None,
     signed_in_as: str | None = None,
     feedback: str | None = None,
+    done: list[str] | None = None,
+    failure: str | None = None,
 ) -> str:
-    """The user message. Page-derived text (snapshot, URL path) can't open or close a block."""
+    """The user message. Page-derived text (snapshot, URL path, failure details) can't open or close a block.
+
+    `done` + `failure` make it a replan: the instruction texts of the steps that already worked (from the
+    approved plan, trusted) and what went wrong with the next one (observed page state, untrusted).
+    """
     parts = [f"Task: {task}", f"Current URL path: {neutralize_tags(start_path)}"]
     if signed_in_as:
         parts.append(f"Signed in as: {signed_in_as}")
     if site and site in SITE_HINTS:
         parts.append(f"<site_hints>\n{SITE_HINTS[site]}\n</site_hints>")
     parts.append(untrusted_block("page_snapshot", redact_snapshot(page_snapshot)))
+    if failure is not None:
+        lines = [f"{i}. {text}" for i, text in enumerate(done or [], start=1)] or ["(none)"]
+        parts.append(
+            "You are RE-PLANNING during a run. These steps already worked; do not repeat them:\n"
+            + "\n".join(lines)
+            + "\nThe next step failed. What was expected and what the page showed:"
+        )
+        parts.append(untrusted_block("failure", failure))
+        parts.append(
+            "Plan ONLY the remaining steps of the task, starting from the current page above. Never undo "
+            "or repeat what is done. If the task can't be finished from here, return no steps and ask."
+        )
     if feedback:
         parts.append(f"Your previous plan was rejected for these reasons. Fix them:\n{feedback}")
     return "\n\n".join(parts)

@@ -61,6 +61,10 @@ def build_services(settings: Settings) -> Services:
         # TODO(vishwas): pass the real Policy here once Nachiketha's policy/ lands (#61, #62). Until then
         # the executor's own guard pauses every step the approved plan marks high risk.
         policy=None,
+        planner=LLMPlanner(llm),
+        target=lambda job: target_setup(job.target_url, settings),
+        run_timeout_s=settings.run_timeout_seconds,
+        max_replans_per_run=settings.max_replans_per_run,
     )
     return Services(
         sessions=sessions,
