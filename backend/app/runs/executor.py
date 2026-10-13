@@ -12,21 +12,22 @@ from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Protocol
+from typing import Any, Protocol
 from uuid import UUID
 
 from playwright.async_api import Page
 
 from app.agent import ActionExecutor, PlaywrightSession, SessionConfig
-from app.agent.runlog import MASK, ScriptedStep, looks_sensitive, run_script
+from app.agent.runlog import MASK, ScriptedStep, looks_sensitive, mask_expected, run_script
 from app.agent.vision import VisionLocator
 from app.contracts_gen.plan_schema import PlannedStep
 from app.db import WorkflowStepRow
+from app.ports.models import ObservedState
 from app.ports.observer import Observer
 from app.runs.states import RunStatus
 from app.runs.steps import StepOutcome, act_and_verify
 from app.runs.store import RunJob, RunStore
-from app.verifier import Verifier
+from app.verifier import StepVerifier
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +48,7 @@ class RunExecutor(Protocol):
 class RunEnvironment:
     """What a run needs besides its plan. Built once by the composition root (app startup, tests)."""
 
-    verifier: Verifier
+    verifier: StepVerifier
     observer_for: Callable[[UUID], Observer]
     """The Observer for one run (the composition root picks the concrete one behind the port)."""
     artifacts_dir: Path
@@ -207,15 +208,21 @@ class InProcessExecutor:
             return self._row(step, out)
         failed = {
             "step_seq": seq,
-            "expected": step.expected_state.model_dump(mode="json", exclude_none=True),
+            "expected": mask_expected(step.expected_state).model_dump(mode="json", exclude_none=True),
             "observed": {"url": out.observed.url, "title": out.observed.title},
             "screenshot_url": shot,
         }
         if await store.event(job.run_id, "step.failed", failed):
-            why = out.result.error.code if out.result.error else "expected state not reached"
+            if out.unclear:
+                # Agreed (#45): an unclear step pauses for a human. Until the contract has a pause reason for
+                # it and /confirm can resume (#59), the run stops here instead; it never passes silently.
+                reason, why = "verification_unclear", "nothing proved the step worked"
+            else:
+                reason = "step_not_verified"
+                why = out.result.error.code if out.result.error else "expected state not reached"
             await store.fail(
                 job.run_id, from_=RunStatus.RUNNING, message=f"Step {seq} did not verify ({why})",
-                reason="step_not_verified", step_seq=seq,
+                reason=reason, step_seq=seq,
             )  # fmt: skip
         return None
 
@@ -234,7 +241,8 @@ class InProcessExecutor:
                 "bbox": list(out.result.bbox) if out.result.bbox else None,
             },
             instruction_text=step.instruction_text,
-            expected_state=step.expected_state.model_dump(mode="json", exclude_none=True),
+            expected_state=mask_expected(step.expected_state).model_dump(mode="json", exclude_none=True),
+            before_state=_summary(out.before) if out.before else None,
             observed_state={
                 "url": out.observed.url,
                 "title": out.observed.title,
@@ -260,3 +268,13 @@ class InProcessExecutor:
     def _artifact_url(self, path: str | None) -> str | None:
         key = self._artifact_key(path)
         return f"{ARTIFACTS_URL}/{key}" if key else None
+
+
+def _summary(state: ObservedState) -> dict[str, Any]:
+    """What is stored about a page state: no ARIA text (it can hold typed values), no own screenshot."""
+    return {
+        "url": state.url,
+        "title": state.title,
+        "headings": state.headings,
+        "captured_at": state.captured_at.isoformat(),
+    }

@@ -31,7 +31,7 @@ from app.runs import InProcessExecutor, RunEnvironment, RunStore
 from app.runs.events import EventHub
 from app.storage import LocalFsStore, get_artifact_store
 from app.targets import TargetSetup
-from app.verifier import RuleVerifier
+from app.verifier import LayeredVerifier
 from tests.runs.test_runner import GOOD_PLAN, step
 
 pytestmark = pytest.mark.anyio
@@ -46,7 +46,7 @@ def services(sessions: Sessions, tmp_path: Path, *replies: FakeResponse) -> Serv
     hub = EventHub()
     store = RunStore(sessions, on_event=hub.notify)
     env = RunEnvironment(
-        verifier=RuleVerifier(),
+        verifier=LayeredVerifier(),
         observer_for=lambda run_id: PageObserver(artifacts_dir=tmp_path / "runs" / str(run_id)),
         artifacts_dir=tmp_path,
     )

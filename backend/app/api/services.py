@@ -20,7 +20,8 @@ from app.planner.service import PlanningService
 from app.runs import InProcessExecutor, RunEnvironment, RunStore
 from app.runs.events import EventHub
 from app.targets import target_setup
-from app.verifier import RuleVerifier
+from app.verifier import LayeredVerifier
+from app.verifier.vision import GeminiVisionJudge
 
 
 @dataclass
@@ -49,13 +50,14 @@ def build_services(settings: Settings) -> Services:
     hub = EventHub()
     store = RunStore(sessions, on_event=hub.notify)
     llm = create_provider(settings)
+    gemini = settings.llm_provider == "gemini"
     env = RunEnvironment(
-        verifier=RuleVerifier(),
+        # Vision costs real Gemini quota; with the fake LLM the cheaper layers decide alone.
+        verifier=LayeredVerifier(GeminiVisionJudge(llm) if gemini else None),
         observer_for=lambda run_id: PageObserver(artifacts_dir=settings.artifacts_dir / "runs" / str(run_id)),
         artifacts_dir=settings.artifacts_dir,
         preconditions=lambda job: target_setup(job.target_url, settings).preconditions,
-        # Vision costs real Gemini quota; with the fake LLM the chain stops at role/label/text/selector.
-        vision=GeminiVisionLocator(llm) if settings.llm_provider == "gemini" else None,
+        vision=GeminiVisionLocator(llm) if gemini else None,
     )
     return Services(
         sessions=sessions,
