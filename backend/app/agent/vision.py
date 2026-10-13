@@ -62,6 +62,11 @@ class VisionLocator(Protocol):
     async def point(self, page: Page, target: Target, instruction: str | None) -> VisionResult: ...
 
 
+async def masked_screenshot(page: Page) -> bytes:
+    """A PNG of the viewport with every sensitive field painted black, safe to send to an LLM."""
+    return await page.screenshot(mask=[page.locator(SENSITIVE_FIELDS)], mask_color="#000000")
+
+
 class GeminiVisionLocator:
     """Asks the LLM where the element is. One request (its model fallback chain) per call."""
 
@@ -72,7 +77,7 @@ class GeminiVisionLocator:
         viewport = page.viewport_size
         if viewport is None:
             return VisionResult(point=None, error="page has no viewport size")
-        shot = await page.screenshot(mask=[page.locator(SENSITIVE_FIELDS)], mask_color="#000000")
+        shot = await masked_screenshot(page)
         try:
             result = await self._llm.generate(
                 system=SYSTEM_PROMPT, prompt=build_prompt(target, instruction), schema=VisionBox, image=shot

@@ -8,7 +8,7 @@ from uuid import UUID, uuid4
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.agent.executor import ActionExecutor, ActionResult
-from app.contracts_gen.common_schema import Action, Target
+from app.contracts_gen.common_schema import Action, ExpectedState, Target
 
 MASK = "***"
 # Fill values for fields with these names are never written to a run log (AGENTS.md §4).
@@ -70,6 +70,17 @@ class RunLog(BaseModel):
 def looks_sensitive(field_name: str | None) -> bool:
     """True for field names like "Password *", "API key" or "Card number": never log what is typed there."""
     return bool(field_name and _SENSITIVE_NAME.search(field_name))
+
+
+def mask_expected(expected: ExpectedState) -> ExpectedState:
+    """The expected state with the values of sensitive fields replaced by ***, for anything stored or sent."""
+    if not expected.field_values or not any(looks_sensitive(fv.name) for fv in expected.field_values):
+        return expected
+    values = [
+        fv.model_copy(update={"value": MASK}) if looks_sensitive(fv.name) else fv
+        for fv in expected.field_values
+    ]
+    return expected.model_copy(update={"field_values": values})
 
 
 def is_sensitive(step: ScriptedStep) -> bool:
