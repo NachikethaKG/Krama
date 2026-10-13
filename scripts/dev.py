@@ -13,7 +13,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 
 SERVERS = {
-    "api": (["uv", "run", "uvicorn", "app.main:app", "--reload", "--port", "8000"], ROOT / "backend"),
+    "api": (
+        ["uv", "run", "uvicorn", "app.main:app", "--reload", "--loop", "app.dev_loop:factory", "--port", "8000"],
+        ROOT / "backend",
+    ),
     "web": (["pnpm", "dev"], ROOT / "frontend"),
 }
 

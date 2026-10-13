@@ -28,6 +28,7 @@ class Settings(BaseSettings):
     gemini_models: str = "gemini-3.8-flash,gemini-3.5-flash,gemini-2.5-flash"
 
     # Local-only demo account on the test Gitea (`just seed`).
+    gitea_url: str = "http://localhost:3001"
     gitea_demo_user: str = "demo"
     gitea_demo_password: str = "demo-local-only"
 
