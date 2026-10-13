@@ -12,7 +12,7 @@ from app.llm import FakeProvider, FakeResponse
 from app.observer import PageObserver
 from app.planner import LLMPlanner
 from app.runs import RunOptions, RunParts, RunReport, run_task
-from app.verifier import RuleVerifier
+from app.verifier import LayeredVerifier
 
 pytestmark = pytest.mark.anyio
 
@@ -83,7 +83,7 @@ def parts(reply: dict[str, Any], *, approve: bool = True) -> RunParts:
     llm = FakeProvider([FakeResponse(name="plan", schema_name="LLMPlan", response=reply)])
     return RunParts(
         planner=LLMPlanner(llm, max_attempts=1),
-        verifier=RuleVerifier(),
+        verifier=LayeredVerifier(),
         observer_for=lambda run_dir: PageObserver(artifacts_dir=run_dir),
         approve=approver,
     )
@@ -182,7 +182,8 @@ async def test_password_values_are_masked_in_the_run_log(site: str, tmp_path: Pa
     reply = plan_with(s3={
         "action": {"type": "fill", "value": secret},
         "target": {"role": "textbox", "name": "Password"},
-        "expected_state": {"url_matches": "^/form$"},
+        # The observer shows *** for a secret field; the verifier compares against that, never the value.
+        "expected_state": {"field_values": [{"role": "textbox", "name": "Password", "value": secret}]},
     })  # fmt: skip
 
     report = await run(site, tmp_path, reply)

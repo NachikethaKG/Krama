@@ -25,7 +25,7 @@ from app.db.repositories import event_payload, events_after
 from app.observer import PageObserver
 from app.runs import InProcessExecutor, RunEnvironment, RunStore
 from app.runs.store import RunJob
-from app.verifier import RuleVerifier
+from app.verifier import LayeredVerifier
 from tests.runs.test_runner import GOOD_PLAN, step
 
 pytestmark = pytest.mark.anyio
@@ -41,7 +41,7 @@ PLAN = [
         {"type": "fill", "value": "s3cret-value"},
         PASSWORD,
         "Type the password.",
-        {"url_matches": "^/form$"},
+        {"field_values": [{**PASSWORD, "value": "s3cret-value"}]},
     ),
     *[{**s, "seq": s["seq"] + 1} for s in GOOD_PLAN["steps"][2:]],
 ]
@@ -65,7 +65,7 @@ async def queued_run(
 
 def environment(tmp_path: Path, **kw: Any) -> RunEnvironment:
     return RunEnvironment(
-        verifier=RuleVerifier(),
+        verifier=LayeredVerifier(),
         observer_for=lambda run_id: PageObserver(artifacts_dir=tmp_path / "runs" / str(run_id)),
         artifacts_dir=tmp_path,
         **kw,
@@ -319,3 +319,48 @@ async def test_create_a_repository_on_real_gitea(sessions: Sessions, tmp_path: P
     async with sessions() as s:
         stored = await s.scalar(text(ALL_EXECUTOR_ROWS))
     assert settings.gitea_demo_password not in (stored or "")  # the login never reaches the database
+
+
+@pytest.mark.skipif(not _gitea_up(), reason=f"Gitea not reachable at {GITEA}; start it with `just up`")
+async def test_a_duplicate_create_on_real_gitea_never_verifies(sessions: Sessions, tmp_path: Path) -> None:
+    """The research case: every action works, Gitea shows "name already used", nothing is created."""
+    from app.config import get_settings
+
+    settings = get_settings()
+    name = f"krama-dup-{uuid.uuid4().hex[:8]}"
+    repo_name = {"role": "textbox", "name": "Repository Name"}
+    env = environment(
+        tmp_path,
+        preconditions=lambda _job: login_steps(
+            user=settings.gitea_demo_user, password=settings.gitea_demo_password
+        ),
+        verify_timeout_s=1.0,
+    )
+
+    def plan(create_expects: dict[str, Any]) -> list[dict[str, Any]]:
+        create = {"role": "button", "name": "Create Repository"}
+        return [
+            step(1, {"type": "navigate", "value": "/repo/create"}, {}, "Open.",
+                 {"url_matches": "^/repo/create$"}),
+            step(2, {"type": "fill", "value": name}, repo_name, "Type the name.",
+                 {"field_values": [{**repo_name, "value": name}]}),
+            step(3, {"type": "click"}, create, "Click Create.", create_expects),
+        ]  # fmt: skip
+
+    first = await queued_run(sessions, GITEA, plan({"url_matches": f"^/{settings.gitea_demo_user}/{name}$"}))
+    await run_to_end(InProcessExecutor(RunStore(sessions), env), first)
+    assert (await run_row(sessions, first)).status == "verified"
+
+    # Same name again, with the weak expectations the old verifier accepted.
+    weak = {"visible": [{"role": "button", "name": "Create Repository"}], "title_contains": "Gitea"}
+    second = await queued_run(sessions, GITEA, plan(weak))
+    await run_to_end(InProcessExecutor(RunStore(sessions), env), second)
+
+    run = await run_row(sessions, second)
+    assert run.status == "failed" and run.error is not None
+    assert run.error["details"] == {"reason": "verification_unclear", "step_seq": 3}
+    async with sessions() as s:
+        assert (
+            await s.scalar(select(func.count()).select_from(WorkflowRow).where(WorkflowRow.run_id == second))
+            == 0
+        )
