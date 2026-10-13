@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "events.schema.json",
   "title": "RunEvent",
-  "$comment": "v1.1. Live-view events sent over SSE on GET /runs/{id}/events. SSE `event:` = type, `id:` = seq. Keep-alives are SSE comment lines, not events.",
+  "$comment": "v1.2. Live-view events sent over SSE on GET /runs/{id}/events. SSE `event:` = type, `id:` = seq. Keep-alives are SSE comment lines, not events.",
   "type": "object",
   "oneOf": [
     { "$ref": "#/$defs/RunStartedEvent" },
@@ -125,7 +125,12 @@
         "ts": { "type": "string", "format": "date-time" },
         "reason": { "$ref": "#/$defs/PauseReason" },
         "step_seq": { "type": "integer", "minimum": 1 },
-        "message": { "type": "string" }
+        "message": { "type": "string" },
+        "plan_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "For replan_review: the plan with the proposed steps (GET /plans/{id})"
+        }
       }
     },
     "RunCompletedEvent": {
@@ -192,7 +197,18 @@
     },
     "PauseReason": {
       "title": "PauseReason",
-      "enum": ["destructive_action", "captcha", "auth_wall", "rate_limited"]
+      "description": "Why a run waits for a human. POST /runs/{id}/confirm with allow continues, deny cancels.",
+      "enum": [
+        "destructive_action",
+        "captcha",
+        "auth_wall",
+        "rate_limited",
+        "verification_unclear",
+        "replan_review",
+        "recovery_exhausted",
+        "sensitive_data",
+        "prompt_injection"
+      ]
     },
     "CancelReason": {
       "title": "CancelReason",

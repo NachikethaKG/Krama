@@ -30,7 +30,7 @@
 | 1 | GET | `/runs/{id}` | → `Run` | |
 | 1 | GET | `/runs/{id}/events` | → `text/event-stream` | Live view, see below. Supports `Last-Event-ID` |
 | 1 | POST | `/runs/{id}/cancel` | → `Run` | |
-| 1 | POST | `/runs/{id}/confirm` | `{step_seq, decision: "allow"\|"deny"}` → `Run` | Resumes a run paused on a destructive step |
+| 1 | POST | `/runs/{id}/confirm` | `{step_seq, decision: "allow"\|"deny"}` → `Run` | Answers a paused run (any `run.paused` reason). `allow` continues (`run.resumed`): run the destructive step, accept an unclear step, run the replanned steps, or retry once more. `deny` ends the run as `cancelled` (`confirmation_denied`). `409 run_not_active` if it isn't paused at `step_seq` |
 | 1 | GET | `/workflows/{id}` | → `Workflow` | The verified workflow (main output) |
 | 1 | GET | `/workflows` | `?target_app&limit&cursor` → page of `WorkflowSummary` | |
 | 2 | GET | `/workflows/{id}/recording` | → rrweb event JSON | Masked before storage |
@@ -79,7 +79,7 @@ Each message has `id: <seq>`, `event: <type>` and a JSON `data` field. Every `da
 | `step.verified` | `step_seq`, `method[]`, `confidence` |
 | `step.failed` | `step_seq`, `expected`, `observed`, `screenshot_url` |
 | `run.replanning` | `reason`, `attempt` |
-| `run.paused` | `reason: "destructive_action"\|"captcha"\|"auth_wall"\|"rate_limited"`, `step_seq` |
+| `run.paused` | `reason: "destructive_action"\|"captcha"\|"auth_wall"\|"rate_limited"\|"verification_unclear"\|"replan_review"\|"recovery_exhausted"\|"sensitive_data"\|"prompt_injection"`, `step_seq`, `message?`, `plan_id?` (replan_review: the proposed steps) |
 | `run.completed` | `workflow_id`, `verified_steps`, `failed_actions` |
 | `run.failed` | `error` |
 | `run.cancelled` | `reason: "user"\|"confirmation_denied"`, `step_seq` (null before the first step) |
