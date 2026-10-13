@@ -1,6 +1,5 @@
 """`krama run`: plan → approve → execute → observe → verify, one task, one browser."""
 
-import asyncio
 import time
 from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass, field
@@ -14,10 +13,10 @@ from app.agent.runlog import MASK, ScriptedStep, looks_sensitive, run_script
 from app.contracts_gen.plan_schema import Plan, PlannedStep
 from app.llm import LLMError
 from app.planner import InvalidPlanError, NeedsClarificationError, Planner, PlanRequest
-from app.ports.models import ObservedState, StepRef
 from app.ports.observer import Observer
 from app.runs.report import ObservedSummary, RunReport, RunStatus, StepReport
-from app.verifier import VerificationOutcome, Verifier
+from app.runs.steps import act_and_verify
+from app.verifier import Verifier
 
 type Approve = Callable[[Plan], Awaitable[bool]]
 type Notify = Callable[[str], None]
@@ -120,39 +119,30 @@ async def _run_step(
     options: RunOptions,
     page: Page,
 ) -> StepReport:
-    ref = StepRef(
-        seq=step.seq, action=step.action, target=step.target, instruction_text=step.instruction_text
+    out = await act_and_verify(
+        step,
+        executor,
+        observer,
+        verifier,
+        page,
+        verify_timeout_s=options.verify_timeout_s,
+        verify_interval_s=options.verify_interval_s,
     )
-    result = await executor.execute(step.action, step.target)
     logged_action = step.action
     if step.action.value is not None and looks_sensitive(step.target.name):
         logged_action = step.action.model_copy(update={"value": MASK})
-
-    observed: ObservedState = await observer.capture(page, ref)
-    outcome: VerificationOutcome | None = None
-    attempts = 0
-    if result.ok:
-        deadline = time.perf_counter() + options.verify_timeout_s
-        while True:
-            attempts += 1
-            outcome = verifier.verify(step.expected_state, observed)
-            if outcome.verified or time.perf_counter() >= deadline:
-                break
-            await asyncio.sleep(options.verify_interval_s)
-            observed = await observer.capture(page, ref)
-
     return StepReport(
         seq=step.seq,
         instruction_text=step.instruction_text,
         action=logged_action,
         target=step.target,
         risk=step.risk,
-        result=result,
+        result=out.result,
         observed=ObservedSummary(
-            url=observed.url, title=observed.title, screenshot_path=observed.screenshot_path
+            url=out.observed.url, title=out.observed.title, screenshot_path=out.observed.screenshot_path
         ),
-        verification=outcome,
-        verify_attempts=attempts,
+        verification=out.verification,
+        verify_attempts=out.verify_attempts,
     )
 
 
