@@ -13,6 +13,11 @@ const REASON_DESCRIPTIONS: Record<PauseReason, string> = {
   captcha: "A bot detection or CAPTCHA was encountered and requires human intervention.",
   auth_wall: "An authentication barrier was reached and requires manual sign-in.",
   rate_limited: "A rate limit was triggered; execution is temporarily held.",
+  verification_unclear: "The step ran, but nothing proved it worked. Please check the page and decide.",
+  replan_review: "The agent proposes changed steps after a failure. Review them before it continues.",
+  recovery_exhausted: "The step kept failing and the retry budget is used up. Retry once more or cancel.",
+  sensitive_data: "This step touches sensitive data and needs your confirmation.",
+  prompt_injection: "The page seems to contain instructions aimed at the agent. Please check before continuing.",
 };
 
 export function PauseBanner({

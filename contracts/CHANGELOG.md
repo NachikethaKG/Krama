@@ -2,6 +2,15 @@
 
 Every change to `contracts/` is listed here. Additive change = minor version bump; breaking change = major bump + ADR.
 
+## 1.5 (#216)
+
+More reasons a run can pause for a human, and the plan to review after a replan. Additive.
+
+- `events.schema.json` v1.2:
+  - `PauseReason` adds `verification_unclear` (a step nothing proved, #45/#53), `replan_review` and `recovery_exhausted` (#55), `sensitive_data` and `prompt_injection` (Policy port pauses, #59).
+  - `RunPausedEvent` adds optional `plan_id`: for `replan_review`, the plan with the proposed steps.
+- `docs/api-contract.md`: `/runs/{id}/confirm` answers any pause; what allow/deny mean.
+
 ## 1.4 (#203)
 
 Two new live-view events and looser keep-alive wording. Additive: no existing event changed.

@@ -110,7 +110,21 @@ class RunResumedEvent(BaseModel):
 
 
 type PauseReason = Annotated[
-    Literal["destructive_action", "captcha", "auth_wall", "rate_limited"], Field(title="PauseReason")
+    Literal[
+        "destructive_action",
+        "captcha",
+        "auth_wall",
+        "rate_limited",
+        "verification_unclear",
+        "replan_review",
+        "recovery_exhausted",
+        "sensitive_data",
+        "prompt_injection",
+    ],
+    Field(
+        description="Why a run waits for a human. POST /runs/{id}/confirm with allow continues, deny cancels.",
+        title="PauseReason",
+    ),
 ]
 
 
@@ -156,6 +170,10 @@ class RunPausedEvent(BaseModel):
     reason: PauseReason
     step_seq: Annotated[int, Field(ge=1)]
     message: str | None = None
+    plan_id: Annotated[
+        UUID | None,
+        Field(description="For replan_review: the plan with the proposed steps (GET /plans/{id})"),
+    ] = None
 
 
 class RunCancelledEvent(BaseModel):
