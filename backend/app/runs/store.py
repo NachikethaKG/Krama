@@ -16,7 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.contracts_gen.plan_schema import PlannedStep
 from app.db import PlanRow, RunRow, TaskRow, WorkflowRow, WorkflowStepRow
-from app.db.repositories import append_event, runs_with_status, transition_run
+from app.db.repositories import append_event, decide_plan, runs_with_status, transition_run
 from app.runs.states import ACTIVE, RunStatus, event_type, sources
 
 
@@ -31,6 +31,9 @@ class RunJob:
     target_url: str
     status: RunStatus
     steps: list[PlannedStep]
+
+
+_RISK_ORDER = {"low": 0, "medium": 1, "high": 2}
 
 
 class RunNotFoundError(LookupError):
@@ -207,6 +210,32 @@ class RunStore:
         if row is None:
             raise _NotRunningError
         return workflow.id
+
+    async def propose_plan(self, job: RunJob, steps: Sequence[PlannedStep], *, expected_result: str) -> UUID:
+        """Store replanned steps as a new proposed plan of the same task (the human reviews it)."""
+        risk = max((s.risk for s in steps), key=_RISK_ORDER.__getitem__, default="low")
+        async with self._sessions.begin() as s:
+            plan = PlanRow(
+                task_id=job.task_id,
+                status="proposed",
+                risk=risk,
+                expected_result=expected_result,
+                steps=[step.model_dump(mode="json", exclude_none=True) for step in steps],
+            )
+            s.add(plan)
+            await s.flush()
+            return plan.id
+
+    async def adopt_plan(self, run_id: UUID, plan_id: UUID) -> None:
+        """The human allowed the replanned steps: approve that plan and run it from now on."""
+        async with self._sessions.begin() as s:
+            plan = await decide_plan(s, plan_id, revision=1, to="approved")
+            if plan is None:
+                raise RunNotFoundError(plan_id)
+            run = await s.get(RunRow, run_id, with_for_update=True)
+            if run is None:
+                raise RunNotFoundError(run_id)
+            run.plan_id, run.plan_revision = plan_id, plan.revision
 
     async def unfinished(self) -> Sequence[UUID]:
         """Runs a restart interrupted: queued, running or paused, with no browser behind them any more."""
