@@ -6,10 +6,21 @@ from pydantic import BaseModel, ConfigDict
 
 from app.contracts_gen.common_schema import ElementRef, ExpectedState, VerificationMethod
 from app.contracts_gen.step_schema import StepVerification
+from app.llm import LLMAttempt
 from app.ports.models import ObservedState
 from app.verifier.aria import AriaNode, parse_aria_snapshot
 
-type CheckKind = Literal["url_matches", "title_contains", "visible", "absent", "field_value", "checked"]
+type CheckKind = Literal[
+    "url_matches",
+    "title_contains",
+    "visible",
+    "absent",
+    "field_value",
+    "checked",
+    "network",
+    "vision",
+    "effect",
+]
 
 
 class Check(BaseModel):
@@ -28,6 +39,8 @@ class VerificationOutcome(BaseModel):
 
     verification: StepVerification
     checks: list[Check]
+    llm_attempts: list[LLMAttempt] = []
+    """LLM requests made by the vision layer, if it ran (for the run log and the benchmark)."""
 
     @property
     def verified(self) -> bool:
