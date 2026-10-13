@@ -5,7 +5,7 @@ Every write goes through app.db.repositories, which validates each event against
 in the same transaction as the run's status change.
 """
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Awaitable, Callable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any
@@ -41,9 +41,21 @@ class _NotRunningError(Exception):
     pass
 
 
+type OnEvent = Callable[[UUID], Awaitable[None]]
+
+
 class RunStore:
-    def __init__(self, sessions: async_sessionmaker[AsyncSession]) -> None:
+    def __init__(
+        self, sessions: async_sessionmaker[AsyncSession], *, on_event: OnEvent | None = None
+    ) -> None:
+        """`on_event(run_id)` runs after every committed event (it wakes the live-view streams)."""
         self._sessions = sessions
+        self._on_event = on_event
+
+    async def _committed(self, run_id: UUID, wrote: bool) -> bool:
+        if wrote and self._on_event is not None:
+            await self._on_event(run_id)
+        return wrote
 
     async def load(self, run_id: UUID) -> RunJob:
         async with self._sessions() as s:
@@ -95,7 +107,7 @@ class RunStore:
             row = await transition_run(
                 s, run_id, to=to, allowed_from=allowed, event_type=kind, event_data=event_data, **changes
             )
-            return row is not None
+        return await self._committed(run_id, row is not None)
 
     async def cancel(self, run_id: UUID, reason: str) -> bool:
         """Cancel a queued, running or paused run. The event names the step it was on, read under the same
@@ -114,7 +126,7 @@ class RunStore:
                 event_data=data,
                 finished_at=datetime.now(UTC),
             )
-            return row is not None
+        return await self._committed(run_id, row is not None)
 
     async def fail(
         self,
@@ -135,7 +147,7 @@ class RunStore:
         """A step event, written only while the run is still running. False once it was cancelled."""
         async with self._sessions.begin() as s:
             row = await append_event(s, run_id, kind, data, while_status=(RunStatus.RUNNING,), **changes)
-            return row is not None
+        return await self._committed(run_id, row is not None)
 
     async def complete(
         self,
@@ -163,9 +175,11 @@ class RunStore:
                     viewport=viewport,
                     steps=list(steps),
                 )
-                return await self._complete(s, job, workflow, **changes)
+                workflow_id = await self._complete(s, job, workflow, **changes)
         except _NotRunningError:
             return None  # the transaction rolled back, workflow included
+        await self._committed(job.run_id, True)
+        return workflow_id
 
     async def _complete(
         self,
