@@ -79,3 +79,14 @@ class PlaywrightSession:
         if self._playwright is not None:
             await self._playwright.stop()
         self._page = self._context = self._browser = self._playwright = None
+
+
+async def page_snapshot(page: Page) -> str:
+    """ARIA snapshot of the current page for the planner (`main` if there is one, else `body`). Untrusted:
+    the planner redacts and delimits it before an LLM sees it."""
+    for locator in (page.get_by_role("main").first, page.locator("body")):
+        try:
+            return await locator.aria_snapshot(timeout=2_000)
+        except Exception:
+            continue
+    return ""

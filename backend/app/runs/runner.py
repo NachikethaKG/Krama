@@ -8,7 +8,7 @@ from pathlib import Path
 
 from playwright.async_api import Page
 
-from app.agent import ActionExecutor, PlaywrightSession, SessionConfig
+from app.agent import ActionExecutor, PlaywrightSession, SessionConfig, page_snapshot
 from app.agent.runlog import MASK, ScriptedStep, looks_sensitive, run_script
 from app.contracts_gen.plan_schema import Plan, PlannedStep
 from app.llm import LLMError
@@ -79,7 +79,7 @@ async def run_task(options: RunOptions, parts: RunParts, *, artifacts_dir: Path)
                         task_id=report.run_id,
                         task=options.task,
                         start_path=executor.current_path(),
-                        page_snapshot=await _page_snapshot(page),
+                        page_snapshot=await page_snapshot(page),
                         site=options.site,
                         signed_in_as=options.signed_in_as,
                     )
@@ -154,16 +154,6 @@ def _masked(plan: Plan) -> Plan:
         for s in plan.steps
     ]
     return plan.model_copy(update={"steps": steps})
-
-
-async def _page_snapshot(page: Page) -> str:
-    """ARIA snapshot of the start page for the planner, which redacts it again before the LLM sees it."""
-    for locator in (page.get_by_role("main").first, page.locator("body")):
-        try:
-            return await locator.aria_snapshot(timeout=2_000)
-        except Exception:
-            continue
-    return ""
 
 
 def _finish(report: RunReport, t0: float, status: RunStatus, message: str) -> RunReport:
