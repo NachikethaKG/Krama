@@ -18,7 +18,7 @@ from app.api.convert import decode_cursor, encode_cursor, run_out
 from app.api.errors import ApiException
 from app.api.services import ServicesDep
 from app.contracts_gen.common_schema import ErrorResponse
-from app.contracts_gen.run_schema import Run, RunPage
+from app.contracts_gen.run_schema import Run, RunConfirmRequest, RunPage
 from app.db import RunRow, WorkflowRow
 from app.db.repositories import event_payload, events_after, list_runs
 
@@ -70,6 +70,23 @@ async def existing_run(run_id: UUID, services: ServicesDep) -> UUID:
         if await s.get(RunRow, run_id) is None:
             raise ApiException(404, "not_found", "Run not found")
     return run_id
+
+
+@router.post(
+    "/runs/{run_id}/confirm",
+    responses={**_404, 409: {"model": ErrorResponse, "description": "The run isn't paused at this step"}},
+)
+async def confirm_run(run_id: UUID, body: RunConfirmRequest, services: ServicesDep) -> Run:
+    """Answers a paused run: `allow` runs the paused step, `deny` cancels the run."""
+    if not await services.executor.confirm(run_id, body.step_seq, body.decision):
+        async with services.sessions() as s:
+            run = await _run_out(s, run_id)  # 404 if it doesn't exist
+        raise ApiException(
+            409, "run_not_active", f"Run is {run.status}, not paused at step {body.step_seq}",
+            {"status": run.status, "current_seq": run.current_seq},
+        )  # fmt: skip
+    async with services.sessions() as s:
+        return await _run_out(s, run_id)
 
 
 @router.get("/runs/{run_id}/events", response_class=EventSourceResponse, responses=_404)
