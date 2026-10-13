@@ -16,7 +16,8 @@ from app.observer import PageObserver
 from app.planner import LLMPlanner
 from app.runs import RunOptions, RunParts, RunReport, run_task
 from app.runs.approval import console_approver
-from app.verifier import RuleVerifier
+from app.verifier import LayeredVerifier
+from app.verifier.vision import GeminiVisionJudge
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -60,9 +61,11 @@ async def run_command(args: argparse.Namespace) -> RunReport:
         headless=not args.headed,
         on_event=print,
     )
+    llm = create_provider(settings)
+    vision = GeminiVisionJudge(llm) if settings.llm_provider == "gemini" else None
     parts = RunParts(
-        planner=LLMPlanner(create_provider(settings)),
-        verifier=RuleVerifier(),
+        planner=LLMPlanner(llm),
+        verifier=LayeredVerifier(vision),
         # The composition root is the one place that picks the concrete Observer behind the port.
         observer_for=lambda run_dir: PageObserver(artifacts_dir=run_dir),
         approve=console_approver(auto_approve=args.yes),

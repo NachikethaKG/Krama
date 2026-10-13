@@ -5,18 +5,19 @@ from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 from playwright.async_api import Page
 
 from app.agent import ActionExecutor, PlaywrightSession, SessionConfig, page_snapshot
-from app.agent.runlog import MASK, ScriptedStep, looks_sensitive, run_script
+from app.agent.runlog import MASK, ScriptedStep, looks_sensitive, mask_expected, run_script
 from app.contracts_gen.plan_schema import Plan, PlannedStep
 from app.llm import LLMError
 from app.planner import InvalidPlanError, NeedsClarificationError, Planner, PlanRequest
 from app.ports.observer import Observer
 from app.runs.report import ObservedSummary, RunReport, RunStatus, StepReport
 from app.runs.steps import act_and_verify
-from app.verifier import Verifier
+from app.verifier import StepVerifier
 
 type Approve = Callable[[Plan], Awaitable[bool]]
 type Notify = Callable[[str], None]
@@ -43,7 +44,7 @@ class RunOptions:
 @dataclass
 class RunParts:
     planner: Planner
-    verifier: Verifier
+    verifier: StepVerifier
     observer_for: Callable[[Path], Observer]
     """Builds the observer for one run, given the run's artifact folder (screenshots, rrweb recording)."""
     approve: Approve
@@ -115,7 +116,7 @@ async def _run_step(
     step: PlannedStep,
     executor: ActionExecutor,
     observer: Observer,
-    verifier: Verifier,
+    verifier: StepVerifier,
     options: RunOptions,
     page: Page,
 ) -> StepReport:
@@ -147,12 +148,12 @@ async def _run_step(
 
 
 def _masked(plan: Plan) -> Plan:
-    steps = [
-        s.model_copy(update={"action": s.action.model_copy(update={"value": MASK})})
-        if s.action.value is not None and looks_sensitive(s.target.name)
-        else s
-        for s in plan.steps
-    ]
+    steps = []
+    for s in plan.steps:
+        update: dict[str, Any] = {"expected_state": mask_expected(s.expected_state)}
+        if s.action.value is not None and looks_sensitive(s.target.name):
+            update["action"] = s.action.model_copy(update={"value": MASK})
+        steps.append(s.model_copy(update=update))
     return plan.model_copy(update={"steps": steps})
 
 
