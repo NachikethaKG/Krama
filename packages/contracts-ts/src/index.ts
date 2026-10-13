@@ -55,7 +55,19 @@ export type RunEvent =
   | RunFailedEvent
   | RunCancelledEvent
   | RunResumedEvent;
-export type PauseReason = "destructive_action" | "captcha" | "auth_wall" | "rate_limited";
+/**
+ * Why a run waits for a human. POST /runs/{id}/confirm with allow continues, deny cancels.
+ */
+export type PauseReason =
+  | "destructive_action"
+  | "captcha"
+  | "auth_wall"
+  | "rate_limited"
+  | "verification_unclear"
+  | "replan_review"
+  | "recovery_exhausted"
+  | "sensitive_data"
+  | "prompt_injection";
 /**
  * `user`: POST /runs/{id}/cancel. `confirmation_denied`: POST /runs/{id}/confirm with decision deny.
  */
@@ -251,6 +263,10 @@ export interface RunPausedEvent {
   reason: PauseReason;
   step_seq: number;
   message?: string;
+  /**
+   * For replan_review: the plan with the proposed steps (GET /plans/{id})
+   */
+  plan_id?: string;
 }
 export interface RunCompletedEvent {
   type: "run.completed";
