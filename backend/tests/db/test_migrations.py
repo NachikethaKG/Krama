@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from alembic import command
 from app.db import Base
 from app.db.models import PLAN_STATUSES, RISKS, RUN_STATUSES, TASK_STATUSES, WORKFLOW_STATUSES
-from tests.db.conftest import alembic_config
+from tests.conftest import alembic_config
 
 pytestmark = pytest.mark.anyio
 

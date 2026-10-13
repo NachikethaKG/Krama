@@ -1,6 +1,8 @@
-"""Real Postgres for the DB tests: a throwaway `krama_test` database next to the dev one, migrated with
-`alembic upgrade head`. Start Postgres with `just up`. Without it these tests skip, except in CI
-(`KRAMA_REQUIRE_DB=1`), where a missing database is a failure.
+"""Shared fixtures: a real Postgres for the tests that need it (tests/db, tests/runs, tests/api).
+
+A throwaway `krama_test` database next to the dev one, migrated with `alembic upgrade head`. Start Postgres
+with `just up`. Without it these tests skip, except in CI (`KRAMA_REQUIRE_DB=1`), where a missing database
+is a failure.
 """
 
 import asyncio
@@ -19,13 +21,8 @@ from alembic import command
 from app.config import get_settings
 from app.db import Base, create_engine, create_sessionmaker
 
-BACKEND = Path(__file__).resolve().parents[2]
+BACKEND = Path(__file__).resolve().parents[1]
 TEST_DB = "krama_test"
-
-
-@pytest.fixture
-def anyio_backend() -> str:
-    return "asyncio"
 
 
 def alembic_config(url: str) -> Config:
