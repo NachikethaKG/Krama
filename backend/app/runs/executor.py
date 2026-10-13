@@ -71,6 +71,10 @@ class InProcessExecutor:
         self._slots = asyncio.Semaphore(max_concurrent)
         self._tasks: dict[UUID, asyncio.Task[None]] = {}
 
+    @property
+    def artifacts_dir(self) -> Path:
+        return self._env.artifacts_dir
+
     async def submit(self, run_id: UUID) -> None:
         if run_id in self._tasks:
             return
@@ -83,7 +87,8 @@ class InProcessExecutor:
             return False
         task = self._tasks.get(run_id)
         if task is not None:
-            task.cancel()  # closes the browser; the DB already says cancelled
+            task.cancel()  # the DB already says cancelled; this stops the steps and closes the browser
+            await asyncio.wait({task}, timeout=10)  # so the caller sees a run whose browser is gone
         return True
 
     async def wait(self, run_id: UUID) -> None:
@@ -107,7 +112,8 @@ class InProcessExecutor:
     async def shutdown(self) -> None:
         tasks = list(self._tasks.values())
         for task in tasks:
-            task.cancel()
+            if not task.cancelling():  # a second cancel would interrupt the browser cleanup itself
+                task.cancel()
         await asyncio.gather(*tasks, return_exceptions=True)
 
     async def _guarded(self, run_id: UUID) -> None:
