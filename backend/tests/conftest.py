@@ -94,6 +94,10 @@ PAGES: dict[str, str] = {
     # Navigates on its own after 600 ms: verification must wait for it instead of failing at once.
     "/slow": """<!doctype html><title>Slow</title><main><h1>Slow</h1>
         <script>setTimeout(() => { location.href = "/done" }, 600)</script></main>""",
+    # A button that appears after 1.5 s: a `wait` with a 1 s action timeout fails once, then its retry works.
+    "/late": """<!doctype html><title>Late</title><main><h1>Late</h1>
+        <button id="late" hidden>Ready</button>
+        <script>setTimeout(() => { document.getElementById("late").hidden = false }, 1500)</script></main>""",
 }
 
 
