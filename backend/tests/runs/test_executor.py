@@ -226,7 +226,7 @@ async def test_runs_wait_for_a_free_slot(sessions: Sessions, site: str, tmp_path
     assert a.finished_at and b.started_at and b.started_at >= a.finished_at  # never two browsers at once
 
 
-async def test_recover_fails_interrupted_runs_but_keeps_paused_ones(
+async def test_recover_fails_every_run_a_restart_left_without_a_browser(
     sessions: Sessions, site: str, tmp_path: Path
 ) -> None:
     running = await queued_run(sessions, site, PLAN, status="running")
@@ -234,14 +234,13 @@ async def test_recover_fails_interrupted_runs_but_keeps_paused_ones(
     paused = await queued_run(sessions, site, PLAN, status="paused")
     executor = InProcessExecutor(RunStore(sessions), environment(tmp_path))
 
-    assert sorted(await executor.recover()) == sorted([running, queued])
+    assert sorted(await executor.recover()) == sorted([running, queued, paused])
 
-    for run_id in (running, queued):
+    for run_id in (running, queued, paused):
         run = await run_row(sessions, run_id)
         assert run.status == "failed" and run.error is not None
         assert run.error["details"]["reason"] == "interrupted"
         assert (await events(sessions, run_id))[-1]["type"] == "run.failed"
-    assert (await run_row(sessions, paused)).status == "paused"
 
 
 async def test_a_failed_precondition_fails_the_run_before_step_one(
