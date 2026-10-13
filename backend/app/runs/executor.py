@@ -12,7 +12,7 @@ from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Protocol
+from typing import Any, Literal, Protocol
 from uuid import UUID
 
 from playwright.async_api import Page
@@ -20,18 +20,26 @@ from playwright.async_api import Page
 from app.agent import ActionExecutor, PlaywrightSession, SessionConfig
 from app.agent.runlog import MASK, ScriptedStep, looks_sensitive, mask_expected, run_script
 from app.agent.vision import VisionLocator
+from app.contracts_gen.events_schema import PauseReason
 from app.contracts_gen.plan_schema import PlannedStep
 from app.db import WorkflowStepRow
-from app.ports.models import ObservedState
+from app.db.base import literal_values
+from app.ports.models import ObservedState, PageState, PolicyDecision
 from app.ports.observer import Observer
+from app.ports.policy import Policy
 from app.runs.states import RunStatus
-from app.runs.steps import StepOutcome, act_and_verify
-from app.runs.store import RunJob, RunStore
+from app.runs.steps import StepOutcome, act_and_verify, step_ref
+from app.runs.store import RunJob, RunNotFoundError, RunStore
 from app.verifier import StepVerifier
 
 logger = logging.getLogger(__name__)
 
 ARTIFACTS_URL = "/api/v1/artifacts"
+# The pause reasons the contract knows. A policy pause with any other reason stops the run instead (#216 adds
+# sensitive_data and prompt_injection; they become pauses by themselves once the contract is regenerated).
+PAUSE_REASONS = frozenset(literal_values(PauseReason))
+
+type Decision = Literal["allow", "deny"]
 
 
 class RunExecutor(Protocol):
@@ -41,6 +49,10 @@ class RunExecutor(Protocol):
 
     async def cancel(self, run_id: UUID) -> bool:
         """Cancel a queued, running or paused run. False if it had already finished."""
+        ...
+
+    async def confirm(self, run_id: UUID, step_seq: int, decision: Decision) -> bool:
+        """Answer a run paused at `step_seq`. False if it isn't paused there."""
         ...
 
 
@@ -59,8 +71,13 @@ class RunEnvironment:
         default=lambda job: SessionConfig(base_url=job.target_url)
     )
     vision: VisionLocator | None = None
+    policy: Policy | None = None
+    """Asked before every step (allow / pause / stop). None until the real Policy (#61) is wired in; a step
+    the approved plan marks high risk pauses either way."""
     verify_timeout_s: float = 5.0
     verify_interval_s: float = 0.25
+    pause_timeout_s: float = 1800.0
+    """How long a paused run keeps its browser open waiting for /confirm before it gives up."""
 
 
 class InProcessExecutor:
@@ -71,6 +88,8 @@ class InProcessExecutor:
         self._env = env
         self._slots = asyncio.Semaphore(max_concurrent)
         self._tasks: dict[UUID, asyncio.Task[None]] = {}
+        self._answers: dict[UUID, asyncio.Future[None]] = {}
+        """Paused runs waiting for /confirm allow."""
 
     @property
     def artifacts_dir(self) -> Path:
@@ -86,11 +105,33 @@ class InProcessExecutor:
     async def cancel(self, run_id: UUID) -> bool:
         if not await self._store.cancel(run_id, reason="user"):
             return False
+        await self._stop_task(run_id)
+        return True
+
+    async def confirm(self, run_id: UUID, step_seq: int, decision: Decision) -> bool:
+        try:
+            status, current = await self._store.current_step(run_id)
+        except RunNotFoundError:
+            return False
+        waiting = self._answers.get(run_id)
+        if status is not RunStatus.PAUSED or current != step_seq or waiting is None or waiting.done():
+            return False
+        if decision == "deny":
+            if not await self._store.cancel(run_id, reason="confirmation_denied"):
+                return False
+            await self._stop_task(run_id)
+            return True
+        resumed = {"step_seq": step_seq, "decision": "allow"}
+        if not await self._store.transition(run_id, RunStatus.RUNNING, resumed, from_=RunStatus.PAUSED):
+            return False
+        waiting.set_result(None)
+        return True
+
+    async def _stop_task(self, run_id: UUID) -> None:
         task = self._tasks.get(run_id)
         if task is not None:
             task.cancel()  # the DB already says cancelled; this stops the steps and closes the browser
             await asyncio.wait({task}, timeout=10)  # so the caller sees a run whose browser is gone
-        return True
 
     async def wait(self, run_id: UUID) -> None:
         """Wait for a run's task to end (tests, shutdown). Returns at once if it isn't running here."""
@@ -99,8 +140,8 @@ class InProcessExecutor:
             await asyncio.gather(task, return_exceptions=True)
 
     async def recover(self) -> list[UUID]:
-        """On startup: queued/running runs have no browser any more, so they fail (paused ones keep
-        waiting for their human). Returns the runs it failed."""
+        """On startup: queued, running and paused runs have no browser any more, so they fail. (A paused
+        run can't continue without the page it paused on.) Returns the runs it failed."""
         failed = []
         for run_id in await self._store.unfinished():
             status = await self._store.status(run_id)
@@ -186,6 +227,9 @@ class InProcessExecutor:
             current_seq=seq,
         ):  # fmt: skip
             return None  # cancelled meanwhile
+        before = await observer.capture(page, step_ref(step))
+        if not await self._allowed(job, step, before):
+            return None
         out = await act_and_verify(
             step,
             executor,
@@ -194,6 +238,7 @@ class InProcessExecutor:
             page,
             verify_timeout_s=self._env.verify_timeout_s,
             verify_interval_s=self._env.verify_interval_s,
+            before=before,
         )
         shot = self._artifact_url(out.observed.screenshot_path)
         bbox = list(out.result.bbox) if out.result.bbox else None
@@ -225,6 +270,58 @@ class InProcessExecutor:
                 reason=reason, step_seq=seq,
             )  # fmt: skip
         return None
+
+    async def _allowed(self, job: RunJob, step: PlannedStep, before: ObservedState) -> bool:
+        """Ask the policy before acting (AGENTS.md §4). True to go ahead; False if the run stopped."""
+        decision = PolicyDecision(verdict="allow")
+        if self._env.policy is not None:
+            page = PageState(url=before.url, title=before.title, aria_excerpt=before.aria_excerpt)
+            decision = await self._env.policy.check_action(step_ref(step), page)
+        if decision.verdict == "allow" and step.risk == "high":
+            # The approved plan itself says this step is risky: a human confirms it right before it runs.
+            message = "The plan marks this step as high risk."
+            decision = PolicyDecision(verdict="pause", reason="destructive_action", message=message)
+        if decision.verdict == "allow":
+            return True
+        if decision.verdict == "pause" and decision.reason in PAUSE_REASONS:
+            return await self._pause(job, step, decision)
+        # A stop, or a pause the contract can't express yet: never continue.
+        await self._store.fail(
+            job.run_id,
+            from_=RunStatus.RUNNING,
+            message=decision.message or f"Stopped by the safety policy ({decision.reason})",
+            reason="policy_stop",
+            policy_reason=decision.reason,
+            step_seq=step.seq,
+        )
+        return False
+
+    async def _pause(self, job: RunJob, step: PlannedStep, decision: PolicyDecision) -> bool:
+        """Pause with the browser open until /confirm. True if a human allowed the step."""
+        answer: asyncio.Future[None] = asyncio.get_running_loop().create_future()
+        self._answers[job.run_id] = answer
+        try:
+            paused: dict[str, Any] = {"reason": decision.reason, "step_seq": step.seq}
+            if decision.message:
+                paused["message"] = decision.message
+            if not await self._store.transition(
+                job.run_id, RunStatus.PAUSED, paused, from_=RunStatus.RUNNING
+            ):
+                return False  # cancelled meanwhile
+            try:
+                await asyncio.wait_for(asyncio.shield(answer), self._env.pause_timeout_s)
+            except TimeoutError:
+                await self._store.fail(
+                    job.run_id,
+                    from_=RunStatus.PAUSED,
+                    message="Nobody answered the pause in time",
+                    reason="pause_timeout",
+                    step_seq=step.seq,
+                )
+                return False
+            return True  # confirm() already moved the run back to running
+        finally:
+            self._answers.pop(job.run_id, None)
 
     def _row(self, step: PlannedStep, out: StepOutcome) -> WorkflowStepRow:
         """The stored step. Sensitive fill values are masked; the ARIA text stays out (it can hold typed

@@ -209,9 +209,16 @@ class RunStore:
         return workflow.id
 
     async def unfinished(self) -> Sequence[UUID]:
-        """Runs a restart interrupted: queued or running, with no browser behind them any more."""
+        """Runs a restart interrupted: queued, running or paused, with no browser behind them any more."""
         async with self._sessions() as s:
-            return await runs_with_status(s, (RunStatus.QUEUED, RunStatus.RUNNING))
+            return await runs_with_status(s, (RunStatus.QUEUED, RunStatus.RUNNING, RunStatus.PAUSED))
+
+    async def current_step(self, run_id: UUID) -> tuple[RunStatus, int | None]:
+        async with self._sessions() as s:
+            run = await s.get(RunRow, run_id)
+            if run is None:
+                raise RunNotFoundError(run_id)
+            return RunStatus(run.status), run.current_seq
 
 
 def _app_of(target_url: str) -> str:

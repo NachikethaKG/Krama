@@ -8,7 +8,7 @@ import asyncio
 import json
 from pathlib import Path
 from typing import Any
-from uuid import UUID
+from uuid import UUID, uuid4
 
 import httpx
 import pytest
@@ -270,3 +270,30 @@ async def test_startup_fails_runs_a_restart_interrupted(sessions: Sessions, tmp_
 
     assert after.status == "failed" and after.error is not None
     assert after.error.details == {"reason": "interrupted"}
+
+
+async def test_confirm_answers_a_paused_run(sessions: Sessions, tmp_path: Path, site: str) -> None:
+    risky = {**GOOD_PLAN, "steps": [*GOOD_PLAN["steps"][:3], {**GOOD_PLAN["steps"][3], "risk": "high"}]}
+    async with Api(services(sessions, tmp_path, reply(risky))) as api:
+        c = api.client
+        plan_id = (await api.planned_task(site)).plan_id
+        run_id = (await c.post(f"/plans/{plan_id}/approve", json={"revision": 1})).json()["id"]
+        for _ in range(400):
+            run = (await c.get(f"/runs/{run_id}")).json()
+            if run["status"] == "paused":
+                break
+            await asyncio.sleep(0.05)
+        assert (run["status"], run["current_seq"]) == ("paused", 4)
+
+        wrong = await c.post(f"/runs/{run_id}/confirm", json={"step_seq": 3, "decision": "allow"})
+        assert wrong.status_code == 409 and wrong.json()["error"]["code"] == "run_not_active"
+        allowed = await c.post(f"/runs/{run_id}/confirm", json={"step_seq": 4, "decision": "allow"})
+        assert allowed.status_code == 200 and allowed.json()["status"] == "running"
+
+        stream = await api.events(UUID(run_id))
+        types = [e["type"] for e in stream]
+        assert types[types.index("run.paused") + 1] == "run.resumed" and types[-1] == "run.completed"
+        late = await c.post(f"/runs/{run_id}/confirm", json={"step_seq": 4, "decision": "deny"})
+        assert late.status_code == 409
+        unknown = await c.post(f"/runs/{uuid4()}/confirm", json={"step_seq": 1, "decision": "allow"})
+        assert unknown.status_code == 404

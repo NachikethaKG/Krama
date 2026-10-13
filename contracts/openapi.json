@@ -689,6 +689,30 @@
         "title": "Run",
         "type": "object"
       },
+      "RunConfirmRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "decision": {
+            "enum": [
+              "allow",
+              "deny"
+            ],
+            "title": "Decision",
+            "type": "string"
+          },
+          "step_seq": {
+            "minimum": 1.0,
+            "title": "Step Seq",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "step_seq",
+          "decision"
+        ],
+        "title": "RunConfirmRequest",
+        "type": "object"
+      },
       "RunPage": {
         "additionalProperties": false,
         "properties": {
@@ -2208,6 +2232,90 @@
           }
         },
         "summary": "Cancel Run",
+        "tags": [
+          "runs"
+        ]
+      }
+    },
+    "/api/v1/runs/{run_id}/confirm": {
+      "post": {
+        "description": "Answers a paused run: `allow` runs the paused step, `deny` cancels the run.",
+        "operationId": "confirm_run_api_v1_runs__run_id__confirm_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RunConfirmRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Run"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "No run with this id"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The run isn't paused at this step"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal error"
+          }
+        },
+        "summary": "Confirm Run",
         "tags": [
           "runs"
         ]

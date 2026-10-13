@@ -55,11 +55,12 @@ async def act_and_verify(
     *,
     verify_timeout_s: float,
     verify_interval_s: float,
+    before: ObservedState | None = None,
 ) -> StepOutcome:
-    ref = StepRef(
-        seq=step.seq, action=step.action, target=step.target, instruction_text=step.instruction_text
-    )
-    before = await observer.capture(page, ref)
+    """`before`: the page right before the action, if the caller already captured it (policy check)."""
+    ref = step_ref(step)
+    if before is None:
+        before = await observer.capture(page, ref)
     with _NetworkRecorder(page) as network:
         result = await executor.execute(step.action, step.target, instruction=step.instruction_text)
         observed = await observer.capture(page, ref)
@@ -88,6 +89,12 @@ async def act_and_verify(
         verification=outcome,
         verify_attempts=attempts,
         network=list(network.calls),
+    )
+
+
+def step_ref(step: PlannedStep) -> StepRef:
+    return StepRef(
+        seq=step.seq, action=step.action, target=step.target, instruction_text=step.instruction_text
     )
 
 

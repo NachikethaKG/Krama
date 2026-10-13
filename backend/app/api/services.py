@@ -58,6 +58,9 @@ def build_services(settings: Settings) -> Services:
         artifacts_dir=settings.artifacts_dir,
         preconditions=lambda job: target_setup(job.target_url, settings).preconditions,
         vision=GeminiVisionLocator(llm) if gemini else None,
+        # TODO(vishwas): pass the real Policy here once Nachiketha's policy/ lands (#61, #62). Until then
+        # the executor's own guard pauses every step the approved plan marks high risk.
+        policy=None,
     )
     return Services(
         sessions=sessions,
