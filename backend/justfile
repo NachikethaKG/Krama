@@ -8,7 +8,7 @@ install:
 
 # API dev server with auto-reload on :8000
 dev:
-    uv run uvicorn app.main:app --reload --port 8000
+    uv run uvicorn app.main:app --reload --loop app.dev_loop:factory --port 8000
 
 # Apply all database migrations (Postgres from `just up`; DATABASE_URL in the repo-root .env)
 migrate:
