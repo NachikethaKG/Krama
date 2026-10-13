@@ -35,6 +35,10 @@ class PlanRequest(BaseModel):
     """ARIA snapshot of the start page. Untrusted; redacted again before it reaches the LLM."""
     site: str | None = None
     signed_in_as: str | None = None
+    done: list[str] = []
+    """Replan only: instruction texts of the steps that already worked."""
+    failure: str | None = None
+    """Replan only: expected vs observed for the step that failed. Untrusted (holds page text)."""
 
 
 class PlanResult(BaseModel):
@@ -91,6 +95,8 @@ class LLMPlanner:
                 site=request.site,
                 signed_in_as=request.signed_in_as,
                 feedback=feedback,
+                done=request.done,
+                failure=request.failure,
             )
             result = await self._llm.generate(system=SYSTEM_PROMPT, prompt=prompt, schema=LLMPlan)
             attempts += result.attempts
