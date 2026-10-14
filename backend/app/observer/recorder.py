@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import inspect
 from pathlib import Path
 from typing import Any, Protocol, runtime_checkable
 
@@ -139,3 +140,30 @@ class SessionRecorder(Protocol):
     ) -> Path:
         """Save accumulated events to a JSON file (optionally gzip compressed)."""
         ...
+
+
+async def _persist_to_store(
+    store: ArtifactStore | Any,
+    key: str,
+    data: bytes,
+    content_type: str,
+) -> str:
+    """Persist data to an ArtifactStore via save() or put()."""
+    if hasattr(store, "save"):
+        call_fn = store.save
+    elif hasattr(store, "put"):
+        call_fn = store.put
+    else:
+        raise AttributeError("Artifact store must implement save() or put()")
+
+    res = call_fn(key=key, data=data, content_type=content_type)
+    if inspect.isawaitable(res):
+        res = await res
+
+    if isinstance(res, str) and res:
+        return res
+    if hasattr(res, "key") and isinstance(res.key, str):
+        return res.key
+    if hasattr(res, "path") and isinstance(res.path, str):
+        return res.path
+    return key

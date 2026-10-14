@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import asyncio
-import inspect
+import json
 import re
 import time
 import urllib.parse
@@ -15,6 +15,7 @@ from playwright.async_api import Page
 
 from app.observer.models import Observation
 from app.observer.network import NetworkTracker
+from app.observer.recorder import _persist_to_store
 from app.observer.rrweb import RRWebRecorder
 from app.ports import ArtifactStore
 from app.ports.models import RecordingRef, StepRef
@@ -104,7 +105,22 @@ class PageObserver(Observer):
         summary = self._tracker.get_summary()
         self._recording = False
         record_path = ""
-        if self._artifacts_dir:
+        store = self._artifact_store or self._recorder.artifact_store
+        if store is not None:
+            effective_run_id = str(self._run_id or self._recorder.run_id or "default")
+            key = f"runs/{effective_run_id}/rrweb_recording.json"
+            json_bytes = json.dumps(events).encode("utf-8")
+            try:
+                record_path = await _persist_to_store(
+                    store,
+                    key=key,
+                    data=json_bytes,
+                    content_type="application/json",
+                )
+                self._recorder._recording_path = record_path
+            except Exception:
+                record_path = ""
+        elif self._artifacts_dir:
             out_file = self._artifacts_dir / "recording.json"
             self._recorder.save_to_json(out_file)
             record_path = str(out_file)
@@ -117,6 +133,22 @@ class PageObserver(Observer):
             started_at=self._recording_started_at,
             ended_at=now,
         )
+
+    async def stop_and_save(
+        self,
+        run_id: str | None = None,
+        *,
+        artifact_store: ArtifactStore | None = None,
+    ) -> RecordingRef:
+        """Stop recording and persist rrweb events to ArtifactStore."""
+        if run_id is not None:
+            self._run_id = run_id
+            self._recorder._run_id = run_id
+        if artifact_store is not None:
+            self._artifact_store = artifact_store
+            self._recorder._artifact_store = artifact_store
+        return await self.stop_recording()
+
 
     async def capture(
         self,
@@ -288,30 +320,3 @@ def _mask_aria_secrets(text: str) -> str:
     if not text:
         return ""
     return _PASSWORD_VALUE_REGEX.sub(r"\1***", text)
-
-
-async def _persist_to_store(
-    store: ArtifactStore | Any,
-    key: str,
-    data: bytes,
-    content_type: str,
-) -> str:
-    """Persist data to an ArtifactStore via save() or put()."""
-    if hasattr(store, "save"):
-        call_fn = store.save
-    elif hasattr(store, "put"):
-        call_fn = store.put
-    else:
-        raise AttributeError("Artifact store must implement save() or put()")
-
-    res = call_fn(key=key, data=data, content_type=content_type)
-    if inspect.isawaitable(res):
-        res = await res
-
-    if isinstance(res, str) and res:
-        return res
-    if hasattr(res, "key") and isinstance(res.key, str):
-        return res.key
-    if hasattr(res, "path") and isinstance(res.path, str):
-        return res.path
-    return key
