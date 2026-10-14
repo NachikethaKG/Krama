@@ -7,6 +7,7 @@ import {
   giteaEventsFixture,
   giteaFailedEventsFixture,
   giteaPausedEventsFixture,
+  giteaReplanEventsFixture,
   giteaWorkflowFixture,
 } from "@/lib/fixtures";
 
@@ -151,5 +152,50 @@ describe("LiveExecutionView", () => {
       expect(screen.getByTestId("live-execution-error")).toBeInTheDocument();
     });
     expect(screen.getByText("Workflow Not Found")).toBeInTheDocument();
+  });
+
+  it("renders VerificationFailureCard with expected vs observed details when a step fails", async () => {
+    const client = new MockApiClient(giteaFailedEventsFixture);
+    render(
+      <LiveExecutionView
+        workflowId="failed"
+        client={client}
+        speed={1000}
+        initialWorkflow={giteaWorkflowFixture}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("verification-failure-card")).toBeInTheDocument();
+    });
+
+    expect(screen.getByTestId("diagnostic-step-seq")).toHaveTextContent("Step #2");
+    expect(screen.getByTestId("expected-state-box")).toBeInTheDocument();
+    expect(screen.getByTestId("observed-state-box")).toBeInTheDocument();
+    expect(screen.getByTestId("expected-screenshot-img")).toBeInTheDocument();
+    expect(screen.getByTestId("observed-screenshot-img")).toBeInTheDocument();
+  });
+
+  it("renders ReplanStatusIndicator and updates through recovery stream to exhausted", async () => {
+    const client = new MockApiClient(giteaReplanEventsFixture);
+    render(
+      <LiveExecutionView
+        workflowId="replan"
+        client={client}
+        speed={1000}
+        initialWorkflow={giteaWorkflowFixture}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("replan-status-indicator")).toBeInTheDocument();
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId("replan-badge-exhausted")).toBeInTheDocument();
+    });
+
+    expect(screen.getByTestId("replan-takeover-btn")).toBeInTheDocument();
+    expect(screen.getByTestId("replan-abort-btn")).toBeInTheDocument();
   });
 });
