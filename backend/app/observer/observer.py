@@ -67,7 +67,6 @@ class PageObserver(Observer):
         """Access the configured run_id."""
         return self._run_id
 
-
     @property
     def recorder(self) -> RRWebRecorder:
         """Access the underlying rrweb session recorder."""
@@ -148,7 +147,6 @@ class PageObserver(Observer):
             self._artifact_store = artifact_store
             self._recorder._artifact_store = artifact_store
         return await self.stop_recording()
-
 
     async def capture(
         self,

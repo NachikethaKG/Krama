@@ -113,8 +113,6 @@ class RRWebRecorder(SessionRecorder):
                 return ""
         return ""
 
-
-
     @property
     def started_at(self) -> datetime | None:
         """Timestamp when recording started."""
