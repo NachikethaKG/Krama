@@ -16,13 +16,36 @@ import {
   giteaPausedEventsFixture,
   giteaReplanEventsFixture,
   giteaWorkflowFixture,
+  mockRunDetails,
+  mockRunsList,
   pausedWorkflowFixture,
   replanWorkflowFixture,
   validWorkflowFixture,
   workflowFixtures,
 } from "./fixtures";
+import type {
+  PaginatedRunsResponse,
+  RunDetails,
+  RunListItem,
+  StepEvidenceDetail,
+  StepVerificationEvidence,
+  VerificationEvidenceMethod,
+} from "./types";
 
-export type { HealthResponse, Plan, Run, RunEvent, Task, Workflow };
+export type {
+  HealthResponse,
+  PaginatedRunsResponse,
+  Plan,
+  Run,
+  RunDetails,
+  RunEvent,
+  RunListItem,
+  StepEvidenceDetail,
+  StepVerificationEvidence,
+  Task,
+  VerificationEvidenceMethod,
+  Workflow,
+};
 export {
   failedWorkflowFixture,
   giteaEventsFixture,
@@ -30,6 +53,8 @@ export {
   giteaPausedEventsFixture,
   giteaReplanEventsFixture,
   giteaWorkflowFixture,
+  mockRunDetails,
+  mockRunsList,
   pausedWorkflowFixture,
   replanWorkflowFixture,
   validWorkflowFixture,
@@ -78,6 +103,10 @@ export interface ApiClient {
   streamWorkflowEvents(id: string, options?: StreamOptions): AsyncIterable<RunEvent>;
   /** Alias for streamWorkflowEvents using run ID */
   runEvents(runId: string, options?: StreamOptions): AsyncIterable<RunEvent>;
+  /** Fetches paginated runs list */
+  getRuns(page?: number, limit?: number, cursor?: string): Promise<PaginatedRunsResponse>;
+  /** Fetches detailed run execution metadata, workflow steps, and verification evidence */
+  getRunDetails(runId: string): Promise<RunDetails>;
 }
 
 /**
@@ -313,6 +342,115 @@ export class HttpApiClient implements ApiClient {
   runEvents(runId: string, options?: StreamOptions): AsyncIterable<RunEvent> {
     return this.streamRunEvents(runId, options);
   }
+
+  async getRuns(page: number = 1, limit: number = 5, cursor?: string): Promise<PaginatedRunsResponse> {
+    const params = new URLSearchParams();
+    if (cursor) {
+      params.set("cursor", cursor);
+    } else {
+      params.set("limit", String(limit));
+    }
+    const query = params.toString() ? `?${params.toString()}` : "";
+    const res = await this.request<{ items: Run[]; next_cursor?: string | null }>(`/runs${query}`);
+    const items: RunListItem[] = (res.items || []).map((r) => ({
+      id: r.id,
+      prompt: r.plan_id ? `Run for plan ${r.plan_id}` : `Run ${r.id}`,
+      status: r.status,
+      createdAt: r.created_at,
+      startedAt: r.started_at,
+      finishedAt: r.finished_at,
+      durationSeconds:
+        r.started_at && r.finished_at
+          ? Math.max(0, Math.round((new Date(r.finished_at).getTime() - new Date(r.started_at).getTime()) / 1000))
+          : null,
+      workflowId: r.workflow_id,
+      planId: r.plan_id,
+      retryCount: r.retry_count,
+    }));
+    return {
+      items,
+      total: items.length,
+      page,
+      pageSize: limit,
+      totalPages: Math.ceil(items.length / limit) || 1,
+      nextCursor: res.next_cursor,
+    };
+  }
+
+  async getRunDetails(runId: string): Promise<RunDetails> {
+    const run = await this.getRun(runId);
+    let workflow: Workflow | null = null;
+    if (run.workflow_id) {
+      try {
+        workflow = await this.getWorkflow(run.workflow_id);
+      } catch {
+        // workflow may not yet exist
+      }
+    }
+    const steps: StepEvidenceDetail[] =
+      workflow?.steps.map((s, idx) => {
+        const verified = s.verification?.result === "verified";
+        const methods = s.verification?.method || [];
+        const method: VerificationEvidenceMethod =
+          methods.includes("aria")
+            ? "aria"
+            : methods.includes("network")
+              ? "network"
+              : methods.includes("vision")
+                ? "vision"
+                : "url_dom";
+        return {
+          id: s.id ?? `step-${s.seq ?? idx + 1}`,
+          seq: s.seq ?? idx + 1,
+          instructionText: s.instruction_text,
+          actionType: s.action?.type ?? "action",
+          targetRole: s.target?.role,
+          targetName: s.target?.name,
+          risk: s.risk ?? "low",
+          status: verified ? "verified" : s.verification?.result === "failed" ? "failed" : "pending",
+          evidence: {
+            method,
+            confidence: s.verification?.confidence ?? 0.95,
+            screenshotUrl: s.observed_state?.screenshot_path,
+            observedAt: s.observed_state?.captured_at || new Date().toISOString(),
+          },
+          screenshotUrl: s.observed_state?.screenshot_path,
+          expectedState: s.expected_state,
+          observedState: s.observed_state,
+        };
+      }) ?? [];
+
+    return {
+      run: {
+        id: run.id,
+        prompt: workflow?.task ?? `Run ${run.id}`,
+        status: run.status,
+        createdAt: run.created_at,
+        startedAt: run.started_at,
+        finishedAt: run.finished_at,
+        durationSeconds:
+          run.started_at && run.finished_at
+            ? Math.max(0, Math.round((new Date(run.finished_at).getTime() - new Date(run.started_at).getTime()) / 1000))
+            : null,
+        workflowId: run.workflow_id,
+        planId: run.plan_id,
+        retryCount: run.retry_count,
+      },
+      workflow,
+      targetUrl: workflow?.target_url || undefined,
+      targetApp: workflow?.target_app || undefined,
+      steps,
+      summary: {
+        totalSteps: steps.length,
+        verifiedSteps: steps.filter((s) => s.status === "verified").length,
+        failedSteps: steps.filter((s) => s.status === "failed").length,
+        durationSeconds:
+          run.started_at && run.finished_at
+            ? Math.max(0, Math.round((new Date(run.finished_at).getTime() - new Date(run.started_at).getTime()) / 1000))
+            : null,
+      },
+    };
+  }
 }
 
 /**
@@ -374,11 +512,18 @@ export async function* replayEvents(
 
 export class MockApiClient implements ApiClient {
   private readonly plans: Record<string, Plan> = {};
+  private readonly runsList: RunListItem[];
+  private readonly runDetailsMap: Record<string, RunDetails>;
 
   constructor(
     private readonly events: RunEvent[] = giteaEventsFixture,
-    private readonly workflows: Record<string, Workflow> = workflowFixtures
-  ) {}
+    private readonly workflows: Record<string, Workflow> = workflowFixtures,
+    runsList: RunListItem[] = mockRunsList,
+    runDetailsMap: Record<string, RunDetails> = mockRunDetails,
+  ) {
+    this.runsList = runsList;
+    this.runDetailsMap = runDetailsMap;
+  }
 
   async health(): Promise<HealthResponse> {
     return { status: "ok", version: "mock" };
@@ -555,6 +700,93 @@ export class MockApiClient implements ApiClient {
   streamRunEvents(runId: string, options?: StreamOptions | AbortSignal): AsyncIterable<RunEvent> {
     const streamOptions = options instanceof AbortSignal ? { signal: options } : options;
     return this.streamWorkflowEvents(runId, streamOptions);
+  }
+
+  async getRuns(page: number = 1, limit: number = 5): Promise<PaginatedRunsResponse> {
+    const allRuns = this.runsList;
+    const total = allRuns.length;
+    const totalPages = Math.max(1, Math.ceil(total / limit));
+    const currentPage = Math.max(1, Math.min(page, totalPages));
+    const startIndex = (currentPage - 1) * limit;
+    const items = allRuns.slice(startIndex, startIndex + limit);
+    return {
+      items,
+      total,
+      page: currentPage,
+      pageSize: limit,
+      totalPages,
+      nextCursor: currentPage < totalPages ? `cursor-${currentPage + 1}` : null,
+    };
+  }
+
+  async getRunDetails(runId: string): Promise<RunDetails> {
+    const details =
+      this.runDetailsMap[runId] ??
+      (runId === "default" || runId === "mock" || runId === ""
+        ? this.runDetailsMap["default"]
+        : undefined);
+    if (details) {
+      return {
+        ...details,
+        run: {
+          ...details.run,
+          id: runId,
+        },
+      };
+    }
+    const wf = this.workflows[runId];
+    if (wf) {
+      const steps: StepEvidenceDetail[] = wf.steps.map((s, idx) => {
+        const verified = s.verification?.result === "verified";
+        const methods = s.verification?.method || [];
+        const method: VerificationEvidenceMethod =
+          methods.includes("aria")
+            ? "aria"
+            : methods.includes("network")
+              ? "network"
+              : methods.includes("vision")
+                ? "vision"
+                : "url_dom";
+        return {
+          id: s.id ?? `step-${s.seq ?? idx + 1}`,
+          seq: s.seq ?? idx + 1,
+          instructionText: s.instruction_text,
+          actionType: s.action?.type ?? "action",
+          targetRole: s.target?.role,
+          targetName: s.target?.name,
+          risk: s.risk ?? "low",
+          status: verified ? "verified" : s.verification?.result === "failed" ? "failed" : "pending",
+          evidence: {
+            method,
+            confidence: s.verification?.confidence ?? 0.95,
+            screenshotUrl: s.observed_state?.screenshot_path,
+            observedAt: s.observed_state?.captured_at || new Date().toISOString(),
+          },
+          screenshotUrl: s.observed_state?.screenshot_path,
+          expectedState: s.expected_state,
+          observedState: s.observed_state,
+        };
+      });
+      return {
+        run: {
+          id: runId,
+          prompt: wf.task || `Run ${runId}`,
+          status: wf.status === "verified" ? "verified" : (wf.status as RunListItem["status"]),
+          createdAt: wf.created_at || new Date().toISOString(),
+          workflowId: wf.id,
+        },
+        workflow: wf,
+        targetUrl: wf.target_url || undefined,
+        targetApp: wf.target_app || undefined,
+        steps,
+        summary: {
+          totalSteps: steps.length,
+          verifiedSteps: steps.filter((s) => s.status === "verified").length,
+          failedSteps: steps.filter((s) => s.status === "failed").length,
+        },
+      };
+    }
+    throw new Error(`Run details not found: ${runId}`);
   }
 }
 
