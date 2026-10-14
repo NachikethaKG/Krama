@@ -324,6 +324,89 @@ describe("HttpApiClient", () => {
         }),
       );
     });
+
+    it("fetches paginated runs via GET /runs", async () => {
+      const runsResponse = {
+        items: [
+          {
+            id: "run-1",
+            plan_id: "plan-1",
+            plan_revision: 1,
+            status: "verified",
+            retry_count: 0,
+            created_at: "2026-10-14T00:00:00Z",
+            started_at: "2026-10-14T00:00:01Z",
+            finished_at: "2026-10-14T00:00:06Z",
+          },
+        ],
+        next_cursor: "cursor-2",
+      };
+      vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify(runsResponse), { status: 200 })));
+
+      const client = new HttpApiClient("http://api");
+      const result = await client.getRuns(1, 5);
+      expect(result.items).toHaveLength(1);
+      expect(result.items[0].id).toBe("run-1");
+      expect(result.items[0].durationSeconds).toBe(5);
+      expect(result.nextCursor).toBe("cursor-2");
+      expect(fetch).toHaveBeenCalledWith("http://api/runs?limit=5");
+    });
+
+    it("fetches run details combining run and workflow metadata", async () => {
+      const runResponse = {
+        id: "run-100",
+        plan_id: "plan-100",
+        plan_revision: 1,
+        status: "verified",
+        workflow_id: "wf-100",
+        retry_count: 0,
+        created_at: "2026-10-14T00:00:00Z",
+        started_at: "2026-10-14T00:00:00Z",
+        finished_at: "2026-10-14T00:00:05Z",
+      };
+      const workflowResponse = {
+        id: "wf-100",
+        title: "Test Workflow",
+        task: "Automate something",
+        target_url: "http://localhost:3001",
+        target_app: "gitea",
+        status: "verified",
+        steps: [
+          {
+            id: "step-1",
+            seq: 1,
+            instruction_text: "Click Button",
+            action: { type: "click" },
+            target: { role: "button", name: "Submit" },
+            risk: "low",
+            verification: { result: "verified", method: ["aria"], confidence: 0.98 },
+            observed_state: { url: "/done", screenshot_path: "/screenshots/done.png" },
+          },
+        ],
+      };
+
+      vi.stubGlobal(
+        "fetch",
+        vi.fn().mockImplementation(async (url: string) => {
+          if (url === "http://api/runs/run-100") {
+            return new Response(JSON.stringify(runResponse), { status: 200 });
+          }
+          if (url === "http://api/workflows/wf-100") {
+            return new Response(JSON.stringify(workflowResponse), { status: 200 });
+          }
+          throw new Error(`Unexpected: ${url}`);
+        }),
+      );
+
+      const client = new HttpApiClient("http://api");
+      const result = await client.getRunDetails("run-100");
+      expect(result.run.id).toBe("run-100");
+      expect(result.steps).toHaveLength(1);
+      expect(result.steps[0].evidence.method).toBe("aria");
+      expect(result.steps[0].evidence.confidence).toBe(0.98);
+      expect(result.steps[0].evidence.screenshotUrl).toBe("/screenshots/done.png");
+      expect(result.summary.verifiedSteps).toBe(1);
+    });
   });
 
   describe("error handling", () => {
@@ -558,6 +641,54 @@ describe("MockApiClient", () => {
     it("throws an error when workflow id is not found", async () => {
       const client = new MockApiClient();
       await expect(client.getWorkflow("unknown-id")).rejects.toThrow("Workflow not found: unknown-id");
+    });
+
+    describe("getRuns pagination", () => {
+      it("returns first page of paginated runs", async () => {
+        const client = new MockApiClient();
+        const res = await client.getRuns(1, 5);
+        expect(res.page).toBe(1);
+        expect(res.pageSize).toBe(5);
+        expect(res.items).toHaveLength(5);
+        expect(res.total).toBe(12);
+        expect(res.totalPages).toBe(3);
+        expect(res.nextCursor).toBe("cursor-2");
+      });
+
+      it("returns second page of paginated runs", async () => {
+        const client = new MockApiClient();
+        const res = await client.getRuns(2, 5);
+        expect(res.page).toBe(2);
+        expect(res.items).toHaveLength(5);
+        expect(res.items[0].id).toBe("run-6");
+      });
+
+      it("handles boundary page requests gracefully", async () => {
+        const client = new MockApiClient();
+        const res = await client.getRuns(3, 5);
+        expect(res.page).toBe(3);
+        expect(res.items).toHaveLength(2);
+        expect(res.nextCursor).toBeNull();
+      });
+    });
+
+    describe("getRunDetails", () => {
+      it("returns comprehensive run details and step verification evidence", async () => {
+        const client = new MockApiClient();
+        const details = await client.getRunDetails("run-1");
+        expect(details.run.id).toBe("run-1");
+        expect(details.steps).toHaveLength(5);
+        expect(details.steps[0].evidence.method).toBe("aria");
+        expect(details.steps[0].evidence.confidence).toBe(1.0);
+        expect(details.steps[0].evidence.screenshotUrl).toBe("/screenshots/step-1.png");
+        expect(details.summary.totalSteps).toBe(5);
+        expect(details.summary.verifiedSteps).toBe(5);
+      });
+
+      it("throws when run details cannot be found", async () => {
+        const client = new MockApiClient();
+        await expect(client.getRunDetails("non-existent-run")).rejects.toThrow("Run details not found: non-existent-run");
+      });
     });
   });
 
