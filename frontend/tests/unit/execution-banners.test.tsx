@@ -28,6 +28,22 @@ describe("PauseBanner", () => {
     fireEvent.click(resumeBtn);
     expect(handleResume).toHaveBeenCalledTimes(1);
   });
+
+  it("renders deny action and triggers callback", () => {
+    const handleDeny = vi.fn();
+    render(
+      <PauseBanner
+        reason="sensitive_data"
+        stepSeq={3}
+        onDeny={handleDeny}
+      />
+    );
+
+    const denyBtn = screen.getByTestId("deny-run-btn");
+    expect(denyBtn).toBeInTheDocument();
+    fireEvent.click(denyBtn);
+    expect(handleDeny).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe("FailureBanner", () => {
@@ -54,5 +70,25 @@ describe("FailureBanner", () => {
     const retryBtn = screen.getByTestId("retry-run-btn");
     fireEvent.click(retryBtn);
     expect(handleRetry).toHaveBeenCalledTimes(1);
+  });
+
+  it("renders failed step details and back to plan button", () => {
+    const handleBack = vi.fn();
+    render(
+      <FailureBanner
+        failedStep={{ seq: 3, instructionText: "Submit form" }}
+        onBackToPlan={handleBack}
+      />
+    );
+
+    const stepDetails = screen.getByTestId("failed-step-details");
+    expect(stepDetails).toBeInTheDocument();
+    expect(stepDetails).toHaveTextContent("Step 3");
+    expect(stepDetails).toHaveTextContent("Submit form");
+
+    const backBtn = screen.getByTestId("back-to-plan-btn");
+    expect(backBtn).toBeInTheDocument();
+    fireEvent.click(backBtn);
+    expect(handleBack).toHaveBeenCalledTimes(1);
   });
 });
