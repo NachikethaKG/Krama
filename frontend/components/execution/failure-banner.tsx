@@ -2,12 +2,22 @@ import type { ApiError } from "@krama/contracts-ts";
 
 export interface FailureBannerProps {
   error?: ApiError | null;
+  failedStep?: { seq: number; instructionText?: string } | null;
+  workflowId?: string;
   onRetry?: () => void;
+  onBackToPlan?: () => void;
   className?: string;
 }
 
-export function FailureBanner({ error, onRetry, className = "" }: FailureBannerProps) {
-  const errorCode = error?.code || "internal";
+export function FailureBanner({
+  error,
+  failedStep,
+  workflowId,
+  onRetry,
+  onBackToPlan,
+  className = "",
+}: FailureBannerProps) {
+  const errorCode = error?.code || "validation_error";
   const errorMessage =
     error?.message ||
     "An unrecoverable failure occurred during workflow execution.";
@@ -49,6 +59,18 @@ export function FailureBanner({ error, onRetry, className = "" }: FailureBannerP
               </span>
             </div>
 
+            {failedStep && (
+              <div
+                data-testid="failed-step-details"
+                className="flex items-center gap-1.5 text-xs font-medium text-rose-950 dark:text-rose-100"
+              >
+                <span className="rounded bg-rose-200/80 px-1.5 py-0.5 font-mono text-[10px] dark:bg-rose-900/80">
+                  Step {failedStep.seq}
+                </span>
+                <span className="truncate">{failedStep.instructionText}</span>
+              </div>
+            )}
+
             <p data-testid="failure-message" className="text-xs text-rose-900/90 sm:text-sm dark:text-rose-200/90">
               {errorMessage}
             </p>
@@ -62,14 +84,33 @@ export function FailureBanner({ error, onRetry, className = "" }: FailureBannerP
           </div>
         </div>
 
-        {/* Retry Button */}
-        {onRetry && (
-          <div className="flex shrink-0 items-center pl-12 sm:pl-0 sm:pt-0.5">
+        {/* Post-failure action controls */}
+        <div className="flex shrink-0 flex-wrap items-center gap-2 pl-12 sm:pl-0 sm:pt-0.5">
+          {onBackToPlan ? (
+            <button
+              type="button"
+              data-testid="back-to-plan-btn"
+              onClick={onBackToPlan}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-rose-300 bg-white px-3 py-2 text-xs font-semibold text-rose-800 shadow-xs transition hover:bg-rose-100/60 dark:border-rose-800 dark:bg-zinc-900 dark:text-rose-200 dark:hover:bg-rose-950/60"
+            >
+              Back to Plan
+            </button>
+          ) : (
+            <a
+              href={workflowId ? `/workflows/${workflowId}/approval` : "/approval"}
+              data-testid="back-to-plan-btn"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-rose-300 bg-white px-3 py-2 text-xs font-semibold text-rose-800 shadow-xs transition hover:bg-rose-100/60 dark:border-rose-800 dark:bg-zinc-900 dark:text-rose-200 dark:hover:bg-rose-950/60"
+            >
+              Back to Plan
+            </a>
+          )}
+
+          {onRetry && (
             <button
               type="button"
               data-testid="retry-run-btn"
               onClick={onRetry}
-              className="inline-flex items-center gap-2 rounded-lg bg-rose-600 px-4 py-2 text-xs font-semibold text-white shadow-xs transition hover:bg-rose-500 focus:outline-hidden focus:ring-2 focus:ring-rose-500/50 dark:bg-rose-500 dark:hover:bg-rose-400"
+              className="inline-flex items-center gap-2 rounded-lg bg-rose-600 px-3.5 py-2 text-xs font-semibold text-white shadow-xs transition hover:bg-rose-500 focus:outline-hidden focus:ring-2 focus:ring-rose-500/50 dark:bg-rose-500 dark:hover:bg-rose-400"
             >
               <svg
                 className="size-3.5"
@@ -86,8 +127,8 @@ export function FailureBanner({ error, onRetry, className = "" }: FailureBannerP
               </svg>
               Retry Workflow
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );

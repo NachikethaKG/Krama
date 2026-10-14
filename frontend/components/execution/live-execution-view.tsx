@@ -35,8 +35,12 @@ export function LiveExecutionView({
     verifiedCount,
     totalSteps,
     isLoading,
+    isCancelling,
+    isConfirming,
     error,
+    cancel,
     resume,
+    deny,
     reset,
   } = useWorkflowExecutionStream({
     workflowId,
@@ -86,6 +90,7 @@ export function LiveExecutionView({
     workflow?.task ||
     (workflow?.title ? `Execute: ${workflow.title}` : "Create a repository in local Gitea");
   const targetUrl = workflow?.target_url || workflow?.target?.base_url || "http://localhost:3001";
+  const failedStep = steps.find((s) => s.status === "failed");
 
   return (
     <main
@@ -105,18 +110,108 @@ export function LiveExecutionView({
         totalSteps={totalSteps}
       />
 
-      {/* 2. Lifecycle Interruption Banners */}
+      {/* 2. Run Control Action Bar (Cancel Run) */}
+      {(runStatus === "running" || runStatus === "paused") && (
+        <div
+          data-testid="run-controls-bar"
+          className="flex items-center justify-between rounded-xl border border-zinc-200 bg-white p-4 shadow-xs dark:border-zinc-800 dark:bg-zinc-900"
+        >
+          <div className="flex items-center gap-2.5">
+            <span
+              className={`size-2.5 rounded-full ${
+                runStatus === "paused" ? "bg-amber-500" : "animate-pulse bg-indigo-500"
+              }`}
+            />
+            <span className="text-xs font-medium text-zinc-600 sm:text-sm dark:text-zinc-300">
+              {runStatus === "paused"
+                ? "Execution awaiting human confirmation"
+                : "Workflow is actively executing…"}
+            </span>
+          </div>
+
+          <button
+            type="button"
+            data-testid="cancel-run-btn"
+            disabled={isCancelling}
+            onClick={cancel}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-rose-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-rose-700 transition hover:bg-rose-50 focus:outline-hidden focus:ring-2 focus:ring-rose-500/50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-rose-900/60 dark:bg-zinc-900 dark:text-rose-400 dark:hover:bg-rose-950/40"
+          >
+            <svg
+              aria-hidden="true"
+              className="size-3.5"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={2.5}
+              stroke="currentColor"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+            {isCancelling ? "Cancelling…" : "Cancel Run"}
+          </button>
+        </div>
+      )}
+
+      {/* 3. Lifecycle Interruption Banners */}
       {runStatus === "paused" && pauseDetails && (
         <PauseBanner
           reason={pauseDetails.reason}
           stepSeq={pauseDetails.stepSeq}
           message={pauseDetails.message}
           onResume={resume}
+          onDeny={deny}
+          isConfirming={isConfirming}
         />
       )}
 
       {runStatus === "failed" && (
-        <FailureBanner error={runError} onRetry={reset} />
+        <FailureBanner
+          error={runError}
+          failedStep={failedStep}
+          workflowId={workflowId}
+          onRetry={reset}
+        />
+      )}
+
+      {runStatus === "cancelled" && (
+        <div
+          role="status"
+          data-testid="cancelled-banner"
+          className="flex flex-col gap-4 rounded-xl border border-zinc-200 bg-zinc-50 p-4 shadow-xs sm:flex-row sm:items-center sm:justify-between dark:border-zinc-800 dark:bg-zinc-900/60"
+        >
+          <div className="flex items-start gap-3">
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
+              <svg className="size-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                Workflow Execution Cancelled
+              </h3>
+              <p className="text-xs text-zinc-600 dark:text-zinc-400">
+                The run was halted before all steps could be completed.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex shrink-0 items-center gap-2 pl-12 sm:pl-0">
+            <button
+              type="button"
+              data-testid="retry-run-btn"
+              onClick={reset}
+              className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
+            >
+              Restart Run
+            </button>
+            <a
+              href={`/workflows/${workflowId}/approval`}
+              data-testid="back-to-plan-btn"
+              className="rounded-lg bg-zinc-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+            >
+              Back to Plan
+            </a>
+          </div>
+        </div>
       )}
 
       {runStatus === "completed" && (

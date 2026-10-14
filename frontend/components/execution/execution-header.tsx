@@ -57,6 +57,11 @@ export function ExecutionHeader({
       text: "text-emerald-700 dark:text-emerald-300",
       dot: "bg-emerald-500",
     },
+    cancelled: {
+      bg: "bg-zinc-100 border-zinc-200 dark:bg-zinc-800 dark:border-zinc-700",
+      text: "text-zinc-600 dark:text-zinc-400",
+      dot: "bg-zinc-500",
+    },
   };
 
   const statusStyle = statusColorMap[runStatus] ?? statusColorMap.idle;

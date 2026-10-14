@@ -5,6 +5,8 @@ export interface PauseBannerProps {
   stepSeq: number;
   message?: string;
   onResume?: () => void;
+  onDeny?: () => void;
+  isConfirming?: boolean;
   className?: string;
 }
 
@@ -25,6 +27,8 @@ export function PauseBanner({
   stepSeq,
   message,
   onResume,
+  onDeny,
+  isConfirming = false,
   className = "",
 }: PauseBannerProps) {
   const reasonText = REASON_DESCRIPTIONS[reason] || "Execution has been paused for safety.";
@@ -72,11 +76,27 @@ export function PauseBanner({
 
         {/* Action Controls */}
         <div className="flex shrink-0 items-center gap-2 pl-12 sm:pl-0">
+          {onDeny && (
+            <button
+              type="button"
+              data-testid="deny-run-btn"
+              disabled={isConfirming}
+              onClick={onDeny}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-amber-300 bg-white px-3.5 py-2 text-xs font-semibold text-amber-900 shadow-xs transition hover:bg-amber-100/60 disabled:cursor-not-allowed disabled:opacity-50 dark:border-amber-800 dark:bg-zinc-900 dark:text-amber-200 dark:hover:bg-amber-950/60"
+            >
+              <svg aria-hidden="true" className="size-3.5 text-rose-500" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              Deny / Abort
+            </button>
+          )}
+
           <button
             type="button"
             data-testid="resume-run-btn"
+            disabled={isConfirming}
             onClick={onResume}
-            className="inline-flex items-center gap-2 rounded-lg bg-amber-600 px-4 py-2 text-xs font-semibold text-white shadow-xs transition hover:bg-amber-500 focus:outline-hidden focus:ring-2 focus:ring-amber-500/50 dark:bg-amber-500 dark:hover:bg-amber-400"
+            className="inline-flex items-center gap-2 rounded-lg bg-amber-600 px-4 py-2 text-xs font-semibold text-white shadow-xs transition hover:bg-amber-500 focus:outline-hidden focus:ring-2 focus:ring-amber-500/50 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-amber-500 dark:hover:bg-amber-400"
           >
             <svg
               className="size-3.5"
@@ -91,7 +111,7 @@ export function PauseBanner({
                 d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 010 1.972l-11.54 6.347a1.125 1.125 0 01-1.667-.986V5.653z"
               />
             </svg>
-            Resume Execution
+            {isConfirming ? "Processing…" : "Confirm & Resume"}
           </button>
         </div>
       </div>

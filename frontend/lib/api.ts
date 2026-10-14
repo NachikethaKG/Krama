@@ -39,6 +39,10 @@ export interface StreamOptions {
 
 export type ApiMode = "mock" | "http";
 
+export interface PlanUpdatePayload {
+  steps: PlannedStep[];
+}
+
 /**
  * API client interface for Krama frontend (docs/architecture.md §4).
  * Decouples UI components and pages from whether the backend is live or mocked.
@@ -52,10 +56,16 @@ export interface ApiClient {
   getTask(taskId: string): Promise<Task>;
   /** Fetches a plan by ID */
   getPlan(planId: string): Promise<Plan>;
+  /** Updates plan steps with revision check via PATCH /plans/{id} */
+  updatePlan(planId: string, revision: number, updates: PlanUpdatePayload | PlannedStep[]): Promise<Plan>;
   /** Approves a plan and queues a run */
   approvePlan(planId: string, revision?: number): Promise<Run>;
   /** Fetches run status by ID */
   getRun(runId: string): Promise<Run>;
+  /** Cancels an active or paused run */
+  cancelRun(runId: string): Promise<Run>;
+  /** Answers a paused run (allow or deny) */
+  confirmRun(runId: string, stepSeq: number, decision: "allow" | "deny"): Promise<Run>;
   /** Streams SSE run events for a run */
   streamRunEvents(runId: string, options?: StreamOptions | AbortSignal): AsyncIterable<RunEvent>;
   /** Fetches a verified workflow by ID */
@@ -176,6 +186,19 @@ export class HttpApiClient implements ApiClient {
     return this.request<Plan>(`/plans/${planId}`);
   }
 
+  async updatePlan(
+    planId: string,
+    revision: number,
+    updates: PlanUpdatePayload | PlannedStep[],
+  ): Promise<Plan> {
+    const steps = Array.isArray(updates) ? updates : updates.steps;
+    return this.request<Plan>(`/plans/${planId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ revision, steps }),
+    });
+  }
+
   async approvePlan(planId: string, revision?: number): Promise<Run> {
     let rev = revision;
     if (rev === undefined) {
@@ -191,6 +214,20 @@ export class HttpApiClient implements ApiClient {
 
   async getRun(runId: string): Promise<Run> {
     return this.request<Run>(`/runs/${runId}`);
+  }
+
+  async cancelRun(runId: string): Promise<Run> {
+    return this.request<Run>(`/runs/${runId}/cancel`, {
+      method: "POST",
+    });
+  }
+
+  async confirmRun(runId: string, stepSeq: number, decision: "allow" | "deny"): Promise<Run> {
+    return this.request<Run>(`/runs/${runId}/confirm`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ step_seq: stepSeq, decision }),
+    });
   }
 
   async getWorkflow(id: string): Promise<Workflow> {
@@ -332,6 +369,8 @@ export async function* replayEvents(
 }
 
 export class MockApiClient implements ApiClient {
+  private readonly plans: Record<string, Plan> = {};
+
   constructor(
     private readonly events: RunEvent[] = giteaEventsFixture,
     private readonly workflows: Record<string, Workflow> = workflowFixtures
@@ -364,6 +403,10 @@ export class MockApiClient implements ApiClient {
   }
 
   async getPlan(planId: string): Promise<Plan> {
+    if (this.plans[planId]) {
+      return this.plans[planId];
+    }
+
     const plannedSteps = giteaWorkflowFixture.steps.map((s) => ({
       seq: s.seq,
       action: s.action,
@@ -373,7 +416,7 @@ export class MockApiClient implements ApiClient {
       risk: s.risk,
     })) as [PlannedStep, ...PlannedStep[]];
 
-    return {
+    const plan: Plan = {
       id: planId || giteaWorkflowFixture.id,
       task_id: "mock-task-id",
       revision: 1,
@@ -383,6 +426,37 @@ export class MockApiClient implements ApiClient {
       steps: plannedSteps,
       created_at: new Date().toISOString(),
     };
+    this.plans[plan.id] = plan;
+    return plan;
+  }
+
+  async updatePlan(
+    planId: string,
+    revision: number,
+    updates: PlanUpdatePayload | PlannedStep[],
+  ): Promise<Plan> {
+    const currentPlan = await this.getPlan(planId);
+    if (revision !== currentPlan.revision) {
+      throw new Error(
+        `Request to /plans/${planId} failed with status 409: Plan revision ${revision} is stale; the current one is ${currentPlan.revision}`
+      );
+    }
+    const steps = Array.isArray(updates) ? updates : updates.steps;
+    if (steps.length === 0) {
+      throw new Error("Plan must contain at least 1 step");
+    }
+    const updatedSteps = steps.map((s, idx) => ({
+      ...s,
+      seq: idx + 1,
+    })) as [PlannedStep, ...PlannedStep[]];
+
+    const updatedPlan: Plan = {
+      ...currentPlan,
+      revision: currentPlan.revision + 1,
+      steps: updatedSteps,
+    };
+    this.plans[planId] = updatedPlan;
+    return updatedPlan;
   }
 
   async approvePlan(planId: string, revision?: number): Promise<Run> {
@@ -405,6 +479,30 @@ export class MockApiClient implements ApiClient {
       status: "running",
       retry_count: 0,
       workflow_id: giteaWorkflowFixture.id,
+      created_at: new Date().toISOString(),
+    };
+  }
+
+  async cancelRun(runId: string): Promise<Run> {
+    return {
+      id: runId,
+      plan_id: giteaWorkflowFixture.id,
+      plan_revision: 1,
+      status: "cancelled",
+      retry_count: 0,
+      created_at: new Date().toISOString(),
+      finished_at: new Date().toISOString(),
+    };
+  }
+
+  async confirmRun(runId: string, stepSeq: number, decision: "allow" | "deny"): Promise<Run> {
+    return {
+      id: runId,
+      plan_id: giteaWorkflowFixture.id,
+      plan_revision: 1,
+      status: decision === "allow" ? "running" : "cancelled",
+      current_seq: stepSeq,
+      retry_count: 0,
       created_at: new Date().toISOString(),
     };
   }
