@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { LiveExecutionView } from "@/components/execution/live-execution-view";
@@ -75,6 +75,73 @@ describe("LiveExecutionView", () => {
     );
 
     expect(screen.getByTestId("failure-code-badge")).toHaveTextContent("validation_error");
+  });
+
+  it("allows cancelling an active run and displays cancelled banner", async () => {
+    const client = new MockApiClient(giteaEventsFixture);
+    render(
+      <LiveExecutionView
+        workflowId="default"
+        client={client}
+        speed={1} // normal speed so it doesn't immediately complete
+        initialWorkflow={giteaWorkflowFixture}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("cancel-run-btn")).toBeInTheDocument();
+    });
+    const cancelBtn = screen.getByTestId("cancel-run-btn");
+    fireEvent.click(cancelBtn);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("cancelled-banner")).toBeInTheDocument();
+    });
+    expect(screen.getByText("Workflow Execution Cancelled")).toBeInTheDocument();
+    expect(screen.getByTestId("back-to-plan-btn")).toBeInTheDocument();
+  });
+
+  it("handles deny action when paused and transitions to cancelled", async () => {
+    const client = new MockApiClient(giteaPausedEventsFixture);
+    render(
+      <LiveExecutionView
+        workflowId="paused"
+        client={client}
+        speed={1000}
+        initialWorkflow={giteaWorkflowFixture}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("pause-banner")).toBeInTheDocument();
+    });
+
+    const denyBtn = screen.getByTestId("deny-run-btn");
+    expect(denyBtn).toBeInTheDocument();
+    fireEvent.click(denyBtn);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("cancelled-banner")).toBeInTheDocument();
+    });
+  });
+
+  it("renders failure banner with failed step details and back to plan link", async () => {
+    const client = new MockApiClient(giteaFailedEventsFixture);
+    render(
+      <LiveExecutionView
+        workflowId="failed"
+        client={client}
+        speed={1000}
+        initialWorkflow={giteaWorkflowFixture}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("failure-banner")).toBeInTheDocument();
+    });
+
+    expect(screen.getByTestId("failed-step-details")).toBeInTheDocument();
+    expect(screen.getByTestId("back-to-plan-btn")).toBeInTheDocument();
   });
 
   it("renders not found error view when workflow ID is invalid", async () => {

@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import type { PlannedStep } from "@krama/contracts-ts";
+
 import {
   createApiClient,
   getApiClient,
@@ -243,6 +245,85 @@ describe("HttpApiClient", () => {
       expect(adapted.steps).toHaveLength(1);
       expect(adapted.steps[0].instruction_text).toBe("Click New");
     });
+
+    it("updates plan steps via PATCH /plans/:id with revision", async () => {
+      const updatedPlan = {
+        id: "plan-456",
+        task_id: "task-123",
+        revision: 2,
+        status: "proposed",
+        risk: "low",
+        expected_result: "Repo created",
+        steps: [
+          {
+            seq: 1,
+            action: { type: "click", value: null },
+            target: { role: "button", name: "Submit" },
+            instruction_text: "Click Submit",
+            expected_state: { url_matches: "/done" },
+            risk: "low",
+          },
+        ],
+        created_at: "2026-10-14T00:00:00Z",
+      };
+      vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify(updatedPlan), { status: 200 })));
+
+      const client = new HttpApiClient("http://api");
+      const result = await client.updatePlan("plan-456", 1, {
+        steps: updatedPlan.steps as [PlannedStep, ...PlannedStep[]],
+      });
+      expect(result).toEqual(updatedPlan);
+      expect(fetch).toHaveBeenCalledWith(
+        "http://api/plans/plan-456",
+        expect.objectContaining({
+          method: "PATCH",
+          body: JSON.stringify({ revision: 1, steps: updatedPlan.steps }),
+        }),
+      );
+    });
+
+    it("cancels a run via POST /runs/:id/cancel", async () => {
+      const cancelResponse = {
+        id: "run-789",
+        plan_id: "plan-456",
+        plan_revision: 1,
+        status: "cancelled",
+        retry_count: 0,
+        created_at: "2026-10-14T00:00:00Z",
+      };
+      vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify(cancelResponse), { status: 200 })));
+
+      const client = new HttpApiClient("http://api");
+      const result = await client.cancelRun("run-789");
+      expect(result).toEqual(cancelResponse);
+      expect(fetch).toHaveBeenCalledWith(
+        "http://api/runs/run-789/cancel",
+        expect.objectContaining({ method: "POST" }),
+      );
+    });
+
+    it("confirms a paused run via POST /runs/:id/confirm", async () => {
+      const confirmResponse = {
+        id: "run-789",
+        plan_id: "plan-456",
+        plan_revision: 1,
+        status: "running",
+        retry_count: 0,
+        created_at: "2026-10-14T00:00:00Z",
+      };
+      vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify(confirmResponse), { status: 200 })));
+
+      const client = new HttpApiClient("http://api");
+      const result = await client.confirmRun("run-789", 2, "allow");
+      expect(result).toEqual(confirmResponse);
+      expect(fetch).toHaveBeenCalledWith(
+        "http://api/runs/run-789/confirm",
+        expect.objectContaining({
+          method: "POST",
+          body: JSON.stringify({ step_seq: 2, decision: "allow" }),
+        }),
+      );
+    });
   });
 
   describe("error handling", () => {
@@ -398,6 +479,62 @@ describe("MockApiClient", () => {
     const run = await client.getRun("run-123");
     expect(run.id).toBe("run-123");
     expect(run.status).toBe("running");
+  });
+
+  it("updates plan and increments revision on match", async () => {
+    const client = new MockApiClient();
+    const originalPlan = await client.getPlan("default");
+    expect(originalPlan.revision).toBe(1);
+
+    const updated = await client.updatePlan("default", 1, {
+      steps: [
+        {
+          seq: 1,
+          action: { type: "click" },
+          target: { role: "button", name: "Submit" },
+          instruction_text: "Updated Step 1",
+          expected_state: { url_matches: "/done" },
+          risk: "low",
+        },
+      ],
+    });
+    expect(updated.revision).toBe(2);
+    expect(updated.steps[0].instruction_text).toBe("Updated Step 1");
+  });
+
+  it("throws 409 conflict when updating plan with stale revision", async () => {
+    const client = new MockApiClient();
+    await client.getPlan("default");
+
+    await expect(
+      client.updatePlan("default", 99, {
+        steps: [
+          {
+            seq: 1,
+            action: { type: "click" },
+            target: { role: "button", name: "Submit" },
+            instruction_text: "Updated Step 1",
+            expected_state: { url_matches: "/done" },
+            risk: "low",
+          },
+        ],
+      }),
+    ).rejects.toThrow(/status 409.*stale/i);
+  });
+
+  it("cancels a run and returns cancelled status", async () => {
+    const client = new MockApiClient();
+    const run = await client.cancelRun("run-123");
+    expect(run.status).toBe("cancelled");
+  });
+
+  it("confirms a paused run and returns running or cancelled", async () => {
+    const client = new MockApiClient();
+    const allowed = await client.confirmRun("run-123", 2, "allow");
+    expect(allowed.status).toBe("running");
+
+    const denied = await client.confirmRun("run-123", 2, "deny");
+    expect(denied.status).toBe("cancelled");
   });
 
   describe("workflow fetching", () => {

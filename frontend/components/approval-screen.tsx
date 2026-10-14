@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { Step, Workflow } from "@krama/contracts-ts";
+import type { PlannedStep, Step, Workflow } from "@krama/contracts-ts";
 
 import { ApprovalControls } from "@/components/approval-controls";
 import { StepList } from "@/components/step-list";
@@ -23,10 +23,12 @@ export function ApprovalScreen({
   const router = useRouter();
   const [apiClient] = useState<ApiClient>(() => client ?? getApiClient());
   const [workflow, setWorkflow] = useState<Workflow | null>(initialWorkflow ?? null);
+  const [planRevision, setPlanRevision] = useState<number>(1);
   const [isLoading, setIsLoading] = useState<boolean>(!initialWorkflow);
   const [isPending, setIsPending] = useState<boolean>(false);
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [conflictError, setConflictError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(initialWorkflow?.status ?? "draft");
 
   useEffect(() => {
@@ -43,6 +45,19 @@ export function ApprovalScreen({
           setWorkflow(data);
           setStatus(data.status ?? "draft");
           setIsLoading(false);
+
+          if (typeof apiClient.getPlan === "function") {
+            apiClient
+              .getPlan(initialWorkflowId)
+              .then((plan) => {
+                if (isMounted) {
+                  setPlanRevision(plan.revision);
+                }
+              })
+              .catch(() => {
+                // Ignore fallback error; default revision 1 is maintained
+              });
+          }
         }
       })
       .catch((err: unknown) => {
@@ -65,12 +80,130 @@ export function ApprovalScreen({
     setWorkflow({ ...workflow, steps: updatedSteps });
   };
 
+  const handleMoveUp = (stepSeq: number) => {
+    if (!workflow) return;
+    const idx = workflow.steps.findIndex((s) => s.seq === stepSeq);
+    if (idx <= 0) return;
+    const newSteps = [...workflow.steps];
+    const temp = newSteps[idx - 1];
+    newSteps[idx - 1] = newSteps[idx];
+    newSteps[idx] = temp;
+    const reindexed = newSteps.map((s, i) => ({ ...s, seq: i + 1 }));
+    setWorkflow({ ...workflow, steps: reindexed });
+  };
+
+  const handleMoveDown = (stepSeq: number) => {
+    if (!workflow) return;
+    const idx = workflow.steps.findIndex((s) => s.seq === stepSeq);
+    if (idx === -1 || idx >= workflow.steps.length - 1) return;
+    const newSteps = [...workflow.steps];
+    const temp = newSteps[idx + 1];
+    newSteps[idx + 1] = newSteps[idx];
+    newSteps[idx] = temp;
+    const reindexed = newSteps.map((s, i) => ({ ...s, seq: i + 1 }));
+    setWorkflow({ ...workflow, steps: reindexed });
+  };
+
+  const handleDeleteStep = (stepSeq: number) => {
+    if (!workflow || workflow.steps.length <= 1) return;
+    const filtered = workflow.steps.filter((s) => s.seq !== stepSeq);
+    const reindexed = filtered.map((s, i) => ({ ...s, seq: i + 1 }));
+    setWorkflow({ ...workflow, steps: reindexed });
+  };
+
+  const handleToggleEdit = async () => {
+    if (!isEditing) {
+      setConflictError(null);
+      setIsEditing(true);
+      return;
+    }
+
+    if (!workflow) {
+      setIsEditing(false);
+      return;
+    }
+
+    setIsPending(true);
+    setError(null);
+    setConflictError(null);
+
+    const plannedSteps = workflow.steps.map((s) => ({
+      seq: s.seq,
+      action: s.action,
+      target: s.target,
+      instruction_text: s.instruction_text,
+      expected_state: s.expected_state,
+      risk: s.risk,
+    })) as [PlannedStep, ...PlannedStep[]];
+
+    try {
+      if (typeof apiClient.updatePlan === "function") {
+        const updated = await apiClient.updatePlan(
+          workflow.id || initialWorkflowId,
+          planRevision,
+          { steps: plannedSteps }
+        );
+        setPlanRevision(updated.revision);
+      }
+      setIsEditing(false);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (
+        msg.includes("409") ||
+        msg.toLowerCase().includes("conflict") ||
+        msg.toLowerCase().includes("stale")
+      ) {
+        setConflictError(msg);
+      } else {
+        setError(msg);
+      }
+    } finally {
+      setIsPending(false);
+    }
+  };
+
+  const handleReloadPlan = async () => {
+    setIsLoading(true);
+    setConflictError(null);
+    setError(null);
+    try {
+      const planId = workflow?.id || initialWorkflowId;
+      const plan = await apiClient.getPlan(planId);
+      setPlanRevision(plan.revision);
+      setWorkflow({
+        id: plan.id,
+        title: plan.expected_result || "Generated Workflow Plan",
+        task: plan.expected_result,
+        target_url: workflow?.target_url || "http://localhost:3001",
+        target_app: workflow?.target_app || "gitea",
+        status: plan.status === "proposed" ? "draft" : (plan.status as Workflow["status"]),
+        steps: plan.steps.map((s) => ({
+          id: `${plan.id}-${s.seq}`,
+          seq: s.seq,
+          action: s.action,
+          target: s.target,
+          instruction_text: s.instruction_text,
+          risk: s.risk,
+          expected_state: s.expected_state,
+          observed_state: { url: "" },
+          verification: { result: "skipped" as const, method: ["url" as const], confidence: 1 },
+        })),
+      });
+      setIsEditing(false);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to reload plan");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleApprove = async () => {
     setIsPending(true);
     setError(null);
+    setConflictError(null);
     try {
       if (typeof apiClient.approvePlan === "function") {
-        await apiClient.approvePlan(workflow?.id || initialWorkflowId);
+        await apiClient.approvePlan(workflow?.id || initialWorkflowId, planRevision);
       }
       setStatus("approved");
       if (workflow) {
@@ -83,7 +216,16 @@ export function ApprovalScreen({
         router.push(`/workflows/${targetId}/execution`);
       }, 600);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Approval failed");
+      const msg = err instanceof Error ? err.message : "Approval failed";
+      if (
+        msg.includes("409") ||
+        msg.toLowerCase().includes("conflict") ||
+        msg.toLowerCase().includes("stale")
+      ) {
+        setConflictError(msg);
+      } else {
+        setError(msg);
+      }
     } finally {
       setIsPending(false);
     }
@@ -162,11 +304,56 @@ export function ApprovalScreen({
         status={status}
       />
 
-      {/* 2. Step list with instruction text and risk badges */}
+      {/* Conflict error banner */}
+      {conflictError && (
+        <div
+          role="alert"
+          data-testid="plan-conflict-banner"
+          className="flex flex-col gap-3 rounded-xl border border-amber-300 bg-amber-50 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-amber-800 dark:bg-amber-950/40"
+        >
+          <div className="flex items-start gap-3">
+            <svg
+              aria-hidden="true"
+              className="mt-0.5 size-5 shrink-0 text-amber-600 dark:text-amber-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={2}
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"
+              />
+            </svg>
+            <div>
+              <h3 className="text-sm font-semibold text-amber-900 dark:text-amber-100">
+                Plan Revision Conflict
+              </h3>
+              <p className="text-xs text-amber-800 dark:text-amber-300">
+                {conflictError}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            data-testid="reload-plan-btn"
+            onClick={handleReloadPlan}
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-amber-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow-xs transition-colors hover:bg-amber-500 focus:outline-hidden dark:bg-amber-500 dark:hover:bg-amber-400"
+          >
+            Reload Latest Plan
+          </button>
+        </div>
+      )}
+
+      {/* 2. Step list with instruction text, reordering, deletion, and risk badges */}
       <StepList
         steps={workflow?.steps || []}
         isEditing={isEditing}
         onInstructionChange={handleInstructionChange}
+        onMoveUp={handleMoveUp}
+        onMoveDown={handleMoveDown}
+        onDeleteStep={handleDeleteStep}
       />
 
       {/* 3. Action controls: Edit / Approve / Reject */}
@@ -176,7 +363,7 @@ export function ApprovalScreen({
         isEditing={isEditing}
         isPending={isPending}
         error={error}
-        onToggleEdit={() => setIsEditing(!isEditing)}
+        onToggleEdit={handleToggleEdit}
         onApprove={handleApprove}
         onReject={handleReject}
       />

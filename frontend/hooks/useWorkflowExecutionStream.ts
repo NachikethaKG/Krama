@@ -11,7 +11,7 @@ import type {
 
 import { type ApiClient, getApiClient } from "@/lib/api";
 
-export type RunExecutionStatus = "idle" | "running" | "paused" | "failed" | "completed";
+export type RunExecutionStatus = "idle" | "running" | "paused" | "failed" | "completed" | "cancelled";
 export type StepStatus = "pending" | "started" | "verified" | "failed";
 
 export interface StepExecutionState {
@@ -57,9 +57,14 @@ export interface UseWorkflowExecutionStreamResult {
   verifiedCount: number;
   totalSteps: number;
   isLoading: boolean;
+  isCancelling: boolean;
+  isConfirming: boolean;
   error: string | null;
   start: () => void;
+  cancel: () => Promise<void>;
+  confirm: (decision: "allow" | "deny") => Promise<void>;
   resume: () => void;
+  deny: () => void;
   reset: () => void;
 }
 
@@ -105,6 +110,8 @@ export function useWorkflowExecutionStream({
   );
   const [elapsedSeconds, setElapsedSeconds] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(!initialWorkflow);
+  const [isCancelling, setIsCancelling] = useState<boolean>(false);
+  const [isConfirming, setIsConfirming] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -241,6 +248,18 @@ export function useWorkflowExecutionStream({
         break;
       }
 
+      case "run.resumed": {
+        setRunStatus("running");
+        setPauseDetails(null);
+        break;
+      }
+
+      case "run.cancelled": {
+        setRunStatus("cancelled");
+        setActiveStepSeq(null);
+        break;
+      }
+
       case "run.failed": {
         setRunStatus("failed");
         setRunError(event.error);
@@ -291,10 +310,86 @@ export function useWorkflowExecutionStream({
     }
   }, [apiClient, handleEvent, speed, workflowId]);
 
+  const cancel = useCallback(async () => {
+    if (isCancelling) return;
+    setIsCancelling(true);
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    isStreamingRef.current = false;
+    setRunStatus("cancelled");
+    setActiveStepSeq(null);
+    try {
+      const runId = workflow?.run_id || workflow?.id || workflowId;
+      if (typeof apiClient.cancelRun === "function") {
+        await apiClient.cancelRun(runId);
+      }
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to cancel run");
+    } finally {
+      setIsCancelling(false);
+    }
+  }, [apiClient, isCancelling, workflow, workflowId]);
+
+  const confirm = useCallback(
+    async (decision: "allow" | "deny") => {
+      if (isConfirming) return;
+      setIsConfirming(true);
+      const stepSeq = pauseDetails?.stepSeq ?? 1;
+      const runId = workflow?.run_id || workflow?.id || workflowId;
+      if (decision === "allow") {
+        setRunStatus("running");
+        setPauseDetails(null);
+      } else {
+        if (abortControllerRef.current) {
+          abortControllerRef.current.abort();
+        }
+        isStreamingRef.current = false;
+        setRunStatus("cancelled");
+        setPauseDetails(null);
+        setActiveStepSeq(null);
+      }
+      try {
+        if (typeof apiClient.confirmRun === "function") {
+          await apiClient.confirmRun(runId, stepSeq, decision);
+        }
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : `Failed to ${decision} paused run`);
+      } finally {
+        setIsConfirming(false);
+      }
+    },
+    [apiClient, isConfirming, pauseDetails?.stepSeq, workflow, workflowId]
+  );
+
   const resume = useCallback(() => {
     setRunStatus("running");
     setPauseDetails(null);
-  }, []);
+    if (pauseDetails && typeof apiClient.confirmRun === "function") {
+      const stepSeq = pauseDetails.stepSeq;
+      const runId = workflow?.run_id || workflow?.id || workflowId;
+      apiClient.confirmRun(runId, stepSeq, "allow").catch((err: unknown) => {
+        setError(err instanceof Error ? err.message : "Failed to confirm run (allow)");
+      });
+    }
+  }, [apiClient, pauseDetails, workflow, workflowId]);
+
+  const deny = useCallback(() => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    isStreamingRef.current = false;
+    setRunStatus("cancelled");
+    setPauseDetails(null);
+    setActiveStepSeq(null);
+    if (pauseDetails && typeof apiClient.confirmRun === "function") {
+      const stepSeq = pauseDetails.stepSeq;
+      const runId = workflow?.run_id || workflow?.id || workflowId;
+      apiClient.confirmRun(runId, stepSeq, "deny").catch((err: unknown) => {
+        setError(err instanceof Error ? err.message : "Failed to confirm run (deny)");
+      });
+    }
+  }, [apiClient, pauseDetails, workflow, workflowId]);
 
   const reset = useCallback(() => {
     if (abortControllerRef.current) {
@@ -365,9 +460,14 @@ export function useWorkflowExecutionStream({
     verifiedCount,
     totalSteps: denominator,
     isLoading,
+    isCancelling,
+    isConfirming,
     error,
     start: startStream,
+    cancel,
+    confirm,
     resume,
+    deny,
     reset,
   };
 }
