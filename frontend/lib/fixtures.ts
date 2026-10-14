@@ -154,7 +154,7 @@ data: {"type":"step.started","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","se
 
 event: step.failed
 id: 6
-data: {"type":"step.failed","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":6,"ts":"2026-10-06T12:00:01.400Z","step_seq":2,"expected":{"url_matches":"^/repo/create$"},"observed":{"url":"/repo/error","title":"500 Internal Server Error"}}
+data: {"type":"step.failed","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":6,"ts":"2026-10-06T12:00:01.400Z","step_seq":2,"expected":{"url_matches":"^/repo/create$","visible":[{"role":"button","name":"Create Repository"}]},"observed":{"url":"/repo/error","title":"500 Internal Server Error"},"screenshot_url":"/mock-observed.png","expected_screenshot_url":"/mock-expected.png"}
 
 event: run.failed
 id: 7
@@ -162,6 +162,45 @@ data: {"type":"run.failed","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq"
 `;
 
 export const giteaFailedEventsFixture: RunEvent[] = parseSseEvents(GITEA_FAILED_RUN_SSE);
+
+export const GITEA_REPLAN_RUN_SSE = `event: run.started
+id: 1
+data: {"type":"run.started","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":1,"ts":"2026-10-06T12:00:00.000Z","plan_id":"6f1c2a4e-3333-4b8a-9a1b-123456789abc","total_steps":5}
+
+event: step.started
+id: 2
+data: {"type":"step.started","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":2,"ts":"2026-10-06T12:00:00.500Z","step_seq":1,"instruction_text":"Open the + menu at the top right."}
+
+event: step.action_done
+id: 3
+data: {"type":"step.action_done","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":3,"ts":"2026-10-06T12:00:00.829Z","step_seq":1,"screenshot_url":"/mock-observed.png","bbox":[1146,6,56,36]}
+
+event: step.verified
+id: 4
+data: {"type":"step.verified","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":4,"ts":"2026-10-06T12:00:01.047Z","step_seq":1,"method":["aria"],"confidence":1.0}
+
+event: step.started
+id: 5
+data: {"type":"step.started","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":5,"ts":"2026-10-06T12:00:01.110Z","step_seq":2,"instruction_text":"Click New Repository in the menu."}
+
+event: step.failed
+id: 6
+data: {"type":"step.failed","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":6,"ts":"2026-10-06T12:00:01.400Z","step_seq":2,"expected":{"url_matches":"^/repo/create$","visible":[{"role":"button","name":"Create Repository"}]},"observed":{"url":"/repo/error","title":"500 Internal Server Error"},"screenshot_url":"/mock-observed.png","expected_screenshot_url":"/mock-expected.png"}
+
+event: run.replanning
+id: 7
+data: {"type":"run.replanning","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":7,"ts":"2026-10-06T12:00:01.600Z","reason":"Element not found in DOM, attempting alternative locator strategy","attempt":1}
+
+event: run.replanning
+id: 8
+data: {"type":"run.replanning","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":8,"ts":"2026-10-06T12:00:02.000Z","reason":"Target branch mismatch, replanning remaining execution steps","attempt":2}
+
+event: run.paused
+id: 9
+data: {"type":"run.paused","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":9,"ts":"2026-10-06T12:00:02.500Z","reason":"recovery_exhausted","step_seq":2,"message":"Automatic recovery budget exhausted after 3 attempts"}
+`;
+
+export const giteaReplanEventsFixture: RunEvent[] = parseSseEvents(GITEA_REPLAN_RUN_SSE);
 
 export const pausedWorkflowFixture: Workflow = {
   ...giteaWorkflowFixture,
@@ -177,5 +216,13 @@ export const failedWorkflowFixture: Workflow = {
   status: "failed",
 };
 
+export const replanWorkflowFixture: Workflow = {
+  ...giteaWorkflowFixture,
+  id: "replan",
+  title: "Create repository in local Gitea (Replan)",
+  status: "running",
+};
+
 workflowFixtures["paused"] = pausedWorkflowFixture;
 workflowFixtures["failed"] = failedWorkflowFixture;
+workflowFixtures["replan"] = replanWorkflowFixture;
