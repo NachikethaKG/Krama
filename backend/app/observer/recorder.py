@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import inspect
 from pathlib import Path
 from typing import Any, Protocol, runtime_checkable
 
 from playwright.async_api import BrowserContext, Page
+
+from app.ports import ArtifactStore
 
 ASSETS_DIR = Path(__file__).resolve().parent / "assets"
 RRWEB_RECORD_BUNDLE = ASSETS_DIR / "record.umd.min.cjs"
@@ -102,12 +105,26 @@ class SessionRecorder(Protocol):
         """Total count of recorded rrweb events."""
         ...
 
+    @property
+    def artifact_store(self) -> ArtifactStore | None:
+        """Underlying ArtifactStore port dependency if configured."""
+        ...
+
     async def start(self, target: BrowserContext | Page) -> None:
         """Start session recording on a browser context or page."""
         ...
 
     async def stop(self) -> list[dict[str, Any]]:
         """Stop session recording and return collected events."""
+        ...
+
+    async def stop_and_save(
+        self,
+        run_id: str | None = None,
+        *,
+        artifact_store: ArtifactStore | None = None,
+    ) -> str:
+        """Stop session recording and persist events to the artifact store."""
         ...
 
     def get_events(self) -> list[dict[str, Any]]:
@@ -123,3 +140,30 @@ class SessionRecorder(Protocol):
     ) -> Path:
         """Save accumulated events to a JSON file (optionally gzip compressed)."""
         ...
+
+
+async def _persist_to_store(
+    store: ArtifactStore | Any,
+    key: str,
+    data: bytes,
+    content_type: str,
+) -> str:
+    """Persist data to an ArtifactStore via save() or put()."""
+    if hasattr(store, "save"):
+        call_fn = store.save
+    elif hasattr(store, "put"):
+        call_fn = store.put
+    else:
+        raise AttributeError("Artifact store must implement save() or put()")
+
+    res = call_fn(key=key, data=data, content_type=content_type)
+    if inspect.isawaitable(res):
+        res = await res
+
+    if isinstance(res, str) and res:
+        return res
+    if hasattr(res, "key") and isinstance(res.key, str):
+        return res.key
+    if hasattr(res, "path") and isinstance(res.path, str):
+        return res.path
+    return key
