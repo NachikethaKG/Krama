@@ -35,6 +35,10 @@ class NetworkSummary(BaseModel):
     requests_by_type: dict[str, int] = Field(default_factory=dict)
 
 
+class ObserverStorageError(RuntimeError):
+    """Raised when persisting or retrieving an observer artifact fails."""
+
+
 class Observation(ObservedState):
     """Complete page observation collected after an action step."""
 
@@ -43,6 +47,10 @@ class Observation(ObservedState):
     raw_url: str = ""
     aria_snapshot: str = ""
     screenshot: bytes | str | None = None
+    screenshot_path: str | None = None
+    rrweb_recording_path: str | None = None
+    rrweb_path: str | None = None
+    storage_error: str | None = None
     network_summary: NetworkSummary = Field(default_factory=NetworkSummary)
     capture_duration_ms: float = 0.0
 
@@ -58,6 +66,9 @@ class Observation(ObservedState):
         aria_excerpt: str = "",
         screenshot: bytes | str | None = None,
         screenshot_path: str | None = None,
+        rrweb_recording_path: str | None = None,
+        rrweb_path: str | None = None,
+        storage_error: str | None = None,
         network_summary: NetworkSummary | None = None,
         capture_duration_ms: float = 0.0,
         captured_at: datetime | None = None,
@@ -66,12 +77,16 @@ class Observation(ObservedState):
         now = captured_at or datetime.now(UTC)
         # Full masked snapshot: the verifier reads `aria_excerpt` through the port and needs every element.
         excerpt = aria_excerpt or aria_snapshot
+        resolved_rrweb_path = rrweb_path or rrweb_recording_path
         return cls(
             url=url,
             title=title,
             headings=headings or [],
             aria_excerpt=excerpt,
             screenshot_path=screenshot_path,
+            rrweb_recording_path=resolved_rrweb_path,
+            rrweb_path=resolved_rrweb_path,
+            storage_error=storage_error,
             captured_at=now,
             raw_url=raw_url or url,
             aria_snapshot=aria_snapshot,
