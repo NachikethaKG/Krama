@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type {
   ApiError,
+  ExpectedState,
+  ObservedSummary,
   PauseReason,
   RunEvent,
   Step,
@@ -13,6 +15,23 @@ import { type ApiClient, getApiClient } from "@/lib/api";
 
 export type RunExecutionStatus = "idle" | "running" | "paused" | "failed" | "completed" | "cancelled";
 export type StepStatus = "pending" | "started" | "verified" | "failed";
+export type ReplanStatus =
+  | "idle"
+  | "re-locating"
+  | "retrying"
+  | "replanning"
+  | "exhausted"
+  | "succeeded";
+
+export interface ReplanState {
+  status: ReplanStatus;
+  attempt: number;
+  maxAttempts: number;
+  reason?: string;
+  strategy?: string;
+  timeoutSeconds?: number;
+  stepSeq?: number;
+}
 
 export interface StepExecutionState {
   seq: number;
@@ -28,6 +47,44 @@ export interface StepExecutionState {
   observedUrl?: string;
   observedTitle?: string;
   screenshotUrl?: string;
+  expectedScreenshotUrl?: string;
+  expectedState?: ExpectedState;
+  observedSummary?: ObservedSummary;
+  failureLayer?: string;
+}
+
+interface ExtendedStepFailedEvent {
+  expected_screenshot_url?: string;
+  expectedScreenshotUrl?: string;
+  error?: string;
+  failure_layer?: string;
+  failureLayer?: string;
+}
+
+interface ExtendedStep {
+  expected_screenshot_url?: string;
+  expectedScreenshotUrl?: string;
+}
+
+interface ExtendedReplanningEvent {
+  status?: ReplanStatus;
+  max_attempts?: number;
+  strategy?: string;
+  timeout_seconds?: number;
+  step_seq?: number;
+  reason?: string;
+  attempt?: number;
+}
+
+interface ExtendedCustomEvent {
+  type?: string;
+  attempt?: number;
+  max_attempts?: number;
+  status?: ReplanStatus;
+  reason?: string;
+  strategy?: string;
+  timeout_seconds?: number;
+  step_seq?: number;
 }
 
 export interface PauseDetails {
@@ -52,6 +109,7 @@ export interface UseWorkflowExecutionStreamResult {
   activeStepSeq: number | null;
   pauseDetails: PauseDetails | null;
   runError: ApiError | null;
+  replanState: ReplanState;
   elapsedSeconds: number;
   progressPercent: number;
   verifiedCount: number;
@@ -67,6 +125,7 @@ export interface UseWorkflowExecutionStreamResult {
   deny: () => void;
   reset: () => void;
 }
+
 
 function buildInitialStepStates(wf?: Workflow | null): {
   states: Record<number, StepExecutionState>;
@@ -102,6 +161,11 @@ export function useWorkflowExecutionStream({
   const [activeStepSeq, setActiveStepSeq] = useState<number | null>(null);
   const [pauseDetails, setPauseDetails] = useState<PauseDetails | null>(null);
   const [runError, setRunError] = useState<ApiError | null>(null);
+  const [replanState, setReplanState] = useState<ReplanState>({
+    status: "idle",
+    attempt: 0,
+    maxAttempts: 3,
+  });
   const [stepStates, setStepStates] = useState<Record<number, StepExecutionState>>(
     () => buildInitialStepStates(initialWorkflow).states
   );
@@ -117,6 +181,10 @@ export function useWorkflowExecutionStream({
   const abortControllerRef = useRef<AbortController | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const isStreamingRef = useRef<boolean>(false);
+  const workflowRef = useRef<Workflow | null>(workflow);
+  useEffect(() => {
+    workflowRef.current = workflow;
+  }, [workflow]);
 
   // Fetch workflow details if not supplied
   useEffect(() => {
@@ -224,17 +292,57 @@ export function useWorkflowExecutionStream({
       }
 
       case "step.failed": {
+        const wfStep = workflowRef.current?.steps?.find((s) => s.seq === event.step_seq);
+        const extEvent = event as unknown as ExtendedStepFailedEvent;
+        const extStep = wfStep as unknown as ExtendedStep | undefined;
+        const expectedScreenshotUrl =
+          extEvent.expected_screenshot_url ||
+          extEvent.expectedScreenshotUrl ||
+          extStep?.expected_screenshot_url ||
+          extStep?.expectedScreenshotUrl ||
+          wfStep?.before_state?.screenshot ||
+          wfStep?.before_state?.screenshot_path;
+
         setStepStates((prev) => ({
           ...prev,
           [event.step_seq]: {
             ...prev[event.step_seq],
             status: "failed",
-            error: "Verification failed: observed state did not match expected preconditions.",
+            error:
+              extEvent.error ||
+              "Verification failed: observed state did not match expected preconditions.",
             observedUrl: event.observed?.url,
             observedTitle: event.observed?.title,
-            screenshotUrl: event.screenshot_url ?? undefined,
+            screenshotUrl: event.screenshot_url ?? prev[event.step_seq]?.screenshotUrl ?? undefined,
+            expectedScreenshotUrl:
+              expectedScreenshotUrl ?? prev[event.step_seq]?.expectedScreenshotUrl ?? undefined,
+            expectedState:
+              event.expected ?? prev[event.step_seq]?.expectedState ?? wfStep?.expected_state,
+            observedSummary: event.observed ?? prev[event.step_seq]?.observedSummary,
+            failureLayer:
+              extEvent.failure_layer ||
+              extEvent.failureLayer ||
+              prev[event.step_seq]?.failureLayer,
           },
         }));
+        break;
+      }
+
+      case "run.replanning": {
+        const extEvent = event as unknown as ExtendedReplanningEvent;
+        const status: ReplanStatus = extEvent.status || "replanning";
+        const maxAttempts = extEvent.max_attempts || 3;
+        setReplanState({
+          status,
+          attempt: event.attempt,
+          maxAttempts,
+          reason: event.reason,
+          strategy:
+            extEvent.strategy ||
+            "Adaptive element re-location & alternative branch replay",
+          timeoutSeconds: extEvent.timeout_seconds ?? 30,
+          stepSeq: extEvent.step_seq,
+        });
         break;
       }
 
@@ -245,12 +353,28 @@ export function useWorkflowExecutionStream({
           stepSeq: event.step_seq,
           message: event.message,
         });
+        if (event.reason === "recovery_exhausted") {
+          setReplanState((prev) => ({
+            ...prev,
+            status: "exhausted",
+            reason: event.message || prev.reason || "Recovery budget exhausted across all attempts",
+          }));
+        } else if (event.reason === "replan_review") {
+          setReplanState((prev) => ({
+            ...prev,
+            status: "exhausted",
+            reason: event.message || "Replan requires human review before proceeding",
+          }));
+        }
         break;
       }
 
       case "run.resumed": {
         setRunStatus("running");
         setPauseDetails(null);
+        setReplanState((prev) =>
+          prev.status === "exhausted" ? { ...prev, status: "idle" } : prev
+        );
         break;
       }
 
@@ -272,8 +396,35 @@ export function useWorkflowExecutionStream({
         break;
       }
 
-      default:
+      default: {
+        const ev = event as unknown as ExtendedCustomEvent;
+        if (ev.type === "step.replan_started" || ev.type === "run.replan_started") {
+          const attempt = ev.attempt ?? 1;
+          const maxAttempts = ev.max_attempts ?? 3;
+          const status: ReplanStatus = ev.status || "re-locating";
+          setReplanState({
+            status,
+            attempt,
+            maxAttempts,
+            reason: ev.reason,
+            strategy:
+              ev.strategy || "Adaptive element re-location & alternative branch replay",
+            timeoutSeconds: ev.timeout_seconds ?? 30,
+            stepSeq: ev.step_seq,
+          });
+        } else if (ev.type === "step.replan_succeeded" || ev.type === "run.replan_succeeded") {
+          setReplanState((prev) => ({
+            ...prev,
+            status: "succeeded",
+          }));
+        } else if (ev.type === "step.replan_failed" || ev.type === "run.replan_failed") {
+          setReplanState((prev) => ({
+            ...prev,
+            status: "exhausted",
+          }));
+        }
         break;
+      }
     }
   }, []);
 
@@ -401,6 +552,11 @@ export function useWorkflowExecutionStream({
     setPauseDetails(null);
     setRunError(null);
     setElapsedSeconds(0);
+    setReplanState({
+      status: "idle",
+      attempt: 0,
+      maxAttempts: 3,
+    });
     if (workflow) {
       const { states, total } = buildInitialStepStates(workflow);
       setStepStates(states);
@@ -455,6 +611,7 @@ export function useWorkflowExecutionStream({
     activeStepSeq,
     pauseDetails,
     runError,
+    replanState,
     elapsedSeconds,
     progressPercent,
     verifiedCount,

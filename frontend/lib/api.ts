@@ -14,8 +14,10 @@ import {
   giteaEventsFixture,
   giteaFailedEventsFixture,
   giteaPausedEventsFixture,
+  giteaReplanEventsFixture,
   giteaWorkflowFixture,
   pausedWorkflowFixture,
+  replanWorkflowFixture,
   validWorkflowFixture,
   workflowFixtures,
 } from "./fixtures";
@@ -26,8 +28,10 @@ export {
   giteaEventsFixture,
   giteaFailedEventsFixture,
   giteaPausedEventsFixture,
+  giteaReplanEventsFixture,
   giteaWorkflowFixture,
   pausedWorkflowFixture,
+  replanWorkflowFixture,
   validWorkflowFixture,
   workflowFixtures,
 };
@@ -524,6 +528,7 @@ export class MockApiClient implements ApiClient {
       "default",
       "paused",
       "failed",
+      "replan",
       "",
     ]);
     if (!validIds.has(id) && !this.workflows[id]) {
@@ -535,6 +540,9 @@ export class MockApiClient implements ApiClient {
     }
     if (id === "failed" || id.includes("failed")) {
       return replayEvents(giteaFailedEventsFixture, options);
+    }
+    if (id === "replan" || id.includes("replan")) {
+      return replayEvents(giteaReplanEventsFixture, options);
     }
 
     return replayEvents(this.events, options);

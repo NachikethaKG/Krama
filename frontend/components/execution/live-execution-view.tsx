@@ -2,9 +2,11 @@
 
 import type { Workflow } from "@krama/contracts-ts";
 
+import { VerificationFailureCard } from "@/components/diagnostics";
 import { ExecutionHeader } from "@/components/execution/execution-header";
 import { FailureBanner } from "@/components/execution/failure-banner";
 import { PauseBanner } from "@/components/execution/pause-banner";
+import { ReplanStatusIndicator } from "@/components/execution/ReplanStatusIndicator";
 import { StepProgressItem } from "@/components/execution/step-progress-item";
 import { useWorkflowExecutionStream } from "@/hooks/useWorkflowExecutionStream";
 import type { ApiClient } from "@/lib/api";
@@ -30,6 +32,7 @@ export function LiveExecutionView({
     steps,
     pauseDetails,
     runError,
+    replanState,
     elapsedSeconds,
     progressPercent,
     verifiedCount,
@@ -151,7 +154,22 @@ export function LiveExecutionView({
         </div>
       )}
 
-      {/* 3. Lifecycle Interruption Banners */}
+      {/* 3. Replan Status Indicator */}
+      {replanState.status !== "idle" && (
+        <ReplanStatusIndicator
+          status={replanState.status}
+          attempt={replanState.attempt}
+          maxAttempts={replanState.maxAttempts}
+          reason={replanState.reason}
+          strategy={replanState.strategy}
+          timeoutSeconds={replanState.timeoutSeconds}
+          onTakeover={resume}
+          onResume={resume}
+          onAbort={cancel}
+        />
+      )}
+
+      {/* 4. Lifecycle Interruption Banners */}
       {runStatus === "paused" && pauseDetails && (
         <PauseBanner
           reason={pauseDetails.reason}
@@ -169,6 +187,27 @@ export function LiveExecutionView({
           failedStep={failedStep}
           workflowId={workflowId}
           onRetry={reset}
+        />
+      )}
+
+      {/* 5. Detailed Step Verification Failure Diagnostic Card */}
+      {failedStep && (
+        <VerificationFailureCard
+          stepSeq={failedStep.seq}
+          instructionText={failedStep.instructionText}
+          failureReason={failedStep.error}
+          failedLayer={failedStep.failureLayer}
+          expected={failedStep.expectedState}
+          observed={
+            failedStep.observedSummary || {
+              url: failedStep.observedUrl || "",
+              title: failedStep.observedTitle || "",
+              error: failedStep.error,
+            }
+          }
+          expectedScreenshotUrl={failedStep.expectedScreenshotUrl}
+          observedScreenshotUrl={failedStep.screenshotUrl}
+          onRetryReplan={reset}
         />
       )}
 
