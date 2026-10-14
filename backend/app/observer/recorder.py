@@ -7,6 +7,8 @@ from typing import Any, Protocol, runtime_checkable
 
 from playwright.async_api import BrowserContext, Page
 
+from app.ports import ArtifactStore
+
 ASSETS_DIR = Path(__file__).resolve().parent / "assets"
 RRWEB_RECORD_BUNDLE = ASSETS_DIR / "record.umd.min.cjs"
 
@@ -102,12 +104,26 @@ class SessionRecorder(Protocol):
         """Total count of recorded rrweb events."""
         ...
 
+    @property
+    def artifact_store(self) -> ArtifactStore | None:
+        """Underlying ArtifactStore port dependency if configured."""
+        ...
+
     async def start(self, target: BrowserContext | Page) -> None:
         """Start session recording on a browser context or page."""
         ...
 
     async def stop(self) -> list[dict[str, Any]]:
         """Stop session recording and return collected events."""
+        ...
+
+    async def stop_and_save(
+        self,
+        run_id: str | None = None,
+        *,
+        artifact_store: ArtifactStore | None = None,
+    ) -> str:
+        """Stop session recording and persist events to the artifact store."""
         ...
 
     def get_events(self) -> list[dict[str, Any]]:

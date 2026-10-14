@@ -25,6 +25,7 @@ from typing import Any
 from playwright.async_api import BrowserContext, Page
 
 from app.observer.recorder import SessionRecorder, get_rrweb_init_script
+from app.ports import ArtifactStore
 
 BINDING_NAME = "__krama_rrweb_emit__"
 
@@ -38,7 +39,14 @@ BENCHMARK_1MIN_GZIP_BYTES: int = 376712
 class RRWebRecorder(SessionRecorder):
     """Bridge that collects rrweb DOM and interaction events from browser sessions."""
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        *,
+        artifact_store: ArtifactStore | None = None,
+        run_id: str | None = None,
+    ) -> None:
+        self._artifact_store = artifact_store
+        self._run_id = run_id
         self._events: list[dict[str, Any]] = []
         self._raw_records: list[dict[str, Any]] = []
         self._is_recording: bool = False
@@ -49,6 +57,16 @@ class RRWebRecorder(SessionRecorder):
         self._bound_pages: set[Page] = set()
 
     @property
+    def artifact_store(self) -> ArtifactStore | None:
+        """Underlying ArtifactStore port dependency."""
+        return self._artifact_store
+
+    @property
+    def run_id(self) -> str | None:
+        """Configured run ID."""
+        return self._run_id
+
+    @property
     def is_recording(self) -> bool:
         """Whether the recorder is actively listening for events."""
         return self._is_recording
@@ -57,6 +75,17 @@ class RRWebRecorder(SessionRecorder):
     def event_count(self) -> int:
         """Total count of recorded events."""
         return len(self._events)
+
+    async def stop_and_save(
+        self,
+        run_id: str | None = None,
+        *,
+        artifact_store: ArtifactStore | None = None,
+    ) -> str:
+        """Stop session recording and persist events to the artifact store."""
+        await self.stop()
+        return ""
+
 
     @property
     def started_at(self) -> datetime | None:

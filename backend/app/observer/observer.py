@@ -14,6 +14,7 @@ from playwright.async_api import Page
 from app.observer.models import Observation
 from app.observer.network import NetworkTracker
 from app.observer.rrweb import RRWebRecorder
+from app.ports import ArtifactStore
 from app.ports.models import RecordingRef, StepRef
 from app.ports.observer import Observer
 
@@ -34,16 +35,35 @@ class PageObserver(Observer):
     def __init__(
         self,
         *,
+        artifact_store: ArtifactStore | None = None,
+        run_id: str | None = None,
         artifacts_dir: Path | None = None,
         network_tracker: NetworkTracker | None = None,
         recorder: RRWebRecorder | None = None,
     ) -> None:
+        self._artifact_store = artifact_store
+        self._run_id = run_id
         self._artifacts_dir = artifacts_dir
         self._tracker = network_tracker or NetworkTracker()
-        self._recorder = recorder or RRWebRecorder()
+        self._recorder = recorder or RRWebRecorder(artifact_store=artifact_store, run_id=run_id)
+        if artifact_store is not None and getattr(self._recorder, "artifact_store", None) is None:
+            self._recorder._artifact_store = artifact_store
+        if run_id is not None and getattr(self._recorder, "run_id", None) is None:
+            self._recorder._run_id = run_id
         self._recording: bool = False
         self._recording_started_at: datetime | None = None
         self._attached_page: Page | None = None
+
+    @property
+    def artifact_store(self) -> ArtifactStore | None:
+        """Access the injected ArtifactStore port dependency."""
+        return self._artifact_store
+
+    @property
+    def run_id(self) -> str | None:
+        """Access the configured run_id."""
+        return self._run_id
+
 
     @property
     def recorder(self) -> RRWebRecorder:
