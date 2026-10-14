@@ -6,6 +6,14 @@ from benchmarks.agent_runner import (
     find_run_log_path,
 )
 from benchmarks.collector import MetricsCollector
+from benchmarks.failure_injection import (
+    ALL_CASES,
+    AccuracyReport,
+    FailureCase,
+    FailureInjectionEvaluator,
+    FailureInjectionReporter,
+    FailureType,
+)
 from benchmarks.gitea import GiteaResetError, GiteaTimeoutError, reset_gitea
 from benchmarks.models import BenchmarkReport, RunTrial
 from benchmarks.orchestrator import BenchmarkOrchestrator
@@ -21,11 +29,17 @@ from benchmarks.tasks import (
 )
 
 __all__ = [
+    "ALL_CASES",
+    "AccuracyReport",
     "AgentRunner",
     "BenchmarkOrchestrator",
     "BenchmarkReport",
     "BenchmarkTask",
     "ConsoleReporter",
+    "FailureCase",
+    "FailureInjectionEvaluator",
+    "FailureInjectionReporter",
+    "FailureType",
     "GiteaResetError",
     "GiteaTimeoutError",
     "MetricsCollector",
