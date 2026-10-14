@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { MockApiClient } from "@/lib/api";
+import type { ApiClient } from "@/lib/api";
 
 export interface ApprovalResult {
   status: "approved" | "executing" | "rejected" | "cancelled";
@@ -9,10 +9,10 @@ export interface ApprovalResult {
 }
 
 /**
- * Executes mock approval transition against MockApiClient data.
+ * Executes approval transition against ApiClient data.
  */
 export async function mockApproveWorkflow(
-  client: MockApiClient,
+  client: ApiClient,
   workflowId: string
 ): Promise<ApprovalResult> {
   // Validate workflow exists in client
@@ -21,10 +21,10 @@ export async function mockApproveWorkflow(
 }
 
 /**
- * Executes mock rejection transition against MockApiClient data.
+ * Executes rejection transition against ApiClient data.
  */
 export async function mockRejectWorkflow(
-  client: MockApiClient,
+  client: ApiClient,
   workflowId: string,
   reason?: string
 ): Promise<ApprovalResult> {
@@ -35,7 +35,7 @@ export async function mockRejectWorkflow(
 
 export interface ApprovalControlsProps {
   workflowId?: string;
-  client?: MockApiClient;
+  client?: ApiClient;
   onApprove?: () => Promise<void> | void;
   onReject?: () => Promise<void> | void;
   onToggleEdit?: () => void;
@@ -147,19 +147,30 @@ export function ApprovalControls({
         <div
           data-testid="approval-success-banner"
           role="status"
-          className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/40 dark:text-emerald-300"
+          className="flex flex-col gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/40 dark:text-emerald-300"
         >
-          <svg
-            aria-hidden="true"
-            className="size-4 shrink-0 text-emerald-600 dark:text-emerald-400"
-            fill="none"
-            viewBox="0 0 24 24"
-            strokeWidth={2}
-            stroke="currentColor"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-          </svg>
-          <span>Plan approved! Workflow is transitioning to execution.</span>
+          <div className="flex items-center gap-2">
+            <svg
+              aria-hidden="true"
+              className="size-4 shrink-0 text-emerald-600 dark:text-emerald-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={2}
+              stroke="currentColor"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+            </svg>
+            <span>Plan approved! Workflow is transitioning to execution.</span>
+          </div>
+          <div>
+            <a
+              href={`/workflows/${workflowId}/execution`}
+              data-testid="live-execution-link"
+              className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 underline hover:text-emerald-900 dark:text-emerald-300 dark:hover:text-emerald-100"
+            >
+              Go to Live Execution &rarr;
+            </a>
+          </div>
         </div>
       )}
 

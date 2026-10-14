@@ -9,7 +9,7 @@ import type {
   Workflow,
 } from "@krama/contracts-ts";
 
-import { type ApiClient, createApiClient } from "@/lib/api";
+import { type ApiClient, getApiClient } from "@/lib/api";
 
 export type RunExecutionStatus = "idle" | "running" | "paused" | "failed" | "completed";
 export type StepStatus = "pending" | "started" | "verified" | "failed";
@@ -91,7 +91,7 @@ export function useWorkflowExecutionStream({
   speed,
   initialWorkflow,
 }: UseWorkflowExecutionStreamOptions): UseWorkflowExecutionStreamResult {
-  const [apiClient] = useState<ApiClient>(() => client ?? createApiClient());
+  const [apiClient] = useState<ApiClient>(() => client ?? getApiClient());
   const [workflow, setWorkflow] = useState<Workflow | null>(initialWorkflow ?? null);
   const [runStatus, setRunStatus] = useState<RunExecutionStatus>("idle");
   const [activeStepSeq, setActiveStepSeq] = useState<number | null>(null);
