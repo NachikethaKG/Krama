@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import asyncio
+import inspect
 import re
 import time
 import urllib.parse
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 from playwright.async_api import Page
 
@@ -116,53 +118,112 @@ class PageObserver(Observer):
             ended_at=now,
         )
 
-    async def capture(self, page: Page, step: StepRef | None = None) -> Observation:
+    async def capture(
+        self,
+        page: Page | Any = None,
+        step: StepRef | int | str | None = None,
+        *,
+        step_id: int | str | None = None,
+        run_id: str | None = None,
+        screenshot_bytes: bytes | None = None,
+        artifact_store: ArtifactStore | None = None,
+    ) -> Observation:
         """Capture the complete page state right after an action.
 
         Fetches screenshot, ARIA snapshot, headings, and title concurrently via asyncio.gather().
-        Guarantees sub-second latency on standard hardware.
+        Persists screenshot via ArtifactStore if configured, recording the path in the observation.
         """
         t0 = time.perf_counter()
 
-        # Ensure network tracker is attached
-        if self._attached_page is not page:
-            self.attach(page)
+        # Handle flexible calling conventions (e.g. capture(step_id, run_id))
+        if page is not None and not hasattr(page, "goto") and not hasattr(page, "title"):
+            if step_id is None and isinstance(page, (int, str)):
+                step_id = page
+            if run_id is None and isinstance(step, str):
+                run_id = step
+            page = None
 
-        # 1. URL Path extraction (synchronous property)
-        raw_url = page.url or ""
-        parsed = urllib.parse.urlsplit(raw_url)
-        path_url = parsed.path or "/"
+        effective_run_id = str(run_id or self._run_id or "default")
+        if step_id is not None:
+            effective_step_id = str(step_id)
+        elif step is not None and hasattr(step, "seq"):
+            effective_step_id = str(step.seq)
+        elif isinstance(step, (int, str)):
+            effective_step_id = str(step)
+        else:
+            effective_step_id = "1"
 
-        # 2. Concurrently fetch title, ARIA snapshot, screenshot, and headings
-        title_task = self._safe_title(page)
-        aria_task = self._safe_aria_snapshot(page)
-        screenshot_task = self._safe_screenshot(page, step)
-        headings_task = self._safe_headings(page)
+        store = artifact_store or self._artifact_store
 
-        title, aria_raw, screenshot_bytes, headings = await asyncio.gather(
-            title_task,
-            aria_task,
-            screenshot_task,
-            headings_task,
-        )
+        if page is not None:
+            # Ensure network tracker is attached
+            if self._attached_page is not page:
+                self.attach(page)
 
-        # 3. Mask sensitive entries in ARIA snapshot
-        aria_masked = _mask_aria_secrets(aria_raw)
+            # 1. URL Path extraction (synchronous property)
+            raw_url = page.url or ""
+            parsed = urllib.parse.urlsplit(raw_url)
+            path_url = parsed.path or "/"
 
-        # 4. Save screenshot to artifact store if directory is provided
+            # 2. Concurrently fetch title, ARIA snapshot, screenshot, and headings
+            title_task = self._safe_title(page)
+            aria_task = self._safe_aria_snapshot(page)
+            screenshot_task = (
+                self._safe_screenshot(page, step if isinstance(step, StepRef) else None)
+                if screenshot_bytes is None
+                else asyncio.sleep(0, result=screenshot_bytes)
+            )
+            headings_task = self._safe_headings(page)
+
+            title, aria_raw, captured_bytes, headings = await asyncio.gather(
+                title_task,
+                aria_task,
+                screenshot_task,
+                headings_task,
+            )
+
+            aria_masked = _mask_aria_secrets(aria_raw)
+            net_summary = self._tracker.snapshot_and_reset()
+        else:
+            raw_url = ""
+            path_url = "/"
+            title = ""
+            headings = []
+            aria_masked = ""
+            captured_bytes = screenshot_bytes or b""
+            net_summary = self._tracker.snapshot_and_reset()
+
+        # 4. Save screenshot to artifact store if configured, else fallback to directory
         screenshot_path: str | None = None
-        if self._artifacts_dir and screenshot_bytes:
-            step_seq = step.seq if step else int(time.time() * 1000)
-            target_file = self._artifacts_dir / f"step_{step_seq:03d}.png"
-            try:
-                target_file.parent.mkdir(parents=True, exist_ok=True)
-                target_file.write_bytes(screenshot_bytes)
-                screenshot_path = str(target_file)
-            except OSError:
-                screenshot_path = None
+        storage_error: str | None = None
 
-        # 5. Snapshot network activity since last step
-        net_summary = self._tracker.snapshot_and_reset()
+        if captured_bytes:
+            if store is not None:
+                key = f"runs/{effective_run_id}/steps/{effective_step_id}_screenshot.png"
+                try:
+                    screenshot_path = await _persist_to_store(
+                        store,
+                        key=key,
+                        data=captured_bytes,
+                        content_type="image/png",
+                    )
+                except Exception as err:
+                    screenshot_path = None
+                    storage_error = str(err)
+            elif self._artifacts_dir:
+                try:
+                    seq_num = int(effective_step_id)
+                    filename = f"step_{seq_num:03d}.png"
+                except ValueError:
+                    filename = f"step_{effective_step_id}.png"
+                target_file = self._artifacts_dir / filename
+                try:
+                    target_file.parent.mkdir(parents=True, exist_ok=True)
+                    target_file.write_bytes(captured_bytes)
+                    screenshot_path = str(target_file)
+                except OSError as err:
+                    screenshot_path = None
+                    storage_error = str(err)
 
         latency_ms = round((time.perf_counter() - t0) * 1000, 2)
 
@@ -172,8 +233,10 @@ class PageObserver(Observer):
             title=title,
             headings=headings,
             aria_snapshot=aria_masked,
-            screenshot=screenshot_bytes,
+            screenshot=captured_bytes,
             screenshot_path=screenshot_path,
+            rrweb_path=getattr(self._recorder, "recording_path", None),
+            storage_error=storage_error,
             network_summary=net_summary,
             capture_duration_ms=latency_ms,
             captured_at=datetime.now(UTC),
@@ -225,3 +288,30 @@ def _mask_aria_secrets(text: str) -> str:
     if not text:
         return ""
     return _PASSWORD_VALUE_REGEX.sub(r"\1***", text)
+
+
+async def _persist_to_store(
+    store: ArtifactStore | Any,
+    key: str,
+    data: bytes,
+    content_type: str,
+) -> str:
+    """Persist data to an ArtifactStore via save() or put()."""
+    if hasattr(store, "save"):
+        call_fn = store.save
+    elif hasattr(store, "put"):
+        call_fn = store.put
+    else:
+        raise AttributeError("Artifact store must implement save() or put()")
+
+    res = call_fn(key=key, data=data, content_type=content_type)
+    if inspect.isawaitable(res):
+        res = await res
+
+    if isinstance(res, str) and res:
+        return res
+    if hasattr(res, "key") and isinstance(res.key, str):
+        return res.key
+    if hasattr(res, "path") and isinstance(res.path, str):
+        return res.path
+    return key
