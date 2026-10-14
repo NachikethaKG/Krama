@@ -1,18 +1,26 @@
 // Thin API client seam (docs/architecture.md §4). `mock` mode serves fixtures, so the UI never waits on the backend.
-import type { HealthResponse, RunEvent, Workflow } from "@krama/contracts-ts";
+import type {
+  HealthResponse,
+  Plan,
+  PlannedStep,
+  Run,
+  RunEvent,
+  Task,
+  Workflow,
+} from "@krama/contracts-ts";
 
 import {
+  failedWorkflowFixture,
   giteaEventsFixture,
   giteaFailedEventsFixture,
   giteaPausedEventsFixture,
   giteaWorkflowFixture,
-  failedWorkflowFixture,
   pausedWorkflowFixture,
   validWorkflowFixture,
   workflowFixtures,
 } from "./fixtures";
 
-export type { HealthResponse, RunEvent, Workflow };
+export type { HealthResponse, Plan, Run, RunEvent, Task, Workflow };
 export {
   failedWorkflowFixture,
   giteaEventsFixture,
@@ -38,6 +46,18 @@ export type ApiMode = "mock" | "http";
 export interface ApiClient {
   /** Checks server/mock health status */
   health(): Promise<HealthResponse>;
+  /** Starts planning in the background for a prompt and target URL */
+  createTask(prompt: string, targetUrl: string): Promise<Task>;
+  /** Fetches task status by ID */
+  getTask(taskId: string): Promise<Task>;
+  /** Fetches a plan by ID */
+  getPlan(planId: string): Promise<Plan>;
+  /** Approves a plan and queues a run */
+  approvePlan(planId: string, revision?: number): Promise<Run>;
+  /** Fetches run status by ID */
+  getRun(runId: string): Promise<Run>;
+  /** Streams SSE run events for a run */
+  streamRunEvents(runId: string, options?: StreamOptions | AbortSignal): AsyncIterable<RunEvent>;
   /** Fetches a verified workflow by ID */
   getWorkflow(id: string): Promise<Workflow>;
   /** Streams SSE run events for a workflow execution with timing and cancellation support */
@@ -46,29 +66,211 @@ export interface ApiClient {
   runEvents(runId: string, options?: StreamOptions): AsyncIterable<RunEvent>;
 }
 
+/**
+ * Parses an SSE byte stream into RunEvent objects according to docs/api-contract.md.
+ */
+export async function* parseEventStream(
+  stream: ReadableStream<Uint8Array>,
+  signal?: AbortSignal,
+): AsyncGenerator<RunEvent, void, unknown> {
+  const reader = stream.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+
+  try {
+    while (!signal?.aborted) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+
+      const parts = buffer.split(/\r?\n\r?\n/);
+      buffer = parts.pop() ?? "";
+
+      for (const part of parts) {
+        if (!part.trim()) continue;
+        const lines = part.split(/\r?\n/);
+        let dataStr = "";
+
+        for (const line of lines) {
+          if (line.startsWith(":")) {
+            // Keep-alive ping comment, ignore
+            continue;
+          }
+          if (line.startsWith("data:")) {
+            const dataPart = line.slice(5).trim();
+            dataStr = dataStr ? `${dataStr}\n${dataPart}` : dataPart;
+          }
+        }
+
+        if (dataStr) {
+          try {
+            const parsed = JSON.parse(dataStr) as RunEvent;
+            yield parsed;
+          } catch {
+            // Ignore unparseable frames
+          }
+        }
+      }
+    }
+  } finally {
+    reader.releaseLock();
+  }
+}
+
 export class HttpApiClient implements ApiClient {
-  constructor(private readonly baseUrl: string) {}
+  private readonly baseUrl: string;
+
+  constructor(baseUrl: string) {
+    this.baseUrl = baseUrl.replace(/\/+$/, "");
+  }
+
+  private async request<T>(path: string, init?: RequestInit): Promise<T> {
+    const url = `${this.baseUrl}${path.startsWith("/") ? path : `/${path}`}`;
+    let response: Response;
+    try {
+      response = init !== undefined ? await fetch(url, init) : await fetch(url);
+    } catch (err) {
+      throw new Error(`Network request failed for ${url}: ${err instanceof Error ? err.message : String(err)}`);
+    }
+
+    if (!response.ok) {
+      let detail = "";
+      try {
+        const json = await response.json();
+        if (json?.error?.message) {
+          detail = `: ${json.error.message}`;
+        } else {
+          detail = `: ${JSON.stringify(json)}`;
+        }
+      } catch {
+        try {
+          const text = await response.text();
+          if (text) detail = `: ${text}`;
+        } catch {
+          // ignore
+        }
+      }
+      throw new Error(`Request to ${path} failed with status ${response.status}${detail}`);
+    }
+
+    return (await response.json()) as T;
+  }
 
   async health(): Promise<HealthResponse> {
-    const response = await fetch(`${this.baseUrl}/health`);
-    if (!response.ok) throw new Error(`health check failed: ${response.status}`);
-    return (await response.json()) as HealthResponse;
+    return this.request<HealthResponse>("/health");
+  }
+
+  async createTask(prompt: string, targetUrl: string): Promise<Task> {
+    return this.request<Task>("/tasks", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt, target_url: targetUrl }),
+    });
+  }
+
+  async getTask(taskId: string): Promise<Task> {
+    return this.request<Task>(`/tasks/${taskId}`);
+  }
+
+  async getPlan(planId: string): Promise<Plan> {
+    return this.request<Plan>(`/plans/${planId}`);
+  }
+
+  async approvePlan(planId: string, revision?: number): Promise<Run> {
+    let rev = revision;
+    if (rev === undefined) {
+      const plan = await this.getPlan(planId);
+      rev = plan.revision;
+    }
+    return this.request<Run>(`/plans/${planId}/approve`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ revision: rev }),
+    });
+  }
+
+  async getRun(runId: string): Promise<Run> {
+    return this.request<Run>(`/runs/${runId}`);
   }
 
   async getWorkflow(id: string): Promise<Workflow> {
-    const response = await fetch(`${this.baseUrl}/workflows/${id}`);
-    if (!response.ok) throw new Error(`getWorkflow failed: ${response.status}`);
-    return (await response.json()) as Workflow;
+    try {
+      return await this.request<Workflow>(`/workflows/${id}`);
+    } catch (err) {
+      // If 404, check if this id is a plan id so the approval screen can render proposed steps
+      if (err instanceof Error && err.message.includes("404")) {
+        try {
+          const plan = await this.getPlan(id);
+          return {
+            id: plan.id,
+            title: plan.expected_result || "Generated Workflow Plan",
+            task: plan.expected_result,
+            target_url: "http://localhost:3001",
+            target_app: "gitea",
+            status: plan.status === "proposed" ? "draft" : (plan.status as Workflow["status"]),
+            steps: plan.steps.map((s) => ({
+              id: `${plan.id}-${s.seq}`,
+              seq: s.seq,
+              action: s.action,
+              target: s.target,
+              instruction_text: s.instruction_text,
+              risk: s.risk,
+              expected_state: s.expected_state,
+              observed_state: { url: "" },
+              verification: { result: "skipped" as const, method: ["url" as const], confidence: 1 },
+            })),
+          };
+        } catch {
+          // Fall through to throw original workflow error
+        }
+      }
+      throw err;
+    }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  async *streamWorkflowEvents(_id: string, _options?: StreamOptions): AsyncIterable<RunEvent> {
-    // Live SSE streaming over fetch/EventSource will be wired with backend in Phase 1
-    yield* [];
+  async *streamRunEvents(
+    runId: string,
+    options?: StreamOptions | AbortSignal,
+  ): AsyncIterable<RunEvent> {
+    const signal = options instanceof AbortSignal ? options : options?.signal;
+    const url = `${this.baseUrl}/runs/${runId}/events`;
+    let response: Response;
+    try {
+      response = await fetch(url, {
+        headers: { Accept: "text/event-stream" },
+        signal,
+      });
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") {
+        return;
+      }
+      throw new Error(`SSE connection failed for ${url}: ${err instanceof Error ? err.message : String(err)}`);
+    }
+
+    if (!response.ok) {
+      let detail = "";
+      try {
+        const text = await response.text();
+        if (text) detail = `: ${text}`;
+      } catch {
+        // ignore
+      }
+      throw new Error(`streamRunEvents failed with status ${response.status}${detail}`);
+    }
+
+    if (!response.body) {
+      throw new Error("No response body received for SSE stream");
+    }
+
+    yield* parseEventStream(response.body, signal);
+  }
+
+  streamWorkflowEvents(id: string, options?: StreamOptions): AsyncIterable<RunEvent> {
+    return this.streamRunEvents(id, options);
   }
 
   runEvents(runId: string, options?: StreamOptions): AsyncIterable<RunEvent> {
-    return this.streamWorkflowEvents(runId, options);
+    return this.streamRunEvents(runId, options);
   }
 }
 
@@ -139,6 +341,74 @@ export class MockApiClient implements ApiClient {
     return { status: "ok", version: "mock" };
   }
 
+  async createTask(prompt: string, targetUrl: string): Promise<Task> {
+    return {
+      id: "mock-task-id",
+      prompt,
+      target_url: targetUrl,
+      status: "planned",
+      plan_id: giteaWorkflowFixture.id,
+      created_at: new Date().toISOString(),
+    };
+  }
+
+  async getTask(taskId: string): Promise<Task> {
+    return {
+      id: taskId,
+      prompt: "Create a repository in local Gitea",
+      target_url: "http://localhost:3001",
+      status: "planned",
+      plan_id: giteaWorkflowFixture.id,
+      created_at: new Date().toISOString(),
+    };
+  }
+
+  async getPlan(planId: string): Promise<Plan> {
+    const plannedSteps = giteaWorkflowFixture.steps.map((s) => ({
+      seq: s.seq,
+      action: s.action,
+      target: s.target,
+      instruction_text: s.instruction_text,
+      expected_state: s.expected_state,
+      risk: s.risk,
+    })) as [PlannedStep, ...PlannedStep[]];
+
+    return {
+      id: planId || giteaWorkflowFixture.id,
+      task_id: "mock-task-id",
+      revision: 1,
+      status: "proposed",
+      risk: "medium",
+      expected_result: "A new repository page is shown",
+      steps: plannedSteps,
+      created_at: new Date().toISOString(),
+    };
+  }
+
+  async approvePlan(planId: string, revision?: number): Promise<Run> {
+    return {
+      id: "mock-run-id",
+      plan_id: planId,
+      plan_revision: revision ?? 1,
+      status: "queued",
+      retry_count: 0,
+      workflow_id: giteaWorkflowFixture.id,
+      created_at: new Date().toISOString(),
+    };
+  }
+
+  async getRun(runId: string): Promise<Run> {
+    return {
+      id: runId,
+      plan_id: giteaWorkflowFixture.id,
+      plan_revision: 1,
+      status: "running",
+      retry_count: 0,
+      workflow_id: giteaWorkflowFixture.id,
+      created_at: new Date().toISOString(),
+    };
+  }
+
   async getWorkflow(id: string): Promise<Workflow> {
     const fixture = this.workflows[id] ?? (id === "" ? giteaWorkflowFixture : undefined);
     if (!fixture) {
@@ -175,6 +445,30 @@ export class MockApiClient implements ApiClient {
   runEvents(runId: string, options?: StreamOptions): AsyncIterable<RunEvent> {
     return this.streamWorkflowEvents(runId, options);
   }
+
+  streamRunEvents(runId: string, options?: StreamOptions | AbortSignal): AsyncIterable<RunEvent> {
+    const streamOptions = options instanceof AbortSignal ? { signal: options } : options;
+    return this.streamWorkflowEvents(runId, streamOptions);
+  }
+}
+
+export function normalizeBaseUrl(url?: string): string {
+  const raw = (url || process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1").trim();
+  const cleaned = raw.replace(/\/+$/, "");
+  if (cleaned === "http://localhost:8000" || cleaned === "http://127.0.0.1:8000") {
+    return `${cleaned}/api/v1`;
+  }
+  return cleaned;
+}
+
+/**
+ * Returns an ApiClient instance based on NEXT_PUBLIC_API_MODE.
+ * When NEXT_PUBLIC_API_MODE === "http", returns HttpApiClient; otherwise MockApiClient.
+ */
+export function getApiClient(): ApiClient {
+  return process.env.NEXT_PUBLIC_API_MODE === "http"
+    ? new HttpApiClient(normalizeBaseUrl(process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"))
+    : new MockApiClient();
 }
 
 export function createApiClient(

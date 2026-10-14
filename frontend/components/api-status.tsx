@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-import { type ApiClient, createApiClient } from "@/lib/api";
+import { type ApiClient, getApiClient } from "@/lib/api";
 
 type Status = { state: "loading" } | { state: "ok"; version: string } | { state: "error"; message: string };
 
@@ -10,7 +10,7 @@ export function ApiStatus({ client }: { client?: ApiClient }) {
   const [status, setStatus] = useState<Status>({ state: "loading" });
 
   useEffect(() => {
-    const api = client ?? createApiClient();
+    const api = client ?? getApiClient();
     api
       .health()
       .then((health) => setStatus({ state: "ok", version: health.version }))

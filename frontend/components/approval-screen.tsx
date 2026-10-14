@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { Step, Workflow } from "@krama/contracts-ts";
 
 import { ApprovalControls } from "@/components/approval-controls";
 import { StepList } from "@/components/step-list";
 import { TaskHeader } from "@/components/task-header";
-import { type ApiClient, createApiClient } from "@/lib/api";
+import { type ApiClient, getApiClient } from "@/lib/api";
 
 export interface ApprovalScreenProps {
   initialWorkflowId?: string;
@@ -19,7 +20,8 @@ export function ApprovalScreen({
   client,
   initialWorkflow,
 }: ApprovalScreenProps) {
-  const [apiClient] = useState<ApiClient>(() => client ?? createApiClient());
+  const router = useRouter();
+  const [apiClient] = useState<ApiClient>(() => client ?? getApiClient());
   const [workflow, setWorkflow] = useState<Workflow | null>(initialWorkflow ?? null);
   const [isLoading, setIsLoading] = useState<boolean>(!initialWorkflow);
   const [isPending, setIsPending] = useState<boolean>(false);
@@ -67,13 +69,19 @@ export function ApprovalScreen({
     setIsPending(true);
     setError(null);
     try {
-      // Simulate network roundtrip if needed
-      await new Promise((resolve) => setTimeout(resolve, 80));
+      if (typeof apiClient.approvePlan === "function") {
+        await apiClient.approvePlan(workflow?.id || initialWorkflowId);
+      }
       setStatus("approved");
       if (workflow) {
         setWorkflow({ ...workflow, status: "approved" });
       }
       setIsEditing(false);
+
+      const targetId = workflow?.id || initialWorkflowId;
+      setTimeout(() => {
+        router.push(`/workflows/${targetId}/execution`);
+      }, 600);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Approval failed");
     } finally {
