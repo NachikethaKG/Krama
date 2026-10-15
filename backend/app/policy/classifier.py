@@ -32,8 +32,7 @@ CLASSIFIER_SYSTEM_PROMPT = (
 class LLMCallable(Protocol):
     """Protocol for an LLM generator or callable."""
 
-    async def __call__(self, prompt: str, system: str | None = None) -> str:
-        ...
+    async def __call__(self, prompt: str, system: str | None = None) -> str: ...
 
 
 class LLMClassifier:

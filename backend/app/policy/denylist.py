@@ -267,9 +267,9 @@ def check_gitea_baseline(
         )
 
     # SSH / GPG Key Revocation
-    if (
-        "revoke" in low_name or "delete" in low_name
-    ) and ("ssh" in low_name or "gpg" in low_name or "key" in low_name):
+    if ("revoke" in low_name or "delete" in low_name) and (
+        "ssh" in low_name or "gpg" in low_name or "key" in low_name
+    ):
         return RiskAssessment(
             level=RiskLevel.HIGH,
             reason="Revocation or deletion of SSH / GPG authentication keys (security)",
