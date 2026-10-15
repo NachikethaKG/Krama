@@ -117,3 +117,21 @@ def test_policy_service_mask_observed_state() -> None:
     masked = service.mask(observed)
     assert masked.url == observed.url
     assert masked.title == observed.title
+
+    # Test masking of sensitive credentials
+    sensitive_observed = ObservedState(
+        url="/auth?token=secret_token_123456",
+        title="Admin password=SuperSecretP@ssword123!",
+        headings=["Welcome", "API key: sk-12345678901234567890"],
+        aria_excerpt='- textbox "Password": MySecretPass999',
+        captured_at=datetime.now(UTC),
+    )
+    masked_sensitive = service.mask(sensitive_observed)
+    assert "secret_token_123456" not in masked_sensitive.url
+    assert "[REDACTED]" in masked_sensitive.url
+    assert "SuperSecretP@ssword123!" not in masked_sensitive.title
+    assert "[REDACTED]" in masked_sensitive.title
+    assert "sk-12345678901234567890" not in masked_sensitive.headings[1]
+    assert "[REDACTED]" in masked_sensitive.headings[1]
+    assert "MySecretPass999" not in masked_sensitive.aria_excerpt
+    assert "[REDACTED]" in masked_sensitive.aria_excerpt
