@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Form Verification</title>
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+</head>
+<body>
+    <main>
+        <h1>Please verify your request</h1>
+        <form action="/submit" method="POST">
+            <div class="g-recaptcha" data-sitekey="6Le-wvkSAAAAAPBMRTvw0Q4Muexq9bi0DJwx_mJ-"></div>
+            <iframe src="https://www.google.com/recaptcha/api2/anchor?ar=1&amp;k=6Le-wvkSAAAAAPBMRTvw0Q4Muexq9bi0DJwx_mJ-" title="reCAPTCHA" width="304" height="78"></iframe>
+            <button type="submit">Continue</button>
+        </form>
+    </main>
+</body>
+</html>

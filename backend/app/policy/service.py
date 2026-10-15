@@ -1,5 +1,6 @@
 """Policy service implementing the backend Policy port."""
 
+from app.policy.barriers import BarrierType, check_barrier
 from app.policy.classifier import LLMClassifier
 from app.policy.models import RiskLevel
 from app.policy.risk import assess_plan as _assess_plan
@@ -19,7 +20,7 @@ __all__ = ["PolicyService"]
 
 
 class PolicyService:
-    """Production implementation of the safety Policy port (Issue #61)."""
+    """Production implementation of the safety Policy port (Issue #61, #62)."""
 
     def __init__(self, classifier: LLMClassifier | None = None) -> None:
         self._classifier = classifier or LLMClassifier()
@@ -40,6 +41,15 @@ class PolicyService:
 
     async def check_action(self, step: StepRef, page: PageState) -> PolicyDecision:
         """Evaluate an impending action and decide whether to allow, pause, or stop."""
+        barrier = check_barrier(page)
+        if barrier.should_stop:
+            reason = "auth_wall" if barrier.barrier_type == BarrierType.AUTH_WALL else "captcha"
+            return PolicyDecision(
+                verdict="stop",
+                reason=reason,
+                message=barrier.reason or f"Security barrier detected: {reason}",
+            )
+
         assessment = await _check_action(step, page, classifier=self._classifier)
         if assessment.level == RiskLevel.HIGH:
             return PolicyDecision(
