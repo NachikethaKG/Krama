@@ -2,6 +2,7 @@
 
 from app.policy.barriers import BarrierType, check_barrier
 from app.policy.classifier import LLMClassifier
+from app.policy.masking import mask_text
 from app.policy.models import RiskLevel
 from app.policy.risk import assess_plan as _assess_plan
 from app.policy.risk import check_action as _check_action
@@ -20,7 +21,7 @@ __all__ = ["PolicyService"]
 
 
 class PolicyService:
-    """Production implementation of the safety Policy port (Issue #61, #62)."""
+    """Production implementation of the safety Policy port (Issue #61, #62, #63)."""
 
     def __init__(self, classifier: LLMClassifier | None = None) -> None:
         self._classifier = classifier or LLMClassifier()
@@ -65,7 +66,14 @@ class PolicyService:
 
     def mask(self, observed: ObservedState) -> ObservedState:
         """Mask sensitive data in observed states before persistence or LLM invocation."""
-        return observed
+        return ObservedState(
+            url=mask_text(observed.url),
+            title=mask_text(observed.title),
+            headings=[mask_text(h) for h in observed.headings],
+            aria_excerpt=mask_text(observed.aria_excerpt),
+            screenshot_path=observed.screenshot_path,
+            captured_at=observed.captured_at,
+        )
 
 
 # Strict conformance check against the Policy port

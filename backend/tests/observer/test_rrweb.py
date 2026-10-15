@@ -52,6 +52,9 @@ def test_get_rrweb_init_script_bundle() -> None:
     assert "\n;\n" in script
     assert "__krama_rrweb_emit__" in script
     assert "maskInputOptions" in script
+    assert "maskAllInputs" in script
+    assert "maskTextClass" in script
+    assert "blockClass" in script
 
 
 def test_benchmark_constants_defined() -> None:

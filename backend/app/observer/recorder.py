@@ -60,7 +60,10 @@ DEFAULT_BOOTSTRAP_TEMPLATE = r"""
     try {
       recordFn({
         emit: emit,
+        maskAllInputs: true,
         maskInputOptions: { password: true },
+        maskTextClass: "krama-mask-text",
+        blockClass: "krama-block",
         recordCanvas: false,
         inlineStylesheet: true,
         sampling: {

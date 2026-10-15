@@ -3,6 +3,7 @@
 from app.policy.barriers import BarrierCheckResult, BarrierType, check_barrier
 from app.policy.classifier import LLMClassifier
 from app.policy.denylist import DENYLIST_KEYWORDS
+from app.policy.masking import is_sensitive_key, mask_dict, mask_prompt, mask_text
 from app.policy.models import (
     ActionContext,
     PlanRiskAssessment,
@@ -26,5 +27,9 @@ __all__ = [
     "assess_plan",
     "check_action",
     "check_barrier",
+    "is_sensitive_key",
+    "mask_dict",
+    "mask_prompt",
+    "mask_text",
     "max_risk_level",
 ]

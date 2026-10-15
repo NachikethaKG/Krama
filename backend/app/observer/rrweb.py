@@ -26,6 +26,7 @@ from playwright.async_api import BrowserContext, Page
 
 from app.observer.models import ObserverStorageError
 from app.observer.recorder import SessionRecorder, _persist_to_store, get_rrweb_init_script
+from app.policy.masking import mask_text
 from app.ports import ArtifactStore
 
 BINDING_NAME = "__krama_rrweb_emit__"
@@ -94,7 +95,8 @@ class RRWebRecorder(SessionRecorder):
         events = await self.stop() if self._is_recording else self.get_events()
         store = artifact_store or self._artifact_store
         effective_run_id = str(run_id or self._run_id or "default")
-        json_bytes = json.dumps(events).encode("utf-8")
+        raw_json = json.dumps(events)
+        json_bytes = mask_text(raw_json).encode("utf-8")
 
         if store is not None:
             key = f"runs/{effective_run_id}/rrweb_recording.json"
@@ -253,7 +255,8 @@ class RRWebRecorder(SessionRecorder):
         path = Path(file_path)
         path.parent.mkdir(parents=True, exist_ok=True)
         events = self.get_events()
-        data = json.dumps(events, indent=indent).encode("utf-8")
+        raw_json = json.dumps(events, indent=indent)
+        data = mask_text(raw_json).encode("utf-8")
 
         should_gzip = compress_gzip or path.name.endswith(".gz")
         if should_gzip:
