@@ -13,18 +13,15 @@ from typing import Any
 
 from playwright.async_api import Page
 
+from app.observer.masking import blur_bounding_boxes
 from app.observer.models import Observation
 from app.observer.network import NetworkTracker
 from app.observer.recorder import _persist_to_store
 from app.observer.rrweb import RRWebRecorder
+from app.policy.masking import mask_text
 from app.ports import ArtifactStore
 from app.ports.models import RecordingRef, StepRef
 from app.ports.observer import Observer
-
-_PASSWORD_VALUE_REGEX = re.compile(
-    r'((?:textbox|field)\s+"[^"]*(?:password|token|secret)[^"]*":\s*)([^\n]+)',
-    re.IGNORECASE,
-)
 
 
 class PageObserver(Observer):
@@ -223,6 +220,12 @@ class PageObserver(Observer):
             captured_bytes = screenshot_bytes or b""
             net_summary = self._tracker.snapshot_and_reset()
 
+        # If custom screenshot bytes were injected while page is active, ensure bounding boxes are blurred
+        if captured_bytes and page is not None and screenshot_bytes is not None:
+            boxes = await self._find_sensitive_bounding_boxes(page)
+            if boxes:
+                captured_bytes = blur_bounding_boxes(captured_bytes, boxes, radius=15)
+
         # 4. Save screenshot to artifact store if configured, else fallback to directory
         screenshot_path: str | None = None
         storage_error: str | None = None
@@ -258,10 +261,10 @@ class PageObserver(Observer):
         latency_ms = round((time.perf_counter() - t0) * 1000, 2)
 
         return Observation.create(
-            url=path_url,
-            raw_url=raw_url,
-            title=title,
-            headings=headings,
+            url=mask_text(path_url),
+            raw_url=mask_text(raw_url),
+            title=mask_text(title),
+            headings=[mask_text(h) for h in headings],
             aria_snapshot=aria_masked,
             screenshot=captured_bytes,
             screenshot_path=screenshot_path,
@@ -291,16 +294,55 @@ class PageObserver(Observer):
         except Exception:
             return ""
 
-    async def _safe_screenshot(self, page: Page, step: StepRef | None) -> bytes:
+    async def _find_sensitive_bounding_boxes(self, page: Page) -> list[dict[str, float]]:
+        """Identify bounding boxes of password inputs and elements marked sensitive."""
+        boxes: list[dict[str, float]] = []
+        selectors = [
+            'input[type="password"]',
+            "[data-sensitive]",
+            ".krama-mask-text",
+            ".krama-block",
+            'input[name*="password" i]',
+            'input[name*="passwd" i]',
+            'input[name*="secret" i]',
+            'input[name*="token" i]',
+            'input[autocomplete="current-password"]',
+            'input[autocomplete="new-password"]',
+        ]
         try:
-            # Mask password inputs directly during capture without extra count queries
-            return await page.screenshot(
+            combined = ", ".join(selectors)
+            locators = await page.locator(combined).all()
+            for loc in locators:
+                try:
+                    box = await loc.bounding_box()
+                    if box and box.get("width", 0) > 0 and box.get("height", 0) > 0:
+                        boxes.append(
+                            {
+                                "x": float(box["x"]),
+                                "y": float(box["y"]),
+                                "width": float(box["width"]),
+                                "height": float(box["height"]),
+                            }
+                        )
+                except Exception:
+                    continue
+        except Exception:
+            pass
+        return boxes
+
+    async def _safe_screenshot(self, page: Page, step: StepRef | None) -> bytes:
+        """Capture screenshot and apply Pillow Gaussian blur to sensitive element bounding boxes."""
+        try:
+            boxes = await self._find_sensitive_bounding_boxes(page)
+            raw_bytes = await page.screenshot(
                 type="png",
                 animations="disabled",
                 caret="hide",
-                mask=[page.locator('input[type="password"]')],
                 timeout=2000,
             )
+            if raw_bytes and boxes:
+                return blur_bounding_boxes(raw_bytes, boxes, radius=15)
+            return raw_bytes
         except Exception:
             return b""
 
@@ -313,8 +355,15 @@ class PageObserver(Observer):
             return []
 
 
+_PASSWORD_VALUE_REGEX = re.compile(
+    r'((?:textbox|field)\s+"[^"]*(?:password|token|secret)[^"]*":\s*)([^\n]+)',
+    re.IGNORECASE,
+)
+
+
 def _mask_aria_secrets(text: str) -> str:
     """Mask password and secret values inside ARIA accessibility tree text."""
     if not text:
         return ""
-    return _PASSWORD_VALUE_REGEX.sub(r"\1***", text)
+    masked = mask_text(text)
+    return _PASSWORD_VALUE_REGEX.sub(r"\1***", masked)
