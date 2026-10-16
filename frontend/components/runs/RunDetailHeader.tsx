@@ -39,7 +39,7 @@ export function RunDetailHeader({ runDetails, className = "" }: RunDetailHeaderP
               data-testid="run-detail-prompt"
               className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-zinc-100"
             >
-              {run.prompt}
+              {run.prompt ?? "(prompt unavailable)"}
             </h1>
             <RunStatusBadge status={run.status} size="md" />
           </div>

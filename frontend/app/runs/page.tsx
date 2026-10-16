@@ -6,57 +6,59 @@ import { getApiClient } from "@/lib/api";
 import type { RunListItem } from "@/lib/types";
 import { RunListTable, RunPagination } from "@/components/runs";
 
+const PAGE_SIZE = 5;
+
 export default function RunsPage() {
   const [runs, setRuns] = useState<RunListItem[]>([]);
-  const [page, setPage] = useState(1);
-  const [pageSize] = useState(5);
-  const [totalPages, setTotalPages] = useState(1);
-  const [total, setTotal] = useState(0);
+  // cursors[i] is the cursor that loads page i + 1 (page 1 has none). GET /runs only gives `next_cursor`.
+  const [cursors, setCursors] = useState<(string | null)[]>([null]);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const cursor = cursors[cursors.length - 1];
 
   useEffect(() => {
     let isMounted = true;
-    const client = getApiClient();
-    client
-      .getRuns(page, pageSize)
+    getApiClient()
+      .getRuns({ limit: PAGE_SIZE, cursor })
       .then((res) => {
-        if (isMounted) {
-          setRuns(res.items);
-          setTotal(res.total);
-          setTotalPages(res.totalPages);
-          setIsLoading(false);
-        }
-      })
-      .catch((err) => {
-        if (isMounted) {
-          setError(err instanceof Error ? err.message : String(err));
-          setIsLoading(false);
-        }
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, [page, pageSize]);
-
-  const handleRefresh = useCallback(() => {
-    setIsLoading(true);
-    setError(null);
-    const client = getApiClient();
-    client
-      .getRuns(page, pageSize)
-      .then((res) => {
+        if (!isMounted) return;
         setRuns(res.items);
-        setTotal(res.total);
-        setTotalPages(res.totalPages);
+        setNextCursor(res.nextCursor);
         setIsLoading(false);
       })
       .catch((err) => {
+        if (!isMounted) return;
         setError(err instanceof Error ? err.message : String(err));
         setIsLoading(false);
       });
-  }, [page, pageSize]);
+    return () => {
+      isMounted = false;
+    };
+  }, [cursor, reloadKey]);
+
+  const startLoading = () => {
+    setIsLoading(true);
+    setError(null);
+  };
+
+  const handleRefresh = useCallback(() => {
+    startLoading();
+    setReloadKey((k) => k + 1);
+  }, []);
+
+  const handleOlder = () => {
+    if (!nextCursor) return;
+    startLoading();
+    setCursors((prev) => [...prev, nextCursor]);
+  };
+
+  const handleNewer = () => {
+    if (cursors.length <= 1) return;
+    startLoading();
+    setCursors((prev) => prev.slice(0, -1));
+  };
 
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-4 py-10">
@@ -112,11 +114,13 @@ export default function RunsPage() {
 
       {!isLoading && !error && runs.length > 0 && (
         <RunPagination
-          page={page}
-          totalPages={totalPages}
-          total={total}
-          pageSize={pageSize}
-          onPageChange={(newPage) => setPage(newPage)}
+          page={cursors.length}
+          pageSize={PAGE_SIZE}
+          itemCount={runs.length}
+          hasPrevious={cursors.length > 1}
+          hasNext={nextCursor !== null}
+          onPrevious={handleNewer}
+          onNext={handleOlder}
           disabled={isLoading}
         />
       )}

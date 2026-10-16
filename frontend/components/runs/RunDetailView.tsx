@@ -105,6 +105,26 @@ export function RunDetailView({
     <main className={`mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-4 py-10 ${className}`}>
       <RunDetailHeader runDetails={details} />
 
+      {(details.run.status === "queued" || details.run.status === "running" || details.run.status === "paused") && (
+        <Link
+          href={`/runs/${details.run.id}/live`}
+          data-testid="run-live-link"
+          className="self-start rounded-lg bg-indigo-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-indigo-500"
+        >
+          Open the live view &rarr;
+        </Link>
+      )}
+
+      {details.error && (
+        <div
+          role="alert"
+          data-testid="run-error"
+          className="rounded-xl border border-rose-300 bg-rose-50 p-4 text-sm text-rose-900 dark:border-rose-900/80 dark:bg-rose-950/40 dark:text-rose-200"
+        >
+          <span className="font-mono text-xs font-semibold uppercase">{details.error.code}</span> {details.error.message}
+        </div>
+      )}
+
       <section className="space-y-4">
         <div className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 pb-3">
           <div>
