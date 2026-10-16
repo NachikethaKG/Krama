@@ -1,0 +1,372 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "tutorial-spec.schema.json",
+  "title": "TutorialSpec",
+  "description": "Canonical specification for an interactive tutorial or video scene sequence (Phase 2 & Phase 5).",
+  "type": "object",
+  "required": [
+    "version",
+    "workflow_id",
+    "title",
+    "viewport",
+    "fps",
+    "total_duration_ms",
+    "scenes"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "Specification format version (e.g. '1.0')."
+    },
+    "workflow_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "UUID of the source Verified Workflow."
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Human-readable title describing the tutorial."
+    },
+    "description": {
+      "type": "string",
+      "description": "Optional extended description or task prompt."
+    },
+    "viewport": {
+      "$ref": "#/definitions/Viewport"
+    },
+    "fps": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 120,
+      "default": 30,
+      "description": "Target frame rate for video rendering (Remotion export)."
+    },
+    "total_duration_ms": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Total duration of the tutorial across all scenes in integer milliseconds."
+    },
+    "scenes": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Sequential scene specifications corresponding to workflow steps.",
+      "items": {
+        "$ref": "#/definitions/Scene"
+      }
+    }
+  },
+  "definitions": {
+    "Viewport": {
+      "type": "object",
+      "description": "Recording viewport dimensions in CSS pixels and device pixel ratio.",
+      "required": ["width", "height"],
+      "additionalProperties": false,
+      "properties": {
+        "width": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Viewport width in CSS pixels."
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Viewport height in CSS pixels."
+        },
+        "device_scale_factor": {
+          "type": "number",
+          "minimum": 0.5,
+          "default": 1.0,
+          "description": "Device pixel ratio (e.g. 1.0 or 2.0)."
+        }
+      }
+    },
+    "Point2D": {
+      "type": "object",
+      "description": "2D coordinate point in page CSS pixels.",
+      "required": ["x", "y"],
+      "additionalProperties": false,
+      "properties": {
+        "x": {
+          "type": "number",
+          "description": "X coordinate in page CSS pixels."
+        },
+        "y": {
+          "type": "number",
+          "description": "Y coordinate in page CSS pixels."
+        }
+      }
+    },
+    "BoundingBox": {
+      "type": "array",
+      "description": "[x, y, width, height] in CSS pixels, page coordinates.",
+      "items": [
+        { "type": "number" },
+        { "type": "number" },
+        { "type": "number" },
+        { "type": "number" }
+      ],
+      "additionalItems": false,
+      "minItems": 4,
+      "maxItems": 4
+    },
+    "Camera": {
+      "type": "object",
+      "description": "Camera zoom and viewport centering keyframe for this scene.",
+      "required": ["scale", "center_x", "center_y"],
+      "additionalProperties": false,
+      "properties": {
+        "scale": {
+          "type": "number",
+          "minimum": 1.0,
+          "maximum": 3.0,
+          "default": 1.35,
+          "description": "Zoom magnification factor (1.0 = 100%, 1.35 = 135%)."
+        },
+        "center_x": {
+          "type": "number",
+          "description": "Focal center X coordinate in page CSS pixels."
+        },
+        "center_y": {
+          "type": "number",
+          "description": "Focal center Y coordinate in page CSS pixels."
+        },
+        "easing": {
+          "type": "string",
+          "default": "cubic-bezier(0.22, 1, 0.36, 1)",
+          "description": "CSS cubic-bezier easing curve expression."
+        },
+        "pan_duration_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 450,
+          "description": "Duration of zoom and pan transition in milliseconds."
+        }
+      }
+    },
+    "Ripple": {
+      "type": "object",
+      "description": "Visual click ripple effect configuration.",
+      "required": ["enabled"],
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether to render a ripple animation at click point."
+        },
+        "radius": {
+          "type": "number",
+          "minimum": 0,
+          "default": 24,
+          "description": "Max ripple radius in CSS pixels."
+        },
+        "color": {
+          "type": "string",
+          "default": "rgba(99, 102, 241, 0.4)",
+          "description": "CSS color string for the ripple ring."
+        }
+      }
+    },
+    "Cursor": {
+      "type": "object",
+      "description": "Cursor path geometry and interaction timing.",
+      "required": ["path", "start_ms", "end_ms", "click_type"],
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "array",
+          "description": "Parametric cubic Bezier curve control points [P0, P1, P2, P3].",
+          "items": {
+            "$ref": "#/definitions/Point2D"
+          },
+          "minItems": 4,
+          "maxItems": 4
+        },
+        "start_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Relative millisecond timestamp when cursor motion begins."
+        },
+        "end_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Relative millisecond timestamp when cursor motion ends."
+        },
+        "click_ms": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "description": "Relative millisecond timestamp when the click fires."
+        },
+        "click_type": {
+          "type": "string",
+          "enum": ["single", "double", "none"],
+          "default": "single",
+          "description": "Mouse click action type."
+        },
+        "ripple": {
+          "$ref": "#/definitions/Ripple"
+        }
+      }
+    },
+    "Highlight": {
+      "type": "object",
+      "description": "Target element highlight box and visual styling.",
+      "required": ["bbox", "style"],
+      "additionalProperties": false,
+      "properties": {
+        "bbox": {
+          "$ref": "#/definitions/BoundingBox"
+        },
+        "style": {
+          "type": "string",
+          "enum": ["pulsing_ring", "solid_box", "spotlight"],
+          "default": "pulsing_ring",
+          "description": "Visual highlighting treatment for the target element."
+        },
+        "padding": {
+          "type": "number",
+          "minimum": 0,
+          "default": 8,
+          "description": "Outset padding in CSS pixels around target bounding box."
+        },
+        "color": {
+          "type": "string",
+          "default": "#4f46e5",
+          "description": "Hex or rgba color for highlight outline."
+        }
+      }
+    },
+    "WordTiming": {
+      "type": "object",
+      "description": "Word-level timing alignment for synchronized captions.",
+      "required": ["word", "start_ms", "end_ms"],
+      "additionalProperties": false,
+      "properties": {
+        "word": {
+          "type": "string",
+          "description": "Single word token."
+        },
+        "start_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Relative start time in milliseconds from scene beginning."
+        },
+        "end_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Relative end time in milliseconds from scene beginning."
+        }
+      }
+    },
+    "Caption": {
+      "type": "object",
+      "description": "Narration text and word-level caption alignment.",
+      "required": ["text", "words"],
+      "additionalProperties": false,
+      "properties": {
+        "text": {
+          "type": "string",
+          "description": "Complete narration / subtitle text for the scene."
+        },
+        "words": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/WordTiming"
+          },
+          "description": "Sequential word-level timing intervals."
+        }
+      }
+    },
+    "RrwebSlice": {
+      "type": "object",
+      "description": "Time slice indices into the underlying rrweb recording.",
+      "required": ["start_timestamp", "end_timestamp"],
+      "additionalProperties": false,
+      "properties": {
+        "start_timestamp": {
+          "type": "integer",
+          "description": "Normalized recording timestamp in milliseconds where scene begins."
+        },
+        "end_timestamp": {
+          "type": "integer",
+          "description": "Normalized recording timestamp in milliseconds where scene ends."
+        },
+        "baseline_snapshot_event_index": {
+          "type": ["integer", "null"],
+          "description": "Index of nearest preceding FullSnapshot event in rrweb event list."
+        }
+      }
+    },
+    "Scroll": {
+      "type": "object",
+      "description": "Page scroll position at the moment of action execution.",
+      "required": ["x", "y"],
+      "additionalProperties": false,
+      "properties": {
+        "x": {
+          "type": "number",
+          "description": "window.scrollX offset in CSS pixels."
+        },
+        "y": {
+          "type": "number",
+          "description": "window.scrollY offset in CSS pixels."
+        }
+      }
+    },
+    "Scene": {
+      "type": "object",
+      "description": "A single step scene within the tutorial sequence.",
+      "required": [
+        "id",
+        "step_index",
+        "duration_ms",
+        "camera",
+        "cursor",
+        "highlight",
+        "caption",
+        "rrweb_slice"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique scene identifier, e.g. 'scene-1'."
+        },
+        "step_index": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "1-based step index matching WorkflowStep.seq."
+        },
+        "title": {
+          "type": "string",
+          "description": "Step instruction title or label."
+        },
+        "duration_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Total duration of this scene in milliseconds."
+        },
+        "camera": {
+          "$ref": "#/definitions/Camera"
+        },
+        "cursor": {
+          "$ref": "#/definitions/Cursor"
+        },
+        "highlight": {
+          "$ref": "#/definitions/Highlight"
+        },
+        "caption": {
+          "$ref": "#/definitions/Caption"
+        },
+        "rrweb_slice": {
+          "$ref": "#/definitions/RrwebSlice"
+        },
+        "scroll": {
+          "$ref": "#/definitions/Scroll"
+        }
+      }
+    }
+  }
+}
