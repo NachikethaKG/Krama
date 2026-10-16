@@ -10,7 +10,9 @@ import type {
 } from "@krama/contracts-ts";
 
 import {
+  blockedWorkflowFixture,
   failedWorkflowFixture,
+  giteaBlockedEventsFixture,
   giteaEventsFixture,
   giteaFailedEventsFixture,
   giteaPausedEventsFixture,
@@ -20,6 +22,7 @@ import {
   mockRunsList,
   pausedWorkflowFixture,
   replanWorkflowFixture,
+  restrictedWorkflowFixture,
   validWorkflowFixture,
   workflowFixtures,
 } from "./fixtures";
@@ -47,7 +50,9 @@ export type {
   Workflow,
 };
 export {
+  blockedWorkflowFixture,
   failedWorkflowFixture,
+  giteaBlockedEventsFixture,
   giteaEventsFixture,
   giteaFailedEventsFixture,
   giteaPausedEventsFixture,
@@ -57,6 +62,7 @@ export {
   mockRunsList,
   pausedWorkflowFixture,
   replanWorkflowFixture,
+  restrictedWorkflowFixture,
   validWorkflowFixture,
   workflowFixtures,
 };
@@ -95,6 +101,8 @@ export interface ApiClient {
   cancelRun(runId: string): Promise<Run>;
   /** Answers a paused run (allow or deny) */
   confirmRun(runId: string, stepSeq: number, decision: "allow" | "deny"): Promise<Run>;
+  /** Confirms or denies a paused run action per safety baseline */
+  confirmRunAction(runId: string, decision: "allow" | "deny", stepSeq?: number): Promise<void>;
   /** Streams SSE run events for a run */
   streamRunEvents(runId: string, options?: StreamOptions | AbortSignal): AsyncIterable<RunEvent>;
   /** Fetches a verified workflow by ID */
@@ -261,6 +269,10 @@ export class HttpApiClient implements ApiClient {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ step_seq: stepSeq, decision }),
     });
+  }
+
+  async confirmRunAction(runId: string, decision: "allow" | "deny", stepSeq?: number): Promise<void> {
+    await this.confirmRun(runId, stepSeq ?? 1, decision);
   }
 
   async getWorkflow(id: string): Promise<Workflow> {
@@ -656,6 +668,10 @@ export class MockApiClient implements ApiClient {
     };
   }
 
+  async confirmRunAction(runId: string, decision: "allow" | "deny", stepSeq?: number): Promise<void> {
+    await this.confirmRun(runId, stepSeq ?? 1, decision);
+  }
+
   async getWorkflow(id: string): Promise<Workflow> {
     const fixture = this.workflows[id] ?? (id === "" ? giteaWorkflowFixture : undefined);
     if (!fixture) {
@@ -674,6 +690,8 @@ export class MockApiClient implements ApiClient {
       "paused",
       "failed",
       "replan",
+      "blocked",
+      "restricted",
       "",
     ]);
     if (!validIds.has(id) && !this.workflows[id]) {
@@ -688,6 +706,9 @@ export class MockApiClient implements ApiClient {
     }
     if (id === "replan" || id.includes("replan")) {
       return replayEvents(giteaReplanEventsFixture, options);
+    }
+    if (id === "blocked" || id.includes("blocked") || id === "restricted" || id.includes("restricted")) {
+      return replayEvents(giteaBlockedEventsFixture, options);
     }
 
     return replayEvents(this.events, options);

@@ -207,6 +207,9 @@ export const pausedWorkflowFixture: Workflow = {
   id: "paused",
   title: "Create repository in local Gitea (Paused)",
   status: "running",
+  steps: (giteaWorkflowFixture.steps || []).map((s) =>
+    s.seq === 2 ? { ...s, risk: "high" } : s
+  ),
 };
 
 export const failedWorkflowFixture: Workflow = {
@@ -223,9 +226,39 @@ export const replanWorkflowFixture: Workflow = {
   status: "running",
 };
 
+export const GITEA_BLOCKED_RUN_SSE = `event: run.started
+id: 1
+data: {"type":"run.started","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":1,"ts":"2026-10-06T12:00:00.000Z","plan_id":"6f1c2a4e-3333-4b8a-9a1b-123456789abc","total_steps":5}
+
+event: step.started
+id: 2
+data: {"type":"step.started","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":2,"ts":"2026-10-06T12:00:00.500Z","step_seq":1,"instruction_text":"Open the + menu at the top right."}
+
+event: run.stopped
+id: 3
+data: {"type":"run.stopped","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":3,"ts":"2026-10-06T12:00:01.000Z","barrier_type":"cloudflare_turnstile","message":"Cloudflare Turnstile challenge detected on target page. Automation restricted per safety baseline.","target_url":"http://localhost:3001/login","step_seq":1}
+`;
+
+export const giteaBlockedEventsFixture: RunEvent[] = parseSseEvents(GITEA_BLOCKED_RUN_SSE);
+
+export const blockedWorkflowFixture: Workflow = {
+  ...giteaWorkflowFixture,
+  id: "blocked",
+  title: "Create repository in local Gitea (Blocked by Cloudflare)",
+  target_url: "http://localhost:3001/login",
+  status: "running",
+};
+
+export const restrictedWorkflowFixture: Workflow = {
+  ...blockedWorkflowFixture,
+  id: "restricted",
+};
+
 workflowFixtures["paused"] = pausedWorkflowFixture;
 workflowFixtures["failed"] = failedWorkflowFixture;
 workflowFixtures["replan"] = replanWorkflowFixture;
+workflowFixtures["blocked"] = blockedWorkflowFixture;
+workflowFixtures["restricted"] = restrictedWorkflowFixture;
 
 import type { RunDetails, RunListItem, StepEvidenceDetail } from "./types";
 

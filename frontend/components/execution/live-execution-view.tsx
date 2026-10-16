@@ -8,6 +8,7 @@ import { FailureBanner } from "@/components/execution/failure-banner";
 import { PauseBanner } from "@/components/execution/pause-banner";
 import { ReplanStatusIndicator } from "@/components/execution/ReplanStatusIndicator";
 import { StepProgressItem } from "@/components/execution/step-progress-item";
+import { AutomationRestrictedScreen, PolicyConfirmationModal } from "@/components/safety";
 import { useWorkflowExecutionStream } from "@/hooks/useWorkflowExecutionStream";
 import type { ApiClient } from "@/lib/api";
 
@@ -31,6 +32,7 @@ export function LiveExecutionView({
     workflow,
     steps,
     pauseDetails,
+    barrierDetails,
     runError,
     replanState,
     elapsedSeconds,
@@ -94,6 +96,18 @@ export function LiveExecutionView({
     (workflow?.title ? `Execute: ${workflow.title}` : "Create a repository in local Gitea");
   const targetUrl = workflow?.target_url || workflow?.target?.base_url || "http://localhost:3001";
   const failedStep = steps.find((s) => s.status === "failed");
+  const stepExec = steps.find((s) => s.seq === pauseDetails?.stepSeq);
+  const wfStep = workflow?.steps?.find((s) => s.seq === pauseDetails?.stepSeq);
+  const effectiveRisk = stepExec?.risk || wfStep?.risk || "high";
+
+  const isPolicyPause =
+    runStatus === "paused" &&
+    pauseDetails !== null &&
+    (pauseDetails.reason === "destructive_action" ||
+      pauseDetails.reason === "sensitive_data" ||
+      pauseDetails.reason === "prompt_injection" ||
+      effectiveRisk === "high" ||
+      effectiveRisk === "medium");
 
   return (
     <main
@@ -169,6 +183,18 @@ export function LiveExecutionView({
         />
       )}
 
+      {/* 3b. Automation Restricted Screen (Bot Walls, CAPTCHA, Auth Walls) */}
+      {(barrierDetails || runStatus === "stopped") && (
+        <AutomationRestrictedScreen
+          barrierType={barrierDetails?.barrierType || "cloudflare_turnstile"}
+          message={barrierDetails?.message}
+          targetUrl={barrierDetails?.targetUrl || targetUrl}
+          stepSeq={barrierDetails?.stepSeq}
+          onResume={resume}
+          onAbort={cancel}
+        />
+      )}
+
       {/* 4. Lifecycle Interruption Banners */}
       {runStatus === "paused" && pauseDetails && (
         <PauseBanner
@@ -176,6 +202,29 @@ export function LiveExecutionView({
           stepSeq={pauseDetails.stepSeq}
           message={pauseDetails.message}
           onResume={resume}
+          onDeny={deny}
+          isConfirming={isConfirming}
+        />
+      )}
+
+      {/* 4b. Policy Confirmation Modal */}
+      {isPolicyPause && pauseDetails && (
+        <PolicyConfirmationModal
+          isOpen={true}
+          stepSeq={pauseDetails.stepSeq}
+          stepInstruction={
+            stepExec?.instructionText ||
+            wfStep?.instruction_text ||
+            pauseDetails.message ||
+            "Execute destructive action"
+          }
+          actionType={stepExec?.actionType || wfStep?.action?.type}
+          targetRole={stepExec?.targetRole || wfStep?.target?.role}
+          targetName={stepExec?.targetName || wfStep?.target?.name}
+          risk={effectiveRisk}
+          reason={pauseDetails.reason}
+          rationale={pauseDetails.message}
+          onAllow={resume}
           onDeny={deny}
           isConfirming={isConfirming}
         />
