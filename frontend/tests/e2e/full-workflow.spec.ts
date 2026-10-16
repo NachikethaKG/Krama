@@ -1,6 +1,8 @@
 import { expect, test } from "@playwright/test";
 
-test.describe("Full-Stack Workflow E2E: Prompt → Plan → Approve → Live Execution", () => {
+// Mock-mode UI flow (playwright.config.ts forces NEXT_PUBLIC_API_MODE=mock). The real-backend flow is
+// tests/e2e-real/real-flow.spec.ts (`pnpm e2e:real`, opt-in with KRAMA_E2E_REAL=1).
+test.describe("Mock-mode Workflow E2E: Prompt → Plan → Approve → Live Execution", () => {
   test("completes end-to-end task creation, plan review, approval, and live execution", async ({
     page,
   }) => {
@@ -51,10 +53,8 @@ test.describe("Full-Stack Workflow E2E: Prompt → Plan → Approve → Live Exe
     await expect(approveBtn).toBeVisible();
     await approveBtn.click();
 
-    // Verify approval confirmation state
-    const approvalBanner = page.getByTestId("approval-success-banner");
-    await expect(approvalBanner).toBeVisible();
-    await expect(approvalBanner).toContainText(/Plan approved!.*transitioning to execution/i);
+    // Approve returns the Run; the live view is keyed by its id
+    await expect(page).toHaveURL(/\/runs\/mock-run-id\/live$/, { timeout: 15000 });
 
     // 5. Verify transition to live execution view showing steps executing live
     const liveExecutionView = page.getByTestId("live-execution-view");
