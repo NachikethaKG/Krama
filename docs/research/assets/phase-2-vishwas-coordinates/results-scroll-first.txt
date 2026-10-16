@@ -1,0 +1,8 @@
+{"target": "Make repository a template", "viewport_box": [518.984375, 392.21875], "scroll_measured": [0, 764], "scroll_after_click": [0, 764], "same": true}
+{"target": "Default Branch", "viewport_box": [518.984375, 204.4375], "scroll_measured": [0, 764], "scroll_after_click": [0, 764], "same": true}
+{"target": "Make repository private", "viewport_box": [518.984375, 292.90625], "scroll_measured": [0, 51], "scroll_after_click": [0, 51], "same": true}
+/ []
+/repo/create []
+/demo/demo-repo []
+/demo/demo-repo/settings []
+/demo/demo-repo/issues/new []
