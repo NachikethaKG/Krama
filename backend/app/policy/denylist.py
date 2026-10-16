@@ -1,16 +1,30 @@
-"""Deterministic denylist, benign allowlist, and Gitea destructive baseline rules."""
+"""Deterministic denylist, benign allowlist, and Gitea destructive baseline rules.
+
+Everything here matches on the *target control* (its role and accessible name), the page route and the
+instruction's own words, never on the value an action types: a fill of "Delete old docs" into an issue title
+is not a delete. Callers strip the typed value before matching (see `risk.check_action`).
+"""
 
 import re
 from typing import Final
 
-from app.policy.models import ActionContext, RiskAssessment, RiskLevel
+from app.policy.models import RiskAssessment, RiskLevel
 
 DENYLIST_KEYWORDS: Final[frozenset[str]] = frozenset(
-    {"delete", "purchase", "transfer", "publish", "send", "reset", "security"}
+    {"delete", "remove", "regenerate", "purchase", "transfer", "publish", "send", "reset", "security"}
 )
+
+# Keywords a deterministic heuristic may treat as harmless in an ambiguous scope ("Send feedback",
+# "Reset filter"). Every other keyword is a hard destructive verb: without a real LLM verdict it never drops
+# below HIGH.
+SOFT_KEYWORDS: Final[frozenset[str]] = frozenset({"send", "reset"})
 
 _DENYLIST_REGEX: Final[dict[str, re.Pattern[str]]] = {
     "delete": re.compile(r"\b(delete|deletes|deleting|deleted|drop|truncate|purge)\b", re.IGNORECASE),
+    "remove": re.compile(
+        r"\b(remove|removes|removing|removed|destroy|destroys|erase|erases|wipe|wipes)\b", re.IGNORECASE
+    ),
+    "regenerate": re.compile(r"\b(regenerate|regenerates|regenerating|regenerated)\b", re.IGNORECASE),
     "purchase": re.compile(
         r"\b(purchase|purchases|purchasing|purchased|buy|checkout|pay|charge)\b", re.IGNORECASE
     ),
@@ -19,8 +33,8 @@ _DENYLIST_REGEX: Final[dict[str, re.Pattern[str]]] = {
     "send": re.compile(r"\b(send|sends|sending|sent)\b", re.IGNORECASE),
     "reset": re.compile(r"\b(reset|resets|resetting)\b", re.IGNORECASE),
     "security": re.compile(
-        r"\b(security|password|passwords|token|tokens|credential|credentials|revoke|revoking|revoked"
-        r"|ssh[\s_-]?key|gpg[\s_-]?key|2fa|mfa)\b",
+        r"\b(security|password|passwords|token|tokens|credential|credentials|revoke|revokes|revoking|revoked"
+        r"|secret|secrets|ssh[\s_-]?key|gpg[\s_-]?key|deploy[\s_-]?key|2fa|mfa)\b",
         re.IGNORECASE,
     ),
 }
@@ -36,6 +50,31 @@ _BENIGN_EXACT_NAMES: Final[frozenset[str]] = frozenset(
     {"cancel", "no", "unwatch", "dismiss", "close modal", "back"}
 )
 
+# Generic confirmation buttons. They carry no meaning of their own: they inherit the risk of the dialog text
+# just before them, and are HIGH when that text can't be found.
+GENERIC_CONFIRM_NAMES: Final[frozenset[str]] = frozenset({"yes", "ok", "confirm", "continue", "proceed"})
+
+# Phrases in a dialog that make its generic confirm destructive, besides the denylist verbs themselves.
+_DESTRUCTIVE_DIALOG_PHRASES: Final[tuple[str, ...]] = (
+    "cannot be undone",
+    "can not be undone",
+    "permanently",
+    "irreversible",
+    "archive this repo",
+    "archive repo",
+)
+
+# Visibility controls: "Make repository private", a "Visibility" select, "Change Visibility", "Make Public".
+_VISIBILITY_NAME: Final[re.Pattern[str]] = re.compile(
+    r"\b(private|public|visibility|visible)\b", re.IGNORECASE
+)
+_VISIBILITY_TOGGLE_ROLES: Final[frozenset[str]] = frozenset(
+    {"checkbox", "switch", "radio", "combobox", "listbox", "option", "menuitemcheckbox", "menuitemradio"}
+)
+_VISIBILITY_CHANGE: Final[re.Pattern[str]] = re.compile(
+    r"\b(make|change|set|switch|update)\b.*\b(private|public|visibility)\b", re.IGNORECASE
+)
+
 
 def match_denylist_keywords(text: str) -> list[str]:
     """Find all matching denylist keywords in the provided text."""
@@ -44,6 +83,11 @@ def match_denylist_keywords(text: str) -> list[str]:
         if regex.search(text):
             matched.append(kw)
     return matched
+
+
+def hard_destructive_keywords(text: str) -> list[str]:
+    """Denylist keywords in `text` that a heuristic may never downgrade (everything but SOFT_KEYWORDS)."""
+    return [kw for kw in match_denylist_keywords(text) if kw not in SOFT_KEYWORDS]
 
 
 def is_benign(name: str, role: str, url: str) -> RiskAssessment | None:
@@ -60,14 +104,19 @@ def is_benign(name: str, role: str, url: str) -> RiskAssessment | None:
             matched_rule="benign_control",
         )
 
-    # Documentation and help links (e.g., "How do I mirror repositories?")
+    # Documentation and help links (e.g., "How do I mirror repositories?"). Not when a destructive verb is
+    # on the control itself: "Delete docs" or "Delete guide page" deletes something.
     if (
-        "how do i" in low_name
-        or "documentation" in low_name
-        or "help" in low_name
-        or "docs" in low_name
-        or "guide" in low_name
-    ) and role in ("link", "button"):
+        (
+            "how do i" in low_name
+            or "documentation" in low_name
+            or "help" in low_name
+            or "docs" in low_name
+            or "guide" in low_name
+        )
+        and role in ("link", "button")
+        and not match_denylist_keywords(low_name)
+    ):
         return RiskAssessment(
             level=RiskLevel.LOW,
             reason=f"Informational link or documentation: '{name}'",
@@ -103,72 +152,34 @@ def is_benign(name: str, role: str, url: str) -> RiskAssessment | None:
     return None
 
 
-def is_ambiguous(action_text: str, context: ActionContext | None = None) -> bool:
-    """Check whether the action has ambiguous scope requiring LLM disambiguation."""
-    low_text = action_text.strip().lower()
+def is_ambiguous(action_text: str) -> bool:
+    """A denylist verb with a temporary or local scope ("delete draft", "reset filter"): ask the LLM.
 
-    # Generic confirmation without clear deterministic context
-    if low_text in ("yes", "confirm", "ok", "continue", "proceed") and (
-        not context or (not context.dialog_text and not context.aria_excerpt and not context.previous_step)
-    ):
-        return True
-
-    # Ambiguity only applies if a denylist keyword is actually matched in the action
-    if not match_denylist_keywords(low_text):
+    Generic confirmations ("Yes", "OK") are not handled here: `risk.check_action` resolves them from the
+    dialog text before the button and treats them as HIGH when there is none.
+    """
+    if not match_denylist_keywords(action_text):
         return False
-
-    # Denylist keywords combined with temporary/local targets like "draft", "zoom", "filter"
-    return any(pattern.search(low_text) for pattern in _AMBIGUOUS_PATTERNS)
+    return any(pattern.search(action_text) for pattern in _AMBIGUOUS_PATTERNS)
 
 
-def check_gitea_baseline(
-    name: str,
-    role: str,
-    url: str,
-    context: ActionContext | None = None,
-) -> RiskAssessment | None:
-    """Evaluate against agreed Gitea destructive baseline actions."""
+def is_destructive_dialog_text(text: str) -> bool:
+    """Whether the text of a confirmation dialog describes a destructive change."""
+    low = text.lower()
+    if any(phrase in low for phrase in _DESTRUCTIVE_DIALOG_PHRASES):
+        return True
+    if "archive" in low or "block" in low:
+        return True
+    return bool(match_denylist_keywords(low)) or _VISIBILITY_CHANGE.search(low) is not None
+
+
+def check_gitea_baseline(name: str, role: str, url: str) -> RiskAssessment | None:
+    """Evaluate the target control (role, name) on its route against the agreed Gitea baseline."""
     low_name = name.strip().lower()
+    low_role = role.strip().lower()
     low_url = url.strip().lower()
-    ctx_parts: list[str] = []
-    if context:
-        if context.title:
-            ctx_parts.append(context.title)
-        if context.aria_excerpt:
-            ctx_parts.append(context.aria_excerpt)
-        if context.dialog_text:
-            ctx_parts.append(context.dialog_text)
-        if context.previous_step:
-            ctx_parts.append(context.previous_step)
-    ctx_text = " ".join(ctx_parts).lower()
 
-    # 1. Generic confirmation buttons ("Yes", "Confirm", "OK", "Continue")
-    if low_name in ("yes", "ok", "confirm", "continue"):
-        destructive_signals = [
-            "delete branch",
-            "cannot be undone",
-            "delete repository",
-            "delete wiki",
-            "archive this repo",
-            "archive repo",
-            "remove webhook",
-            "delete label",
-            "delete milestone",
-            "delete comment",
-            "delete this issue",
-            "permanently",
-            "delete",
-        ]
-        if any(sig in ctx_text for sig in destructive_signals):
-            return RiskAssessment(
-                level=RiskLevel.HIGH,
-                reason=f"Confirmation inherits destructive dialog risk ({name})",
-                flagged_by="denylist",
-                confidence=1.0,
-                matched_rule="gitea_dialog_confirm_destructive",
-            )
-
-    # 2. High Risk Gitea Destructive Actions
+    # 1. High Risk Gitea Destructive Actions
     # Repository deletion / transfer / wiki / archive
     if "delete this repository" in low_name or "delete repository" in low_name:
         return RiskAssessment(
@@ -206,8 +217,11 @@ def check_gitea_baseline(
             matched_rule="gitea_archive_repo",
         )
 
-    # Visibility change / private repository setting
-    if "make repository private" in low_name or ("private" in low_name and role == "checkbox"):
+    # Visibility change: the "Make repository private" checkbox, a visibility select or radio, or a
+    # "Change Visibility" / "Make Public" button, in either direction.
+    if (
+        low_role in _VISIBILITY_TOGGLE_ROLES and _VISIBILITY_NAME.search(low_name)
+    ) or _VISIBILITY_CHANGE.search(low_name):
         return RiskAssessment(
             level=RiskLevel.HIGH,
             reason="Repository visibility and security change",
@@ -217,7 +231,7 @@ def check_gitea_baseline(
         )
 
     # Push mirror: pushes code to external remote (data egress)
-    if "add push mirror" in low_name or "push mirror" in low_name:
+    if "push mirror" in low_name:
         return RiskAssessment(
             level=RiskLevel.HIGH,
             reason="Push mirror transmits codebase to an external remote",
@@ -266,9 +280,9 @@ def check_gitea_baseline(
             matched_rule="gitea_remove_webhook",
         )
 
-    # SSH / GPG Key Revocation
-    if ("revoke" in low_name or "delete" in low_name) and (
-        "ssh" in low_name or "gpg" in low_name or "key" in low_name
+    # SSH / GPG / deploy key revocation
+    if re.search(r"\b(revoke|delete|remove)\b", low_name) and re.search(
+        r"\b(ssh|gpg|deploy|keys?)\b", low_name
     ):
         return RiskAssessment(
             level=RiskLevel.HIGH,
@@ -276,6 +290,28 @@ def check_gitea_baseline(
             flagged_by="denylist",
             confidence=1.0,
             matched_rule="gitea_security_revoke_key",
+        )
+
+    # Collaborators and organisation members
+    if re.search(r"\b(remove|delete)\b", low_name) and re.search(
+        r"\b(collaborator|member|team)s?\b", low_name
+    ):
+        return RiskAssessment(
+            level=RiskLevel.HIGH,
+            reason="Removing a user's access to the repository or organisation",
+            flagged_by="denylist",
+            confidence=1.0,
+            matched_rule="gitea_remove_collaborator",
+        )
+
+    # OAuth2 application secrets
+    if "regenerate" in low_name and ("secret" in low_name or "token" in low_name):
+        return RiskAssessment(
+            level=RiskLevel.HIGH,
+            reason="Regenerating a secret invalidates the current one (security)",
+            flagged_by="denylist",
+            confidence=1.0,
+            matched_rule="gitea_regenerate_secret",
         )
 
     # User / account security changes
@@ -288,7 +324,7 @@ def check_gitea_baseline(
             matched_rule="gitea_update_password",
         )
 
-    if low_name == "block" and ("/issues" in low_url or role in ("button", "menuitem")):
+    if low_name == "block" and ("/issues" in low_url or low_role in ("button", "menuitem")):
         return RiskAssessment(
             level=RiskLevel.HIGH,
             reason="Blocking user access",
@@ -324,7 +360,7 @@ def check_gitea_baseline(
                 matched_rule="gitea_delete_comment",
             )
 
-    # 3. Medium Risk Actions (reversible state changes / session operations)
+    # 2. Medium Risk Actions (reversible state changes / session operations)
     if "close issue" in low_name or (low_name == "close" and "/issues" in low_url):
         return RiskAssessment(
             level=RiskLevel.MEDIUM,
