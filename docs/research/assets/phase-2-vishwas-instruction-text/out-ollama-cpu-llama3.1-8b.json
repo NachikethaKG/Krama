@@ -1,0 +1,489 @@
+{
+  "provider": "ollama-cpu:llama3.1:8b",
+  "tasks": {
+    "create-repo": {
+      "seconds": 85.3,
+      "error": null,
+      "model": "llama3.1:8b",
+      "steps": [
+        {
+          "in": {
+            "seq": 1,
+            "action": "click",
+            "role": "link",
+            "label": "New Repository",
+            "section": "Repositories"
+          },
+          "text": "In the **Repositories** section, click **New Repository**.",
+          "checks": {
+            "imperative": true,
+            "label_exact": true,
+            "value_exact": true,
+            "no_leak_multiline": true,
+            "where_first": true,
+            "short": true,
+            "no_direction_words": true,
+            "no_invented_bold": true
+          }
+        },
+        {
+          "in": {
+            "seq": 2,
+            "action": "fill",
+            "role": "textbox",
+            "label": "Repository Name",
+            "value": "team-docs"
+          },
+          "text": "Enter `team-docs` in **Repository Name**.",
+          "checks": {
+            "imperative": true,
+            "label_exact": true,
+            "value_exact": true,
+            "no_leak_multiline": true,
+            "where_first": true,
+            "short": true,
+            "no_direction_words": true,
+            "no_invented_bold": true
+          }
+        },
+        {
+          "in": {
+            "seq": 3,
+            "action": "click",
+            "role": "checkbox",
+            "label": "Initialize Repository"
+          },
+          "text": "Select the **Initialize Repository** checkbox.",
+          "checks": {
+            "imperative": true,
+            "label_exact": true,
+            "value_exact": true,
+            "no_leak_multiline": true,
+            "where_first": true,
+            "short": true,
+            "no_direction_words": true,
+            "no_invented_bold": true
+          }
+        },
+        {
+          "in": {
+            "seq": 4,
+            "action": "click",
+            "role": "button",
+            "label": "Create Repository"
+          },
+          "text": "Click **Create Repository**.",
+          "checks": {
+            "imperative": true,
+            "label_exact": true,
+            "value_exact": true,
+            "no_leak_multiline": true,
+            "where_first": true,
+            "short": true,
+            "no_direction_words": true,
+            "no_invented_bold": true
+          }
+        }
+      ]
+    },
+    "create-issue": {
+      "seconds": 46.6,
+      "error": null,
+      "model": "llama3.1:8b",
+      "steps": [
+        {
+          "in": {
+            "seq": 1,
+            "action": "navigate",
+            "value": "/demo/krama-research-tasks/issues",
+            "arrives_on": "Issues - krama-research-tasks"
+          },
+          "text": "Go to the **Issues - krama-research-tasks** page.",
+          "checks": {
+            "imperative": true,
+            "label_exact": true,
+            "value_exact": true,
+            "no_leak_multiline": true,
+            "where_first": true,
+            "short": true,
+            "no_direction_words": true,
+            "no_invented_bold": true
+          }
+        },
+        {
+          "in": {
+            "seq": 2,
+            "action": "click",
+            "role": "link",
+            "label": "New Issue",
+            "section": "Labels Milestones"
+          },
+          "text": "In the Labels Milestones section, click **New Issue**.",
+          "checks": {
+            "imperative": true,
+            "label_exact": true,
+            "value_exact": true,
+            "no_leak_multiline": true,
+            "where_first": true,
+            "short": true,
+            "no_direction_words": true,
+            "no_invented_bold": true
+          }
+        },
+        {
+          "in": {
+            "seq": 3,
+            "action": "fill",
+            "role": "textbox",
+            "label": "Title",
+            "value": "Login page shows a blank screen"
+          },
+          "text": "Enter `Login page shows a blank screen` in **Title**.",
+          "checks": {
+            "imperative": true,
+            "label_exact": true,
+            "value_exact": true,
+            "no_leak_multiline": true,
+            "where_first": true,
+            "short": true,
+            "no_direction_words": true,
+            "no_invented_bold": true
+          }
+        },
+        {
+          "in": {
+            "seq": 4,
+            "action": "fill",
+            "role": "textbox",
+            "label": "Leave a comment",
+            "value": "Steps: open /user/login on a small window."
+          },
+          "text": "Enter `Steps: open /user/login on a small window.` in **Leave a comment**.",
+          "checks": {
+            "imperative": true,
+            "label_exact": true,
+            "value_exact": true,
+            "no_leak_multiline": true,
+            "where_first": true,
+            "short": true,
+            "no_direction_words": true,
+            "no_invented_bold": true
+          }
+        },
+        {
+          "in": {
+            "seq": 5,
+            "action": "click",
+            "role": "button",
+            "label": "Create Issue"
+          },
+          "text": "Click **Create Issue**.",
+          "checks": {
+            "imperative": true,
+            "label_exact": true,
+            "value_exact": true,
+            "no_leak_multiline": true,
+            "where_first": true,
+            "short": true,
+            "no_direction_words": true,
+            "no_invented_bold": true
+          }
+        }
+      ]
+    },
+    "create-branch": {
+      "seconds": 35.9,
+      "error": null,
+      "model": "llama3.1:8b",
+      "steps": [
+        {
+          "in": {
+            "seq": 1,
+            "action": "navigate",
+            "value": "/demo/krama-research-tasks/branches",
+            "arrives_on": "Branches - krama-research-tasks"
+          },
+          "text": "Go to the **Branches - krama-research-tasks** page.",
+          "checks": {
+            "imperative": true,
+            "label_exact": true,
+            "value_exact": true,
+            "no_leak_multiline": true,
+            "where_first": true,
+            "short": true,
+            "no_direction_words": true,
+            "no_invented_bold": true
+          }
+        },
+        {
+          "in": {
+            "seq": 2,
+            "action": "click",
+            "role": "button",
+            "label": "Create new branch from \"main\"",
+            "section": "Default Branch"
+          },
+          "text": "In the Default Branch section, click **Create new branch from \"main\"**.",
+          "checks": {
+            "imperative": true,
+            "label_exact": true,
+            "value_exact": true,
+            "no_leak_multiline": true,
+            "where_first": true,
+            "short": true,
+            "no_direction_words": true,
+            "no_invented_bold": true
+          }
+        },
+        {
+          "in": {
+            "seq": 3,
+            "action": "fill",
+            "role": "textbox",
+            "label": "Branch Name",
+            "value": "feature-docs",
+            "inside": "dialog \"Create new branch\""
+          },
+          "text": "In the Create new branch dialog, enter `feature-docs` in **Branch Name**.",
+          "checks": {
+            "imperative": true,
+            "label_exact": true,
+            "value_exact": true,
+            "no_leak_multiline": true,
+            "where_first": false,
+            "short": true,
+            "no_direction_words": true,
+            "no_invented_bold": true
+          }
+        },
+        {
+          "in": {
+            "seq": 4,
+            "action": "click",
+            "role": "button",
+            "label": "Confirm",
+            "inside": "dialog \"Create new branch\""
+          },
+          "text": "In the Create new branch dialog, click **Confirm**.",
+          "checks": {
+            "imperative": true,
+            "label_exact": true,
+            "value_exact": true,
+            "no_leak_multiline": true,
+            "where_first": false,
+            "short": true,
+            "no_direction_words": true,
+            "no_invented_bold": true
+          }
+        }
+      ]
+    },
+    "add-file": {
+      "seconds": 42.2,
+      "error": null,
+      "model": "llama3.1:8b",
+      "steps": [
+        {
+          "in": {
+            "seq": 1,
+            "action": "navigate",
+            "value": "/demo/krama-research-tasks",
+            "arrives_on": "demo/krama-research-tasks - krama-research-tasks"
+          },
+          "text": "Go to the demo/krama-research-tasks - krama-research-tasks page.",
+          "checks": {
+            "imperative": true,
+            "label_exact": true,
+            "value_exact": true,
+            "no_leak_multiline": true,
+            "where_first": true,
+            "short": true,
+            "no_direction_words": true,
+            "no_invented_bold": true
+          }
+        },
+        {
+          "in": {
+            "seq": 2,
+            "action": "click",
+            "role": "menu",
+            "label": "Add File",
+            "inside": "dropdown menu"
+          },
+          "text": "In the dropdown menu, click **Add File**.",
+          "checks": {
+            "imperative": true,
+            "label_exact": true,
+            "value_exact": true,
+            "no_leak_multiline": true,
+            "where_first": true,
+            "short": true,
+            "no_direction_words": true,
+            "no_invented_bold": true
+          }
+        },
+        {
+          "in": {
+            "seq": 3,
+            "action": "click",
+            "role": "menuitem",
+            "label": "New File",
+            "inside": "dropdown menu"
+          },
+          "text": "In the dropdown menu, click **New File**.",
+          "checks": {
+            "imperative": true,
+            "label_exact": true,
+            "value_exact": true,
+            "no_leak_multiline": true,
+            "where_first": true,
+            "short": true,
+            "no_direction_words": true,
+            "no_invented_bold": true
+          }
+        },
+        {
+          "in": {
+            "seq": 4,
+            "action": "fill",
+            "role": "textbox",
+            "label": "Name your file…",
+            "value": "docs/notes.md"
+          },
+          "text": "Enter `docs/notes.md` in **Name your file…**.",
+          "checks": {
+            "imperative": true,
+            "label_exact": true,
+            "value_exact": true,
+            "no_leak_multiline": true,
+            "where_first": true,
+            "short": true,
+            "no_direction_words": true,
+            "no_invented_bold": true
+          }
+        },
+        {
+          "in": {
+            "seq": 5,
+            "action": "fill",
+            "role": "textbox",
+            "label": "Editor content",
+            "value": "# Notes\n\nFirst note."
+          },
+          "text": "Enter `# Notes\n\nFirst note.` in **Editor content**.",
+          "checks": {
+            "imperative": true,
+            "label_exact": true,
+            "value_exact": true,
+            "no_leak_multiline": false,
+            "where_first": true,
+            "short": true,
+            "no_direction_words": true,
+            "no_invented_bold": true
+          }
+        },
+        {
+          "in": {
+            "seq": 6,
+            "action": "click",
+            "role": "button",
+            "label": "Commit Changes",
+            "section": "Commit Changes"
+          },
+          "text": "In the Commit Changes section, click **Commit Changes**.",
+          "checks": {
+            "imperative": true,
+            "label_exact": true,
+            "value_exact": true,
+            "no_leak_multiline": true,
+            "where_first": true,
+            "short": true,
+            "no_direction_words": true,
+            "no_invented_bold": true
+          }
+        }
+      ]
+    },
+    "repo-settings-selector": {
+      "seconds": 21.7,
+      "error": null,
+      "model": "llama3.1:8b",
+      "steps": [
+        {
+          "in": {
+            "seq": 1,
+            "action": "navigate",
+            "value": "/demo/krama-research-tasks/settings",
+            "arrives_on": "Repository - krama-research-tasks"
+          },
+          "text": "Go to the Repository - krama-research-tasks page.",
+          "checks": {
+            "imperative": true,
+            "label_exact": true,
+            "value_exact": true,
+            "no_leak_multiline": true,
+            "where_first": true,
+            "short": true,
+            "no_direction_words": true,
+            "no_invented_bold": true
+          }
+        },
+        {
+          "in": {
+            "seq": 2,
+            "action": "fill",
+            "role": "textbox",
+            "label": "Description",
+            "value": "Docs for the team",
+            "section": "Basic Settings"
+          },
+          "text": "In the Basic Settings section, enter `Docs for the team` in **Description**.",
+          "checks": {
+            "imperative": true,
+            "label_exact": true,
+            "value_exact": true,
+            "no_leak_multiline": true,
+            "where_first": true,
+            "short": true,
+            "no_direction_words": true,
+            "no_invented_bold": true
+          }
+        },
+        {
+          "in": {
+            "seq": 3,
+            "action": "click",
+            "role": "button",
+            "label": "Update Settings",
+            "section": "Basic Settings"
+          },
+          "text": "In the Basic Settings section, click **Update Settings**.",
+          "checks": {
+            "imperative": true,
+            "label_exact": true,
+            "value_exact": true,
+            "no_leak_multiline": true,
+            "where_first": true,
+            "short": true,
+            "no_direction_words": true,
+            "no_invented_bold": true
+          }
+        }
+      ]
+    }
+  },
+  "summary": {
+    "imperative": 22,
+    "label_exact": 22,
+    "value_exact": 22,
+    "no_leak_multiline": 21,
+    "where_first": 20,
+    "short": 22,
+    "no_direction_words": 22,
+    "no_invented_bold": 22,
+    "all_pass": 19,
+    "steps": 22,
+    "seconds_total": 231.7,
+    "errors": 0
+  }
+}

@@ -1,0 +1,161 @@
+{
+  "create-repo": [
+    {
+      "seq": 1,
+      "action": "click",
+      "role": "link",
+      "label": "New Repository",
+      "section": "Repositories"
+    },
+    {
+      "seq": 2,
+      "action": "fill",
+      "role": "textbox",
+      "label": "Repository Name",
+      "value": "team-docs"
+    },
+    {
+      "seq": 3,
+      "action": "click",
+      "role": "checkbox",
+      "label": "Initialize Repository"
+    },
+    {
+      "seq": 4,
+      "action": "click",
+      "role": "button",
+      "label": "Create Repository"
+    }
+  ],
+  "create-issue": [
+    {
+      "seq": 1,
+      "action": "navigate",
+      "value": "/demo/krama-research-tasks/issues",
+      "arrives_on": "Issues - krama-research-tasks"
+    },
+    {
+      "seq": 2,
+      "action": "click",
+      "role": "link",
+      "label": "New Issue",
+      "section": "Labels Milestones"
+    },
+    {
+      "seq": 3,
+      "action": "fill",
+      "role": "textbox",
+      "label": "Title",
+      "value": "Login page shows a blank screen"
+    },
+    {
+      "seq": 4,
+      "action": "fill",
+      "role": "textbox",
+      "label": "Leave a comment",
+      "value": "Steps: open /user/login on a small window."
+    },
+    {
+      "seq": 5,
+      "action": "click",
+      "role": "button",
+      "label": "Create Issue"
+    }
+  ],
+  "create-branch": [
+    {
+      "seq": 1,
+      "action": "navigate",
+      "value": "/demo/krama-research-tasks/branches",
+      "arrives_on": "Branches - krama-research-tasks"
+    },
+    {
+      "seq": 2,
+      "action": "click",
+      "role": "button",
+      "label": "Create new branch from \"main\"",
+      "section": "Default Branch"
+    },
+    {
+      "seq": 3,
+      "action": "fill",
+      "role": "textbox",
+      "label": "Branch Name",
+      "value": "feature-docs",
+      "inside": "dialog \"Create new branch\""
+    },
+    {
+      "seq": 4,
+      "action": "click",
+      "role": "button",
+      "label": "Confirm",
+      "inside": "dialog \"Create new branch\""
+    }
+  ],
+  "add-file": [
+    {
+      "seq": 1,
+      "action": "navigate",
+      "value": "/demo/krama-research-tasks",
+      "arrives_on": "demo/krama-research-tasks - krama-research-tasks"
+    },
+    {
+      "seq": 2,
+      "action": "click",
+      "role": "menu",
+      "label": "Add File",
+      "inside": "dropdown menu"
+    },
+    {
+      "seq": 3,
+      "action": "click",
+      "role": "menuitem",
+      "label": "New File",
+      "inside": "dropdown menu"
+    },
+    {
+      "seq": 4,
+      "action": "fill",
+      "role": "textbox",
+      "label": "Name your file…",
+      "value": "docs/notes.md"
+    },
+    {
+      "seq": 5,
+      "action": "fill",
+      "role": "textbox",
+      "label": "Editor content",
+      "value": "# Notes\n\nFirst note."
+    },
+    {
+      "seq": 6,
+      "action": "click",
+      "role": "button",
+      "label": "Commit Changes",
+      "section": "Commit Changes"
+    }
+  ],
+  "repo-settings-selector": [
+    {
+      "seq": 1,
+      "action": "navigate",
+      "value": "/demo/krama-research-tasks/settings",
+      "arrives_on": "Repository - krama-research-tasks"
+    },
+    {
+      "seq": 2,
+      "action": "fill",
+      "role": "textbox",
+      "label": "Description",
+      "value": "Docs for the team",
+      "section": "Basic Settings"
+    },
+    {
+      "seq": 3,
+      "action": "click",
+      "role": "button",
+      "label": "Update Settings",
+      "section": "Basic Settings"
+    }
+  ]
+}
