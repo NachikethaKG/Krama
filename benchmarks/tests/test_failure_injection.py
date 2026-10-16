@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import io
 from pathlib import Path
+from typing import Literal
 
 import pytest
 from app.contracts_gen.common_schema import (
@@ -26,12 +27,14 @@ from benchmarks.failure_injection.cases import (
     ALL_CASES,
     MISSING_ELEMENT_CASES,
     UNEXPECTED_DIALOG_CASES,
+    WEAK_SIGNAL_CASES,
     WRONG_FORM_VALUE_CASES,
     WRONG_PAGE_CASES,
 )
 from benchmarks.failure_injection.evaluator import FailureInjectionEvaluator
 from benchmarks.failure_injection.models import (
     AccuracyReport,
+    FailureCase,
     FailureType,
 )
 from benchmarks.failure_injection.reporter import FailureInjectionReporter
@@ -43,43 +46,27 @@ from benchmarks.failure_injection.runner import (
 pytestmark = pytest.mark.anyio
 
 
-class AlwaysFailVerifier:
-    """Mock verifier that always reports steps as failed."""
+class FixedVerifier:
+    """Mock verifier that always returns the same result."""
+
+    def __init__(self, result: Literal["verified", "failed", "skipped"]) -> None:
+        self.result = result
 
     def verify(
         self, expected: ExpectedState, evidence: StepEvidence
     ) -> VerificationOutcome:
         return VerificationOutcome(
             verification=StepVerification(
-                result="failed", method=["url"], confidence=1.0
+                result=self.result,
+                method=["url"],
+                confidence=1.0 if self.result != "skipped" else 0.5,
             ),
             checks=[
                 Check(
                     kind="url_matches",
                     expected="test",
-                    passed=False,
-                    detail="forced fail",
-                )
-            ],
-        )
-
-
-class AlwaysPassVerifier:
-    """Mock verifier that always reports steps as verified."""
-
-    def verify(
-        self, expected: ExpectedState, evidence: StepEvidence
-    ) -> VerificationOutcome:
-        return VerificationOutcome(
-            verification=StepVerification(
-                result="verified", method=["url"], confidence=1.0
-            ),
-            checks=[
-                Check(
-                    kind="url_matches",
-                    expected="test",
-                    passed=True,
-                    detail="forced pass",
+                    passed=self.result != "failed",
+                    detail=f"forced {self.result}",
                 )
             ],
         )
@@ -94,19 +81,30 @@ class CrashingVerifier:
         raise RuntimeError("Verifier internal engine malfunction")
 
 
+INJECTED = [c for c in ALL_CASES if c.is_failure]
+CONTROLS = [c for c in ALL_CASES if not c.is_failure]
+WEAK_INJECTED = [c for c in WEAK_SIGNAL_CASES if c.is_failure]
+
+
 # --------------------------------------------------------------------------------------------------
 # Test cases integrity
 # --------------------------------------------------------------------------------------------------
 
 
-def test_cases_suite_contains_all_four_failure_modes() -> None:
+def test_cases_suite_contains_all_failure_modes() -> None:
     types: set[FailureType] = {c.failure_type for c in ALL_CASES}
     assert types == {
         "wrong_page",
         "missing_element",
         "unexpected_dialog",
         "wrong_form_value",
+        "weak_signal",
     }
+
+
+def test_case_names_unique() -> None:
+    names = [c.name for c in ALL_CASES]
+    assert len(names) == len(set(names))
 
 
 def test_each_category_has_both_injected_failures_and_controls() -> None:
@@ -115,6 +113,7 @@ def test_each_category_has_both_injected_failures_and_controls() -> None:
         MISSING_ELEMENT_CASES,
         UNEXPECTED_DIALOG_CASES,
         WRONG_FORM_VALUE_CASES,
+        WEAK_SIGNAL_CASES,
     ]
     for cat in categories:
         injected = [c for c in cat if c.is_failure]
@@ -134,11 +133,75 @@ def test_case_models_valid() -> None:
         assert isinstance(case.expected, ExpectedState)
         assert isinstance(case.evidence, StepEvidence)
         assert isinstance(case.is_failure, bool)
+        assert case.expected_result in ("verified", "failed", "skipped")
+
+
+def test_weak_signal_cases_cover_the_research_table() -> None:
+    """The weak-signal table in docs/research/phase-1-together-verified-definition.md."""
+    by_name = {c.name: c for c in WEAK_SIGNAL_CASES}
+    title_only = by_name["weak_title_only_noop_click"]
+    assert title_only.expected.title_contains == "Gitea"
+    assert title_only.evidence.before == title_only.evidence.after or (
+        title_only.evidence.before is not None
+        and title_only.evidence.before.aria_excerpt
+        == title_only.evidence.after.aria_excerpt
+    )
+    already = by_name["weak_visible_already_present_before_click"]
+    assert already.evidence.before is not None
+    assert "Create Repository" in already.evidence.before.aria_excerpt
+    vacuous = by_name["weak_vacuous_absent_wrong_role"]
+    assert vacuous.expected.absent and vacuous.expected.absent[0].role == "text"
+    assert "paragraph: The repository name" in vacuous.evidence.after.aria_excerpt
+    hard = by_name["weak_duplicate_name_document_post_200"]
+    assert hard.evidence.after.url == "/repo/create"
+    assert [(n.method, n.status, n.resource_type) for n in hard.evidence.network] == [
+        ("POST", 200, "document")
+    ]
+    for name in (
+        "weak_title_only_noop_click",
+        "weak_visible_already_present_before_click",
+        "weak_vacuous_absent_wrong_role",
+        "weak_click_no_effect_url_already_true",
+        "weak_duplicate_name_document_post_200",
+    ):
+        assert by_name[name].expected_result == "skipped"
+
+
+def test_case_rejects_inconsistent_expected_result() -> None:
+    base = WEAK_SIGNAL_CASES[0]
+    with pytest.raises(ValueError, match="never expect 'verified'"):
+        FailureCase(
+            **{
+                **base.model_dump(exclude={"expected", "evidence"}),
+                "expected_result": "verified",
+            },
+            expected=base.expected,
+            evidence=base.evidence,
+        )
+    with pytest.raises(ValueError, match="must expect 'verified'"):
+        FailureCase(
+            **{
+                **base.model_dump(exclude={"expected", "evidence"}),
+                "is_failure": False,
+                "expected_result": "skipped",
+            },
+            expected=base.expected,
+            evidence=base.evidence,
+        )
 
 
 # --------------------------------------------------------------------------------------------------
-# Evaluator tests with LayeredVerifier and RuleVerifier
+# LayeredVerifier vs RuleVerifier: per-case expected outcomes
 # --------------------------------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("case", ALL_CASES, ids=lambda c: c.name)
+async def test_layered_verifier_gives_each_case_its_expected_result(
+    case: FailureCase,
+) -> None:
+    result = await FailureInjectionEvaluator(LayeredVerifier()).evaluate_case(case)
+    assert result.outcome_result == case.expected_result
+    assert result.matches_expected is True
 
 
 async def test_evaluator_with_layered_verifier() -> None:
@@ -147,52 +210,67 @@ async def test_evaluator_with_layered_verifier() -> None:
 
     assert report.total_cases == len(ALL_CASES)
     assert report.errors == 0
-    assert report.detection_accuracy == 1.0
-    assert report.false_alarm_rate == 0.0
-
-    assert report.true_positives == report.injected_failures
+    assert report.expected_mismatches == 0
+    assert report.silently_passed == 0
+    assert report.silently_passed_rate == 0.0
     assert report.false_negatives == 0
-    assert report.true_negatives == report.clean_controls
-    assert report.false_positives == 0
-
-    for ft in (
-        "wrong_page",
-        "missing_element",
-        "unexpected_dialog",
-        "wrong_form_value",
-    ):
-        type_metric = report.by_type[ft]
-        assert type_metric.recall == 1.0
-        assert type_metric.false_alarm_rate == 0.0
-        assert type_metric.true_positives == type_metric.injected_failures
-        assert type_metric.false_negatives == 0
-
-
-async def test_evaluator_with_rule_verifier() -> None:
-    evaluator = FailureInjectionEvaluator(verifier=RuleVerifier())
-    report = await evaluator.evaluate_all(ALL_CASES)
-
-    assert report.total_cases == len(ALL_CASES)
-    assert report.errors == 0
     assert report.detection_accuracy == 1.0
     assert report.false_alarm_rate == 0.0
+    assert report.needless_pause_rate == 0.0
+    assert report.paused_failures == sum(
+        1 for c in INJECTED if c.expected_result == "skipped"
+    )
+    assert report.true_positives == sum(
+        1 for c in INJECTED if c.expected_result == "failed"
+    )
+    assert report.hard_detection_rate < 1.0  # weak signals are paused, not failed
+
+    weak = report.by_type["weak_signal"]
+    assert weak.injected_outcomes.verified == 0
+    assert weak.injected_outcomes.skipped == 5
+    assert weak.injected_outcomes.failed == 2
+    assert weak.control_outcomes.verified == weak.clean_controls
+
+
+async def test_rule_verifier_silently_passes_the_weak_signal_cases() -> None:
+    """The benchmark has teeth: the rules layer alone verifies every weak-signal failure."""
+    report = await FailureInjectionEvaluator(RuleVerifier()).evaluate_all(ALL_CASES)
+
+    silently_passed = {
+        r.case_name
+        for r in report.cases
+        if r.is_failure and r.outcome_result == "verified"
+    }
+    assert {c.name for c in WEAK_INJECTED} <= silently_passed
+    assert report.silently_passed >= len(WEAK_INJECTED)
+    assert report.silently_passed_rate > 0.0
+    assert report.by_type["weak_signal"].silently_passed_rate == 1.0
+    assert report.expected_mismatches >= len(WEAK_INJECTED)
+
+
+async def test_layered_and_rule_reports_differ() -> None:
+    layered = await FailureInjectionEvaluator(LayeredVerifier()).evaluate_all(ALL_CASES)
+    rule = await FailureInjectionEvaluator(RuleVerifier()).evaluate_all(ALL_CASES)
+    assert layered.silently_passed == 0 < rule.silently_passed
+    assert layered.detection_accuracy > rule.detection_accuracy
+    assert [r.outcome_result for r in layered.cases] != [
+        r.outcome_result for r in rule.cases
+    ]
 
 
 # --------------------------------------------------------------------------------------------------
-# Evaluator edge cases: false alarms, misses, exceptions
+# Evaluator scoring: false alarms, misses, skipped, exceptions, empty denominators
 # --------------------------------------------------------------------------------------------------
 
 
 async def test_evaluator_detects_false_alarms_with_always_fail_verifier() -> None:
-    evaluator = FailureInjectionEvaluator(verifier=AlwaysFailVerifier())
+    evaluator = FailureInjectionEvaluator(verifier=FixedVerifier("failed"))
     report = await evaluator.evaluate_all(ALL_CASES)
 
-    # Everything was flagged as failed
-    # Injected failures: correctly caught (TP)
-    # Clean controls: falsely flagged as failed (FP) -> false alarms!
     assert report.true_positives == report.injected_failures
     assert report.false_negatives == 0
     assert report.detection_accuracy == 1.0
+    assert report.hard_detection_rate == 1.0
 
     assert report.false_positives == report.clean_controls
     assert report.true_negatives == 0
@@ -200,14 +278,13 @@ async def test_evaluator_detects_false_alarms_with_always_fail_verifier() -> Non
 
 
 async def test_evaluator_detects_missed_failures_with_always_pass_verifier() -> None:
-    evaluator = FailureInjectionEvaluator(verifier=AlwaysPassVerifier())
+    evaluator = FailureInjectionEvaluator(verifier=FixedVerifier("verified"))
     report = await evaluator.evaluate_all(ALL_CASES)
 
-    # Everything was flagged as verified
-    # Injected failures: missed (FN)
-    # Clean controls: correctly passed (TN)
     assert report.true_positives == 0
     assert report.false_negatives == report.injected_failures
+    assert report.silently_passed == report.injected_failures
+    assert report.silently_passed_rate == 1.0
     assert report.detection_accuracy == 0.0
 
     assert report.false_positives == 0
@@ -215,17 +292,64 @@ async def test_evaluator_detects_missed_failures_with_always_pass_verifier() -> 
     assert report.false_alarm_rate == 0.0
 
 
-async def test_evaluator_handles_exceptions_gracefully() -> None:
-    evaluator = FailureInjectionEvaluator(verifier=CrashingVerifier())
-    report = await evaluator.evaluate_all(ALL_CASES[:2])
+async def test_skipped_is_its_own_outcome() -> None:
+    """skipped on an injected case = caught for a human; on a control = needless pause."""
+    report = await FailureInjectionEvaluator(FixedVerifier("skipped")).evaluate_all(
+        ALL_CASES
+    )
 
-    assert report.total_cases == 2
-    assert report.errors == 2
+    assert report.paused_failures == report.injected_failures
+    assert report.true_positives == 0  # not counted as a hard 'failed'
+    assert report.silently_passed == 0
+    assert report.detection_accuracy == 1.0  # not silently passed
+    assert report.hard_detection_rate == 0.0
+
+    assert report.needless_pauses == report.clean_controls
+    assert report.needless_pause_rate == 1.0
+    assert report.false_positives == 0
+    assert report.false_alarm_rate == 0.0
+    for r in report.cases:
+        assert r.classification == ("TP_PAUSED" if r.is_failure else "FP_PAUSED")
+
+
+async def test_evaluator_counts_crashes_as_misses_and_false_alarms() -> None:
+    evaluator = FailureInjectionEvaluator(verifier=CrashingVerifier())
+    report = await evaluator.evaluate_all(ALL_CASES)
+
+    assert report.total_cases == len(ALL_CASES)
+    assert report.errors == len(ALL_CASES)
     for c in report.cases:
-        assert c.classification == "ERROR"
         assert c.outcome_result == "error"
+        assert c.classification == ("FN" if c.is_failure else "FP")
+        assert c.matches_expected is False
         assert c.error_message is not None
         assert "Verifier internal engine malfunction" in c.error_message
+
+    # A verifier that crashes on everything must NOT look perfect.
+    assert report.injected_failures == len(INJECTED)
+    assert report.clean_controls == len(CONTROLS)
+    assert report.false_negatives == len(INJECTED)
+    assert report.detection_accuracy == 0.0
+    assert report.false_positives == len(CONTROLS)
+    assert report.false_alarm_rate == 1.0
+    assert report.silently_passed == 0  # a crash is a miss, not a 'verified'
+    for m in report.by_type.values():
+        assert m.recall == 0.0
+        assert m.injected_outcomes.error == m.injected_failures
+        assert m.control_outcomes.error == m.clean_controls
+
+
+async def test_rates_default_to_zero_when_nothing_to_count() -> None:
+    evaluator = FailureInjectionEvaluator(verifier=LayeredVerifier())
+    empty = await evaluator.evaluate_all([])
+    assert empty.detection_accuracy == 0.0
+    assert empty.hard_detection_rate == 0.0
+    assert empty.false_alarm_rate == 0.0
+    controls_only = await evaluator.evaluate_all(CONTROLS)
+    assert controls_only.injected_failures == 0
+    assert controls_only.detection_accuracy == 0.0
+    for m in controls_only.by_type.values():
+        assert m.recall == 0.0
 
 
 def test_evaluator_sync_run_method() -> None:
@@ -340,3 +464,37 @@ def test_runner_cli_threshold_failure_max_false_alarm() -> None:
         ]
     )
     assert code == 1
+
+
+def test_runner_full_suite_passes_with_layered_verifier() -> None:
+    assert run_benchmark(["--verifier", "layered", "--no-save"]) == 0
+
+
+def test_runner_exits_non_zero_when_rule_verifier_silently_passes() -> None:
+    assert run_benchmark(["--verifier", "rule", "--no-save"]) == 1
+    # The silent-pass gate can be relaxed explicitly.
+    assert (
+        run_benchmark(
+            ["--verifier", "rule", "--no-save", "--max-silently-passed", "1.0"]
+        )
+        == 0
+    )
+
+
+def test_runner_exits_non_zero_on_verifier_errors(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import benchmarks.failure_injection.runner as runner_mod
+
+    monkeypatch.setattr(runner_mod, "LayeredVerifier", CrashingVerifier)
+    assert run_benchmark(["--verifier", "layered", "--no-save"]) == 1
+
+
+def test_reporter_shows_skipped_and_silent_pass_columns() -> None:
+    report = FailureInjectionEvaluator(RuleVerifier()).run(WEAK_SIGNAL_CASES)
+    buf = io.StringIO()
+    FailureInjectionReporter(stream=buf).render(report)
+    out = buf.getvalue()
+    assert "Silently Passed (must be 0):" in out
+    assert "Needless Pause Rate:" in out
+    assert "!! expected skipped, got verified" in out
