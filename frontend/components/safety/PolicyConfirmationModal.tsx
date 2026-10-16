@@ -35,32 +35,19 @@ export function PolicyConfirmationModal({
   isConfirming = false,
   className = "",
 }: PolicyConfirmationModalProps) {
-  const allowBtnRef = useRef<HTMLButtonElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
 
-  // Focus Allow button when modal opens
+  // Move focus into the dialog (not onto Allow: Enter must never approve a destructive step by accident).
+  // Escape deliberately does nothing: the run stays paused until the user clicks Allow or Deny, and a stray
+  // keypress must not send a decision to the backend.
   useEffect(() => {
     if (isOpen) {
       const timer = setTimeout(() => {
-        allowBtnRef.current?.focus();
+        dialogRef.current?.focus();
       }, 50);
       return () => clearTimeout(timer);
     }
   }, [isOpen]);
-
-  // Handle escape key to safely deny/dismiss
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !isConfirming) {
-        e.preventDefault();
-        onDeny();
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, isConfirming, onDeny]);
 
   if (!isOpen) {
     return null;
@@ -91,6 +78,8 @@ export function PolicyConfirmationModal({
         aria-labelledby="policy-modal-title"
         aria-describedby="policy-modal-desc"
         data-testid="policy-confirmation-modal"
+        ref={dialogRef}
+        tabIndex={-1}
         className={`pointer-events-auto relative w-full max-w-lg rounded-2xl border border-amber-300/80 bg-white p-6 shadow-2xl transition-all sm:p-7 dark:border-amber-700/80 dark:bg-zinc-900 ${className}`}
       >
         {/* Header Icon & Title */}
@@ -213,7 +202,6 @@ export function PolicyConfirmationModal({
           </button>
 
           <button
-            ref={allowBtnRef}
             type="button"
             data-testid="modal-allow-btn"
             disabled={isConfirming}

@@ -1,9 +1,21 @@
-import type { RunEvent, Workflow } from "@krama/contracts-ts";
+import type { Plan, PlannedStep, RunEvent, Step, Workflow } from "@krama/contracts-ts";
 import giteaWorkflowJson from "../../contracts/fixtures/gitea-create-repo-workflow.json";
 import validWorkflowJson from "../../contracts/fixtures/valid_workflow.json";
 
 export const giteaWorkflowFixture = giteaWorkflowJson as unknown as Workflow;
 export const validWorkflowFixture = validWorkflowJson as unknown as Workflow;
+
+/** The plan-shaped part of a workflow step (what /plans/{id} returns). */
+export function toPlannedStep(s: Step): PlannedStep {
+  return {
+    seq: s.seq,
+    action: s.action,
+    target: { role: s.target?.role ?? null, name: s.target?.name ?? null, selector: s.target?.selector ?? null },
+    instruction_text: s.instruction_text,
+    expected_state: s.expected_state,
+    risk: s.risk,
+  };
+}
 
 export const workflowFixtures: Record<string, Workflow> = {
   [validWorkflowFixture.id]: validWorkflowFixture,
@@ -45,7 +57,7 @@ data: {"type":"step.started","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","se
 
 event: step.action_done
 id: 3
-data: {"type":"step.action_done","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":3,"ts":"2026-10-06T12:00:00.829Z","step_seq":1,"screenshot_url":"contracts/fixtures/screenshots/step-1.png","bbox":[1146,6,56,36]}
+data: {"type":"step.action_done","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":3,"ts":"2026-10-06T12:00:00.829Z","step_seq":1,"screenshot_url":"/screenshots/step-1.png","bbox":[1146,6,56,36]}
 
 event: step.verified
 id: 4
@@ -57,7 +69,7 @@ data: {"type":"step.started","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","se
 
 event: step.action_done
 id: 6
-data: {"type":"step.action_done","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":6,"ts":"2026-10-06T12:00:01.218Z","step_seq":2,"screenshot_url":"contracts/fixtures/screenshots/step-2.png","bbox":[1044,44,156,38]}
+data: {"type":"step.action_done","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":6,"ts":"2026-10-06T12:00:01.218Z","step_seq":2,"screenshot_url":"/screenshots/step-2.png","bbox":[1044,44,156,38]}
 
 event: step.verified
 id: 7
@@ -69,7 +81,7 @@ data: {"type":"step.started","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","se
 
 event: step.action_done
 id: 9
-data: {"type":"step.action_done","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":9,"ts":"2026-10-06T12:00:01.825Z","step_seq":3,"screenshot_url":"contracts/fixtures/screenshots/step-3.png","bbox":[519,262,386,38]}
+data: {"type":"step.action_done","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":9,"ts":"2026-10-06T12:00:01.825Z","step_seq":3,"screenshot_url":"/screenshots/step-3.png","bbox":[519,262,386,38]}
 
 event: step.verified
 id: 10
@@ -81,7 +93,7 @@ data: {"type":"step.started","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","se
 
 event: step.action_done
 id: 12
-data: {"type":"step.action_done","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":12,"ts":"2026-10-06T12:00:02.516Z","step_seq":4,"screenshot_url":"contracts/fixtures/screenshots/step-4.png","bbox":[519,936,15,15]}
+data: {"type":"step.action_done","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":12,"ts":"2026-10-06T12:00:02.516Z","step_seq":4,"screenshot_url":"/screenshots/step-4.png","bbox":[519,936,15,15]}
 
 event: step.verified
 id: 13
@@ -93,7 +105,7 @@ data: {"type":"step.started","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","se
 
 event: step.action_done
 id: 15
-data: {"type":"step.action_done","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":15,"ts":"2026-10-06T12:00:03.410Z","step_seq":5,"screenshot_url":"contracts/fixtures/screenshots/step-5.png","bbox":[519,650,154,38]}
+data: {"type":"step.action_done","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":15,"ts":"2026-10-06T12:00:03.410Z","step_seq":5,"screenshot_url":"/screenshots/step-5.png","bbox":[519,650,154,38]}
 
 event: step.verified
 id: 16
@@ -115,7 +127,7 @@ data: {"type":"step.started","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","se
 
 event: step.action_done
 id: 3
-data: {"type":"step.action_done","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":3,"ts":"2026-10-06T12:00:00.829Z","step_seq":1,"screenshot_url":"contracts/fixtures/screenshots/step-1.png","bbox":[1146,6,56,36]}
+data: {"type":"step.action_done","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":3,"ts":"2026-10-06T12:00:00.829Z","step_seq":1,"screenshot_url":"/screenshots/step-1.png","bbox":[1146,6,56,36]}
 
 event: step.verified
 id: 4
@@ -142,7 +154,7 @@ data: {"type":"step.started","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","se
 
 event: step.action_done
 id: 3
-data: {"type":"step.action_done","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":3,"ts":"2026-10-06T12:00:00.829Z","step_seq":1,"screenshot_url":"contracts/fixtures/screenshots/step-1.png","bbox":[1146,6,56,36]}
+data: {"type":"step.action_done","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":3,"ts":"2026-10-06T12:00:00.829Z","step_seq":1,"screenshot_url":"/screenshots/step-1.png","bbox":[1146,6,56,36]}
 
 event: step.verified
 id: 4
@@ -154,7 +166,7 @@ data: {"type":"step.started","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","se
 
 event: step.failed
 id: 6
-data: {"type":"step.failed","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":6,"ts":"2026-10-06T12:00:01.400Z","step_seq":2,"expected":{"url_matches":"^/repo/create$","visible":[{"role":"button","name":"Create Repository"}]},"observed":{"url":"/repo/error","title":"500 Internal Server Error"},"screenshot_url":"/mock-observed.png","expected_screenshot_url":"/mock-expected.png"}
+data: {"type":"step.failed","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":6,"ts":"2026-10-06T12:00:01.400Z","step_seq":2,"expected":{"url_matches":"^/repo/create$","visible":[{"role":"button","name":"Create Repository"}]},"observed":{"url":"/repo/error","title":"500 Internal Server Error"},"screenshot_url":"/mock-observed.png"}
 
 event: run.failed
 id: 7
@@ -185,7 +197,7 @@ data: {"type":"step.started","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","se
 
 event: step.failed
 id: 6
-data: {"type":"step.failed","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":6,"ts":"2026-10-06T12:00:01.400Z","step_seq":2,"expected":{"url_matches":"^/repo/create$","visible":[{"role":"button","name":"Create Repository"}]},"observed":{"url":"/repo/error","title":"500 Internal Server Error"},"screenshot_url":"/mock-observed.png","expected_screenshot_url":"/mock-expected.png"}
+data: {"type":"step.failed","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":6,"ts":"2026-10-06T12:00:01.400Z","step_seq":2,"expected":{"url_matches":"^/repo/create$","visible":[{"role":"button","name":"Create Repository"}]},"observed":{"url":"/repo/error","title":"500 Internal Server Error"},"screenshot_url":"/mock-observed.png"}
 
 event: run.replanning
 id: 7
@@ -201,6 +213,68 @@ data: {"type":"run.paused","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq"
 `;
 
 export const giteaReplanEventsFixture: RunEvent[] = parseSseEvents(GITEA_REPLAN_RUN_SSE);
+
+export const GITEA_REPLAN_REVIEW_RUN_SSE = `event: run.started
+id: 1
+data: {"type":"run.started","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":1,"ts":"2026-10-06T12:00:00.000Z","plan_id":"6f1c2a4e-3333-4b8a-9a1b-123456789abc","total_steps":5}
+
+event: step.started
+id: 2
+data: {"type":"step.started","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":2,"ts":"2026-10-06T12:00:00.500Z","step_seq":1,"instruction_text":"Open the + menu at the top right."}
+
+event: step.action_done
+id: 3
+data: {"type":"step.action_done","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":3,"ts":"2026-10-06T12:00:00.829Z","step_seq":1,"screenshot_url":"/screenshots/step-1.png","bbox":[1146,6,56,36]}
+
+event: step.verified
+id: 4
+data: {"type":"step.verified","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":4,"ts":"2026-10-06T12:00:01.047Z","step_seq":1,"method":["aria"],"confidence":1.0}
+
+event: step.started
+id: 5
+data: {"type":"step.started","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":5,"ts":"2026-10-06T12:00:01.110Z","step_seq":2,"instruction_text":"Click New Repository in the menu."}
+
+event: step.action_done
+id: 6
+data: {"type":"step.action_done","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":6,"ts":"2026-10-06T12:00:01.300Z","step_seq":2,"screenshot_url":"/mock-observed.png","bbox":null}
+
+event: step.failed
+id: 7
+data: {"type":"step.failed","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":7,"ts":"2026-10-06T12:00:01.400Z","step_seq":2,"expected":{"url_matches":"^/repo/create$"},"observed":{"url":"/explore/repos","title":"Explore - Gitea"},"screenshot_url":"/mock-observed.png"}
+
+event: run.replanning
+id: 8
+data: {"type":"run.replanning","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":8,"ts":"2026-10-06T12:00:01.600Z","reason":"step 2 failed: the URL did not match ^/repo/create$","attempt":1}
+
+event: run.paused
+id: 9
+data: {"type":"run.paused","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":9,"ts":"2026-10-06T12:00:02.200Z","reason":"replan_review","step_seq":2,"message":"The agent proposes new remaining steps. Allow runs them, deny cancels.","plan_id":"6f1c2a4e-4444-4b8a-9a1b-123456789abc"}
+`;
+
+export const giteaReplanReviewEventsFixture: RunEvent[] = parseSseEvents(GITEA_REPLAN_REVIEW_RUN_SSE);
+
+/** The plan a replan_review pause points at: the steps already done plus new remaining steps from seq 2. */
+export const replanProposedPlanFixture: Plan = {
+  id: "6f1c2a4e-4444-4b8a-9a1b-123456789abc",
+  task_id: "mock-task-id",
+  revision: 1,
+  status: "proposed",
+  risk: "low",
+  expected_result: "A new repository page is shown",
+  steps: [
+    ...giteaWorkflowFixture.steps.slice(0, 1).map(toPlannedStep),
+    {
+      seq: 2,
+      action: { type: "navigate", value: "/repo/create" },
+      target: {},
+      instruction_text: "Open the New Repository page directly.",
+      expected_state: { url_matches: "/repo/create" },
+      risk: "low",
+    },
+    ...giteaWorkflowFixture.steps.slice(2).map(toPlannedStep),
+  ] as [PlannedStep, ...PlannedStep[]],
+  created_at: "2026-10-06T12:00:02.000Z",
+};
 
 export const pausedWorkflowFixture: Workflow = {
   ...giteaWorkflowFixture,
@@ -226,6 +300,13 @@ export const replanWorkflowFixture: Workflow = {
   status: "running",
 };
 
+export const replanReviewWorkflowFixture: Workflow = {
+  ...giteaWorkflowFixture,
+  id: "replan-review",
+  title: "Create repository in local Gitea (Replan review)",
+  status: "running",
+};
+
 export const GITEA_BLOCKED_RUN_SSE = `event: run.started
 id: 1
 data: {"type":"run.started","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":1,"ts":"2026-10-06T12:00:00.000Z","plan_id":"6f1c2a4e-3333-4b8a-9a1b-123456789abc","total_steps":5}
@@ -234,11 +315,13 @@ event: step.started
 id: 2
 data: {"type":"step.started","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":2,"ts":"2026-10-06T12:00:00.500Z","step_seq":1,"instruction_text":"Open the + menu at the top right."}
 
-event: run.stopped
+event: run.failed
 id: 3
-data: {"type":"run.stopped","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":3,"ts":"2026-10-06T12:00:01.000Z","barrier_type":"cloudflare_turnstile","message":"Cloudflare Turnstile challenge detected on target page. Automation restricted per safety baseline.","target_url":"http://localhost:3001/login","step_seq":1}
+data: {"type":"run.failed","run_id":"6f1c2a4e-2222-4b8a-9a1b-123456789abc","seq":3,"ts":"2026-10-06T12:00:01.000Z","error":{"code":"internal","message":"A CAPTCHA challenge was detected on the target page. Automation stops here; finish this step manually.","details":{"reason":"policy_stop","policy_reason":"captcha","step_seq":1}}}
 `;
 
+// Policy STOP (CAPTCHA / bot wall / login wall) is not a pause: the backend ends the run with run.failed and
+// error.details.reason = "policy_stop", error.details.policy_reason = "captcha" | "auth_wall".
 export const giteaBlockedEventsFixture: RunEvent[] = parseSseEvents(GITEA_BLOCKED_RUN_SSE);
 
 export const blockedWorkflowFixture: Workflow = {
@@ -259,6 +342,7 @@ workflowFixtures["failed"] = failedWorkflowFixture;
 workflowFixtures["replan"] = replanWorkflowFixture;
 workflowFixtures["blocked"] = blockedWorkflowFixture;
 workflowFixtures["restricted"] = restrictedWorkflowFixture;
+workflowFixtures["replan-review"] = replanReviewWorkflowFixture;
 
 import type { RunDetails, RunListItem, StepEvidenceDetail } from "./types";
 

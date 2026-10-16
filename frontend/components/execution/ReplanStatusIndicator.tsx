@@ -26,8 +26,8 @@ export interface ReplanStatusIndicatorProps {
 export function ReplanStatusIndicator({
   status,
   attempt = 1,
-  maxAttempts = 3,
-  strategy = "Adaptive element re-location & alternative branch replay",
+  maxAttempts,
+  strategy,
   timeoutSeconds,
   reason,
   onTakeover,
@@ -135,7 +135,7 @@ export function ReplanStatusIndicator({
                 data-testid="replan-attempt-counter"
                 className="rounded-md border border-zinc-200 bg-white px-2 py-0.5 font-mono text-xs font-semibold text-zinc-700 shadow-2xs dark:border-zinc-800 dark:bg-zinc-800 dark:text-zinc-300"
               >
-                Attempt {attempt} of {maxAttempts}
+                {maxAttempts ? `Attempt ${attempt} of ${maxAttempts}` : `Attempt ${attempt}`}
               </span>
             </div>
 
@@ -148,9 +148,11 @@ export function ReplanStatusIndicator({
 
             {/* Strategy & Timeout */}
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-zinc-600 dark:text-zinc-400">
-              <span data-testid="replan-strategy">
-                <strong className="text-zinc-800 dark:text-zinc-200">Strategy:</strong> {strategy}
-              </span>
+              {strategy && (
+                <span data-testid="replan-strategy">
+                  <strong className="text-zinc-800 dark:text-zinc-200">Strategy:</strong> {strategy}
+                </span>
+              )}
 
               {countdown !== undefined && countdown > 0 && !isExhausted && !isSucceeded && (
                 <span data-testid="replan-timeout" className="font-mono font-medium text-amber-700 dark:text-amber-400">

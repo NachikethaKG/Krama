@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { PauseReason } from "@krama/contracts-ts";
 
 export interface PauseBannerProps {
@@ -7,8 +8,25 @@ export interface PauseBannerProps {
   onResume?: () => void;
   onDeny?: () => void;
   isConfirming?: boolean;
+  /** Disables "allow" (e.g. the proposed steps of a replan_review are not loaded). Deny stays available. */
+  allowDisabled?: boolean;
+  /** Extra content, e.g. the proposed steps of a replan_review pause. */
+  children?: ReactNode;
   className?: string;
 }
+
+/** What "allow" means for each reason (POST /runs/{id}/confirm). "Deny" always cancels the run. */
+export const ALLOW_LABELS: Record<PauseReason, string> = {
+  destructive_action: "Allow this step",
+  captcha: "Continue",
+  auth_wall: "Continue",
+  rate_limited: "Continue",
+  verification_unclear: "Accept this step",
+  replan_review: "Run the proposed steps",
+  recovery_exhausted: "Try the step once more",
+  sensitive_data: "Allow this step",
+  prompt_injection: "Continue anyway",
+};
 
 const REASON_DESCRIPTIONS: Record<PauseReason, string> = {
   destructive_action: "A destructive action requires human confirmation before proceeding.",
@@ -29,6 +47,8 @@ export function PauseBanner({
   onResume,
   onDeny,
   isConfirming = false,
+  allowDisabled = false,
+  children,
   className = "",
 }: PauseBannerProps) {
   const reasonText = REASON_DESCRIPTIONS[reason] || "Execution has been paused for safety.";
@@ -64,7 +84,7 @@ export function PauseBanner({
                 Execution Paused at Step {stepSeq}
               </h3>
               <span className="rounded-md border border-amber-300 bg-amber-100/70 px-2 py-0.5 font-mono text-[11px] font-semibold text-amber-800 uppercase dark:border-amber-700 dark:bg-amber-900/70 dark:text-amber-200">
-                {reason.replace("_", " ")}
+                {reason.replace(/_/g, " ")}
               </span>
             </div>
 
@@ -87,14 +107,14 @@ export function PauseBanner({
               <svg aria-hidden="true" className="size-3.5 text-rose-500" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
               </svg>
-              Deny / Abort
+              {isConfirming ? "Processing…" : "Deny & cancel run"}
             </button>
           )}
 
           <button
             type="button"
             data-testid="resume-run-btn"
-            disabled={isConfirming}
+            disabled={isConfirming || allowDisabled}
             onClick={onResume}
             className="inline-flex items-center gap-2 rounded-lg bg-amber-600 px-4 py-2 text-xs font-semibold text-white shadow-xs transition hover:bg-amber-500 focus:outline-hidden focus:ring-2 focus:ring-amber-500/50 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-amber-500 dark:hover:bg-amber-400"
           >
@@ -111,10 +131,11 @@ export function PauseBanner({
                 d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 010 1.972l-11.54 6.347a1.125 1.125 0 01-1.667-.986V5.653z"
               />
             </svg>
-            {isConfirming ? "Processing…" : "Confirm & Resume"}
+            {isConfirming ? "Processing…" : ALLOW_LABELS[reason] ?? "Continue"}
           </button>
         </div>
       </div>
+      {children && <div className="mt-4">{children}</div>}
     </div>
   );
 }

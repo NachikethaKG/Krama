@@ -1,9 +1,10 @@
-import type { Step } from "@krama/contracts-ts";
+import type { PlannedStep } from "@krama/contracts-ts";
 
 import { RiskBadge } from "./risk-badge";
 
 export interface StepListProps {
-  steps: Step[];
+  /** Plan steps (a workflow Step is a superset, so Step[] works too). */
+  steps: PlannedStep[];
   isEditing?: boolean;
   onInstructionChange?: (seq: number, newInstruction: string) => void;
   onMoveUp?: (seq: number) => void;
@@ -60,7 +61,7 @@ export function StepList({
 
           return (
             <li
-              key={step.id || step.seq}
+              key={step.seq}
               data-testid="step-item"
               data-step-seq={step.seq}
               className="group flex flex-col gap-3 rounded-xl border border-zinc-200 bg-white p-4 transition-colors hover:border-zinc-300 sm:flex-row sm:items-start sm:justify-between dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-700"

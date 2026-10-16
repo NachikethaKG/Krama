@@ -50,9 +50,7 @@ test.describe("Workflow Plan Editing Flow", () => {
     const approveBtn = page.getByTestId("approve-btn");
     await approveBtn.click();
 
-    const successBanner = page.getByTestId("approval-success-banner");
-    await expect(successBanner).toBeVisible();
-    await expect(page.getByTestId("workflow-status-badge")).toHaveText(/approved/i);
+    await expect(page).toHaveURL(/\/runs\/mock-run-id\/live$/, { timeout: 10000 });
   });
 });
 
@@ -61,7 +59,7 @@ test.describe("Workflow Run Controls & Lifecycle States", () => {
     page,
   }) => {
     // 1. Navigate to live execution view with moderate replay speed
-    await page.goto("/workflows/default/execution?mock=true&speed=5");
+    await page.goto("/runs/default/live?speed=5");
 
     // 2. Verify cancel run button is accessible during active execution
     const cancelBtn = page.getByTestId("cancel-run-btn");
@@ -79,25 +77,24 @@ test.describe("Workflow Run Controls & Lifecycle States", () => {
     const statusBadge = page.getByTestId("execution-status-badge");
     await expect(statusBadge).toHaveAttribute("data-status", "cancelled");
 
-    // 6. Verify Back to Plan and Restart buttons are available
+    // 6. Back to Plan and New Task are available; a cancelled run is not restarted in place
     const backToPlanBtn = cancelledBanner.getByTestId("back-to-plan-btn");
     await expect(backToPlanBtn).toBeVisible();
     await expect(backToPlanBtn).toHaveAttribute("href", "/workflows/default/approval");
-
-    const restartBtn = cancelledBanner.getByTestId("retry-run-btn");
-    await expect(restartBtn).toBeVisible();
+    await expect(cancelledBanner.getByTestId("new-task-link")).toBeVisible();
+    await expect(cancelledBanner.getByTestId("retry-run-btn")).toHaveCount(0);
   });
 
   test("handles pause state denial by halting and showing cancelled state", async ({
     page,
   }) => {
-    // 1. Navigate to paused workflow route
-    await page.goto("/workflows/paused/execution?mock=true&speed=50");
+    // 1. The "replan" run pauses with recovery_exhausted (banner pause)
+    await page.goto("/runs/replan/live?speed=50");
 
     // 2. Wait for pause banner to appear
     const pauseBanner = page.getByTestId("pause-banner");
     await expect(pauseBanner).toBeVisible({ timeout: 10000 });
-    await expect(pauseBanner).toHaveAttribute("data-pause-reason", "destructive_action");
+    await expect(pauseBanner).toHaveAttribute("data-pause-reason", "recovery_exhausted");
 
     // 3. Verify Confirm & Resume and Deny / Abort controls
     const resumeBtn = page.getByTestId("resume-run-btn");

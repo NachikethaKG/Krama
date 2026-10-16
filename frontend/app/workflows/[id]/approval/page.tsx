@@ -6,5 +6,5 @@ export interface WorkflowApprovalPageProps {
 
 export default async function WorkflowApprovalPage({ params }: WorkflowApprovalPageProps) {
   const { id } = await params;
-  return <ApprovalScreen initialWorkflowId={id} />;
+  return <ApprovalScreen planId={id} />;
 }

@@ -1,4 +1,4 @@
-import type { RunExecutionStatus } from "@/hooks/useWorkflowExecutionStream";
+import type { RunExecutionStatus } from "@/hooks/useRunExecutionStream";
 
 export interface ExecutionHeaderProps {
   title?: string | null;
@@ -62,10 +62,10 @@ export function ExecutionHeader({
       text: "text-zinc-600 dark:text-zinc-400",
       dot: "bg-zinc-500",
     },
-    stopped: {
-      bg: "bg-amber-100 border-amber-300 dark:bg-amber-950/70 dark:border-amber-700",
-      text: "text-amber-800 dark:text-amber-200",
-      dot: "bg-amber-500",
+    queued: {
+      bg: "bg-zinc-100 border-zinc-200 dark:bg-zinc-800 dark:border-zinc-700",
+      text: "text-zinc-700 dark:text-zinc-300",
+      dot: "bg-zinc-400 animate-pulse",
     },
   };
 

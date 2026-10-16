@@ -13,7 +13,7 @@ describe("RunDetailHeader", () => {
 
     expect(screen.getByTestId("back-to-runs-link")).toBeInTheDocument();
     expect(screen.getByTestId("run-detail-id")).toHaveTextContent("run-1");
-    expect(screen.getByTestId("run-detail-prompt")).toHaveTextContent(details.run.prompt);
+    expect(screen.getByTestId("run-detail-prompt")).toHaveTextContent(details.run.prompt!);
     expect(screen.getByTestId("stat-total-steps")).toHaveTextContent("5");
     expect(screen.getByTestId("stat-verified-steps")).toHaveTextContent("5");
     expect(screen.getByTestId("stat-failed-steps")).toHaveTextContent("0");
@@ -60,7 +60,7 @@ describe("RunDetailView", () => {
     render(<RunDetailView runId="run-1" initialDetails={mockRunDetails["run-1"]} />);
 
     expect(screen.queryByTestId("run-details-loading")).not.toBeInTheDocument();
-    expect(screen.getByTestId("run-detail-prompt")).toHaveTextContent(mockRunDetails["run-1"].run.prompt);
+    expect(screen.getByTestId("run-detail-prompt")).toHaveTextContent(mockRunDetails["run-1"].run.prompt!);
     expect(screen.getByTestId("step-evidence-list")).toBeInTheDocument();
   });
 });

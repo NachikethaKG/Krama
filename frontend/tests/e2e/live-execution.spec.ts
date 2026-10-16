@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 test.describe("Workflow Live Execution - Happy Path", () => {
   test("replays fixture events and tracks step progression to completion", async ({ page }) => {
     // 1. Navigate to the execution view with accelerated replay speed
-    await page.goto("/workflows/default/execution?mock=true&speed=50");
+    await page.goto("/runs/default/live?speed=50");
 
     // 2. Assert header, timer, and progress bar elements are visible
     const header = page.getByTestId("execution-header");
@@ -45,7 +45,7 @@ test.describe("Workflow Live Execution - Happy Path", () => {
   });
 
   test("loads direct /execution route and runs execution", async ({ page }) => {
-    await page.goto("/execution?mock=true&speed=50");
+    await page.goto("/execution?speed=50");
 
     await expect(page.getByTestId("execution-header")).toBeVisible();
     await expect(page.getByTestId("execution-step-list")).toBeVisible();
@@ -59,43 +59,44 @@ test.describe("Workflow Live Execution - Interruption & Failure Handling", () =>
   test("handles run.paused event with pause banner, reason details, and resume control", async ({
     page,
   }) => {
-    // 1. Navigate to paused workflow route
-    await page.goto("/workflows/paused/execution?mock=true&speed=50");
+    // 1. The "replan" run pauses with recovery_exhausted (a banner pause; destructive pauses use the modal)
+    await page.goto("/runs/replan/live?speed=50");
 
     // 2. Wait for pause banner to appear
     const pauseBanner = page.getByTestId("pause-banner");
     await expect(pauseBanner).toBeVisible({ timeout: 10000 });
-    await expect(pauseBanner).toHaveAttribute("data-pause-reason", "destructive_action");
+    await expect(pauseBanner).toHaveAttribute("data-pause-reason", "recovery_exhausted");
     await expect(pauseBanner).toContainText(/Execution Paused at Step 2/i);
-    await expect(pauseBanner).toContainText(/Destructive action requires confirmation/i);
+    await expect(pauseBanner).toContainText(/recovery budget exhausted/i);
+    await expect(page.getByTestId("policy-confirmation-modal")).toHaveCount(0);
 
     // 3. Verify status badge indicates paused
     const statusBadge = page.getByTestId("execution-status-badge");
     await expect(statusBadge).toHaveAttribute("data-status", "paused");
     await expect(statusBadge).toContainText(/paused/i);
 
-    // 4. Verify step 1 is verified and step 2 is active
+    // 4. Verify step 1 is verified and step 2 failed
     const step1 = page.locator('[data-testid="step-progress-item"][data-step-seq="1"]');
     await expect(step1).toHaveAttribute("data-step-status", "verified");
 
     const step2 = page.locator('[data-testid="step-progress-item"][data-step-seq="2"]');
-    await expect(step2).toHaveAttribute("data-step-status", "started");
+    await expect(step2).toHaveAttribute("data-step-status", "failed");
 
     // 5. Test resume action control
     const resumeBtn = page.getByTestId("resume-run-btn");
     await expect(resumeBtn).toBeVisible();
     await resumeBtn.click();
 
-    // After resume, status transitions back to running and pause banner dismisses
+    // After allow, the pause banner dismisses and the retried step lets the run complete
     await expect(pauseBanner).not.toBeVisible();
-    await expect(statusBadge).toHaveAttribute("data-status", "running");
+    await expect(page.getByTestId("completion-banner")).toBeVisible({ timeout: 15000 });
   });
 
   test("handles run.failed event with terminal failure banner and step error callout", async ({
     page,
   }) => {
     // 1. Navigate to failed workflow route
-    await page.goto("/workflows/failed/execution?mock=true&speed=50");
+    await page.goto("/runs/failed/live?speed=50");
 
     // 2. Wait for failure banner to appear
     const failureBanner = page.getByTestId("failure-banner");
@@ -120,12 +121,8 @@ test.describe("Workflow Live Execution - Interruption & Failure Handling", () =>
     await expect(failedStep.getByTestId("step-failed-icon")).toBeVisible();
     await expect(failedStep.getByTestId("step-error-callout")).toBeVisible();
 
-    // 6. Test retry action control resets execution
-    const retryBtn = page.getByTestId("retry-run-btn");
-    await expect(retryBtn).toBeVisible();
-    await retryBtn.click();
-
-    // After retry, failure banner dismisses and run transitions
-    await expect(failureBanner).not.toBeVisible();
+    // 6. A finished run is never re-streamed: no Retry button, only the way back to the plan
+    await expect(page.getByTestId("retry-run-btn")).toHaveCount(0);
+    await expect(failureBanner.getByTestId("back-to-plan-btn")).toHaveAttribute("href", "/workflows/failed/approval");
   });
 });

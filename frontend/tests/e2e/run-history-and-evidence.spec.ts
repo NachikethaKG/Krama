@@ -10,9 +10,9 @@ test.describe("Run History & Step Verification Evidence View", () => {
     const table = page.getByTestId("runs-list-table");
     await expect(table).toBeVisible();
 
-    // 3. Inspect first page (items 1–5 of 12)
+    // 3. Inspect first page (items 1–5); GET /runs is cursor-paged and has no total
     const paginationInfo = page.getByTestId("pagination-info");
-    await expect(paginationInfo).toContainText("Showing 1 to 5 of 12 runs");
+    await expect(paginationInfo).toContainText("Showing 1 to 5");
     await expect(page.getByTestId("run-row-run-1")).toBeVisible();
     await expect(page.getByTestId("run-row-run-5")).toBeVisible();
 
@@ -24,14 +24,14 @@ test.describe("Run History & Step Verification Evidence View", () => {
 
     // 5. Navigate to Page 2
     await nextBtn.click();
-    await expect(paginationInfo).toContainText("Showing 6 to 10 of 12 runs");
+    await expect(paginationInfo).toContainText("Showing 6 to 10");
     await expect(page.getByTestId("run-row-run-6")).toBeVisible();
     await expect(prevBtn).toBeEnabled();
     await expect(nextBtn).toBeEnabled();
 
     // 6. Navigate to Page 3 (last page)
     await nextBtn.click();
-    await expect(paginationInfo).toContainText("Showing 11 to 12 of 12 runs");
+    await expect(paginationInfo).toContainText("Showing 11 to 12");
     await expect(page.getByTestId("run-row-run-11")).toBeVisible();
     await expect(page.getByTestId("run-row-run-12")).toBeVisible();
 
@@ -41,7 +41,7 @@ test.describe("Run History & Step Verification Evidence View", () => {
 
     // 8. Navigate back to Page 2
     await prevBtn.click();
-    await expect(paginationInfo).toContainText("Showing 6 to 10 of 12 runs");
+    await expect(paginationInfo).toContainText("Showing 6 to 10");
     await expect(page.getByTestId("run-row-run-6")).toBeVisible();
   });
 

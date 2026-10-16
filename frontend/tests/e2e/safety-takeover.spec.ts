@@ -5,7 +5,7 @@ test.describe("Safety Baseline: Policy Confirmation Modal & Manual Takeover Scre
     page,
   }) => {
     // 1. Navigate to paused workflow route
-    await page.goto("/workflows/paused/execution?mock=true&speed=50");
+    await page.goto("/runs/paused/live?speed=50");
 
     // 2. Policy confirmation modal appears upon pause
     const modal = page.getByTestId("policy-confirmation-modal");
@@ -35,16 +35,16 @@ test.describe("Safety Baseline: Policy Confirmation Modal & Manual Takeover Scre
     await expect(allowBtn).toBeVisible();
     await allowBtn.click();
 
-    // 7. Modal dismisses and execution state transitions back to running
+    // 7. Modal dismisses; the run resumes (run.resumed) and completes
     await expect(modal).not.toBeVisible();
-    await expect(statusBadge).toHaveAttribute("data-status", "running");
+    await expect(page.getByTestId("completion-banner")).toBeVisible({ timeout: 15000 });
   });
 
   test("deny path: clicking Deny halts the destructive step and cancels the run safely", async ({
     page,
   }) => {
     // 1. Navigate to paused workflow route
-    await page.goto("/workflows/paused/execution?mock=true&speed=50");
+    await page.goto("/runs/paused/live?speed=50");
 
     // 2. Wait for policy modal to appear
     const modal = page.getByTestId("policy-confirmation-modal");
@@ -65,11 +65,21 @@ test.describe("Safety Baseline: Policy Confirmation Modal & Manual Takeover Scre
     );
   });
 
-  test("blocker path: simulated run.stopped with bot barrier displays Automation Restricted screen", async ({
+  test("Escape does not deny: the modal stays and the run stays paused", async ({ page }) => {
+    await page.goto("/runs/paused/live?speed=50");
+    const modal = page.getByTestId("policy-confirmation-modal");
+    await expect(modal).toBeVisible({ timeout: 10000 });
+    await expect(page.getByTestId("pause-banner")).toHaveCount(0);
+    await page.keyboard.press("Escape");
+    await expect(modal).toBeVisible();
+    await expect(page.getByTestId("execution-status-badge")).toHaveAttribute("data-status", "paused");
+  });
+
+  test("blocker path: a policy stop (run.failed, policy_stop) displays the Automation Restricted screen", async ({
     page,
   }) => {
-    // 1. Navigate to blocked workflow route emitting run.stopped with cloudflare_turnstile
-    await page.goto("/workflows/blocked/execution?mock=true&speed=50");
+    // 1. The blocked run ends with run.failed {error.details.reason: "policy_stop", policy_reason: "captcha"}
+    await page.goto("/runs/blocked/live?speed=50");
 
     // 2. Wait for Automation Restricted screen to appear
     const restrictedScreen = page.getByTestId("automation-restricted-screen");
@@ -79,29 +89,18 @@ test.describe("Safety Baseline: Policy Confirmation Modal & Manual Takeover Scre
     await expect(
       restrictedScreen.getByText(/Automation restricted → Take over manually/i)
     ).toBeVisible();
-    await expect(restrictedScreen.getByTestId("barrier-type-badge")).toHaveText(/Cloudflare Turnstile/i);
-    await expect(
-      restrictedScreen.getByText(/Cloudflare Turnstile challenge detected on target page/i)
-    ).toBeVisible();
+    await expect(restrictedScreen.getByTestId("barrier-type-badge")).toHaveText(/CAPTCHA/i);
+    await expect(restrictedScreen.getByText(/A CAPTCHA challenge was detected on the target page/i)).toBeVisible();
 
     // 4. Verify Open Target URL link
     const openUrlLink = restrictedScreen.getByTestId("open-target-url-btn");
     await expect(openUrlLink).toBeVisible();
-    await expect(openUrlLink).toHaveAttribute("href", "http://localhost:3001/login");
+    await expect(openUrlLink).toHaveAttribute("href", "http://localhost:3001");
     await expect(openUrlLink).toHaveAttribute("target", "_blank");
 
-    // 5. Verify takeover manual controls: Resume Execution & Abort Run
-    const resumeBtn = restrictedScreen.getByTestId("takeover-resume-btn");
-    const abortBtn = restrictedScreen.getByTestId("takeover-abort-btn");
-    await expect(resumeBtn).toBeVisible();
-    await expect(abortBtn).toBeVisible();
-
-    // 6. Click Abort Run to safely terminate blocked execution
-    await abortBtn.click();
-    await expect(page.getByTestId("cancelled-banner")).toBeVisible();
-    await expect(page.getByTestId("execution-status-badge")).toHaveAttribute(
-      "data-status",
-      "cancelled"
-    );
+    // 5. The run already failed: no Resume / Abort, only ways forward
+    await expect(restrictedScreen.getByTestId("takeover-resume-btn")).toHaveCount(0);
+    await expect(restrictedScreen.getByTestId("takeover-new-task-link")).toBeVisible();
+    await expect(page.getByTestId("execution-status-badge")).toHaveAttribute("data-status", "failed");
   });
 });
