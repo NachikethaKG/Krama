@@ -1,55 +1,24 @@
 "use client";
 
 import { useState } from "react";
-import type { ApiClient } from "@/lib/api";
-
-export interface ApprovalResult {
-  status: "approved" | "executing" | "rejected" | "cancelled";
-  workflowId: string;
-}
-
-/**
- * Executes approval transition against ApiClient data.
- */
-export async function mockApproveWorkflow(
-  client: ApiClient,
-  workflowId: string
-): Promise<ApprovalResult> {
-  // Validate workflow exists in client
-  await client.getWorkflow(workflowId);
-  return { status: "approved", workflowId };
-}
-
-/**
- * Executes rejection transition against ApiClient data.
- */
-export async function mockRejectWorkflow(
-  client: ApiClient,
-  workflowId: string,
-  reason?: string
-): Promise<ApprovalResult> {
-  void reason;
-  await client.getWorkflow(workflowId);
-  return { status: "rejected", workflowId };
-}
 
 export interface ApprovalControlsProps {
-  workflowId?: string;
-  client?: ApiClient;
+  /** The run created by POST /plans/{id}/approve; the success banner links to its live view. */
+  runId?: string | null;
   onApprove?: () => Promise<void> | void;
   onReject?: () => Promise<void> | void;
   onToggleEdit?: () => void;
   isEditing?: boolean;
   isPending?: boolean;
   disabled?: boolean;
+  /** Plan status: `proposed`, `approved` or `rejected`. */
   status?: string | null;
   error?: string | null;
   className?: string;
 }
 
 export function ApprovalControls({
-  workflowId = "default",
-  client,
+  runId,
   onApprove,
   onReject,
   onToggleEdit,
@@ -66,17 +35,15 @@ export function ApprovalControls({
   const pending = isPending || internalPending;
   const error = externalError ?? internalError;
   const isTerminal = status === "approved" || status === "executing" || status === "rejected" || status === "cancelled";
+  // Approving while editing would approve the revision the user is no longer looking at.
+  const approveDisabled = pending || disabled || isTerminal || isEditing;
 
   const handleApprove = async () => {
-    if (pending || disabled || isTerminal) return;
+    if (approveDisabled || !onApprove) return;
     setInternalError(null);
     setInternalPending(true);
     try {
-      if (onApprove) {
-        await onApprove();
-      } else if (client) {
-        await mockApproveWorkflow(client, workflowId);
-      }
+      await onApprove();
     } catch (err) {
       setInternalError(err instanceof Error ? err.message : "Failed to approve workflow plan");
     } finally {
@@ -85,15 +52,11 @@ export function ApprovalControls({
   };
 
   const handleReject = async () => {
-    if (pending || disabled || isTerminal) return;
+    if (pending || disabled || isTerminal || !onReject) return;
     setInternalError(null);
     setInternalPending(true);
     try {
-      if (onReject) {
-        await onReject();
-      } else if (client) {
-        await mockRejectWorkflow(client, workflowId);
-      }
+      await onReject();
     } catch (err) {
       setInternalError(err instanceof Error ? err.message : "Failed to reject workflow plan");
     } finally {
@@ -162,15 +125,17 @@ export function ApprovalControls({
             </svg>
             <span>Plan approved! Workflow is transitioning to execution.</span>
           </div>
-          <div>
-            <a
-              href={`/workflows/${workflowId}/execution`}
-              data-testid="live-execution-link"
-              className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 underline hover:text-emerald-900 dark:text-emerald-300 dark:hover:text-emerald-100"
-            >
-              Go to Live Execution &rarr;
-            </a>
-          </div>
+          {runId && (
+            <div>
+              <a
+                href={`/runs/${runId}/live`}
+                data-testid="live-execution-link"
+                className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 underline hover:text-emerald-900 dark:text-emerald-300 dark:hover:text-emerald-100"
+              >
+                Go to Live Execution &rarr;
+              </a>
+            </div>
+          )}
         </div>
       )}
 
@@ -243,7 +208,8 @@ export function ApprovalControls({
             type="button"
             data-testid="approve-btn"
             aria-busy={pending}
-            disabled={pending || disabled || isTerminal}
+            disabled={approveDisabled}
+            title={isEditing ? "Save your edits before approving" : undefined}
             onClick={handleApprove}
             className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-5 py-2 text-sm font-medium text-white shadow-xs transition-colors hover:bg-emerald-700 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-emerald-600 dark:hover:bg-emerald-500"
           >

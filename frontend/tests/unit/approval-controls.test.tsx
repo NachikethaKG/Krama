@@ -1,12 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-import {
-  ApprovalControls,
-  mockApproveWorkflow,
-  mockRejectWorkflow,
-} from "@/components/approval-controls";
-import { MockApiClient } from "@/lib/api";
+import { ApprovalControls } from "@/components/approval-controls";
 
 describe("ApprovalControls", () => {
   it("renders Approve, Reject, and Edit buttons", () => {
@@ -73,26 +68,17 @@ describe("ApprovalControls", () => {
     expect(screen.getByTestId("reject-btn")).toBeDisabled();
   });
 
-  describe("mockApproveWorkflow and mockRejectWorkflow helpers", () => {
-    it("approves existing workflow successfully", async () => {
-      const client = new MockApiClient();
-      const res = await mockApproveWorkflow(client, "default");
-      expect(res.status).toBe("approved");
-      expect(res.workflowId).toBe("default");
-    });
+  it("links the success banner to the live view of the RUN, not the plan", () => {
+    render(<ApprovalControls status="approved" runId="run-123" />);
+    expect(screen.getByTestId("live-execution-link")).toHaveAttribute("href", "/runs/run-123/live");
+  });
 
-    it("rejects existing workflow successfully", async () => {
-      const client = new MockApiClient();
-      const res = await mockRejectWorkflow(client, "default", "User declined");
-      expect(res.status).toBe("rejected");
-      expect(res.workflowId).toBe("default");
-    });
-
-    it("throws error when approving non-existent workflow", async () => {
-      const client = new MockApiClient();
-      await expect(mockApproveWorkflow(client, "non-existent-wf")).rejects.toThrow(
-        "Workflow not found"
-      );
-    });
+  it("disables Approve while the plan is being edited", () => {
+    const onApprove = vi.fn();
+    render(<ApprovalControls status="proposed" isEditing onToggleEdit={vi.fn()} onApprove={onApprove} />);
+    const approve = screen.getByTestId("approve-btn");
+    expect(approve).toBeDisabled();
+    fireEvent.click(approve);
+    expect(onApprove).not.toHaveBeenCalled();
   });
 });
