@@ -174,6 +174,11 @@ GITEA_ACCOUNT_SETTINGS_ARIA = "\n".join(
         '- button "Update Password"',
     ]
 )
+# The same form when its fields are labelled plainly (the old check matched exactly `textbox "Password"`).
+PLAIN_PASSWORD_SETTINGS_ARIA = (
+    '- textbox "Password"\n- textbox "Confirm Password"\n- button "Update Password"'
+)
+SETTINGS_ARIA_VARIANTS = [GITEA_ACCOUNT_SETTINGS_ARIA, PLAIN_PASSWORD_SETTINGS_ARIA]
 
 
 def _register_step() -> StepRef:
@@ -185,8 +190,9 @@ def _register_step() -> StepRef:
     )
 
 
+@pytest.mark.parametrize("aria", SETTINGS_ARIA_VARIANTS)
 @pytest.mark.anyio
-async def test_update_password_on_settings_pauses_instead_of_auth_wall_stop() -> None:
+async def test_update_password_on_settings_pauses_instead_of_auth_wall_stop(aria: str) -> None:
     """Regression: any password textbox was treated as a login wall and stopped the run."""
     step = StepRef(
         seq=4,
@@ -194,7 +200,7 @@ async def test_update_password_on_settings_pauses_instead_of_auth_wall_stop() ->
         target=Target(name="Update Password", role="button"),
         instruction_text="Click Update Password",
     )
-    page = PageState(url="/user/settings/account", title="Account", aria_excerpt=GITEA_ACCOUNT_SETTINGS_ARIA)
+    page = PageState(url="/user/settings/account", title="Account", aria_excerpt=aria)
 
     decision = await PolicyService().check_action(step, page)
 
@@ -202,8 +208,9 @@ async def test_update_password_on_settings_pauses_instead_of_auth_wall_stop() ->
     assert decision.reason == "destructive_action"
 
 
-def test_password_field_on_settings_page_is_not_auth_wall() -> None:
-    page = PageState(url="/user/settings/account", title="Account", aria_excerpt=GITEA_ACCOUNT_SETTINGS_ARIA)
+@pytest.mark.parametrize("aria", SETTINGS_ARIA_VARIANTS)
+def test_password_field_on_settings_page_is_not_auth_wall(aria: str) -> None:
+    page = PageState(url="/user/settings/account", title="Account", aria_excerpt=aria)
     assert check_barrier(page).should_stop is False
 
 
