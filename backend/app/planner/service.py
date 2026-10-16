@@ -8,6 +8,7 @@ is ever executed here.
 import asyncio
 import logging
 from collections.abc import Callable
+from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
 
@@ -18,6 +19,8 @@ from app.agent.runlog import run_script
 from app.db import PlanRow, TaskRow
 from app.llm import LLMError, LLMRateLimitedError
 from app.planner.planner import InvalidPlanError, NeedsClarificationError, Planner, PlanRequest
+from app.ports.models import ObservedState
+from app.ports.policy import Policy
 from app.targets import TargetSetup
 
 logger = logging.getLogger(__name__)
@@ -34,11 +37,14 @@ class PlanningService:
         *,
         session_config: Callable[[str], SessionConfig] = lambda url: SessionConfig(base_url=url),
         max_concurrent: int = 1,
+        policy: Policy | None = None,
     ) -> None:
+        """`policy` masks secrets in the page snapshot before it goes to the LLM (#63)."""
         self._sessions = sessions
         self._planner = planner
         self._target = target
         self._session_config = session_config
+        self._policy = policy
         self._slots = asyncio.Semaphore(max_concurrent)
         self._tasks: dict[UUID, asyncio.Task[None]] = {}
 
@@ -93,8 +99,8 @@ class PlanningService:
             request = PlanRequest(
                 task_id=task_id,
                 task=prompt,
-                start_path=executor.current_path(),
-                page_snapshot=await page_snapshot(page),
+                start_path=self._mask(executor.current_path()),
+                page_snapshot=self._mask(await page_snapshot(page)),
                 site=setup.site,
                 signed_in_as=setup.signed_in_as,
             )
@@ -130,6 +136,13 @@ class PlanningService:
             task_row = await s.get(TaskRow, task_id)
             assert task_row is not None
             task_row.status, task_row.clarification_question, task_row.error = "planned", None, None
+
+    def _mask(self, text: str) -> str:
+        """Page-derived text (snapshot, URL path) through the policy's mask before the LLM sees it."""
+        if self._policy is None:
+            return text
+        state = ObservedState(url="/", title="", aria_excerpt=text, captured_at=datetime.now(UTC))
+        return self._policy.mask(state).aria_excerpt
 
     async def _finish(self, task_id: UUID, status: str, **fields: Any) -> None:
         async with self._sessions.begin() as s:

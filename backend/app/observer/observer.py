@@ -124,7 +124,7 @@ class PageObserver(Observer):
         event_count = len(events) if events else summary.request_count
 
         return RecordingRef(
-            path=record_path or "observer/recording.json",
+            path=record_path,  # "" if nothing was stored: never point at a file that doesn't exist
             event_count=event_count,
             started_at=self._recording_started_at,
             ended_at=now,
@@ -308,6 +308,9 @@ class PageObserver(Observer):
             'input[name*="token" i]',
             'input[autocomplete="current-password"]',
             'input[autocomplete="new-password"]',
+            # Like the masking before vision calls (app/agent/vision.py): payment fields, one-time codes.
+            'input[autocomplete^="cc-"]',
+            'input[autocomplete="one-time-code"]',
         ]
         try:
             combined = ", ".join(selectors)

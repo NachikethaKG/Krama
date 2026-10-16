@@ -27,7 +27,13 @@ from app.db import WorkflowStepRow
 from app.db.base import literal_values
 from app.llm import LLMError
 from app.planner.planner import Planner, PlannerError, PlanRequest
-from app.ports.models import ObservedState, PageState, PolicyDecision
+from app.ports.models import (
+    InvalidArtifactKeyError,
+    ObservedState,
+    PageState,
+    PolicyDecision,
+    validate_artifact_key,
+)
 from app.ports.observer import Observer
 from app.ports.policy import Policy
 from app.runs.states import RunStatus
@@ -364,12 +370,12 @@ class InProcessExecutor:
         request = PlanRequest(
             task_id=job.task_id,
             task=job.prompt,
-            start_path=urlsplit(page.url).path or "/",
-            page_snapshot=await page_snapshot(page),
+            start_path=self._mask(urlsplit(page.url).path or "/"),
+            page_snapshot=await self._masked_snapshot(page),
             site=setup.site,
             signed_in_as=setup.signed_in_as,
             done=[s.instruction_text for s in steps[:i]],
-            failure=_failure_text(failed, out),
+            failure=self._mask(_failure_text(failed, out)),
         )
         try:
             result = await env.planner.plan(request)
@@ -381,6 +387,18 @@ class InProcessExecutor:
             job, [*steps[:i], *new_steps], expected_result=result.plan.expected_result
         )
         return new_steps, plan_id
+
+    async def _masked_snapshot(self, page: Page) -> str:
+        """The page's ARIA snapshot with secrets masked by the policy (#63) before it goes to an LLM."""
+        return self._mask(await page_snapshot(page))
+
+    def _mask(self, text: str) -> str:
+        """Page-derived text (snapshot, URL path, failure details) through the policy's mask, before any LLM
+        sees it. Tokens can sit in a URL as easily as on the page."""
+        if self._env.policy is None:
+            return text
+        state = ObservedState(url="/", title="", aria_excerpt=text, captured_at=datetime.now(UTC))
+        return self._env.policy.mask(state).aria_excerpt
 
     async def _allowed(self, job: RunJob, step: PlannedStep, before: ObservedState) -> bool:
         """Ask the policy before acting (AGENTS.md §4). True to go ahead; False if the run stopped."""
@@ -478,9 +496,18 @@ class InProcessExecutor:
         )
 
     def _artifact_key(self, path: str | None) -> str | None:
-        """The observer writes files under ARTIFACTS_DIR; the API serves them by their relative key."""
+        """The key the API serves an observer artifact by (`/api/v1/artifacts/<key>`).
+
+        An observer backed by the ArtifactStore (#50) returns keys; one writing to a folder returns file
+        paths under ARTIFACTS_DIR. Anything else (absolute paths elsewhere, unsafe keys) is never exposed.
+        """
         if not path:
             return None
+        if not Path(path).is_absolute():
+            try:
+                return validate_artifact_key(path.replace("\\", "/"))
+            except InvalidArtifactKeyError:
+                return None
         try:
             return Path(path).resolve().relative_to(self._env.artifacts_dir.resolve()).as_posix()
         except ValueError:
