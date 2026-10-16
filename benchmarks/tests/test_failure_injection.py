@@ -6,17 +6,17 @@ import io
 from pathlib import Path
 
 import pytest
-from app.contracts_gen.common_schema import (  # type: ignore[import-untyped]
+from app.contracts_gen.common_schema import (
     ExpectedState,
 )
-from app.contracts_gen.step_schema import (  # type: ignore[import-untyped]
+from app.contracts_gen.step_schema import (
     StepVerification,
 )
-from app.verifier.layered import (  # type: ignore[import-untyped]
+from app.verifier.layered import (
     LayeredVerifier,
     StepEvidence,
 )
-from app.verifier.verifier import (  # type: ignore[import-untyped]
+from app.verifier.verifier import (
     Check,
     RuleVerifier,
     VerificationOutcome,
@@ -161,7 +161,7 @@ async def test_evaluator_with_layered_verifier() -> None:
         "unexpected_dialog",
         "wrong_form_value",
     ):
-        type_metric = report.by_type[ft]  # type: ignore[index]
+        type_metric = report.by_type[ft]
         assert type_metric.recall == 1.0
         assert type_metric.false_alarm_rate == 0.0
         assert type_metric.true_positives == type_metric.injected_failures

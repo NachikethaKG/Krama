@@ -8,10 +8,10 @@ from collections.abc import Sequence
 from datetime import UTC, datetime
 from typing import Any
 
-from app.contracts_gen.common_schema import (  # type: ignore[import-untyped]
+from app.contracts_gen.common_schema import (
     ExpectedState,
 )
-from app.verifier.layered import (  # type: ignore[import-untyped]
+from app.verifier.layered import (
     LayeredVerifier,
     StepEvidence,
 )
@@ -43,7 +43,7 @@ class FailureInjectionEvaluator:
     async def _call_verifier(
         self, expected: ExpectedState, evidence: StepEvidence
     ) -> Any:
-        from app.verifier.verifier import RuleVerifier  # type: ignore[import-untyped]
+        from app.verifier.verifier import RuleVerifier
 
         v: Any = self.verifier
         if isinstance(v, RuleVerifier):

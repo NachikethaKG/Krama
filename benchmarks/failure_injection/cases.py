@@ -13,7 +13,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
-from app.contracts_gen.common_schema import (  # type: ignore[import-untyped]
+from app.contracts_gen.common_schema import (
     Action,
     ActionType,
     ElementRef,
@@ -21,8 +21,8 @@ from app.contracts_gen.common_schema import (  # type: ignore[import-untyped]
     FieldValue,
     Target,
 )
-from app.ports.models import ObservedState  # type: ignore[import-untyped]
-from app.verifier.layered import StepEvidence  # type: ignore[import-untyped]
+from app.ports.models import ObservedState
+from app.verifier.layered import StepEvidence
 
 from benchmarks.failure_injection.models import FailureCase
 

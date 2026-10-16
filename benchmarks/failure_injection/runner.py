@@ -14,8 +14,8 @@ import sys
 from collections.abc import Sequence
 from pathlib import Path
 
-from app.verifier.layered import LayeredVerifier  # type: ignore[import-untyped]
-from app.verifier.verifier import RuleVerifier  # type: ignore[import-untyped]
+from app.verifier.layered import LayeredVerifier
+from app.verifier.verifier import RuleVerifier
 
 from benchmarks.failure_injection.cases import ALL_CASES
 from benchmarks.failure_injection.evaluator import FailureInjectionEvaluator
