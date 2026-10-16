@@ -77,6 +77,12 @@ jobs:
         run: uv run pytest
         env:
           LLM_PROVIDER: fake
+      # The benchmarks (Nachiketha's, benchmarks/) live outside backend/, so the steps above never see them.
+      - if: steps.exists.outputs.yes == 'true'
+        name: Benchmarks (mypy, tests)
+        run: uv run mypy ../benchmarks && uv run pytest ../benchmarks/tests -o addopts=""
+        env:
+          LLM_PROVIDER: fake
           DATABASE_URL: postgresql+asyncpg://krama:krama-local-only@localhost:5433/krama
           # A missing database fails the DB tests here instead of skipping them (locally they skip).
           KRAMA_REQUIRE_DB: "1"
