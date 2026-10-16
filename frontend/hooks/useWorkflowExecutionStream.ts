@@ -13,7 +13,14 @@ import type {
 
 import { type ApiClient, getApiClient } from "@/lib/api";
 
-export type RunExecutionStatus = "idle" | "running" | "paused" | "failed" | "completed" | "cancelled";
+export type RunExecutionStatus =
+  | "idle"
+  | "running"
+  | "paused"
+  | "failed"
+  | "completed"
+  | "cancelled"
+  | "stopped";
 export type StepStatus = "pending" | "started" | "verified" | "failed";
 export type ReplanStatus =
   | "idle"
@@ -22,6 +29,14 @@ export type ReplanStatus =
   | "replanning"
   | "exhausted"
   | "succeeded";
+
+export interface BarrierDetails {
+  barrierType: string;
+  reason?: string;
+  message?: string;
+  targetUrl?: string;
+  stepSeq?: number | null;
+}
 
 export interface ReplanState {
   status: ReplanStatus;
@@ -108,6 +123,7 @@ export interface UseWorkflowExecutionStreamResult {
   stepStates: Record<number, StepExecutionState>;
   activeStepSeq: number | null;
   pauseDetails: PauseDetails | null;
+  barrierDetails: BarrierDetails | null;
   runError: ApiError | null;
   replanState: ReplanState;
   elapsedSeconds: number;
@@ -160,6 +176,7 @@ export function useWorkflowExecutionStream({
   const [runStatus, setRunStatus] = useState<RunExecutionStatus>("idle");
   const [activeStepSeq, setActiveStepSeq] = useState<number | null>(null);
   const [pauseDetails, setPauseDetails] = useState<PauseDetails | null>(null);
+  const [barrierDetails, setBarrierDetails] = useState<BarrierDetails | null>(null);
   const [runError, setRunError] = useState<ApiError | null>(null);
   const [replanState, setReplanState] = useState<ReplanState>({
     status: "idle",
@@ -182,9 +199,13 @@ export function useWorkflowExecutionStream({
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const isStreamingRef = useRef<boolean>(false);
   const workflowRef = useRef<Workflow | null>(workflow);
+  const activeStepSeqRef = useRef<number | null>(activeStepSeq);
   useEffect(() => {
     workflowRef.current = workflow;
   }, [workflow]);
+  useEffect(() => {
+    activeStepSeqRef.current = activeStepSeq;
+  }, [activeStepSeq]);
 
   // Fetch workflow details if not supplied
   useEffect(() => {
@@ -249,17 +270,19 @@ export function useWorkflowExecutionStream({
       }
 
       case "step.started": {
+        const wfStep = workflowRef.current?.steps?.find((s) => s.seq === event.step_seq);
         setActiveStepSeq(event.step_seq);
         setStepStates((prev) => ({
           ...prev,
           [event.step_seq]: {
             ...(prev[event.step_seq] ?? {
               seq: event.step_seq,
-              risk: "low",
+              risk: wfStep?.risk || "low",
             }),
             seq: event.step_seq,
             status: "started",
             instructionText: event.instruction_text || prev[event.step_seq]?.instructionText || "",
+            risk: prev[event.step_seq]?.risk || wfStep?.risk || "low",
           },
         }));
         break;
@@ -353,6 +376,19 @@ export function useWorkflowExecutionStream({
           stepSeq: event.step_seq,
           message: event.message,
         });
+        if (event.reason === "captcha" || event.reason === "auth_wall") {
+          setBarrierDetails({
+            barrierType: event.reason,
+            reason: event.reason,
+            message:
+              event.message ||
+              (event.reason === "captcha"
+                ? "A bot detection or CAPTCHA was encountered and requires human intervention."
+                : "An authentication barrier was reached and requires manual sign-in."),
+            targetUrl: workflowRef.current?.target_url || "http://localhost:3001",
+            stepSeq: event.step_seq,
+          });
+        }
         if (event.reason === "recovery_exhausted") {
           setReplanState((prev) => ({
             ...prev,
@@ -372,9 +408,32 @@ export function useWorkflowExecutionStream({
       case "run.resumed": {
         setRunStatus("running");
         setPauseDetails(null);
+        setBarrierDetails(null);
         setReplanState((prev) =>
           prev.status === "exhausted" ? { ...prev, status: "idle" } : prev
         );
+        break;
+      }
+
+      case "run.stopped" as string: {
+        const ev = event as unknown as {
+          barrier_type?: string;
+          barrier?: string;
+          reason?: string;
+          message?: string;
+          target_url?: string;
+          step_seq?: number;
+        };
+        setRunStatus("stopped");
+        setBarrierDetails({
+          barrierType: ev.barrier_type || ev.barrier || "cloudflare_turnstile",
+          reason: ev.reason,
+          message:
+            ev.message ||
+            "Cloudflare Turnstile challenge detected on target page. Automation restricted per safety baseline.",
+          targetUrl: ev.target_url || workflowRef.current?.target_url || "http://localhost:3001/login",
+          stepSeq: ev.step_seq ?? activeStepSeqRef.current,
+        });
         break;
       }
 
@@ -469,6 +528,8 @@ export function useWorkflowExecutionStream({
     }
     isStreamingRef.current = false;
     setRunStatus("cancelled");
+    setPauseDetails(null);
+    setBarrierDetails(null);
     setActiveStepSeq(null);
     try {
       const runId = workflow?.run_id || workflow?.id || workflowId;
@@ -491,6 +552,7 @@ export function useWorkflowExecutionStream({
       if (decision === "allow") {
         setRunStatus("running");
         setPauseDetails(null);
+        setBarrierDetails(null);
       } else {
         if (abortControllerRef.current) {
           abortControllerRef.current.abort();
@@ -498,10 +560,13 @@ export function useWorkflowExecutionStream({
         isStreamingRef.current = false;
         setRunStatus("cancelled");
         setPauseDetails(null);
+        setBarrierDetails(null);
         setActiveStepSeq(null);
       }
       try {
-        if (typeof apiClient.confirmRun === "function") {
+        if (typeof apiClient.confirmRunAction === "function") {
+          await apiClient.confirmRunAction(runId, decision, stepSeq);
+        } else if (typeof apiClient.confirmRun === "function") {
           await apiClient.confirmRun(runId, stepSeq, decision);
         }
       } catch (err: unknown) {
@@ -516,9 +581,14 @@ export function useWorkflowExecutionStream({
   const resume = useCallback(() => {
     setRunStatus("running");
     setPauseDetails(null);
-    if (pauseDetails && typeof apiClient.confirmRun === "function") {
-      const stepSeq = pauseDetails.stepSeq;
-      const runId = workflow?.run_id || workflow?.id || workflowId;
+    setBarrierDetails(null);
+    const stepSeq = pauseDetails?.stepSeq ?? 1;
+    const runId = workflow?.run_id || workflow?.id || workflowId;
+    if (typeof apiClient.confirmRunAction === "function") {
+      apiClient.confirmRunAction(runId, "allow", stepSeq).catch((err: unknown) => {
+        setError(err instanceof Error ? err.message : "Failed to confirm run (allow)");
+      });
+    } else if (typeof apiClient.confirmRun === "function") {
       apiClient.confirmRun(runId, stepSeq, "allow").catch((err: unknown) => {
         setError(err instanceof Error ? err.message : "Failed to confirm run (allow)");
       });
@@ -532,10 +602,15 @@ export function useWorkflowExecutionStream({
     isStreamingRef.current = false;
     setRunStatus("cancelled");
     setPauseDetails(null);
+    setBarrierDetails(null);
     setActiveStepSeq(null);
-    if (pauseDetails && typeof apiClient.confirmRun === "function") {
-      const stepSeq = pauseDetails.stepSeq;
-      const runId = workflow?.run_id || workflow?.id || workflowId;
+    const stepSeq = pauseDetails?.stepSeq ?? 1;
+    const runId = workflow?.run_id || workflow?.id || workflowId;
+    if (typeof apiClient.confirmRunAction === "function") {
+      apiClient.confirmRunAction(runId, "deny", stepSeq).catch((err: unknown) => {
+        setError(err instanceof Error ? err.message : "Failed to confirm run (deny)");
+      });
+    } else if (typeof apiClient.confirmRun === "function") {
       apiClient.confirmRun(runId, stepSeq, "deny").catch((err: unknown) => {
         setError(err instanceof Error ? err.message : "Failed to confirm run (deny)");
       });
@@ -550,6 +625,7 @@ export function useWorkflowExecutionStream({
     setRunStatus("idle");
     setActiveStepSeq(null);
     setPauseDetails(null);
+    setBarrierDetails(null);
     setRunError(null);
     setElapsedSeconds(0);
     setReplanState({
@@ -610,6 +686,7 @@ export function useWorkflowExecutionStream({
     stepStates,
     activeStepSeq,
     pauseDetails,
+    barrierDetails,
     runError,
     replanState,
     elapsedSeconds,
