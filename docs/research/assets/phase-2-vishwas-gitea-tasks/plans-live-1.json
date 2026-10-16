@@ -1,0 +1,150 @@
+{
+  "create-issue": {
+    "model": "gemini-2.5-flash",
+    "passed": false,
+    "steps": [
+      {
+        "seq": 1,
+        "instruction_text": "Navigate to the 'krama-research-tasks' repository page.",
+        "action": {
+          "type": "click",
+          "value": null
+        },
+        "target": {
+          "role": "link",
+          "name": "demo/krama-research-tasks",
+          "selector": null
+        },
+        "ok": false,
+        "strategy": null,
+        "error": {
+          "code": "ambiguous_target",
+          "message": "several elements match role=link name='demo/krama-research-tasks' and none could be picked"
+        }
+      }
+    ]
+  },
+  "create-branch": {
+    "model": "gemini-2.5-flash",
+    "passed": false,
+    "steps": [
+      {
+        "seq": 1,
+        "instruction_text": "Navigate to the krama-research-tasks repository page.",
+        "action": {
+          "type": "click",
+          "value": null
+        },
+        "target": {
+          "role": "link",
+          "name": "demo/krama-research-tasks",
+          "selector": null
+        },
+        "ok": false,
+        "strategy": null,
+        "error": {
+          "code": "ambiguous_target",
+          "message": "several elements match role=link name='demo/krama-research-tasks' and none could be picked"
+        }
+      }
+    ]
+  },
+  "add-file": {
+    "model": "gemini-2.5-flash",
+    "passed": false,
+    "steps": [
+      {
+        "seq": 1,
+        "instruction_text": "Navigate to the krama-research-tasks repository page.",
+        "action": {
+          "type": "navigate",
+          "value": "/demo/krama-research-tasks"
+        },
+        "target": {
+          "role": null,
+          "name": null,
+          "selector": null
+        },
+        "ok": true,
+        "strategy": null,
+        "error": null
+      },
+      {
+        "seq": 2,
+        "instruction_text": "Click the 'Add file' button to create a new file.",
+        "action": {
+          "type": "click",
+          "value": null
+        },
+        "target": {
+          "role": "button",
+          "name": "Add file",
+          "selector": null
+        },
+        "ok": true,
+        "strategy": "text",
+        "error": null
+      },
+      {
+        "seq": 3,
+        "instruction_text": "Click 'New file' to open the file creation interface.",
+        "action": {
+          "type": "click",
+          "value": null
+        },
+        "target": {
+          "role": "link",
+          "name": "New file",
+          "selector": null
+        },
+        "ok": true,
+        "strategy": "text",
+        "error": null
+      },
+      {
+        "seq": 4,
+        "instruction_text": "Enter 'docs/notes.md' as the file path.",
+        "action": {
+          "type": "fill",
+          "value": "docs/notes.md"
+        },
+        "target": {
+          "role": "textbox",
+          "name": "File name",
+          "selector": null
+        },
+        "ok": false,
+        "strategy": null,
+        "error": {
+          "code": "target_not_found",
+          "message": "no visible element for role=textbox name='File name'"
+        }
+      }
+    ]
+  },
+  "repo-settings": {
+    "model": "gemini-2.5-flash",
+    "passed": false,
+    "steps": [
+      {
+        "seq": 1,
+        "instruction_text": "Click the link to the 'krama-research-tasks' repository.",
+        "action": {
+          "type": "click",
+          "value": null
+        },
+        "target": {
+          "role": "link",
+          "name": "demo/krama-research-tasks",
+          "selector": null
+        },
+        "ok": false,
+        "strategy": null,
+        "error": {
+          "code": "ambiguous_target",
+          "message": "several elements match role=link name='demo/krama-research-tasks' and none could be picked"
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,119 @@
+- navigation "Navigation Bar":
+  - link "Dashboard":
+    - /url: /
+  - link "Issues":
+    - /url: /issues
+  - link "Pull Requests":
+    - /url: /pulls
+  - link "Milestones":
+    - /url: /milestones
+  - link "Explore":
+    - /url: /explore/repos
+  - link "Notifications":
+    - /url: /notifications
+  - menu "Create…"
+  - menu "Profile and Settings…":
+    - img "demo"
+- main "demo/krama-research-tasks":
+  - link "demo":
+    - /url: /demo
+  - text: /
+  - link "krama-research-tasks":
+    - /url: /demo/krama-research-tasks
+  - link "RSS Feed":
+    - /url: /demo/krama-research-tasks.rss
+  - button "Unwatch"
+  - link "1":
+    - /url: /demo/krama-research-tasks/watchers
+  - button "Star"
+  - link "0":
+    - /url: /demo/krama-research-tasks/stars
+  - text: Fork
+  - link "0":
+    - /url: /demo/krama-research-tasks/forks
+  - navigation:
+    - link "Code":
+      - /url: /demo/krama-research-tasks
+    - link "Issues":
+      - /url: /demo/krama-research-tasks/issues
+    - link "Pull Requests":
+      - /url: /demo/krama-research-tasks/pulls
+    - link "Actions":
+      - /url: /demo/krama-research-tasks/actions
+    - link "Packages":
+      - /url: /demo/krama-research-tasks/packages
+    - link "Projects":
+      - /url: /demo/krama-research-tasks/projects
+    - link "Releases":
+      - /url: /demo/krama-research-tasks/releases
+    - link "Wiki":
+      - /url: /demo/krama-research-tasks/wiki
+    - link "Activity":
+      - /url: /demo/krama-research-tasks/activity
+    - link "Settings":
+      - /url: /demo/krama-research-tasks/settings
+  - button "Manage Topics"
+  - link "1 Commit":
+    - /url: /demo/krama-research-tasks/commits/branch/main
+  - link "1 Branch":
+    - /url: /demo/krama-research-tasks/branches
+  - link "0 Tags":
+    - /url: /demo/krama-research-tasks/tags
+  - text: 23 KiB
+  - strong: main
+  - button "New Pull Request"
+  - link "Go to file":
+    - /url: /demo/krama-research-tasks/find/branch/main
+  - menu: Add File
+  - textbox "Search code..."
+  - button "Search..."
+  - button "HTTP"
+  - textbox: http://127.0.0.1:3001/demo/krama-research-tasks.git
+  - button "Copy URL"
+  - menu "More Operations"
+  - table:
+    - rowgroup:
+      - row "demo demo 71841cff13 Initial commit Oct 16, 2026, 20:18 GMT+5:30":
+        - columnheader "demo demo 71841cff13 Initial commit":
+          - img "demo"
+          - link "demo":
+            - /url: /demo
+            - strong: demo
+          - link "71841cff13":
+            - /url: /demo/krama-research-tasks/commit/71841cff13abadf16f0195092bdfd3771616d423
+          - link "Initial commit":
+            - /url: /demo/krama-research-tasks/commit/71841cff13abadf16f0195092bdfd3771616d423
+        - columnheader "Oct 16, 2026, 20:18 GMT+5:30": 2026-10-16 14:48:39 +00:00now
+    - rowgroup:
+      - row "README.md Initial commit Oct 16, 2026, 20:18 GMT+5:30":
+        - cell "README.md":
+          - link "README.md":
+            - /url: /demo/krama-research-tasks/src/branch/main/README.md
+        - cell "Initial commit":
+          - link "Initial commit":
+            - /url: /demo/krama-research-tasks/commit/71841cff13abadf16f0195092bdfd3771616d423
+        - cell "Oct 16, 2026, 20:18 GMT+5:30": 2026-10-16 14:48:39 +00:00now
+  - heading "README.md Edit File" [level=4]:
+    - strong:
+      - link "README.md":
+        - /url: "#readme"
+    - link "Edit File":
+      - /url: /demo/krama-research-tasks/_edit/main//README.md
+  - heading "krama-research-tasks" [level=1]:
+    - link:
+      - /url: "#krama-research-tasks"
+    - text: krama-research-tasks
+- group "Footer":
+  - contentinfo "About Software":
+    - link "Powered by Gitea":
+      - /url: https://about.gitea.com
+    - text: "Version: 1.22.6 Page:"
+    - strong: 847ms
+    - text: "Template:"
+    - strong: 99ms
+  - group "Links":
+    - menu: English
+    - link "Licenses":
+      - /url: /assets/licenses.txt
+    - link "API":
+      - /url: /api/swagger

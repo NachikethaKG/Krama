@@ -1,0 +1,101 @@
+- navigation "Navigation Bar":
+  - link "Dashboard":
+    - /url: /
+  - link "Issues":
+    - /url: /issues
+  - link "Pull Requests":
+    - /url: /pulls
+  - link "Milestones":
+    - /url: /milestones
+  - link "Explore":
+    - /url: /explore/repos
+  - link "Notifications":
+    - /url: /notifications
+  - menu "Create…"
+  - menu "Profile and Settings…":
+    - img "demo"
+- main "New Issue":
+  - link "demo":
+    - /url: /demo
+  - text: /
+  - link "krama-research-tasks":
+    - /url: /demo/krama-research-tasks
+  - link "RSS Feed":
+    - /url: /demo/krama-research-tasks.rss
+  - button "Unwatch"
+  - link "1":
+    - /url: /demo/krama-research-tasks/watchers
+  - button "Star"
+  - link "0":
+    - /url: /demo/krama-research-tasks/stars
+  - text: Fork
+  - link "0":
+    - /url: /demo/krama-research-tasks/forks
+  - navigation:
+    - link "Code":
+      - /url: /demo/krama-research-tasks
+    - link "Issues":
+      - /url: /demo/krama-research-tasks/issues
+    - link "Pull Requests":
+      - /url: /demo/krama-research-tasks/pulls
+    - link "Actions":
+      - /url: /demo/krama-research-tasks/actions
+    - link "Packages":
+      - /url: /demo/krama-research-tasks/packages
+    - link "Projects":
+      - /url: /demo/krama-research-tasks/projects
+    - link "Releases":
+      - /url: /demo/krama-research-tasks/releases
+    - link "Wiki":
+      - /url: /demo/krama-research-tasks/wiki
+    - link "Activity":
+      - /url: /demo/krama-research-tasks/activity
+    - link "Settings":
+      - /url: /demo/krama-research-tasks/settings
+  - img "demo"
+  - textbox "Title"
+  - text: Write Preview
+  - toolbar:
+    - button "Add heading"
+    - button "Add bold text"
+    - button "Add italic text"
+    - button "Quote text"
+    - button "Add code"
+    - button "Add a link"
+    - button "Add a bullet list"
+    - button "Add a numbered list"
+    - button "Add a list of tasks"
+    - button "Mention a user or team"
+    - button "Reference an issue or pull request"
+    - button
+    - button "Use the legacy editor instead"
+  - textbox "Leave a comment"
+  - button "Drop files or click here to upload."
+  - button "Create Issue"
+  - combobox: No Branch/Tag Specified
+  - menu:
+    - strong: Labels
+  - text: No Label
+  - menu:
+    - strong: Milestone
+  - text: No Milestone
+  - menu:
+    - strong: Projects
+  - text: No project
+  - combobox:
+    - strong: Assignees
+  - text: No Assignees
+- group "Footer":
+  - contentinfo "About Software":
+    - link "Powered by Gitea":
+      - /url: https://about.gitea.com
+    - text: "Version: 1.22.6 Page:"
+    - strong: 50ms
+    - text: "Template:"
+    - strong: 5ms
+  - group "Links":
+    - menu: English
+    - link "Licenses":
+      - /url: /assets/licenses.txt
+    - link "API":
+      - /url: /api/swagger

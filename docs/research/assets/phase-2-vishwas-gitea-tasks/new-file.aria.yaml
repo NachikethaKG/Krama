@@ -1,0 +1,97 @@
+- navigation "Navigation Bar":
+  - link "Dashboard":
+    - /url: /
+  - link "Issues":
+    - /url: /issues
+  - link "Pull Requests":
+    - /url: /pulls
+  - link "Milestones":
+    - /url: /milestones
+  - link "Explore":
+    - /url: /explore/repos
+  - link "Notifications":
+    - /url: /notifications
+  - menu "Create…"
+  - menu "Profile and Settings…":
+    - img "demo"
+- main "demo/krama-research-tasks":
+  - link "demo":
+    - /url: /demo
+  - text: /
+  - link "krama-research-tasks":
+    - /url: /demo/krama-research-tasks
+  - link "RSS Feed":
+    - /url: /demo/krama-research-tasks.rss
+  - button "Unwatch"
+  - link "1":
+    - /url: /demo/krama-research-tasks/watchers
+  - button "Star"
+  - link "0":
+    - /url: /demo/krama-research-tasks/stars
+  - text: Fork
+  - link "0":
+    - /url: /demo/krama-research-tasks/forks
+  - navigation:
+    - link "Code":
+      - /url: /demo/krama-research-tasks
+    - link "Issues":
+      - /url: /demo/krama-research-tasks/issues
+    - link "Pull Requests":
+      - /url: /demo/krama-research-tasks/pulls
+    - link "Actions":
+      - /url: /demo/krama-research-tasks/actions
+    - link "Packages":
+      - /url: /demo/krama-research-tasks/packages
+    - link "Projects":
+      - /url: /demo/krama-research-tasks/projects
+    - link "Releases":
+      - /url: /demo/krama-research-tasks/releases
+    - link "Wiki":
+      - /url: /demo/krama-research-tasks/wiki
+    - link "Activity":
+      - /url: /demo/krama-research-tasks/activity
+    - link "Settings":
+      - /url: /demo/krama-research-tasks/settings
+  - link "krama-research-tasks":
+    - /url: /demo/krama-research-tasks/src/branch/main
+  - text: /
+  - textbox "Name your file…"
+  - text: or
+  - link "Cancel":
+    - /url: /demo/krama-research-tasks/src/branch/main
+  - text: New File
+  - code:
+    - textbox "Editor content;Press Alt+F1 for Accessibility Options."
+  - img "demo"
+  - heading "Commit Changes" [level=3]
+  - 'textbox "Add ''{filename}''"'
+  - textbox "Add an optional extended description…"
+  - checkbox "Add a Signed-off-by trailer by the committer at the end of the commit log message."
+  - text: Add a Signed-off-by trailer by the committer at the end of the commit log message.
+  - radio "Commit directly to the main branch." [checked]
+  - text: Commit directly to the
+  - strong: main
+  - text: branch.
+  - radio "Create a new branch for this commit and start a pull request."
+  - text: Create a
+  - strong: new branch
+  - text: for this commit and start a pull request.
+  - button "Commit Changes" [disabled]
+  - link "Cancel":
+    - /url: /demo/krama-research-tasks/src/branch/main/
+- group "Footer":
+  - contentinfo "About Software":
+    - link "Powered by Gitea":
+      - /url: https://about.gitea.com
+    - text: "Version: 1.22.6 Page:"
+    - strong: 25ms
+    - text: "Template:"
+    - strong: 9ms
+  - group "Links":
+    - menu: English
+    - link "Licenses":
+      - /url: /assets/licenses.txt
+    - link "API":
+      - /url: /api/swagger
+- alert
+- alert

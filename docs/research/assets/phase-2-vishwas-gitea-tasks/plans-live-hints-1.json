@@ -1,0 +1,282 @@
+{
+  "create-issue": {
+    "model": "gemini-2.5-flash",
+    "passed": true,
+    "steps": [
+      {
+        "seq": 1,
+        "instruction_text": "Navigate to the new issue page for the 'krama-research-tasks' repository.",
+        "action": {
+          "type": "navigate",
+          "value": "/demo/krama-research-tasks/issues/new"
+        },
+        "target": {
+          "role": null,
+          "name": null,
+          "selector": null
+        },
+        "ok": true,
+        "strategy": null,
+        "error": null
+      },
+      {
+        "seq": 2,
+        "instruction_text": "Fill the 'Title' field with 'Login page shows a blank screen'.",
+        "action": {
+          "type": "fill",
+          "value": "Login page shows a blank screen"
+        },
+        "target": {
+          "role": "textbox",
+          "name": "Title",
+          "selector": null
+        },
+        "ok": true,
+        "strategy": "role",
+        "error": null
+      },
+      {
+        "seq": 3,
+        "instruction_text": "Click the 'Create Issue' button to submit the new issue.",
+        "action": {
+          "type": "click",
+          "value": null
+        },
+        "target": {
+          "role": "button",
+          "name": "Create Issue",
+          "selector": null
+        },
+        "ok": true,
+        "strategy": "role",
+        "error": null
+      }
+    ]
+  },
+  "create-branch": {
+    "model": "gemini-2.5-flash",
+    "passed": true,
+    "steps": [
+      {
+        "seq": 1,
+        "instruction_text": "Navigate to the krama-research-tasks repository page.",
+        "action": {
+          "type": "navigate",
+          "value": "/demo/krama-research-tasks"
+        },
+        "target": {
+          "role": null,
+          "name": null,
+          "selector": null
+        },
+        "ok": true,
+        "strategy": null,
+        "error": null
+      },
+      {
+        "seq": 2,
+        "instruction_text": "Navigate to the branches page of the repository.",
+        "action": {
+          "type": "navigate",
+          "value": "/demo/krama-research-tasks/branches"
+        },
+        "target": {
+          "role": null,
+          "name": null,
+          "selector": null
+        },
+        "ok": true,
+        "strategy": null,
+        "error": null
+      },
+      {
+        "seq": 3,
+        "instruction_text": "Click the button to create a new branch from 'main'.",
+        "action": {
+          "type": "click",
+          "value": null
+        },
+        "target": {
+          "role": "button",
+          "name": "Create new branch from \"main\"",
+          "selector": null
+        },
+        "ok": true,
+        "strategy": "role",
+        "error": null
+      },
+      {
+        "seq": 4,
+        "instruction_text": "Enter 'feature-docs' as the new branch name.",
+        "action": {
+          "type": "fill",
+          "value": "feature-docs"
+        },
+        "target": {
+          "role": "textbox",
+          "name": "Branch Name *",
+          "selector": null
+        },
+        "ok": true,
+        "strategy": "role",
+        "error": null
+      },
+      {
+        "seq": 5,
+        "instruction_text": "Click 'Confirm' to create the new branch.",
+        "action": {
+          "type": "click",
+          "value": null
+        },
+        "target": {
+          "role": "button",
+          "name": "Confirm",
+          "selector": null
+        },
+        "ok": true,
+        "strategy": "role",
+        "error": null
+      }
+    ]
+  },
+  "add-file": {
+    "model": "gemini-2.5-flash",
+    "passed": true,
+    "steps": [
+      {
+        "seq": 1,
+        "instruction_text": "Navigate to the 'krama-research-tasks' repository page.",
+        "action": {
+          "type": "navigate",
+          "value": "/demo/krama-research-tasks"
+        },
+        "target": {
+          "role": null,
+          "name": null,
+          "selector": null
+        },
+        "ok": true,
+        "strategy": null,
+        "error": null
+      },
+      {
+        "seq": 2,
+        "instruction_text": "Navigate to the new file creation page for the main branch.",
+        "action": {
+          "type": "navigate",
+          "value": "/demo/krama-research-tasks/_new/main/"
+        },
+        "target": {
+          "role": null,
+          "name": null,
+          "selector": null
+        },
+        "ok": true,
+        "strategy": null,
+        "error": null
+      },
+      {
+        "seq": 3,
+        "instruction_text": "Enter the file path 'docs/notes.md' into the 'Name your file\u2026' textbox.",
+        "action": {
+          "type": "fill",
+          "value": "docs/notes.md"
+        },
+        "target": {
+          "role": "textbox",
+          "name": "Name your file\u2026",
+          "selector": null
+        },
+        "ok": true,
+        "strategy": "role",
+        "error": null
+      },
+      {
+        "seq": 4,
+        "instruction_text": "Enter 'First note' into the 'Editor content' textbox.",
+        "action": {
+          "type": "fill",
+          "value": "First note"
+        },
+        "target": {
+          "role": "textbox",
+          "name": "Editor content",
+          "selector": null
+        },
+        "ok": true,
+        "strategy": "role",
+        "error": null
+      },
+      {
+        "seq": 5,
+        "instruction_text": "Click the 'Commit Changes' button to create the file.",
+        "action": {
+          "type": "click",
+          "value": null
+        },
+        "target": {
+          "role": "button",
+          "name": "Commit Changes",
+          "selector": null
+        },
+        "ok": true,
+        "strategy": "role",
+        "error": null
+      }
+    ]
+  },
+  "repo-settings": {
+    "model": "gemini-2.5-flash",
+    "passed": true,
+    "steps": [
+      {
+        "seq": 1,
+        "instruction_text": "Navigate to the settings page for the 'krama-research-tasks' repository.",
+        "action": {
+          "type": "navigate",
+          "value": "/demo/krama-research-tasks/settings"
+        },
+        "target": {
+          "role": null,
+          "name": null,
+          "selector": null
+        },
+        "ok": true,
+        "strategy": null,
+        "error": null
+      },
+      {
+        "seq": 2,
+        "instruction_text": "Fill the description field with 'Docs for the team'.",
+        "action": {
+          "type": "fill",
+          "value": "Docs for the team"
+        },
+        "target": {
+          "role": "textbox",
+          "name": "Description",
+          "selector": null
+        },
+        "ok": true,
+        "strategy": "role",
+        "error": null
+      },
+      {
+        "seq": 3,
+        "instruction_text": "Click the 'Update Settings' button to save the new description.",
+        "action": {
+          "type": "click",
+          "value": null
+        },
+        "target": {
+          "role": "button",
+          "name": "Update Settings",
+          "selector": "form:has(textarea#description) button.primary"
+        },
+        "ok": true,
+        "strategy": "selector",
+        "error": null
+      }
+    ]
+  }
+}

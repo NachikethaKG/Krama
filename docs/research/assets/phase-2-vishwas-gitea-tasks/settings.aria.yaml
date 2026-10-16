@@ -1,0 +1,243 @@
+- navigation "Navigation Bar":
+  - link "Dashboard":
+    - /url: /
+  - link "Issues":
+    - /url: /issues
+  - link "Pull Requests":
+    - /url: /pulls
+  - link "Milestones":
+    - /url: /milestones
+  - link "Explore":
+    - /url: /explore/repos
+  - link "Notifications":
+    - /url: /notifications
+  - menu "Create…"
+  - menu "Profile and Settings…":
+    - img "demo"
+- main "Repository":
+  - link "demo":
+    - /url: /demo
+  - text: /
+  - link "krama-research-tasks":
+    - /url: /demo/krama-research-tasks
+  - link "RSS Feed":
+    - /url: /demo/krama-research-tasks.rss
+  - button "Unwatch"
+  - link "1":
+    - /url: /demo/krama-research-tasks/watchers
+  - button "Star"
+  - link "0":
+    - /url: /demo/krama-research-tasks/stars
+  - text: Fork
+  - link "0":
+    - /url: /demo/krama-research-tasks/forks
+  - navigation:
+    - link "Code":
+      - /url: /demo/krama-research-tasks
+    - link "Issues":
+      - /url: /demo/krama-research-tasks/issues
+    - link "Pull Requests":
+      - /url: /demo/krama-research-tasks/pulls
+    - link "Actions":
+      - /url: /demo/krama-research-tasks/actions
+    - link "Packages":
+      - /url: /demo/krama-research-tasks/packages
+    - link "Projects":
+      - /url: /demo/krama-research-tasks/projects
+    - link "Releases":
+      - /url: /demo/krama-research-tasks/releases
+    - link "Wiki":
+      - /url: /demo/krama-research-tasks/wiki
+    - link "Activity":
+      - /url: /demo/krama-research-tasks/activity
+    - link "Settings":
+      - /url: /demo/krama-research-tasks/settings
+  - text: Settings
+  - link "Repository":
+    - /url: /demo/krama-research-tasks/settings
+  - link "Collaborators":
+    - /url: /demo/krama-research-tasks/settings/collaboration
+  - link "Webhooks":
+    - /url: /demo/krama-research-tasks/settings/hooks
+  - link "Branches":
+    - /url: /demo/krama-research-tasks/settings/branches
+  - link "Tags":
+    - /url: /demo/krama-research-tasks/settings/tags
+  - link "Deploy Keys":
+    - /url: /demo/krama-research-tasks/settings/keys
+  - group: Actions
+  - heading "Basic Settings" [level=4]
+  - text: Repository Name *
+  - textbox "Repository Name *": krama-research-tasks
+  - text: Repository Size 23 KiB Template
+  - checkbox "Make repository a template"
+  - text: Make repository a template Visibility
+  - checkbox "Make repository private"
+  - text: Make repository private Description
+  - textbox "Description"
+  - text: Website
+  - textbox "Website"
+  - button "Update Settings"
+  - text: Choose new avatar
+  - button "Choose File"
+  - button "Update Avatar"
+  - button "Delete Current Avatar"
+  - heading "Mirror Settings" [level=4]
+  - text: Set up your repository to automatically synchronize commits, tags and branches with another repository.
+  - link "How do I mirror repositories?":
+    - /url: https://docs.gitea.com/usage/repo-mirror#pushing-to-a-remote-repository
+  - text: "To set up a pull mirror, please consult:"
+  - link "the \"Pulling from a remote repository\" section of the documentation.":
+    - /url: https://docs.gitea.com/usage/repo-mirror#pulling-from-a-remote-repository
+  - table:
+    - rowgroup:
+      - row "Pushed repository Direction Last update":
+        - columnheader "Pushed repository"
+        - columnheader "Direction"
+        - columnheader "Last update"
+        - columnheader
+    - rowgroup:
+      - row "No push mirrors configured":
+        - cell "No push mirrors configured"
+      - 'row "Git Remote Repository URL Put any required credentials in the Authorization section. Sync when commits are pushed Mirror Interval (valid time units are ''h'', ''m'', ''s''). 0 to disable periodic sync. (Minimum interval: 10m0s) 8h0m0s Add Push Mirror"':
+        - 'cell "Git Remote Repository URL Put any required credentials in the Authorization section. Sync when commits are pushed Mirror Interval (valid time units are ''h'', ''m'', ''s''). 0 to disable periodic sync. (Minimum interval: 10m0s) 8h0m0s Add Push Mirror"':
+          - text: Git Remote Repository URL
+          - textbox "Git Remote Repository URL"
+          - paragraph: Put any required credentials in the Authorization section.
+          - group: Authorization
+          - checkbox "Sync when commits are pushed"
+          - text: "Sync when commits are pushed Mirror Interval (valid time units are 'h', 'm', 's'). 0 to disable periodic sync. (Minimum interval: 10m0s)"
+          - 'textbox "Mirror Interval (valid time units are ''h'', ''m'', ''s''). 0 to disable periodic sync. (Minimum interval: 10m0s)"': 8h0m0s
+          - button "Add Push Mirror"
+  - heading "Advanced Settings" [level=4]
+  - text: Code
+  - checkbox "Access source code, files, commits and branches." [checked]
+  - text: Access source code, files, commits and branches. Wiki
+  - checkbox "Enable Repository Wiki" [checked]
+  - text: Enable Repository Wiki
+  - radio "Use Built-In Wiki" [checked]
+  - text: Use Built-In Wiki Default Wiki Branch Name
+  - textbox "Default Wiki Branch Name": main
+  - text: "Default Access Permission for signed-in users:  Not set"
+  - radio "Use External Wiki"
+  - text: Use External Wiki External Wiki URL
+  - textbox "External Wiki URL"
+  - paragraph: Visitors are redirected to the external wiki URL when clicking the wiki tab.
+  - text: Issues
+  - checkbox "Enable Repository Issue Tracker" [checked]
+  - text: Enable Repository Issue Tracker
+  - radio "Use Built-In Issue Tracker" [checked]
+  - text: Use Built-In Issue Tracker
+  - checkbox "Enable Time Tracking" [checked]
+  - text: Enable Time Tracking
+  - checkbox "Let Only Contributors Track Time" [checked]
+  - text: Let Only Contributors Track Time
+  - checkbox "Enable Dependencies For Issues and Pull Requests" [checked]
+  - text: Enable Dependencies For Issues and Pull Requests
+  - checkbox "Close an issue via a commit made in a non default branch"
+  - text: Close an issue via a commit made in a non default branch
+  - radio "Use External Issue Tracker"
+  - text: Use External Issue Tracker External Issue Tracker URL
+  - textbox "External Issue Tracker URL"
+  - paragraph: Visitors are redirected to the external issue tracker URL when clicking on the issues tab.
+  - text: External Issue Tracker URL Format
+  - textbox "External Issue Tracker URL Format":
+    - /placeholder: "https://github.com/{user}/{repo}/issues/{index}"
+  - paragraph:
+    - text: Use the placeholders
+    - code: "{user}"
+    - text: ","
+    - code: "{repo}"
+    - text: and
+    - code: "{index}"
+    - text: for the username, repository name and issue index.
+  - text: External Issue Tracker Number Format
+  - 'radio "Numeric #1234"'
+  - text: "Numeric #1234"
+  - radio "Alphanumeric ABC-123 , DEFG-234"
+  - text: Alphanumeric ABC-123 , DEFG-234
+  - radio "Regular Expression (ISSUE-\\d+) , ISSUE-(\\d+)"
+  - text: Regular Expression (ISSUE-\d+) , ISSUE-(\d+) Regular Expression Pattern
+  - textbox "Regular Expression Pattern"
+  - paragraph:
+    - text: The first captured group will be used in place of
+    - code: "{index}"
+    - text: .
+  - text: Projects
+  - checkbox "Enable Projects" [checked]
+  - text: Enable Projects
+  - paragraph: Projects Mode (which kinds of projects to show)
+  - menu: All projects
+  - text: Releases
+  - checkbox "Enable Repository Releases" [checked]
+  - text: Enable Repository Releases Packages
+  - checkbox "Enable Repository Packages Registry" [checked]
+  - text: Enable Repository Packages Registry Actions
+  - checkbox "Enable Repository Actions" [checked]
+  - text: Enable Repository Actions Pull Requests
+  - checkbox "Enable Repository Pull Requests" [checked]
+  - text: Enable Repository Pull Requests
+  - paragraph: Merge Styles
+  - checkbox "Create merge commit" [checked]
+  - text: Create merge commit
+  - checkbox "Rebase then fast-forward" [checked]
+  - text: Rebase then fast-forward
+  - checkbox "Rebase then create merge commit" [checked]
+  - text: Rebase then create merge commit
+  - checkbox "Create squash commit" [checked]
+  - text: Create squash commit
+  - checkbox "Fast-forward only" [checked]
+  - text: Fast-forward only
+  - checkbox "Manually merged"
+  - text: Manually merged
+  - paragraph: Default Merge Style
+  - menu: Create merge commit
+  - checkbox "Allow edits from maintainers by default"
+  - text: Allow edits from maintainers by default
+  - checkbox "Enable updating pull request branch by rebase" [checked]
+  - text: Enable updating pull request branch by rebase
+  - checkbox "Delete pull request branch after merge by default"
+  - text: Delete pull request branch after merge by default
+  - 'checkbox "Enable autodetect manual merge (Note: In some special cases, misjudgments can occur)"'
+  - text: "Enable autodetect manual merge (Note: In some special cases, misjudgments can occur)"
+  - checkbox "Ignore Whitespace for Conflicts"
+  - text: Ignore Whitespace for Conflicts
+  - button "Update Settings"
+  - heading "Signing Verification Settings" [level=4]
+  - text: Signature Trust Model
+  - radio "Default Trust Model" [checked]
+  - text: Default Trust Model
+  - paragraph: Use the default repository trust model for this installation.
+  - 'radio "Collaborator: Trust signatures by collaborators"'
+  - text: "Collaborator: Trust signatures by collaborators"
+  - paragraph: Valid signatures by collaborators of this repository will be marked "trusted" - (whether they match the committer or not). Otherwise, valid signatures will be marked "untrusted" if the signature matches the committer and "unmatched" if not.
+  - 'radio "Committer: Trust signatures that match committers (This matches GitHub and will force Gitea signed commits to have Gitea as the committer)"'
+  - text: "Committer: Trust signatures that match committers (This matches GitHub and will force Gitea signed commits to have Gitea as the committer)"
+  - paragraph: "Valid signatures will only be marked \"trusted\" if they match the committer, otherwise they will be marked \"unmatched\". This forces Gitea to be the committer on signed commits with the actual committer marked as Co-authored-by: and Co-committed-by: trailer in the commit. The default Gitea key must match a User in the database."
+  - 'radio "Collaborator+Committer: Trust signatures by collaborators which match the committer"'
+  - text: "Collaborator+Committer: Trust signatures by collaborators which match the committer"
+  - paragraph: "Valid signatures by collaborators of this repository will be marked \"trusted\" if they match the committer. Otherwise, valid signatures will be marked \"untrusted\" if the signature matches the committer and \"unmatched\" otherwise. This will force Gitea to be marked as the committer on signed commits with the actual committer marked as Co-Authored-By: and Co-Committed-By: trailer in the commit. The default Gitea key must match a User in the database."
+  - button "Update Settings"
+  - heading "Danger Zone" [level=4]
+  - text: Transfer Ownership Transfer this repository to a user or to an organization for which you have administrator rights.
+  - button "Transfer Ownership"
+  - text: Delete Wiki Data Deleting repository wiki data is permanent and cannot be undone.
+  - button "Delete Wiki Data"
+  - text: Delete This Repository Deleting a repository is permanent and cannot be undone.
+  - button "Delete This Repository"
+  - text: Archive This Repo Archiving the repo will make it entirely read-only. It will be hidden from the dashboard. Nobody (not even you!) will be able to make new commits, or open any issues or pull requests.
+  - button "Archive Repo"
+- group "Footer":
+  - contentinfo "About Software":
+    - link "Powered by Gitea":
+      - /url: https://about.gitea.com
+    - text: "Version: 1.22.6 Page:"
+    - strong: 17ms
+    - text: "Template:"
+    - strong: 3ms
+  - group "Links":
+    - menu: English
+    - link "Licenses":
+      - /url: /assets/licenses.txt
+    - link "API":
+      - /url: /api/swagger
