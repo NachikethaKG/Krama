@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { artifactUrl } from "@/lib/artifacts";
 import type { ElementRef, ExpectedState, FieldValue, ObservedSummary } from "@krama/contracts-ts";
 
 export interface VerificationFailureCardProps {
@@ -25,7 +26,12 @@ export interface VerificationFailureCardProps {
     missingSelector?: string | null;
     details?: string | null;
   } | null;
-  expectedScreenshotUrl?: string | null;
+  /**
+   * The screenshot taken before this step (the previous step's last one). The contract has no "expected"
+   * screenshot, so the expected side is the expected STATE (shown as text) plus this "before" image.
+   * Pass a loadable URL (resolve API references with `artifactUrl`).
+   */
+  previousScreenshotUrl?: string | null;
   observedScreenshotUrl?: string | null;
   onRetryReplan?: () => void;
   className?: string;
@@ -69,20 +75,23 @@ export function VerificationFailureCard({
   failedLayer,
   expected,
   observed,
-  expectedScreenshotUrl,
+  previousScreenshotUrl,
   observedScreenshotUrl,
   onRetryReplan,
   className = "",
 }: VerificationFailureCardProps) {
-  const [expectedImgError, setExpectedImgError] = useState(false);
+  const [previousImgError, setPreviousImgError] = useState(false);
   const [observedImgError, setObservedImgError] = useState(false);
 
   const layerName = resolveFailedLayer(failedLayer, expected, observed);
   const reasonText =
     failureReason || "Verification failed: observed state did not match expected preconditions.";
 
-  const hasExpectedScreenshot = Boolean(expectedScreenshotUrl) && !expectedImgError;
-  const hasObservedScreenshot = Boolean(observedScreenshotUrl) && !observedImgError;
+  // API screenshot references resolve against the API origin, never the Next.js origin.
+  const previousSrc = artifactUrl(previousScreenshotUrl);
+  const observedSrc = artifactUrl(observedScreenshotUrl);
+  const hasPreviousScreenshot = Boolean(previousSrc) && !previousImgError;
+  const hasObservedScreenshot = Boolean(observedSrc) && !observedImgError;
 
   const obs = observed as
     | (ObservedSummary & { error?: string | null; missingSelector?: string | null; details?: string | null })
@@ -318,40 +327,40 @@ export function VerificationFailureCard({
         <div data-testid="screenshot-comparison-section" className="flex flex-col gap-3">
           <div className="flex items-center justify-between">
             <h4 className="text-xs font-bold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
-              Visual State Diff: Side-by-Side Comparison
+              Screenshots: Before vs. After This Step
             </h4>
             <span className="text-xs text-zinc-500 dark:text-zinc-400">
-              Target Reference vs. Captured State
+              Expected state is listed above
             </span>
           </div>
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            {/* Column 1: Expected State Snapshot */}
+            {/* Column 1: the page before this step (previous step's screenshot) */}
             <div
-              data-testid="expected-screenshot-col"
+              data-testid="previous-screenshot-col"
               className="flex flex-col overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50/50 shadow-2xs dark:border-zinc-800 dark:bg-zinc-900/50"
             >
               <div className="flex items-center justify-between border-b border-zinc-200 bg-zinc-100/70 px-3 py-2 text-xs font-medium text-zinc-700 dark:border-zinc-800 dark:bg-zinc-800/60 dark:text-zinc-300">
                 <span className="flex items-center gap-1.5 font-semibold">
                   <span className="size-2 rounded-full bg-emerald-500" />
-                  Expected State (Reference)
+                  Before This Step
                 </span>
-                <span className="font-mono text-[10px] text-zinc-400">Planned Target</span>
+                <span className="font-mono text-[10px] text-zinc-400">Previous Step</span>
               </div>
 
               <div className="relative flex aspect-16/10 w-full items-center justify-center bg-zinc-100 dark:bg-zinc-950/60">
-                {hasExpectedScreenshot ? (
+                {hasPreviousScreenshot ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
-                    data-testid="expected-screenshot-img"
-                    src={expectedScreenshotUrl!}
-                    alt="Expected state reference"
-                    onError={() => setExpectedImgError(true)}
+                    data-testid="previous-screenshot-img"
+                    src={previousSrc}
+                    alt="Page before this step"
+                    onError={() => setPreviousImgError(true)}
                     className="h-full w-full object-contain"
                   />
                 ) : (
                   <div
-                    data-testid="expected-screenshot-placeholder"
+                    data-testid="previous-screenshot-placeholder"
                     className="flex flex-col items-center justify-center gap-2 p-6 text-center text-zinc-400 dark:text-zinc-500"
                   >
                     <svg className="size-8 opacity-60" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
@@ -361,8 +370,8 @@ export function VerificationFailureCard({
                         d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"
                       />
                     </svg>
-                    <span className="text-xs font-medium">No reference screenshot available</span>
-                    <span className="text-[10px] opacity-70">Pre-action reference image not provided</span>
+                    <span className="text-xs font-medium">No earlier screenshot</span>
+                    <span className="text-[10px] opacity-70">Compare with the expected state listed above</span>
                   </div>
                 )}
               </div>
@@ -386,7 +395,7 @@ export function VerificationFailureCard({
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     data-testid="observed-screenshot-img"
-                    src={observedScreenshotUrl!}
+                    src={observedSrc}
                     alt="Observed state capture"
                     onError={() => setObservedImgError(true)}
                     className="h-full w-full object-contain"

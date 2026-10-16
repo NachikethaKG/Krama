@@ -82,17 +82,17 @@ describe("VerificationFailureCard", () => {
     render(
       <VerificationFailureCard
         stepSeq={2}
-        expectedScreenshotUrl="/mock-expected.png"
+        previousScreenshotUrl="/screenshots/step-1.png"
         observedScreenshotUrl="/mock-observed.png"
       />
     );
 
-    const expectedImg = screen.getByTestId("expected-screenshot-img");
+    const expectedImg = screen.getByTestId("previous-screenshot-img");
     const observedImg = screen.getByTestId("observed-screenshot-img");
 
     expect(expectedImg).toBeInTheDocument();
-    expect(expectedImg).toHaveAttribute("src", "/mock-expected.png");
-    expect(expectedImg).toHaveAttribute("alt", "Expected state reference");
+    expect(expectedImg).toHaveAttribute("src", "/screenshots/step-1.png");
+    expect(expectedImg).toHaveAttribute("alt", "Page before this step");
 
     expect(observedImg).toBeInTheDocument();
     expect(observedImg).toHaveAttribute("src", "/mock-observed.png");
@@ -103,13 +103,13 @@ describe("VerificationFailureCard", () => {
     render(
       <VerificationFailureCard
         stepSeq={2}
-        expectedScreenshotUrl={null}
+        previousScreenshotUrl={null}
         observedScreenshotUrl={undefined}
       />
     );
 
-    expect(screen.getByTestId("expected-screenshot-placeholder")).toHaveTextContent(
-      "No reference screenshot available"
+    expect(screen.getByTestId("previous-screenshot-placeholder")).toHaveTextContent(
+      "No earlier screenshot"
     );
     expect(screen.getByTestId("observed-screenshot-placeholder")).toHaveTextContent(
       "Screenshot not captured or failed to load"
@@ -120,18 +120,18 @@ describe("VerificationFailureCard", () => {
     render(
       <VerificationFailureCard
         stepSeq={2}
-        expectedScreenshotUrl="/broken-expected.png"
+        previousScreenshotUrl="/broken-previous.png"
         observedScreenshotUrl="/broken-observed.png"
       />
     );
 
-    const expectedImg = screen.getByTestId("expected-screenshot-img");
+    const expectedImg = screen.getByTestId("previous-screenshot-img");
     const observedImg = screen.getByTestId("observed-screenshot-img");
 
     fireEvent.error(expectedImg);
     fireEvent.error(observedImg);
 
-    expect(screen.getByTestId("expected-screenshot-placeholder")).toBeInTheDocument();
+    expect(screen.getByTestId("previous-screenshot-placeholder")).toBeInTheDocument();
     expect(screen.getByTestId("observed-screenshot-placeholder")).toBeInTheDocument();
   });
 

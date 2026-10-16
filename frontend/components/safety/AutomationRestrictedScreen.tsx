@@ -7,8 +7,10 @@ export interface AutomationRestrictedScreenProps {
   message?: string;
   targetUrl?: string;
   stepSeq?: number | null;
-  onResume?: () => void | Promise<void>;
-  onAbort?: () => void | Promise<void>;
+  /** Where "Start a new task" goes (default: the home page). */
+  newTaskHref?: string;
+  /** Optional link to the run's evidence page. */
+  runHref?: string;
   className?: string;
 }
 
@@ -64,12 +66,12 @@ const BARRIER_CONFIG: Record<string, BarrierInfo> = {
 };
 
 export function AutomationRestrictedScreen({
-  barrierType = "cloudflare_turnstile",
+  barrierType,
   message,
-  targetUrl = "http://localhost:3001",
+  targetUrl,
   stepSeq,
-  onResume,
-  onAbort,
+  newTaskHref = "/",
+  runHref,
   className = "",
 }: AutomationRestrictedScreenProps) {
   const normalizedKey = barrierType.toLowerCase().replace(/-/g, "_").trim();
@@ -135,6 +137,7 @@ export function AutomationRestrictedScreen({
         )}
 
         {/* Target URL Reference Card */}
+        {targetUrl && (
         <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-2xs dark:border-zinc-800 dark:bg-zinc-900">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
@@ -160,6 +163,7 @@ export function AutomationRestrictedScreen({
             </a>
           </div>
         </div>
+        )}
 
         {/* Manual Takeover Instructions */}
         <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-900/50 dark:bg-amber-950/20">
@@ -174,40 +178,30 @@ export function AutomationRestrictedScreen({
               Complete the CAPTCHA puzzle, check Turnstile verification, or sign into your account manually.
             </li>
             <li>
-              Once passed, click <span className="font-semibold">&ldquo;Resume Execution&rdquo;</span> to continue automated workflow replay.
+              Finish the remaining steps yourself. The automated run has stopped and cannot be resumed; start a new
+              task once the site no longer shows the challenge.
             </li>
           </ol>
         </div>
 
-        {/* Action Controls */}
+        {/* The run already failed (policy stop): there is nothing to resume or abort, only ways forward. */}
         <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-end">
-          {onAbort && (
-            <button
-              type="button"
-              data-testid="takeover-abort-btn"
-              onClick={onAbort}
-              className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-4 py-2.5 text-xs font-semibold text-zinc-700 shadow-xs transition hover:bg-zinc-100 focus:outline-hidden focus:ring-2 focus:ring-rose-500/50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
+          {runHref && (
+            <a
+              href={runHref}
+              data-testid="takeover-run-link"
+              className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-4 py-2.5 text-xs font-semibold text-zinc-700 shadow-xs transition hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
             >
-              <svg aria-hidden="true" className="size-3.5 text-rose-500" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-              Abort Run
-            </button>
+              View run evidence
+            </a>
           )}
-
-          {onResume && (
-            <button
-              type="button"
-              data-testid="takeover-resume-btn"
-              onClick={onResume}
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-amber-600 px-5 py-2.5 text-xs font-semibold text-white shadow-xs transition hover:bg-amber-500 focus:outline-hidden focus:ring-2 focus:ring-amber-500/50 dark:bg-amber-500 dark:hover:bg-amber-400"
-            >
-              <svg aria-hidden="true" className="size-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 010 1.972l-11.54 6.347a1.125 1.125 0 01-1.667-.986V5.653z" />
-              </svg>
-              Resume Execution
-            </button>
-          )}
+          <a
+            href={newTaskHref}
+            data-testid="takeover-new-task-link"
+            className="inline-flex items-center justify-center gap-2 rounded-lg bg-amber-600 px-5 py-2.5 text-xs font-semibold text-white shadow-xs transition hover:bg-amber-500 dark:bg-amber-500 dark:hover:bg-amber-400"
+          >
+            Start a new task
+          </a>
         </div>
       </div>
     </div>

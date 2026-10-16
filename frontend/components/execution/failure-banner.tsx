@@ -3,7 +3,8 @@ import type { ApiError } from "@krama/contracts-ts";
 export interface FailureBannerProps {
   error?: ApiError | null;
   failedStep?: { seq: number; instructionText?: string } | null;
-  workflowId?: string;
+  /** The plan this run executed; "Back to plan" links to its approval page. */
+  planId?: string;
   onRetry?: () => void;
   onBackToPlan?: () => void;
   className?: string;
@@ -12,7 +13,7 @@ export interface FailureBannerProps {
 export function FailureBanner({
   error,
   failedStep,
-  workflowId,
+  planId,
   onRetry,
   onBackToPlan,
   className = "",
@@ -97,7 +98,7 @@ export function FailureBanner({
             </button>
           ) : (
             <a
-              href={workflowId ? `/workflows/${workflowId}/approval` : "/approval"}
+              href={planId ? `/workflows/${planId}/approval` : "/"}
               data-testid="back-to-plan-btn"
               className="inline-flex items-center gap-1.5 rounded-lg border border-rose-300 bg-white px-3 py-2 text-xs font-semibold text-rose-800 shadow-xs transition hover:bg-rose-100/60 dark:border-rose-800 dark:bg-zinc-900 dark:text-rose-200 dark:hover:bg-rose-950/60"
             >

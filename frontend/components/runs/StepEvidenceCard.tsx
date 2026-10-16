@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { artifactUrl } from "@/lib/artifacts";
 import type { StepEvidenceDetail, VerificationEvidenceMethod } from "@/lib/types";
 import { RiskBadge } from "@/components/risk-badge";
 
@@ -80,14 +81,16 @@ export function StepEvidenceCard({
 
   const method = step.evidence?.method ?? "url_dom";
   const methodConfig = METHOD_CONFIG[method] ?? METHOD_CONFIG.url_dom;
-  const confidence = step.evidence?.confidence ?? 0.95;
-  const confidenceDetails = getConfidenceDetails(confidence);
+  // No invented score: a step without a verification result shows "n/a".
+  const confidence = step.evidence?.confidence ?? null;
+  const confidenceDetails = getConfidenceDetails(confidence ?? 0);
 
   const isVerified = step.status === "verified";
   const isFailed = step.status === "failed";
 
-  const hasScreenshot = Boolean(step.screenshotUrl || step.evidence?.screenshotUrl);
-  const effectiveScreenshotUrl = step.screenshotUrl || step.evidence?.screenshotUrl;
+  // API references (bare artifact keys or /api/... paths) resolve against the API, never the Next.js origin.
+  const effectiveScreenshotUrl = artifactUrl(step.screenshotUrl || step.evidence?.screenshotUrl);
+  const hasScreenshot = Boolean(effectiveScreenshotUrl);
 
   return (
     <div
@@ -202,13 +205,17 @@ export function StepEvidenceCard({
             <div className="flex items-center gap-2">
               <span
                 data-testid="confidence-score"
-                data-confidence={confidence}
-                className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold rounded-md border ${confidenceDetails.badgeClass}`}
+                data-confidence={confidence ?? ""}
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold rounded-md border ${
+                  confidence === null
+                    ? "bg-zinc-100 text-zinc-600 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700"
+                    : confidenceDetails.badgeClass
+                }`}
               >
-                {confidenceDetails.percentage}%
+                {confidence === null ? "n/a" : `${confidenceDetails.percentage}%`}
               </span>
               <span className="text-xs text-zinc-600 dark:text-zinc-400">
-                {confidenceDetails.label}
+                {confidence === null ? "Not verified yet" : confidenceDetails.label}
               </span>
             </div>
             <div className="w-full bg-zinc-200 dark:bg-zinc-700 h-1.5 rounded-full mt-2 overflow-hidden">
@@ -220,7 +227,9 @@ export function StepEvidenceCard({
                       ? "bg-amber-500"
                       : "bg-rose-500"
                 }`}
-                style={{ width: `${Math.min(100, Math.max(5, confidenceDetails.percentage))}%` }}
+                style={{
+                  width: confidence === null ? "0%" : `${Math.min(100, Math.max(5, confidenceDetails.percentage))}%`,
+                }}
               />
             </div>
           </div>
