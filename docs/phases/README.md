@@ -147,12 +147,47 @@ Each sprint ends with an integration PR merged to `main` and a demo **run on Nac
 |---|---|---|
 | [F: Foundation](phase-f-foundation.md) | Repo, guardrails, environment, contracts v1 | ✅ completed (tag: `v0.0-foundation`) |
 | [0: Technical spike](phase-0-spike.md) | Can an agent reliably do one task on one site? | ✅ completed (tag: `v0.0-spike`) |
-| [1: Verified workflow](phase-1-verified-workflow.md) | Plan → approve → execute → verify → store, safely | — |
+| [1: Verified workflow](phase-1-verified-workflow.md) | Plan → approve → execute → verify → store, safely | ✅ completed (tag: `v0.1`) |
 | [2: Interactive tutorial](phase-2-interactive-tutorial.md) | Workflow → interactive tutorial player | — |
 | [3: MVP](phase-3-mvp.md) | Real GitHub, accounts, sharing, polish | — |
 | [4: Reliability](phase-4-reliability.md) | UI drift detection, self-healing, versioning | — |
 | [5: Video export](phase-5-video-export.md) | MP4 export with narration | — |
 | [6: Later](phase-6-later.md) | Backlog | — |
+
+### Phase 1: Verified Workflow — Exit Gate (#67)
+
+Run on 2026-10-16 on the real stack (Postgres, Gitea, real Gemini, Windows), from a fresh pull of `main`. The demo
+ran on Vishwas's laptop instead of Nachiketha's, by decision of the project admin. Release with the demo GIF and
+evidence: [v0.1](https://github.com/NachikethaKG/Krama/releases/tag/v0.1).
+
+- [x] **UI runs "create a repo": plan → approve → live view → stored verified workflow.** Real UI e2e
+  (`KRAMA_E2E_REAL=1 pnpm e2e:real`) passed with the Safety Policy on; demo: 3/3 steps verified, screenshots served
+  by the API, the repository confirmed through Gitea's own API.
+- [x] **A broken step is detected; the failure-injection benchmark reports verifier accuracy.** A deliberately
+  broken step → `step.failed` → replan → paused for review, never verified. Benchmark: 0/20 broken steps passed
+  silently, 20/20 caught (15 failed, 5 paused for a human), 0/14 false alarms.
+- [x] **A destructive step pauses for confirmation.** "Delete repository" paused at the opener (`destructive_action`,
+  from the Safety Policy); deny → cancelled; the repository still exists.
+- [x] **The injection page doesn't change the agent's behaviour.** Real Gemini planned only the task on two injection
+  pages; a planner that obeys the injection is still stopped by the policy before the bait, which is never pressed.
+- [x] **No password or token in any stored artifact.** After all gate runs: the Gitea password and the Gemini key
+  are in 0 of 72 artifact files, 0 DB rows and 0 log lines; plus `tests/runs/test_safety_e2e.py`.
+- [x] **Suites:** backend 638 passed (7 opt-in live/platform skips), `ruff` + `mypy --strict` clean; frontend 237
+  passed, `tsc` + `eslint` clean.
+
+Verifying Nachiketha's Phase 1 issues before the gate found real problems, fixed in #232 (benchmark), #233
+(policy), #234 (CI runs the benchmarks), #235 (UI on the real API), #236 (policy, artifact store and masking
+wired into runs) and #237 (live injection test).
+
+Known follow-ups (not gate blockers):
+- CAPTCHA detection from raw HTML/iframes can't run through `PageState` (url, title, ARIA only); extending
+  `PageState` is a contract decision.
+- The run-detail cards show one verification "layer" label even when several methods were used.
+- The approval route is still `/workflows/{planId}/approval` (the id is a plan id); `public/mock-expected.png` is
+  unused.
+- Before- and after-step screenshots share one key, so the before shot is overwritten; the screenshot blur
+  assumes `device_scale_factor` 1.
+- An approved plan can hold a value the plan types (e.g. a password the task itself contains); runs never copy it.
 
 ### Phase 0: Technical Spike — Acceptance & Completion Checklist
 
