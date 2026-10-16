@@ -5,7 +5,7 @@ test.describe("Failure Diagnostic & Live Replan UI", () => {
     page,
   }) => {
     // 1. Navigate to failed execution workflow
-    await page.goto("/workflows/failed/execution?mock=true&speed=50");
+    await page.goto("/runs/failed/live?speed=50");
 
     // 2. Wait for failure diagnostic card to render
     const failureCard = page.getByTestId("verification-failure-card");
@@ -33,11 +33,12 @@ test.describe("Failure Diagnostic & Live Replan UI", () => {
     const screenshotSection = page.getByTestId("screenshot-comparison-section");
     await expect(screenshotSection).toBeVisible();
 
-    const expectedImg = page.getByTestId("expected-screenshot-img");
+    // The contract has no "expected" screenshot: the left image is the page before this step
+    const previousImg = page.getByTestId("previous-screenshot-img");
     const observedImg = page.getByTestId("observed-screenshot-img");
-    await expect(expectedImg).toBeVisible();
+    await expect(previousImg).toBeVisible();
     await expect(observedImg).toBeVisible();
-    await expect(expectedImg).toHaveAttribute("src", "/mock-expected.png");
+    await expect(previousImg).toHaveAttribute("src", "/screenshots/step-1.png");
     await expect(observedImg).toHaveAttribute("src", "/mock-observed.png");
   });
 
@@ -45,7 +46,7 @@ test.describe("Failure Diagnostic & Live Replan UI", () => {
     page,
   }) => {
     // 1. Navigate to replan workflow execution
-    await page.goto("/workflows/replan/execution?mock=true&speed=50");
+    await page.goto("/runs/replan/live?speed=50");
 
     // 2. Wait for replan status indicator to appear
     const replanIndicator = page.getByTestId("replan-status-indicator");
@@ -56,23 +57,19 @@ test.describe("Failure Diagnostic & Live Replan UI", () => {
     await expect(attemptCounter).toBeVisible();
     await expect(attemptCounter).toContainText(/Attempt/i);
 
-    const replanStrategy = page.getByTestId("replan-strategy");
-    await expect(replanStrategy).toContainText(/Strategy:/i);
-
     // 4. Wait for stream to progress to exhausted status badge
     const exhaustedBadge = page.getByTestId("replan-badge-exhausted");
     await expect(exhaustedBadge).toBeVisible({ timeout: 15000 });
     await expect(exhaustedBadge).toHaveText(/exhausted/i);
 
-    // 5. Verify manual takeover and abort action buttons appear when exhausted
-    const takeoverBtn = page.getByTestId("replan-takeover-btn");
-    const abortBtn = page.getByTestId("replan-abort-btn");
-    await expect(takeoverBtn).toBeVisible();
-    await expect(abortBtn).toBeVisible();
+    // 5. ONE decision control: the pause banner ("try once more" / deny); the indicator has no buttons
+    await expect(page.getByTestId("replan-takeover-btn")).toHaveCount(0);
+    const pauseBanner = page.getByTestId("pause-banner");
+    await expect(pauseBanner).toHaveAttribute("data-pause-reason", "recovery_exhausted");
 
-    // 6. Test manual takeover action
-    await takeoverBtn.click();
-    await expect(page.getByTestId("execution-status-badge")).toHaveAttribute("data-status", "running");
+    // 6. Allow retries the step once more; the run then completes
+    await page.getByTestId("resume-run-btn").click();
+    await expect(page.getByTestId("completion-banner")).toBeVisible({ timeout: 15000 });
   });
 
   test("gracefully handles missing screenshot references with accessible placeholders", async ({
@@ -83,13 +80,13 @@ test.describe("Failure Diagnostic & Live Replan UI", () => {
       // Mock window to load with null screenshot URLs if necessary
     });
 
-    await page.goto("/workflows/failed/execution?mock=true&speed=50");
+    await page.goto("/runs/failed/live?speed=50");
 
     const failureCard = page.getByTestId("verification-failure-card");
     await expect(failureCard).toBeVisible({ timeout: 10000 });
 
     // Verify screenshot comparison columns exist and have accessible structure
-    await expect(page.getByTestId("expected-screenshot-col")).toBeVisible();
+    await expect(page.getByTestId("previous-screenshot-col")).toBeVisible();
     await expect(page.getByTestId("observed-screenshot-col")).toBeVisible();
   });
 });

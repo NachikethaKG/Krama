@@ -132,9 +132,9 @@ export function RunListTable({
                   <div
                     data-testid="run-prompt"
                     className="truncate text-zinc-900 dark:text-zinc-100 font-medium"
-                    title={run.prompt}
+                    title={run.prompt ?? undefined}
                   >
-                    {run.prompt}
+                    {run.prompt ?? "(prompt unavailable)"}
                   </div>
                   {run.retryCount && run.retryCount > 0 ? (
                     <span

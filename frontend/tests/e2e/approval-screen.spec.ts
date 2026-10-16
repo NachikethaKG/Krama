@@ -44,18 +44,9 @@ test.describe("Workflow Approval Screen - Happy Path", () => {
     // 5. User clicks "Approve & Execute"
     await approveBtn.click();
 
-    // 6. Assert state transitions to approved
-    const successBanner = page.getByTestId("approval-success-banner");
-    await expect(successBanner).toBeVisible();
-    await expect(successBanner).toContainText(/Plan approved!.*transitioning to execution/i);
-
-    const statusBadge = page.getByTestId("workflow-status-badge");
-    await expect(statusBadge).toHaveText(/approved/i);
-
-    // Assert action buttons are now disabled
-    await expect(approveBtn).toBeDisabled();
-    await expect(rejectBtn).toBeDisabled();
-    await expect(editBtn).toBeDisabled();
+    // 6. Approve returns the RUN; the app opens that run's live view (keyed by the run id, not the plan id)
+    await expect(page).toHaveURL(/\/runs\/mock-run-id\/live$/, { timeout: 10000 });
+    await expect(page.getByTestId("live-execution-view")).toHaveAttribute("data-run-id", "mock-run-id");
   });
 
   test("loads default approval route and verifies direct navigation", async ({ page }) => {
@@ -81,7 +72,7 @@ test.describe("Workflow Approval Screen - Rejection & Edge Cases", () => {
     // Verify rejection banner and state transition
     const rejectedBanner = page.getByTestId("approval-rejected-banner");
     await expect(rejectedBanner).toBeVisible();
-    await expect(rejectedBanner).toContainText(/Workflow plan rejected.*Execution canceled/i);
+    await expect(rejectedBanner).toContainText(/Workflow plan rejected/i);
 
     const statusBadge = page.getByTestId("workflow-status-badge");
     await expect(statusBadge).toHaveText(/rejected/i);
@@ -117,6 +108,6 @@ test.describe("Workflow Approval Screen - Rejection & Edge Cases", () => {
 
     const errorView = page.getByTestId("approval-screen-error");
     await expect(errorView).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Workflow Not Found" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Plan Not Found" })).toBeVisible();
   });
 });

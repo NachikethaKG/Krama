@@ -1,19 +1,32 @@
-import type { ExpectedState, ObservedState, RunStatus, Workflow } from "@krama/contracts-ts";
+import type {
+  ApiError,
+  ExpectedState,
+  ObservedState,
+  Plan,
+  RunStatus,
+  Task,
+  VerificationMethod,
+  Workflow,
+} from "@krama/contracts-ts";
 
 export type VerificationEvidenceMethod = "url_dom" | "aria" | "network" | "vision";
 
 export interface StepVerificationEvidence {
   method: VerificationEvidenceMethod;
-  confidence: number;
+  /** The contract's verification methods for this step, when known. */
+  methods?: VerificationMethod[];
+  /** null when the step has no verification result yet. */
+  confidence?: number | null;
   screenshotUrl?: string | null;
-  observedAt: string;
+  observedAt?: string | null;
   details?: Record<string, unknown>;
 }
 
 export interface RunListItem {
   id: string;
-  prompt: string;
-  status: RunStatus | "verified" | "failed" | "paused" | "cancelled" | "queued" | "running";
+  /** The task prompt (Run → Plan → Task). null when it could not be loaded. */
+  prompt: string | null;
+  status: RunStatus;
   createdAt: string;
   startedAt?: string | null;
   finishedAt?: string | null;
@@ -23,13 +36,10 @@ export interface RunListItem {
   retryCount?: number;
 }
 
-export interface PaginatedRunsResponse {
+/** One page of GET /runs (newest first). `nextCursor` is opaque; null on the last page. */
+export interface RunsPage {
   items: RunListItem[];
-  total: number;
-  page: number;
-  pageSize: number;
-  totalPages: number;
-  nextCursor?: string | null;
+  nextCursor: string | null;
 }
 
 export interface StepEvidenceDetail {
@@ -42,6 +52,7 @@ export interface StepEvidenceDetail {
   risk: string;
   status: "verified" | "failed" | "pending";
   evidence: StepVerificationEvidence;
+  /** A loadable URL (already resolved with artifactUrl). */
   screenshotUrl?: string | null;
   expectedState?: ExpectedState;
   observedState?: ObservedState;
@@ -55,6 +66,9 @@ export interface StepEvidenceDetail {
 export interface RunDetails {
   run: RunListItem;
   workflow?: Workflow | null;
+  plan?: Plan | null;
+  task?: Task | null;
+  error?: ApiError | null;
   targetUrl?: string;
   targetApp?: string;
   steps: StepEvidenceDetail[];

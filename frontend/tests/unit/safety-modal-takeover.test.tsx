@@ -5,7 +5,6 @@ import {
   AutomationRestrictedScreen,
   PolicyConfirmationModal,
 } from "@/components/safety";
-import { MockApiClient } from "@/lib/api";
 
 describe("PolicyConfirmationModal Component", () => {
   it("does not render into the DOM when isOpen is false", () => {
@@ -132,7 +131,7 @@ describe("PolicyConfirmationModal Component", () => {
     expect(onAllow).not.toHaveBeenCalled();
   });
 
-  it("dispatches onDeny callback when Escape key is pressed", () => {
+  it("does NOT deny when Escape is pressed (a stray key must not send a decision)", () => {
     const onAllow = vi.fn();
     const onDeny = vi.fn();
 
@@ -146,7 +145,9 @@ describe("PolicyConfirmationModal Component", () => {
     );
 
     fireEvent.keyDown(window, { key: "Escape" });
-    expect(onDeny).toHaveBeenCalledTimes(1);
+    expect(onDeny).not.toHaveBeenCalled();
+    expect(onAllow).not.toHaveBeenCalled();
+    expect(screen.getByTestId("policy-confirmation-modal")).toBeInTheDocument();
   });
 
   it("disables Allow and Deny buttons when isConfirming is true", () => {
@@ -167,17 +168,13 @@ describe("PolicyConfirmationModal Component", () => {
 
 describe("AutomationRestrictedScreen Component", () => {
   it("renders container with barrier explanation, target URL, and takeover instructions", () => {
-    const onResume = vi.fn();
-    const onAbort = vi.fn();
-
     render(
       <AutomationRestrictedScreen
         barrierType="cloudflare_turnstile"
         message="Cloudflare Turnstile challenge detected on target page"
         targetUrl="http://localhost:3001/login"
         stepSeq={2}
-        onResume={onResume}
-        onAbort={onAbort}
+        runHref="/runs/run-1"
       />
     );
 
@@ -198,9 +195,11 @@ describe("AutomationRestrictedScreen Component", () => {
     expect(targetLink).toHaveAttribute("href", "http://localhost:3001/login");
     expect(targetLink).toHaveAttribute("target", "_blank");
 
-    // Action controls
-    expect(screen.getByTestId("takeover-resume-btn")).toBeInTheDocument();
-    expect(screen.getByTestId("takeover-abort-btn")).toBeInTheDocument();
+    // The run already failed (policy stop): no Resume / Abort, only ways forward
+    expect(screen.queryByTestId("takeover-resume-btn")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("takeover-abort-btn")).not.toBeInTheDocument();
+    expect(screen.getByTestId("takeover-new-task-link")).toHaveAttribute("href", "/");
+    expect(screen.getByTestId("takeover-run-link")).toHaveAttribute("href", "/runs/run-1");
   });
 
   it("adapts explanation for Google reCAPTCHA barrier type", () => {
@@ -231,46 +230,8 @@ describe("AutomationRestrictedScreen Component", () => {
     ).toBeInTheDocument();
   });
 
-  it("dispatches onResume callback when Resume Execution is clicked", () => {
-    const onResume = vi.fn();
-    const onAbort = vi.fn();
-
-    render(
-      <AutomationRestrictedScreen
-        barrierType="cloudflare_turnstile"
-        onResume={onResume}
-        onAbort={onAbort}
-      />
-    );
-
-    fireEvent.click(screen.getByTestId("takeover-resume-btn"));
-    expect(onResume).toHaveBeenCalledTimes(1);
-    expect(onAbort).not.toHaveBeenCalled();
-  });
-
-  it("dispatches onAbort callback when Abort Run is clicked", () => {
-    const onResume = vi.fn();
-    const onAbort = vi.fn();
-
-    render(
-      <AutomationRestrictedScreen
-        barrierType="cloudflare_turnstile"
-        onResume={onResume}
-        onAbort={onAbort}
-      />
-    );
-
-    fireEvent.click(screen.getByTestId("takeover-abort-btn"));
-    expect(onAbort).toHaveBeenCalledTimes(1);
-    expect(onResume).not.toHaveBeenCalled();
-  });
-});
-
-describe("ApiClient confirmRunAction extension", () => {
-  it("resolves confirmRunAction allow and deny on MockApiClient", async () => {
-    const client = new MockApiClient();
-
-    await expect(client.confirmRunAction("mock-run-id", "allow")).resolves.toBeUndefined();
-    await expect(client.confirmRunAction("mock-run-id", "deny", 2)).resolves.toBeUndefined();
+  it("hides the target card when no target URL is known", () => {
+    render(<AutomationRestrictedScreen barrierType="captcha" />);
+    expect(screen.queryByTestId("open-target-url-btn")).not.toBeInTheDocument();
   });
 });

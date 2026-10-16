@@ -3,9 +3,12 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { PlannedStep } from "@krama/contracts-ts";
 
 import {
+  ApiRequestError,
+  artifactUrl,
   createApiClient,
   getApiClient,
   HttpApiClient,
+  isApiError,
   MockApiClient,
   parseEventStream,
 } from "@/lib/api";
@@ -126,7 +129,8 @@ describe("HttpApiClient", () => {
       expect(fetch).toHaveBeenCalledWith("http://api/plans/plan-456");
     });
 
-    it("approves plan via POST /plans/:id/approve with explicit revision", async () => {
+
+    it("approves plan via POST /plans/:id/approve with the revision on screen and returns the RUN", async () => {
       const runResponse = {
         id: "run-789",
         plan_id: "plan-456",
@@ -139,55 +143,30 @@ describe("HttpApiClient", () => {
 
       const client = new HttpApiClient("http://api");
       const result = await client.approvePlan("plan-456", 2);
-      expect(result).toEqual(runResponse);
+      expect(result.id).toBe("run-789");
       expect(fetch).toHaveBeenCalledWith(
         "http://api/plans/plan-456/approve",
-        expect.objectContaining({
-          method: "POST",
-          body: JSON.stringify({ revision: 2 }),
-        }),
+        expect.objectContaining({ method: "POST", body: JSON.stringify({ revision: 2 }) }),
       );
     });
 
-    it("approves plan by fetching plan revision when revision is omitted", async () => {
-      const planResponse = {
-        id: "plan-456",
-        task_id: "task-123",
-        revision: 3,
-        status: "proposed",
-        risk: "low",
-        expected_result: "Repo created",
-        steps: [],
-        created_at: "2026-10-14T00:00:00Z",
-      };
-      const runResponse = {
-        id: "run-789",
-        plan_id: "plan-456",
-        plan_revision: 3,
-        status: "queued",
-        retry_count: 0,
-        created_at: "2026-10-14T00:00:00Z",
-      };
-
-      const fetchMock = vi.fn().mockImplementation(async (url: string) => {
-        if (url === "http://api/plans/plan-456") {
-          return new Response(JSON.stringify(planResponse), { status: 200 });
-        }
-        if (url === "http://api/plans/plan-456/approve") {
-          return new Response(JSON.stringify(runResponse), { status: 201 });
-        }
-        throw new Error(`Unexpected url: ${url}`);
-      });
-      vi.stubGlobal("fetch", fetchMock);
-
+    it("rejects a plan via POST /plans/:id/reject", async () => {
+      vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({ id: "p", status: "rejected" }), { status: 200 })));
       const client = new HttpApiClient("http://api");
-      const result = await client.approvePlan("plan-456");
-      expect(result).toEqual(runResponse);
-      expect(fetchMock).toHaveBeenCalledWith(
-        "http://api/plans/plan-456/approve",
-        expect.objectContaining({
-          body: JSON.stringify({ revision: 3 }),
-        }),
+      await client.rejectPlan("plan-456", "not needed");
+      expect(fetch).toHaveBeenCalledWith(
+        "http://api/plans/plan-456/reject",
+        expect.objectContaining({ method: "POST", body: JSON.stringify({ reason: "not needed" }) }),
+      );
+    });
+
+    it("answers a clarification via POST /tasks/:id/clarify", async () => {
+      vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({ id: "t", status: "planning" }), { status: 202 })));
+      const client = new HttpApiClient("http://api");
+      await client.clarifyTask("task-1", "demo-repo");
+      expect(fetch).toHaveBeenCalledWith(
+        "http://api/tasks/task-1/clarify",
+        expect.objectContaining({ method: "POST", body: JSON.stringify({ answer: "demo-repo" }) }),
       );
     });
 
@@ -203,173 +182,126 @@ describe("HttpApiClient", () => {
       vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify(runResponse), { status: 200 })));
 
       const client = new HttpApiClient("http://api");
-      const result = await client.getRun("run-789");
-      expect(result).toEqual(runResponse);
+      await expect(client.getRun("run-789")).resolves.toEqual(runResponse);
     });
 
-    it("fetches workflow on 200 and adapts plan if workflow returns 404", async () => {
-      const planResponse = {
-        id: "plan-123",
-        task_id: "task-1",
-        revision: 1,
-        status: "proposed",
-        risk: "medium",
-        expected_result: "Create repository in Gitea",
-        steps: [
-          {
-            seq: 1,
-            action: { type: "click", value: null },
-            target: { role: "button", name: "New" },
-            instruction_text: "Click New",
-            expected_state: { url_matches: "/repo/create" },
-            risk: "low",
-          },
-        ],
-        created_at: "2026-10-14T00:00:00Z",
-      };
+    it("getWorkflow does NOT fall back to a plan on 404", async () => {
+      const fetchMock = vi.fn().mockImplementation(async () =>
+        new Response(JSON.stringify({ error: { code: "not_found", message: "Workflow not found" } }), { status: 404 }),
+      );
+      vi.stubGlobal("fetch", fetchMock);
 
+      const client = new HttpApiClient("http://api");
+      const err = await client.getWorkflow("plan-123").catch((e: unknown) => e);
+      expect(err).toBeInstanceOf(ApiRequestError);
+      expect(isApiError(err, "not_found", 404)).toBe(true);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it("updates plan steps via PATCH /plans/:id with revision", async () => {
+      const steps: PlannedStep[] = [
+        {
+          seq: 1,
+          action: { type: "click", value: null },
+          target: { role: "button", name: "Submit" },
+          instruction_text: "Click Submit",
+          expected_state: { url_matches: "/done" },
+          risk: "low",
+        },
+      ];
+      vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({ id: "plan-456", revision: 2, steps }), { status: 200 })));
+
+      const client = new HttpApiClient("http://api");
+      const result = await client.updatePlan("plan-456", 1, steps);
+      expect(result.revision).toBe(2);
+      expect(fetch).toHaveBeenCalledWith(
+        "http://api/plans/plan-456",
+        expect.objectContaining({ method: "PATCH", body: JSON.stringify({ revision: 1, steps }) }),
+      );
+    });
+
+    it("exposes the contract error code on a 409", async () => {
+      vi.stubGlobal(
+        "fetch",
+        vi.fn().mockResolvedValue(
+          new Response(JSON.stringify({ error: { code: "conflict", message: "Plan revision 1 is stale", details: {} } }), {
+            status: 409,
+          }),
+        ),
+      );
+      const client = new HttpApiClient("http://api");
+      const err = await client.updatePlan("p", 1, []).catch((e: unknown) => e);
+      expect(isApiError(err, "conflict", 409)).toBe(true);
+      expect((err as Error).message).toMatch(/stale/);
+    });
+
+    it("cancels a run via POST /runs/:id/cancel", async () => {
+      vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({ id: "run-789", status: "cancelled" }), { status: 200 })));
+      const client = new HttpApiClient("http://api");
+      await client.cancelRun("run-789");
+      expect(fetch).toHaveBeenCalledWith("http://api/runs/run-789/cancel", expect.objectContaining({ method: "POST" }));
+    });
+
+    it("confirms a paused run via POST /runs/:id/confirm with the paused step_seq", async () => {
+      vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({ id: "run-789", status: "running" }), { status: 200 })));
+      const client = new HttpApiClient("http://api");
+      await client.confirmRun("run-789", 2, "allow");
+      expect(fetch).toHaveBeenCalledWith(
+        "http://api/runs/run-789/confirm",
+        expect.objectContaining({ method: "POST", body: JSON.stringify({ step_seq: 2, decision: "allow" }) }),
+      );
+    });
+
+    it("refuses to confirm without a valid step_seq (never guesses step 1)", async () => {
+      const fetchMock = vi.fn();
+      vi.stubGlobal("fetch", fetchMock);
+      const client = new HttpApiClient("http://api");
+      await expect(client.confirmRun("run-789", 0, "allow")).rejects.toThrow(/step_seq/);
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it("pages GET /runs with limit + opaque cursor and resolves each prompt via plan → task", async () => {
       const fetchMock = vi.fn().mockImplementation(async (url: string) => {
-        if (url === "http://api/workflows/plan-123") {
-          return new Response(JSON.stringify({ error: { message: "Workflow not found" } }), { status: 404 });
+        if (url.startsWith("http://api/runs?")) {
+          return new Response(
+            JSON.stringify({
+              items: [
+                {
+                  id: "run-1",
+                  plan_id: "plan-1",
+                  plan_revision: 1,
+                  status: "verified",
+                  retry_count: 0,
+                  created_at: "2026-10-14T00:00:00Z",
+                  started_at: "2026-10-14T00:00:01Z",
+                  finished_at: "2026-10-14T00:00:06Z",
+                },
+              ],
+              next_cursor: "opaque==",
+            }),
+            { status: 200 },
+          );
         }
-        if (url === "http://api/plans/plan-123") {
-          return new Response(JSON.stringify(planResponse), { status: 200 });
-        }
+        if (url === "http://api/plans/plan-1") return new Response(JSON.stringify({ id: "plan-1", task_id: "task-1" }), { status: 200 });
+        if (url === "http://api/tasks/task-1") return new Response(JSON.stringify({ id: "task-1", prompt: "Create a repo" }), { status: 200 });
         throw new Error(`Unexpected: ${url}`);
       });
       vi.stubGlobal("fetch", fetchMock);
 
       const client = new HttpApiClient("http://api");
-      const adapted = await client.getWorkflow("plan-123");
-      expect(adapted.id).toBe("plan-123");
-      expect(adapted.steps).toHaveLength(1);
-      expect(adapted.steps[0].instruction_text).toBe("Click New");
+      const page1 = await client.getRuns({ limit: 5 });
+      expect(fetchMock).toHaveBeenCalledWith("http://api/runs?limit=5");
+      expect(page1.items[0]).toMatchObject({ id: "run-1", prompt: "Create a repo", durationSeconds: 5 });
+      expect(page1.nextCursor).toBe("opaque==");
+
+      await client.getRuns({ limit: 5, cursor: page1.nextCursor });
+      expect(fetchMock).toHaveBeenCalledWith("http://api/runs?limit=5&cursor=opaque%3D%3D");
     });
 
-    it("updates plan steps via PATCH /plans/:id with revision", async () => {
-      const updatedPlan = {
-        id: "plan-456",
-        task_id: "task-123",
-        revision: 2,
-        status: "proposed",
-        risk: "low",
-        expected_result: "Repo created",
-        steps: [
-          {
-            seq: 1,
-            action: { type: "click", value: null },
-            target: { role: "button", name: "Submit" },
-            instruction_text: "Click Submit",
-            expected_state: { url_matches: "/done" },
-            risk: "low",
-          },
-        ],
-        created_at: "2026-10-14T00:00:00Z",
-      };
-      vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify(updatedPlan), { status: 200 })));
-
-      const client = new HttpApiClient("http://api");
-      const result = await client.updatePlan("plan-456", 1, {
-        steps: updatedPlan.steps as [PlannedStep, ...PlannedStep[]],
-      });
-      expect(result).toEqual(updatedPlan);
-      expect(fetch).toHaveBeenCalledWith(
-        "http://api/plans/plan-456",
-        expect.objectContaining({
-          method: "PATCH",
-          body: JSON.stringify({ revision: 1, steps: updatedPlan.steps }),
-        }),
-      );
-    });
-
-    it("cancels a run via POST /runs/:id/cancel", async () => {
-      const cancelResponse = {
-        id: "run-789",
-        plan_id: "plan-456",
-        plan_revision: 1,
-        status: "cancelled",
-        retry_count: 0,
-        created_at: "2026-10-14T00:00:00Z",
-      };
-      vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify(cancelResponse), { status: 200 })));
-
-      const client = new HttpApiClient("http://api");
-      const result = await client.cancelRun("run-789");
-      expect(result).toEqual(cancelResponse);
-      expect(fetch).toHaveBeenCalledWith(
-        "http://api/runs/run-789/cancel",
-        expect.objectContaining({ method: "POST" }),
-      );
-    });
-
-    it("confirms a paused run via POST /runs/:id/confirm", async () => {
-      const confirmResponse = {
-        id: "run-789",
-        plan_id: "plan-456",
-        plan_revision: 1,
-        status: "running",
-        retry_count: 0,
-        created_at: "2026-10-14T00:00:00Z",
-      };
-      vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify(confirmResponse), { status: 200 })));
-
-      const client = new HttpApiClient("http://api");
-      const result = await client.confirmRun("run-789", 2, "allow");
-      expect(result).toEqual(confirmResponse);
-      expect(fetch).toHaveBeenCalledWith(
-        "http://api/runs/run-789/confirm",
-        expect.objectContaining({
-          method: "POST",
-          body: JSON.stringify({ step_seq: 2, decision: "allow" }),
-        }),
-      );
-    });
-
-    it("fetches paginated runs via GET /runs", async () => {
-      const runsResponse = {
-        items: [
-          {
-            id: "run-1",
-            plan_id: "plan-1",
-            plan_revision: 1,
-            status: "verified",
-            retry_count: 0,
-            created_at: "2026-10-14T00:00:00Z",
-            started_at: "2026-10-14T00:00:01Z",
-            finished_at: "2026-10-14T00:00:06Z",
-          },
-        ],
-        next_cursor: "cursor-2",
-      };
-      vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify(runsResponse), { status: 200 })));
-
-      const client = new HttpApiClient("http://api");
-      const result = await client.getRuns(1, 5);
-      expect(result.items).toHaveLength(1);
-      expect(result.items[0].id).toBe("run-1");
-      expect(result.items[0].durationSeconds).toBe(5);
-      expect(result.nextCursor).toBe("cursor-2");
-      expect(fetch).toHaveBeenCalledWith("http://api/runs?limit=5");
-    });
-
-    it("fetches run details combining run and workflow metadata", async () => {
-      const runResponse = {
-        id: "run-100",
-        plan_id: "plan-100",
-        plan_revision: 1,
-        status: "verified",
-        workflow_id: "wf-100",
-        retry_count: 0,
-        created_at: "2026-10-14T00:00:00Z",
-        started_at: "2026-10-14T00:00:00Z",
-        finished_at: "2026-10-14T00:00:05Z",
-      };
+    it("builds run details from run, plan, task and workflow and resolves artifact keys against the API", async () => {
       const workflowResponse = {
         id: "wf-100",
         title: "Test Workflow",
-        task: "Automate something",
-        target_url: "http://localhost:3001",
-        target_app: "gitea",
         status: "verified",
         steps: [
           {
@@ -379,32 +311,46 @@ describe("HttpApiClient", () => {
             action: { type: "click" },
             target: { role: "button", name: "Submit" },
             risk: "low",
+            expected_state: {},
             verification: { result: "verified", method: ["aria"], confidence: 0.98 },
-            observed_state: { url: "/done", screenshot_path: "/screenshots/done.png" },
+            observed_state: { url: "/done" },
+            screenshot_path: "runs/run-100/step-1.png",
           },
         ],
       };
-
       vi.stubGlobal(
         "fetch",
         vi.fn().mockImplementation(async (url: string) => {
-          if (url === "http://api/runs/run-100") {
-            return new Response(JSON.stringify(runResponse), { status: 200 });
+          if (url === "http://localhost:8000/api/v1/runs/run-100") {
+            return new Response(
+              JSON.stringify({
+                id: "run-100",
+                plan_id: "plan-100",
+                status: "verified",
+                workflow_id: "wf-100",
+                retry_count: 0,
+                created_at: "2026-10-14T00:00:00Z",
+                started_at: "2026-10-14T00:00:00Z",
+                finished_at: "2026-10-14T00:00:05Z",
+              }),
+              { status: 200 },
+            );
           }
-          if (url === "http://api/workflows/wf-100") {
-            return new Response(JSON.stringify(workflowResponse), { status: 200 });
-          }
+          if (url === "http://localhost:8000/api/v1/workflows/wf-100") return new Response(JSON.stringify(workflowResponse), { status: 200 });
+          if (url === "http://localhost:8000/api/v1/plans/plan-100") return new Response(JSON.stringify({ id: "plan-100", task_id: "task-100", steps: [] }), { status: 200 });
+          if (url === "http://localhost:8000/api/v1/tasks/task-100")
+            return new Response(JSON.stringify({ id: "task-100", prompt: "Make a repo", target_url: "http://localhost:3001" }), { status: 200 });
           throw new Error(`Unexpected: ${url}`);
         }),
       );
 
-      const client = new HttpApiClient("http://api");
+      const client = new HttpApiClient("http://localhost:8000/api/v1");
       const result = await client.getRunDetails("run-100");
-      expect(result.run.id).toBe("run-100");
-      expect(result.steps).toHaveLength(1);
+      expect(result.run.prompt).toBe("Make a repo");
+      expect(result.targetUrl).toBe("http://localhost:3001");
       expect(result.steps[0].evidence.method).toBe("aria");
       expect(result.steps[0].evidence.confidence).toBe(0.98);
-      expect(result.steps[0].evidence.screenshotUrl).toBe("/screenshots/done.png");
+      expect(result.steps[0].screenshotUrl).toBe("http://localhost:8000/api/v1/artifacts/runs/run-100/step-1.png");
       expect(result.summary.verifiedSteps).toBe(1);
     });
   });
@@ -414,310 +360,214 @@ describe("HttpApiClient", () => {
       vi.stubGlobal(
         "fetch",
         vi.fn().mockResolvedValue(
-          new Response(
-            JSON.stringify({
-              error: { code: "internal", message: "Database connection failed", details: {} },
-            }),
-            { status: 500, headers: { "Content-Type": "application/json" } },
-          ),
+          new Response(JSON.stringify({ error: { code: "internal", message: "Database connection failed", details: {} } }), {
+            status: 500,
+          }),
         ),
       );
-
       const client = new HttpApiClient("http://api");
       await expect(client.createTask("foo", "bar")).rejects.toThrow("Database connection failed");
     });
 
-    it("throws on network connection failure / timeout", async () => {
-      vi.stubGlobal(
-        "fetch",
-        vi.fn().mockRejectedValue(new Error("Connection refused (ECONNREFUSED)")),
-      );
-
+    it("throws on network connection failure", async () => {
+      vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("Connection refused (ECONNREFUSED)")));
       const client = new HttpApiClient("http://api");
       await expect(client.health()).rejects.toThrow(/Network request failed.*ECONNREFUSED/);
     });
 
-    it("throws on 404 not found", async () => {
-      vi.stubGlobal(
-        "fetch",
-        vi.fn().mockResolvedValue(
-          new Response(
-            JSON.stringify({
-              error: { code: "not_found", message: "Task not found", details: {} },
-            }),
-            { status: 404, headers: { "Content-Type": "application/json" } },
-          ),
-        ),
-      );
-
-      const client = new HttpApiClient("http://api");
-      await expect(client.getTask("unknown-id")).rejects.toThrow("Task not found");
-    });
-
     it("throws on non-2xx status code without JSON body", async () => {
       vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("Service Unavailable", { status: 503 })));
-
       const client = new HttpApiClient("http://api");
       await expect(client.health()).rejects.toThrow("503");
     });
   });
 
-  describe("SSE streaming (streamRunEvents / parseEventStream)", () => {
-    it("parses SSE chunks into RunEvents and ignores ping comments", async () => {
-      const sseText =
-        'id: 1\nevent: run.started\ndata: {"type":"run.started","run_id":"r1","seq":1,"ts":"2026-10-14T00:00:00Z","plan_id":"p1","total_steps":2}\n\n' +
-        ': ping\n\n' +
-        'id: 2\nevent: step.started\ndata: {"type":"step.started","run_id":"r1","seq":2,"ts":"2026-10-14T00:00:01Z","step_seq":1,"instruction_text":"Click New"}\n\n' +
-        'id: 3\nevent: run.completed\ndata: {"type":"run.completed","run_id":"r1","seq":3,"ts":"2026-10-14T00:00:02Z","workflow_id":"w1","verified_steps":1,"failed_actions":0}\n\n';
-
-      const stream = new ReadableStream<Uint8Array>({
-        start(controller) {
-          controller.enqueue(new TextEncoder().encode(sseText));
-          controller.close();
-        },
-      });
-
-      const events: unknown[] = [];
-      for await (const event of parseEventStream(stream)) {
-        events.push(event);
-      }
-
-      expect(events).toHaveLength(3);
-      expect((events[0] as { type: string }).type).toBe("run.started");
-      expect((events[1] as { type: string }).type).toBe("step.started");
-      expect((events[2] as { type: string }).type).toBe("run.completed");
-    });
-
-    it("handles stream cancellation via AbortSignal", async () => {
-      const controller = new AbortController();
-      controller.abort();
-
-      const stream = new ReadableStream<Uint8Array>({
+  describe("SSE streaming", () => {
+    const frame = (seq: number, type: string, extra: Record<string, unknown> = {}) =>
+      `id: ${seq}\nevent: ${type}\ndata: ${JSON.stringify({ type, run_id: "r1", seq, ts: "2026-10-14T00:00:00Z", ...extra })}\n\n`;
+    const body = (text: string) =>
+      new ReadableStream<Uint8Array>({
         start(c) {
-          c.enqueue(new TextEncoder().encode('data: {"type":"run.started"}\n\n'));
+          c.enqueue(new TextEncoder().encode(text));
           c.close();
         },
       });
 
+    it("parses SSE chunks into RunEvents and ignores ping comments", async () => {
+      const text =
+        frame(1, "run.started", { plan_id: "p1", total_steps: 2 }) +
+        ": ping\n\n" +
+        frame(2, "step.started", { step_seq: 1, instruction_text: "Click New" });
       const events: unknown[] = [];
-      for await (const event of parseEventStream(stream, controller.signal)) {
-        events.push(event);
-      }
-
-      expect(events).toHaveLength(0);
+      for await (const event of parseEventStream(body(text))) events.push(event);
+      expect(events.map((e) => (e as { type: string }).type)).toEqual(["run.started", "step.started"]);
     });
 
-    it("throws on streamRunEvents HTTP error status", async () => {
-      vi.stubGlobal(
-        "fetch",
-        vi.fn().mockResolvedValue(new Response("Run not found", { status: 404 })),
+    it("stops after a final event and never reconnects", async () => {
+      const fetchMock = vi.fn().mockImplementation(async () =>
+        new Response(body(frame(1, "run.started", { plan_id: "p", total_steps: 1 }) + frame(2, "run.completed", { workflow_id: "w", verified_steps: 1, failed_actions: 0 })), {
+          status: 200,
+        }),
       );
-
+      vi.stubGlobal("fetch", fetchMock);
       const client = new HttpApiClient("http://api");
-      const generator = client.streamRunEvents("unknown-run");
-      await expect(generator[Symbol.asyncIterator]().next()).rejects.toThrow("404");
+      const types: string[] = [];
+      for await (const e of client.streamRunEvents("r1", { reconnectDelayMs: 1 })) types.push(e.type);
+      expect(types).toEqual(["run.started", "run.completed"]);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it("reconnects after an unexpected drop with Last-Event-ID and skips repeated seqs", async () => {
+      const fetchMock = vi
+        .fn()
+        .mockImplementationOnce(async () => new Response(body(frame(1, "run.started", { plan_id: "p", total_steps: 1 })), { status: 200 }))
+        .mockImplementationOnce(async () => {
+          throw new TypeError("network error");
+        })
+        .mockImplementationOnce(
+          async () =>
+            new Response(
+              body(frame(1, "run.started", { plan_id: "p", total_steps: 1 }) + frame(2, "run.failed", { error: { code: "internal", message: "x" } })),
+              { status: 200 },
+            ),
+        );
+      vi.stubGlobal("fetch", fetchMock);
+      const onReconnect = vi.fn();
+      const client = new HttpApiClient("http://api");
+      const seqs: number[] = [];
+      for await (const e of client.streamRunEvents("r1", { reconnectDelayMs: 1, onReconnect })) seqs.push(e.seq);
+
+      expect(seqs).toEqual([1, 2]);
+      expect(fetchMock).toHaveBeenCalledTimes(3);
+      expect(fetchMock.mock.calls[0][1].headers["Last-Event-ID"]).toBeUndefined();
+      expect(fetchMock.mock.calls[1][1].headers["Last-Event-ID"]).toBe("1");
+      expect(fetchMock.mock.calls[2][1].headers["Last-Event-ID"]).toBe("1");
+      expect(onReconnect).toHaveBeenCalledTimes(2);
+    });
+
+    it("gives up after maxReconnects attempts without events", async () => {
+      vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("network error")));
+      const client = new HttpApiClient("http://api");
+      const it = client.streamRunEvents("r1", { reconnectDelayMs: 1, maxReconnects: 2 })[Symbol.asyncIterator]();
+      await expect(it.next()).rejects.toThrow(/after 2 reconnect attempts/);
+    });
+
+    it("does not retry a 404", async () => {
+      const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ error: { code: "not_found", message: "Run not found" } }), { status: 404 }));
+      vi.stubGlobal("fetch", fetchMock);
+      const client = new HttpApiClient("http://api");
+      const it = client.streamRunEvents("unknown-run", { reconnectDelayMs: 1 })[Symbol.asyncIterator]();
+      await expect(it.next()).rejects.toThrow("404");
+      expect(fetchMock).toHaveBeenCalledTimes(1);
     });
   });
 });
 
-describe("MockApiClient", () => {
-  it("returns health response", async () => {
-    const client = new MockApiClient();
-    await expect(client.health()).resolves.toEqual({ status: "ok", version: "mock" });
+describe("artifactUrl", () => {
+  const base = "http://localhost:8000/api/v1";
+  it("prefixes event paths (/api/...) with the API origin", () => {
+    expect(artifactUrl("/api/v1/artifacts/runs/r/step-1.png", base)).toBe("http://localhost:8000/api/v1/artifacts/runs/r/step-1.png");
   });
+  it("turns a bare key into an artifact URL", () => {
+    expect(artifactUrl("runs/r/step 1.png", base)).toBe("http://localhost:8000/api/v1/artifacts/runs/r/step%201.png");
+  });
+  it("keeps absolute URLs and app-relative paths", () => {
+    expect(artifactUrl("https://cdn/x.png", base)).toBe("https://cdn/x.png");
+    expect(artifactUrl("/screenshots/step-1.png", base)).toBe("/screenshots/step-1.png");
+    expect(artifactUrl(null, base)).toBeUndefined();
+  });
+});
 
-  it("creates a mock task with planned status and plan_id", async () => {
+describe("MockApiClient", () => {
+  it("creates a task that is planning, then polls to planned with a plan id", async () => {
     const client = new MockApiClient();
     const task = await client.createTask("Create repo", "http://localhost:3001");
-    expect(task.id).toBe("mock-task-id");
-    expect(task.status).toBe("planned");
-    expect(task.plan_id).toBeTruthy();
+    expect(task.status).toBe("planning");
+    const polled = await client.getTask(task.id);
+    expect(polled.status).toBe("planned");
+    expect(polled.plan_id).toBe("default");
   });
 
-  it("fetches a mock task by ID", async () => {
-    const client = new MockApiClient();
-    const task = await client.getTask("any-id");
-    expect(task.id).toBe("any-id");
-    expect(task.status).toBe("planned");
-  });
-
-  it("fetches a mock plan with planned steps and risk", async () => {
+  it("serves plans and 404s unknown ones", async () => {
     const client = new MockApiClient();
     const plan = await client.getPlan("default");
-    expect(plan.id).toBe("default");
     expect(plan.steps).toHaveLength(5);
     expect(plan.status).toBe("proposed");
+    await expect(client.getPlan("nope")).rejects.toMatchObject({ status: 404, code: "not_found" });
   });
 
-  it("approves plan and returns queued run", async () => {
+  it("updates a plan, bumps the revision, and 409s a stale revision", async () => {
+    const client = new MockApiClient();
+    const step: PlannedStep = {
+      seq: 1,
+      action: { type: "click" },
+      target: { role: "button", name: "Submit" },
+      instruction_text: "Updated Step 1",
+      expected_state: { url_matches: "/done" },
+      risk: "low",
+    };
+    const updated = await client.updatePlan("default", 1, [step]);
+    expect(updated.revision).toBe(2);
+    await expect(client.updatePlan("default", 1, [step])).rejects.toMatchObject({ status: 409, code: "conflict" });
+  });
+
+  it("approves a plan into a queued RUN and refuses to edit it afterwards", async () => {
     const client = new MockApiClient();
     const run = await client.approvePlan("default", 1);
-    expect(run.id).toBe("mock-run-id");
-    expect(run.plan_id).toBe("default");
-    expect(run.status).toBe("queued");
+    expect(run).toMatchObject({ id: "mock-run-id", plan_id: "default", status: "queued" });
+    await expect(client.updatePlan("default", 1, [])).rejects.toMatchObject({ code: "plan_not_editable" });
   });
 
-  it("fetches a mock run by ID", async () => {
+  it("409s /confirm unless the run is paused at that step", async () => {
     const client = new MockApiClient();
-    const run = await client.getRun("run-123");
-    expect(run.id).toBe("run-123");
-    expect(run.status).toBe("running");
+    await expect(client.confirmRun("paused", 2, "allow")).rejects.toMatchObject({ status: 409, code: "run_not_active" });
   });
 
-  it("updates plan and increments revision on match", async () => {
+  it("replays the success script and ends at run.completed", async () => {
     const client = new MockApiClient();
-    const originalPlan = await client.getPlan("default");
-    expect(originalPlan.revision).toBe(1);
-
-    const updated = await client.updatePlan("default", 1, {
-      steps: [
-        {
-          seq: 1,
-          action: { type: "click" },
-          target: { role: "button", name: "Submit" },
-          instruction_text: "Updated Step 1",
-          expected_state: { url_matches: "/done" },
-          risk: "low",
-        },
-      ],
-    });
-    expect(updated.revision).toBe(2);
-    expect(updated.steps[0].instruction_text).toBe("Updated Step 1");
+    const types: string[] = [];
+    for await (const event of client.streamRunEvents("default", { speed: 1000 })) types.push(event.type);
+    expect(types).toHaveLength(17);
+    expect(types.at(-1)).toBe("run.completed");
   });
 
-  it("throws 409 conflict when updating plan with stale revision", async () => {
+  it("waits on a pause like the backend: allow resumes and completes", async () => {
     const client = new MockApiClient();
-    await client.getPlan("default");
-
-    await expect(
-      client.updatePlan("default", 99, {
-        steps: [
-          {
-            seq: 1,
-            action: { type: "click" },
-            target: { role: "button", name: "Submit" },
-            instruction_text: "Updated Step 1",
-            expected_state: { url_matches: "/done" },
-            risk: "low",
-          },
-        ],
-      }),
-    ).rejects.toThrow(/status 409.*stale/i);
+    const types: string[] = [];
+    for await (const event of client.streamRunEvents("paused", { speed: 1000 })) {
+      types.push(event.type);
+      if (event.type === "run.paused") void client.confirmRun("paused", event.step_seq, "allow");
+    }
+    expect(types).toContain("run.resumed");
+    expect(types.at(-1)).toBe("run.completed");
   });
 
-  it("cancels a run and returns cancelled status", async () => {
+  it("resumes after lastEventId", async () => {
     const client = new MockApiClient();
-    const run = await client.cancelRun("run-123");
-    expect(run.status).toBe("cancelled");
+    const seqs: number[] = [];
+    for await (const event of client.streamRunEvents("default", { speed: 1000, lastEventId: 15 })) seqs.push(event.seq);
+    expect(seqs).toEqual([16, 17]);
   });
 
-  it("confirms a paused run and returns running or cancelled", async () => {
+  it("404s an unknown run", async () => {
     const client = new MockApiClient();
-    const allowed = await client.confirmRun("run-123", 2, "allow");
-    expect(allowed.status).toBe("running");
-
-    const denied = await client.confirmRun("run-123", 2, "deny");
-    expect(denied.status).toBe("cancelled");
+    await expect(client.getRun("unknown-run")).rejects.toMatchObject({ status: 404 });
   });
 
-  describe("workflow fetching", () => {
-    it("returns the realistic Gitea workflow fixture by id", async () => {
-      const client = new MockApiClient();
-      const workflow = await client.getWorkflow("6f1c2a4e-1111-4b8a-9a1b-123456789abc");
-      expect(workflow.id).toBe("6f1c2a4e-1111-4b8a-9a1b-123456789abc");
-      expect(workflow.title).toBe("Create a repository in local Gitea");
-      expect(workflow.steps).toHaveLength(5);
-      expect(workflow.status).toBe("verified");
-    });
-
-    it("returns default fixture when querying with alias 'mock' or 'default'", async () => {
-      const client = new MockApiClient();
-      const mockWf = await client.getWorkflow("mock");
-      const defaultWf = await client.getWorkflow("default");
-      expect(mockWf.id).toBe("6f1c2a4e-1111-4b8a-9a1b-123456789abc");
-      expect(defaultWf.id).toBe("6f1c2a4e-1111-4b8a-9a1b-123456789abc");
-    });
-
-    it("throws an error when workflow id is not found", async () => {
-      const client = new MockApiClient();
-      await expect(client.getWorkflow("unknown-id")).rejects.toThrow("Workflow not found: unknown-id");
-    });
-
-    describe("getRuns pagination", () => {
-      it("returns first page of paginated runs", async () => {
-        const client = new MockApiClient();
-        const res = await client.getRuns(1, 5);
-        expect(res.page).toBe(1);
-        expect(res.pageSize).toBe(5);
-        expect(res.items).toHaveLength(5);
-        expect(res.total).toBe(12);
-        expect(res.totalPages).toBe(3);
-        expect(res.nextCursor).toBe("cursor-2");
-      });
-
-      it("returns second page of paginated runs", async () => {
-        const client = new MockApiClient();
-        const res = await client.getRuns(2, 5);
-        expect(res.page).toBe(2);
-        expect(res.items).toHaveLength(5);
-        expect(res.items[0].id).toBe("run-6");
-      });
-
-      it("handles boundary page requests gracefully", async () => {
-        const client = new MockApiClient();
-        const res = await client.getRuns(3, 5);
-        expect(res.page).toBe(3);
-        expect(res.items).toHaveLength(2);
-        expect(res.nextCursor).toBeNull();
-      });
-    });
-
-    describe("getRunDetails", () => {
-      it("returns comprehensive run details and step verification evidence", async () => {
-        const client = new MockApiClient();
-        const details = await client.getRunDetails("run-1");
-        expect(details.run.id).toBe("run-1");
-        expect(details.steps).toHaveLength(5);
-        expect(details.steps[0].evidence.method).toBe("aria");
-        expect(details.steps[0].evidence.confidence).toBe(1.0);
-        expect(details.steps[0].evidence.screenshotUrl).toBe("/screenshots/step-1.png");
-        expect(details.summary.totalSteps).toBe(5);
-        expect(details.summary.verifiedSteps).toBe(5);
-      });
-
-      it("throws when run details cannot be found", async () => {
-        const client = new MockApiClient();
-        await expect(client.getRunDetails("non-existent-run")).rejects.toThrow("Run details not found: non-existent-run");
-      });
-    });
+  it("pages runs with an opaque cursor", async () => {
+    const client = new MockApiClient();
+    const p1 = await client.getRuns({ limit: 5 });
+    expect(p1.items).toHaveLength(5);
+    const p3 = await client.getRuns({ limit: 5, cursor: (await client.getRuns({ limit: 5, cursor: p1.nextCursor })).nextCursor });
+    expect(p3.items).toHaveLength(2);
+    expect(p3.nextCursor).toBeNull();
   });
 
-  describe("event stream replay", () => {
-    it("throws an error when streaming events for non-existent workflow/run id", () => {
-      const client = new MockApiClient();
-      expect(() => client.streamWorkflowEvents("unknown-wf-id")).toThrow("Workflow not found: unknown-wf-id");
-    });
-
-    it("replays all 17 fixture events in chronological sequence with realistic delays", async () => {
-      const client = new MockApiClient();
-      const stream = client.streamWorkflowEvents("mock", { speed: 100 });
-      const types: string[] = [];
-      for await (const event of stream) {
-        types.push(event.type);
-      }
-      expect(types).toHaveLength(17);
-      expect(types[0]).toBe("run.started");
-      expect(types[types.length - 1]).toBe("run.completed");
-    });
-
-    it("supports streamRunEvents alias", async () => {
-      const client = new MockApiClient();
-      const stream = client.streamRunEvents("default", { speed: 100 });
-      const types: string[] = [];
-      for await (const event of stream) {
-        types.push(event.type);
-      }
-      expect(types).toHaveLength(17);
-    });
+  it("returns run details with evidence", async () => {
+    const client = new MockApiClient();
+    const details = await client.getRunDetails("run-1");
+    expect(details.steps).toHaveLength(5);
+    expect(details.steps[0].evidence.screenshotUrl).toBe("/screenshots/step-1.png");
+    await expect(client.getRunDetails("non-existent-run")).rejects.toThrow("Run details not found: non-existent-run");
   });
 });
