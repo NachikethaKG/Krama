@@ -1,0 +1,189 @@
+{
+  "as-stored": [
+    {
+      "seq": 1,
+      "target": {
+        "role": "link",
+        "name": "New Repository"
+      },
+      "action_ok": true,
+      "error": null,
+      "strategy": "role",
+      "result": "verified",
+      "observed_url": "/repo/create",
+      "seconds": 0.5
+    },
+    {
+      "seq": 2,
+      "target": {
+        "role": "textbox",
+        "name": "Repository Name *"
+      },
+      "action_ok": true,
+      "error": null,
+      "strategy": "role",
+      "result": "verified",
+      "observed_url": "/repo/create",
+      "seconds": 0.7
+    },
+    {
+      "seq": 3,
+      "target": {
+        "role": "button",
+        "name": "Create Repository"
+      },
+      "action_ok": true,
+      "error": null,
+      "strategy": "role",
+      "result": "failed",
+      "observed_url": "/repo/create",
+      "seconds": 5.9
+    }
+  ],
+  "reset": [
+    {
+      "seq": 1,
+      "target": {
+        "role": "link",
+        "name": "New Repository"
+      },
+      "action_ok": true,
+      "error": null,
+      "strategy": "role",
+      "result": "verified",
+      "observed_url": "/repo/create",
+      "seconds": 0.5
+    },
+    {
+      "seq": 2,
+      "target": {
+        "role": "textbox",
+        "name": "Repository Name *"
+      },
+      "action_ok": true,
+      "error": null,
+      "strategy": "role",
+      "result": "verified",
+      "observed_url": "/repo/create",
+      "seconds": 0.2
+    },
+    {
+      "seq": 3,
+      "target": {
+        "role": "button",
+        "name": "Create Repository"
+      },
+      "action_ok": true,
+      "error": null,
+      "strategy": "role",
+      "result": "verified",
+      "observed_url": "/demo/my-test-1",
+      "seconds": 0.2
+    }
+  ],
+  "renamed-name": [
+    {
+      "seq": 1,
+      "target": {
+        "role": "link",
+        "name": "Add Repository"
+      },
+      "action_ok": false,
+      "error": "target_not_found",
+      "strategy": null,
+      "result": "failed",
+      "observed_url": "/",
+      "seconds": 5.3
+    },
+    {
+      "seq": 2,
+      "result": "not_run"
+    },
+    {
+      "seq": 3,
+      "result": "not_run"
+    }
+  ],
+  "ui-renamed": [
+    {
+      "seq": 1,
+      "target": {
+        "role": "link",
+        "name": "New Repository"
+      },
+      "action_ok": true,
+      "error": null,
+      "strategy": "role",
+      "result": "verified",
+      "observed_url": "/repo/create",
+      "seconds": 1.0
+    },
+    {
+      "seq": 2,
+      "target": {
+        "role": "textbox",
+        "name": "Repository Name *"
+      },
+      "action_ok": true,
+      "error": null,
+      "strategy": "role",
+      "result": "verified",
+      "observed_url": "/repo/create",
+      "seconds": 0.5
+    },
+    {
+      "seq": 3,
+      "target": {
+        "role": "button",
+        "name": "Create Repository"
+      },
+      "action_ok": false,
+      "error": "target_not_found",
+      "strategy": null,
+      "result": "failed",
+      "observed_url": "/repo/create",
+      "seconds": 5.8
+    }
+  ],
+  "ui-suffix": [
+    {
+      "seq": 1,
+      "target": {
+        "role": "link",
+        "name": "New Repository"
+      },
+      "action_ok": true,
+      "error": null,
+      "strategy": "role",
+      "result": "verified",
+      "observed_url": "/repo/create",
+      "seconds": 1.6
+    },
+    {
+      "seq": 2,
+      "target": {
+        "role": "textbox",
+        "name": "Repository Name *"
+      },
+      "action_ok": true,
+      "error": null,
+      "strategy": "role",
+      "result": "verified",
+      "observed_url": "/repo/create",
+      "seconds": 1.3
+    },
+    {
+      "seq": 3,
+      "target": {
+        "role": "button",
+        "name": "Create Repository"
+      },
+      "action_ok": true,
+      "error": null,
+      "strategy": "role",
+      "result": "verified",
+      "observed_url": "/demo/my-test-1",
+      "seconds": 1.5
+    }
+  ]
+}

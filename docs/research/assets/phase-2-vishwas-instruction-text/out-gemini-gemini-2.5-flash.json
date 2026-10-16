@@ -1,0 +1,489 @@
+{
+  "provider": "gemini:gemini-2.5-flash",
+  "tasks": {
+    "create-repo": {
+      "seconds": 7.6,
+      "error": null,
+      "model": "gemini-2.5-flash",
+      "steps": [
+        {
+          "in": {
+            "seq": 1,
+            "action": "click",
+            "role": "link",
+            "label": "New Repository",
+            "section": "Repositories"
+          },
+          "text": "In the **Repositories** section, click **New Repository**.",
+          "checks": {
+            "imperative": true,
+            "label_exact": true,
+            "value_exact": true,
+            "no_leak_multiline": true,
+            "where_first": true,
+            "short": true,
+            "no_direction_words": true,
+            "no_invented_bold": true
+          }
+        },
+        {
+          "in": {
+            "seq": 2,
+            "action": "fill",
+            "role": "textbox",
+            "label": "Repository Name",
+            "value": "team-docs"
+          },
+          "text": "Enter `team-docs` in **Repository Name**.",
+          "checks": {
+            "imperative": true,
+            "label_exact": true,
+            "value_exact": true,
+            "no_leak_multiline": true,
+            "where_first": true,
+            "short": true,
+            "no_direction_words": true,
+            "no_invented_bold": true
+          }
+        },
+        {
+          "in": {
+            "seq": 3,
+            "action": "click",
+            "role": "checkbox",
+            "label": "Initialize Repository"
+          },
+          "text": "Select the **Initialize Repository** checkbox.",
+          "checks": {
+            "imperative": true,
+            "label_exact": true,
+            "value_exact": true,
+            "no_leak_multiline": true,
+            "where_first": true,
+            "short": true,
+            "no_direction_words": true,
+            "no_invented_bold": true
+          }
+        },
+        {
+          "in": {
+            "seq": 4,
+            "action": "click",
+            "role": "button",
+            "label": "Create Repository"
+          },
+          "text": "Click **Create Repository**.",
+          "checks": {
+            "imperative": true,
+            "label_exact": true,
+            "value_exact": true,
+            "no_leak_multiline": true,
+            "where_first": true,
+            "short": true,
+            "no_direction_words": true,
+            "no_invented_bold": true
+          }
+        }
+      ]
+    },
+    "create-issue": {
+      "seconds": 11.3,
+      "error": null,
+      "model": "gemini-2.5-flash",
+      "steps": [
+        {
+          "in": {
+            "seq": 1,
+            "action": "navigate",
+            "value": "/demo/krama-research-tasks/issues",
+            "arrives_on": "Issues - krama-research-tasks"
+          },
+          "text": "Go to the **Issues - krama-research-tasks** page.",
+          "checks": {
+            "imperative": true,
+            "label_exact": true,
+            "value_exact": true,
+            "no_leak_multiline": true,
+            "where_first": true,
+            "short": true,
+            "no_direction_words": true,
+            "no_invented_bold": true
+          }
+        },
+        {
+          "in": {
+            "seq": 2,
+            "action": "click",
+            "role": "link",
+            "label": "New Issue",
+            "section": "Labels Milestones"
+          },
+          "text": "Under **Labels Milestones**, click **New Issue**.",
+          "checks": {
+            "imperative": true,
+            "label_exact": true,
+            "value_exact": true,
+            "no_leak_multiline": true,
+            "where_first": true,
+            "short": true,
+            "no_direction_words": true,
+            "no_invented_bold": true
+          }
+        },
+        {
+          "in": {
+            "seq": 3,
+            "action": "fill",
+            "role": "textbox",
+            "label": "Title",
+            "value": "Login page shows a blank screen"
+          },
+          "text": "Enter `Login page shows a blank screen` in **Title**.",
+          "checks": {
+            "imperative": true,
+            "label_exact": true,
+            "value_exact": true,
+            "no_leak_multiline": true,
+            "where_first": true,
+            "short": true,
+            "no_direction_words": true,
+            "no_invented_bold": true
+          }
+        },
+        {
+          "in": {
+            "seq": 4,
+            "action": "fill",
+            "role": "textbox",
+            "label": "Leave a comment",
+            "value": "Steps: open /user/login on a small window."
+          },
+          "text": "Enter `Steps: open /user/login on a small window.` in **Leave a comment**.",
+          "checks": {
+            "imperative": true,
+            "label_exact": true,
+            "value_exact": true,
+            "no_leak_multiline": true,
+            "where_first": true,
+            "short": true,
+            "no_direction_words": true,
+            "no_invented_bold": true
+          }
+        },
+        {
+          "in": {
+            "seq": 5,
+            "action": "click",
+            "role": "button",
+            "label": "Create Issue"
+          },
+          "text": "Click **Create Issue**.",
+          "checks": {
+            "imperative": true,
+            "label_exact": true,
+            "value_exact": true,
+            "no_leak_multiline": true,
+            "where_first": true,
+            "short": true,
+            "no_direction_words": true,
+            "no_invented_bold": true
+          }
+        }
+      ]
+    },
+    "create-branch": {
+      "seconds": 7.9,
+      "error": "LLMRateLimitedError: every Gemini model is out of quota",
+      "model": null,
+      "steps": [
+        {
+          "in": {
+            "seq": 1,
+            "action": "navigate",
+            "value": "/demo/krama-research-tasks/branches",
+            "arrives_on": "Branches - krama-research-tasks"
+          },
+          "text": "",
+          "checks": {
+            "imperative": false,
+            "label_exact": true,
+            "value_exact": true,
+            "no_leak_multiline": true,
+            "where_first": true,
+            "short": true,
+            "no_direction_words": true,
+            "no_invented_bold": true
+          }
+        },
+        {
+          "in": {
+            "seq": 2,
+            "action": "click",
+            "role": "button",
+            "label": "Create new branch from \"main\"",
+            "section": "Default Branch"
+          },
+          "text": "",
+          "checks": {
+            "imperative": false,
+            "label_exact": false,
+            "value_exact": true,
+            "no_leak_multiline": true,
+            "where_first": true,
+            "short": true,
+            "no_direction_words": true,
+            "no_invented_bold": true
+          }
+        },
+        {
+          "in": {
+            "seq": 3,
+            "action": "fill",
+            "role": "textbox",
+            "label": "Branch Name",
+            "value": "feature-docs",
+            "inside": "dialog \"Create new branch\""
+          },
+          "text": "",
+          "checks": {
+            "imperative": false,
+            "label_exact": false,
+            "value_exact": false,
+            "no_leak_multiline": true,
+            "where_first": false,
+            "short": true,
+            "no_direction_words": true,
+            "no_invented_bold": true
+          }
+        },
+        {
+          "in": {
+            "seq": 4,
+            "action": "click",
+            "role": "button",
+            "label": "Confirm",
+            "inside": "dialog \"Create new branch\""
+          },
+          "text": "",
+          "checks": {
+            "imperative": false,
+            "label_exact": false,
+            "value_exact": true,
+            "no_leak_multiline": true,
+            "where_first": false,
+            "short": true,
+            "no_direction_words": true,
+            "no_invented_bold": true
+          }
+        }
+      ]
+    },
+    "add-file": {
+      "seconds": 2.4,
+      "error": "LLMRateLimitedError: every Gemini model is out of quota",
+      "model": null,
+      "steps": [
+        {
+          "in": {
+            "seq": 1,
+            "action": "navigate",
+            "value": "/demo/krama-research-tasks",
+            "arrives_on": "demo/krama-research-tasks - krama-research-tasks"
+          },
+          "text": "",
+          "checks": {
+            "imperative": false,
+            "label_exact": true,
+            "value_exact": true,
+            "no_leak_multiline": true,
+            "where_first": true,
+            "short": true,
+            "no_direction_words": true,
+            "no_invented_bold": true
+          }
+        },
+        {
+          "in": {
+            "seq": 2,
+            "action": "click",
+            "role": "menu",
+            "label": "Add File",
+            "inside": "dropdown menu"
+          },
+          "text": "",
+          "checks": {
+            "imperative": false,
+            "label_exact": false,
+            "value_exact": true,
+            "no_leak_multiline": true,
+            "where_first": true,
+            "short": true,
+            "no_direction_words": true,
+            "no_invented_bold": true
+          }
+        },
+        {
+          "in": {
+            "seq": 3,
+            "action": "click",
+            "role": "menuitem",
+            "label": "New File",
+            "inside": "dropdown menu"
+          },
+          "text": "",
+          "checks": {
+            "imperative": false,
+            "label_exact": false,
+            "value_exact": true,
+            "no_leak_multiline": true,
+            "where_first": true,
+            "short": true,
+            "no_direction_words": true,
+            "no_invented_bold": true
+          }
+        },
+        {
+          "in": {
+            "seq": 4,
+            "action": "fill",
+            "role": "textbox",
+            "label": "Name your file…",
+            "value": "docs/notes.md"
+          },
+          "text": "",
+          "checks": {
+            "imperative": false,
+            "label_exact": false,
+            "value_exact": false,
+            "no_leak_multiline": true,
+            "where_first": true,
+            "short": true,
+            "no_direction_words": true,
+            "no_invented_bold": true
+          }
+        },
+        {
+          "in": {
+            "seq": 5,
+            "action": "fill",
+            "role": "textbox",
+            "label": "Editor content",
+            "value": "# Notes\n\nFirst note."
+          },
+          "text": "",
+          "checks": {
+            "imperative": false,
+            "label_exact": false,
+            "value_exact": true,
+            "no_leak_multiline": true,
+            "where_first": true,
+            "short": true,
+            "no_direction_words": true,
+            "no_invented_bold": true
+          }
+        },
+        {
+          "in": {
+            "seq": 6,
+            "action": "click",
+            "role": "button",
+            "label": "Commit Changes",
+            "section": "Commit Changes"
+          },
+          "text": "",
+          "checks": {
+            "imperative": false,
+            "label_exact": false,
+            "value_exact": true,
+            "no_leak_multiline": true,
+            "where_first": true,
+            "short": true,
+            "no_direction_words": true,
+            "no_invented_bold": true
+          }
+        }
+      ]
+    },
+    "repo-settings-selector": {
+      "seconds": 10.4,
+      "error": "RemoteProtocolError: Server disconnected without sending a response.",
+      "model": null,
+      "steps": [
+        {
+          "in": {
+            "seq": 1,
+            "action": "navigate",
+            "value": "/demo/krama-research-tasks/settings",
+            "arrives_on": "Repository - krama-research-tasks"
+          },
+          "text": "",
+          "checks": {
+            "imperative": false,
+            "label_exact": true,
+            "value_exact": true,
+            "no_leak_multiline": true,
+            "where_first": true,
+            "short": true,
+            "no_direction_words": true,
+            "no_invented_bold": true
+          }
+        },
+        {
+          "in": {
+            "seq": 2,
+            "action": "fill",
+            "role": "textbox",
+            "label": "Description",
+            "value": "Docs for the team",
+            "section": "Basic Settings"
+          },
+          "text": "",
+          "checks": {
+            "imperative": false,
+            "label_exact": false,
+            "value_exact": false,
+            "no_leak_multiline": true,
+            "where_first": true,
+            "short": true,
+            "no_direction_words": true,
+            "no_invented_bold": true
+          }
+        },
+        {
+          "in": {
+            "seq": 3,
+            "action": "click",
+            "role": "button",
+            "label": "Update Settings",
+            "section": "Basic Settings"
+          },
+          "text": "",
+          "checks": {
+            "imperative": false,
+            "label_exact": false,
+            "value_exact": true,
+            "no_leak_multiline": true,
+            "where_first": true,
+            "short": true,
+            "no_direction_words": true,
+            "no_invented_bold": true
+          }
+        }
+      ]
+    }
+  },
+  "summary": {
+    "imperative": 9,
+    "label_exact": 12,
+    "value_exact": 19,
+    "no_leak_multiline": 22,
+    "where_first": 20,
+    "short": 22,
+    "no_direction_words": 22,
+    "no_invented_bold": 22,
+    "all_pass": 9,
+    "steps": 22,
+    "seconds_total": 39.6,
+    "errors": 3
+  }
+}

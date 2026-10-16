@@ -1,0 +1,10 @@
+DPR 2.0: screenshot (2560, 1200) for viewport {'width': 1280, 'height': 600}; document height 1364; rrweb meta [{'href': 'http://127.0.0.1:3001/repo/create', 'width': 1280, 'height': 600}]
+{"target": "checkbox 'Make repository a template'", "t_click": 1792165607524, "stored_A": [518.984375, 1156.21875, 15, 15], "scroll_before": [0, 0], "scroll_after": [0, 764], "page_box_after": [518.984375, 1156.21875, 15, 15], "rrweb_click_xy": [526, 399], "rrweb_scroll_at_click": [0, 0], "stored_box_in_replay_viewport": [519.0, 1156.2, 15, 15], "click_inside_stored_box": false}
+{"target": "textbox 'Default Branch'", "t_click": 1792165607949, "stored_A": [518.984375, 968.4375, 386, 38], "scroll_before": [0, 764], "scroll_after": [0, 764], "page_box_after": [518.984375, 968.4375, 386, 38], "rrweb_click_xy": [711, 223], "rrweb_scroll_at_click": [0, 764], "stored_box_in_replay_viewport": [519.0, 204.4, 386, 38], "click_inside_stored_box": true}
+{"target": "checkbox 'Make repository private'", "t_click": 1792165608349, "stored_A": [518.984375, 343.90625, 15, 15], "scroll_before": [0, 764], "scroll_after": [0, 51], "page_box_after": [518.984375, 343.90625, 15, 15], "rrweb_click_xy": [526, 300], "rrweb_scroll_at_click": [0, 764], "stored_box_in_replay_viewport": [519.0, -420.1, 15, 15], "click_inside_stored_box": false}
+3 rrweb clicks, 2 rrweb scroll events
+  +    0 ms  click  x=526 y=399
+  +    9 ms  scroll x=0 y=764
+  +  413 ms  click  x=711 y=223
+  +  813 ms  click  x=526 y=300
+  +  819 ms  scroll x=0 y=51

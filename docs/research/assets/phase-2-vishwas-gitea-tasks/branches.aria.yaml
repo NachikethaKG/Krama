@@ -1,0 +1,99 @@
+- navigation "Navigation Bar":
+  - link "Dashboard":
+    - /url: /
+  - link "Issues":
+    - /url: /issues
+  - link "Pull Requests":
+    - /url: /pulls
+  - link "Milestones":
+    - /url: /milestones
+  - link "Explore":
+    - /url: /explore/repos
+  - link "Notifications":
+    - /url: /notifications
+  - menu "Create…"
+  - menu "Profile and Settings…":
+    - img "demo"
+- main "Branches":
+  - link "demo":
+    - /url: /demo
+  - text: /
+  - link "krama-research-tasks":
+    - /url: /demo/krama-research-tasks
+  - link "RSS Feed":
+    - /url: /demo/krama-research-tasks.rss
+  - button "Unwatch"
+  - link "1":
+    - /url: /demo/krama-research-tasks/watchers
+  - button "Star"
+  - link "0":
+    - /url: /demo/krama-research-tasks/stars
+  - text: Fork
+  - link "0":
+    - /url: /demo/krama-research-tasks/forks
+  - navigation:
+    - link "Code":
+      - /url: /demo/krama-research-tasks
+    - link "Issues":
+      - /url: /demo/krama-research-tasks/issues
+    - link "Pull Requests":
+      - /url: /demo/krama-research-tasks/pulls
+    - link "Actions":
+      - /url: /demo/krama-research-tasks/actions
+    - link "Packages":
+      - /url: /demo/krama-research-tasks/packages
+    - link "Projects":
+      - /url: /demo/krama-research-tasks/projects
+    - link "Releases":
+      - /url: /demo/krama-research-tasks/releases
+    - link "Wiki":
+      - /url: /demo/krama-research-tasks/wiki
+    - link "Activity":
+      - /url: /demo/krama-research-tasks/activity
+    - link "Settings":
+      - /url: /demo/krama-research-tasks/settings
+  - link "1 Commit":
+    - /url: /demo/krama-research-tasks/commits/branch/main
+  - link "1 Branch":
+    - /url: /demo/krama-research-tasks/branches
+  - link "0 Tags":
+    - /url: /demo/krama-research-tasks/tags
+  - text: 23 KiB
+  - heading "Default Branch Switch Default Branch" [level=4]:
+    - text: Default Branch
+    - button "Switch Default Branch"
+  - table:
+    - rowgroup:
+      - row "main 71841cff13 · Initial commit · Updated Oct 16, 2026, 20:18 GMT+5:30 Create new branch from \"main\" Rename Branch \"main\"":
+        - cell "main 71841cff13 · Initial commit · Updated Oct 16, 2026, 20:18 GMT+5:30":
+          - link "main":
+            - /url: /demo/krama-research-tasks/src/branch/main
+          - button
+          - paragraph:
+            - link "71841cff13":
+              - /url: /demo/krama-research-tasks/commit/71841cff13abadf16f0195092bdfd3771616d423
+            - text: · Initial commit · Updated 2026-10-16 14:48:39 +00:00now
+        - cell "Create new branch from \"main\" Rename Branch \"main\"":
+          - button "Create new branch from \"main\""
+          - button
+          - menu "Download Branch \"main\""
+          - button "Rename Branch \"main\""
+  - heading "Branches" [level=4]
+  - searchbox "Search branches..."
+  - button "Search..."
+  - table:
+    - rowgroup
+- group "Footer":
+  - contentinfo "About Software":
+    - link "Powered by Gitea":
+      - /url: https://about.gitea.com
+    - text: "Version: 1.22.6 Page:"
+    - strong: 456ms
+    - text: "Template:"
+    - strong: 114ms
+  - group "Links":
+    - menu: English
+    - link "Licenses":
+      - /url: /assets/licenses.txt
+    - link "API":
+      - /url: /api/swagger
