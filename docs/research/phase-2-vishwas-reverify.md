@@ -78,7 +78,8 @@ For #77 (`POST /workflows/{id}/reverify` → `202 Run`):
 5. **Destructive steps:** keep the policy pause (never skip it). Simplest for Phase 2: refuse reverify for workflows
    with a high-risk step, or let the pause time out quickly. **Decision for Vishwas.**
 
-No `architecture.md` change (it already lists "re-verification" as a run of stored steps).
+No `architecture.md` change: reverify reuses the existing run pipeline. `api-contract.md` already lists the
+endpoint (`POST /workflows/{id}/reverify` → `202 Run`, "Replays the stored workflow headlessly").
 
 ## Open questions
 - Should a failed reverify set `workflows.status = outdated` right away? Phase 4 (#110, #111) owns drift
