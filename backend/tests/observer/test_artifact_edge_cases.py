@@ -135,7 +135,7 @@ async def test_page_observer_stop_recording_storage_failure_handles_cleanly(
 
     # State reset and fallback path returned without unhandled crash
     assert observer._recording is False
-    assert rec_ref.path == "observer/recording.json"
+    assert rec_ref.path == ""  # nothing was stored, so no path that would point at a missing file
 
 
 def test_observation_model_schema_compatibility() -> None:

@@ -122,7 +122,7 @@ async def test_recording_lifecycle_and_error_handling(mock_gitea_page: Page) -> 
 
     ref = await observer.stop_recording()
 
-    assert ref.path == "observer/recording.json"
+    assert ref.path == ""  # nothing was stored, so no path that would point at a missing file
     assert ref.event_count >= 1
     assert ref.started_at <= ref.ended_at
 
