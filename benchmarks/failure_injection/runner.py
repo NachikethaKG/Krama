@@ -5,6 +5,9 @@ Usage:
     python -m benchmarks.failure_injection.runner --verifier rule
     python -m benchmarks.failure_injection.runner --filter-type wrong_page
     python -m benchmarks.failure_injection.runner --no-save
+
+Exit code is 1 when a verifier crashed on any case, when any injected failure came back `verified`
+(silently passed; disable with --max-silently-passed 1), or when an optional threshold is not met.
 """
 
 from __future__ import annotations
@@ -14,11 +17,14 @@ import sys
 from collections.abc import Sequence
 from pathlib import Path
 
-from app.verifier.layered import LayeredVerifier  # type: ignore[import-untyped]
-from app.verifier.verifier import RuleVerifier  # type: ignore[import-untyped]
+from app.verifier.layered import LayeredVerifier
+from app.verifier.verifier import RuleVerifier
 
 from benchmarks.failure_injection.cases import ALL_CASES
-from benchmarks.failure_injection.evaluator import FailureInjectionEvaluator
+from benchmarks.failure_injection.evaluator import (
+    FAILURE_TYPES,
+    FailureInjectionEvaluator,
+)
 from benchmarks.failure_injection.models import FailureCase, FailureType
 from benchmarks.failure_injection.reporter import FailureInjectionReporter
 
@@ -36,12 +42,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--filter-type",
-        choices=[
-            "wrong_page",
-            "missing_element",
-            "unexpected_dialog",
-            "wrong_form_value",
-        ],
+        choices=list(FAILURE_TYPES),
         default=None,
         help="Optional failure mode to isolate and test",
     )
@@ -67,6 +68,13 @@ def build_parser() -> argparse.ArgumentParser:
         type=float,
         default=None,
         help="Maximum allowed false alarm rate threshold (0.0 to 1.0) to pass",
+    )
+    parser.add_argument(
+        "--max-silently-passed",
+        type=float,
+        default=0.0,
+        help="Maximum allowed rate of injected failures that come back 'verified' "
+        "(default 0.0: any silent pass fails the run)",
     )
     return parser
 
@@ -100,13 +108,31 @@ def run_benchmark(
 
     reporter.render(report, saved_path=saved_path)
 
+    exit_code = 0
+    if report.errors > 0:
+        print(
+            f"FAILED: the verifier crashed on {report.errors} case(s); "
+            "crashes count as misses / false alarms.",
+            file=sys.stderr,
+        )
+        exit_code = 1
+
+    if report.silently_passed_rate > args.max_silently_passed:
+        print(
+            f"FAILED: {report.silently_passed} injected failure(s) came back 'verified' "
+            f"(silently passed {report.silently_passed_rate * 100.0:.1f}% > "
+            f"{args.max_silently_passed * 100.0:.1f}%).",
+            file=sys.stderr,
+        )
+        exit_code = 1
+
     if args.min_accuracy is not None and report.detection_accuracy < args.min_accuracy:
         print(
             f"FAILED: Detection accuracy {report.detection_accuracy * 100.0:.1f}% "
             f"fell below required threshold {args.min_accuracy * 100.0:.1f}%.",
             file=sys.stderr,
         )
-        return 1
+        exit_code = 1
 
     if (
         args.max_false_alarm is not None
@@ -117,9 +143,9 @@ def run_benchmark(
             f"exceeded maximum allowed threshold {args.max_false_alarm * 100.0:.1f}%.",
             file=sys.stderr,
         )
-        return 1
+        exit_code = 1
 
-    return 0
+    return exit_code
 
 
 def main() -> None:

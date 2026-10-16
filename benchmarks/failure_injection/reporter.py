@@ -2,81 +2,107 @@
 
 from __future__ import annotations
 
-import io
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import TextIO
 
-from benchmarks.failure_injection.models import AccuracyReport
+from benchmarks.failure_injection.models import AccuracyReport, OutcomeCounts
+
+STATUS_LABELS = {
+    "TP": "[CAUGHT]",
+    "TP_PAUSED": "[PAUSED]",
+    "FN": "[MISSED]",
+    "TN": "[PASS]",
+    "FP": "[FALSE ALARM]",
+    "FP_PAUSED": "[NEEDLESS PAUSE]",
+}
+
+
+def _vfse(c: OutcomeCounts) -> str:
+    return f"{c.verified}/{c.failed}/{c.skipped}/{c.error}"
+
+
+def _pct(rate: float) -> str:
+    return f"{rate * 100.0:.1f}%"
 
 
 class FailureInjectionReporter:
     """Renders formatted console tables and saves JSON reports for failure injection benchmarks."""
 
-    def __init__(self, stream: io.TextIOBase | None = None) -> None:
+    def __init__(self, stream: TextIO | None = None) -> None:
         self.stream = stream or sys.stdout
 
     def render(self, report: AccuracyReport, saved_path: Path | None = None) -> None:
         """Render a formatted console table summarizing accuracy and false alarms."""
         out = self.stream
-
-        sep = "=" * 80
-        thin_sep = "-" * 80
-
-        acc_pct = report.detection_accuracy * 100.0
-        far_pct = report.false_alarm_rate * 100.0
+        width = 96
+        sep = "=" * width
+        thin_sep = "-" * width
+        inj, ctrl = report.injected_failures, report.clean_controls
 
         out.write(f"\n{sep}\n")
-        out.write(f"{'VERIFIER FAILURE-INJECTION BENCHMARK REPORT':^80}\n")
+        out.write(f"{'VERIFIER FAILURE-INJECTION BENCHMARK REPORT':^{width}}\n")
         out.write(f"{sep}\n")
         out.write(f"Verifier Evaluated:          {report.verifier_name}\n")
         out.write(f"Timestamp:                   {report.timestamp}\n")
         out.write(f"Total Cases:                 {report.total_cases}\n")
-        out.write(f"Injected Failures:           {report.injected_failures}\n")
-        out.write(f"Clean Control Cases:         {report.clean_controls}\n")
+        out.write(f"Injected Failures:           {inj}\n")
+        out.write(f"Clean Control Cases:         {ctrl}\n")
         out.write(
-            f"Detection Accuracy (Recall): {acc_pct:.1f}% "
-            f"({report.true_positives}/{report.injected_failures} caught)\n"
+            f"Silently Passed (must be 0): {_pct(report.silently_passed_rate)} "
+            f"({report.silently_passed}/{inj} injected came back verified)\n"
         )
         out.write(
-            f"False Alarm Rate (FP Rate):  {far_pct:.1f}% "
-            f"({report.false_positives}/{report.clean_controls} false alarms)\n"
+            f"Detection Accuracy (Recall): {_pct(report.detection_accuracy)} "
+            f"({report.true_positives} failed + {report.paused_failures} paused / {inj})\n"
         )
-        if report.errors > 0:
-            out.write(f"System / Execution Errors:   {report.errors}\n")
+        out.write(
+            f"Hard Detection (failed):     {_pct(report.hard_detection_rate)} "
+            f"({report.true_positives}/{inj})\n"
+        )
+        out.write(
+            f"False Alarm Rate (FP Rate):  {_pct(report.false_alarm_rate)} "
+            f"({report.false_positives}/{ctrl} controls failed or crashed)\n"
+        )
+        out.write(
+            f"Needless Pause Rate:         {_pct(report.needless_pause_rate)} "
+            f"({report.needless_pauses}/{ctrl} controls skipped)\n"
+        )
+        out.write(f"System / Execution Errors:   {report.errors}\n")
+        out.write(
+            f"Outcome != expected_result:  {report.expected_mismatches}/{report.total_cases}\n"
+        )
 
         out.write(f"\n{thin_sep}\n")
-        out.write("PER-FAILURE-TYPE BREAKDOWN:\n")
         out.write(
-            f"{'Failure Type':<20} {'Total':<6} {'Injected (TP/FN)':<18} "
-            f"{'Control (TN/FP)':<17} {'Recall':<8} {'False Alarm'}\n"
+            "PER-FAILURE-TYPE BREAKDOWN:\n"
+            "  v/f/s/e = verified/failed/skipped/error; "
+            "Silent = injected verified; Hard = injected failed\n"
+        )
+        out.write(
+            f"{'Failure Type':<18} {'Inj':>3} {'Injected v/f/s/e':>17} {'Silent':>7} "
+            f"{'Hard':>7} {'Ctl':>4} {'Control v/f/s/e':>16} {'FalseAl':>8} {'Pause':>7}\n"
         )
         out.write(f"{thin_sep}\n")
-
-        for ft, metrics in report.by_type.items():
-            inj_str = f"{metrics.injected_failures} ({metrics.true_positives}/{metrics.false_negatives})"
-            ctrl_str = f"{metrics.clean_controls} ({metrics.true_negatives}/{metrics.false_positives})"
-            rec_str = f"{metrics.recall * 100.0:.1f}%"
-            far_str = f"{metrics.false_alarm_rate * 100.0:.1f}%"
+        for ft, m in report.by_type.items():
             out.write(
-                f"{ft:<20} {metrics.total_cases:<6} {inj_str:<18} "
-                f"{ctrl_str:<17} {rec_str:<8} {far_str}\n"
+                f"{ft:<18} {m.injected_failures:>3} {_vfse(m.injected_outcomes):>17} "
+                f"{_pct(m.silently_passed_rate):>7} {_pct(m.hard_detection_rate):>7} "
+                f"{m.clean_controls:>4} {_vfse(m.control_outcomes):>16} "
+                f"{_pct(m.false_alarm_rate):>8} {_pct(m.needless_pause_rate):>7}\n"
             )
 
         out.write(f"\n{thin_sep}\n")
         out.write("CASE EVALUATION DETAILS:\n")
-
-        status_labels = {
-            "TP": "[CAUGHT]",
-            "FN": "[MISSED]",
-            "TN": "[PASS]",
-            "FP": "[FALSE ALARM]",
-            "ERROR": "[ERROR]",
-        }
-
         for case_res in report.cases:
-            tag = status_labels.get(
+            tag = STATUS_LABELS.get(
                 case_res.classification, f"[{case_res.classification}]"
+            )
+            mismatch = (
+                f" !! expected {case_res.expected_result}, got {case_res.outcome_result}"
+                if case_res.matches_expected is False
+                else ""
             )
             err = f" -> {case_res.error_message}" if case_res.error_message else ""
             checks = (
@@ -85,7 +111,8 @@ class FailureInjectionReporter:
                 else ""
             )
             out.write(
-                f"  {tag:<14} {case_res.case_name} [{case_res.failure_type}]{checks}{err}\n"
+                f"  {tag:<17} {case_res.case_name} [{case_res.failure_type}]"
+                f"{mismatch}{checks}{err}\n"
             )
 
         out.write(f"{sep}\n")
