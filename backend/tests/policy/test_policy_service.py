@@ -5,6 +5,7 @@ from datetime import UTC, datetime
 import pytest
 
 from app.contracts_gen.common_schema import Action, Target
+from app.llm import FakeProvider, FakeResponse
 from app.policy.classifier import LLMClassifier
 from app.policy.service import PolicyService
 from app.ports.models import (
@@ -86,11 +87,16 @@ async def test_policy_service_check_action_low_risk_allows() -> None:
 
 
 async def test_policy_service_check_action_disambiguation() -> None:
-    class FakeDraftLLM:
-        async def __call__(self, prompt: str, system: str | None = None) -> str:
-            return '{"level": "low", "reason": "Draft is temporary"}'
-
-    classifier = LLMClassifier(llm=FakeDraftLLM())
+    llm = FakeProvider(
+        [
+            FakeResponse(
+                name="draft_low",
+                schema_name="RiskVerdict",
+                response={"level": "low", "reason": "Draft is temporary"},
+            )
+        ]
+    )
+    classifier = LLMClassifier(llm)
     service = PolicyService(classifier=classifier)
 
     step = StepRef(

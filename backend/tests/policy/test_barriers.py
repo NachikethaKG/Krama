@@ -161,3 +161,126 @@ async def test_policy_service_stops_on_auth_wall() -> None:
     decision = await service.check_action(step, auth_page)
     assert decision.verdict == "stop"
     assert decision.reason == "auth_wall"
+
+
+# --- Review regressions (#61, #62) ---
+
+GITEA_ACCOUNT_SETTINGS_ARIA = "\n".join(
+    [
+        '- heading "Password" [level=4]',
+        '- textbox "Current Password"',
+        '- textbox "New Password"',
+        '- textbox "Confirm Password"',
+        '- button "Update Password"',
+    ]
+)
+# The same form when its fields are labelled plainly (the old check matched exactly `textbox "Password"`).
+PLAIN_PASSWORD_SETTINGS_ARIA = (
+    '- textbox "Password"\n- textbox "Confirm Password"\n- button "Update Password"'
+)
+SETTINGS_ARIA_VARIANTS = [GITEA_ACCOUNT_SETTINGS_ARIA, PLAIN_PASSWORD_SETTINGS_ARIA]
+
+
+def _register_step() -> StepRef:
+    return StepRef(
+        seq=1,
+        action=Action(type="click"),
+        target=Target(name="Register", role="button"),
+        instruction_text="Register",
+    )
+
+
+@pytest.mark.parametrize("aria", SETTINGS_ARIA_VARIANTS)
+@pytest.mark.anyio
+async def test_update_password_on_settings_pauses_instead_of_auth_wall_stop(aria: str) -> None:
+    """Regression: any password textbox was treated as a login wall and stopped the run."""
+    step = StepRef(
+        seq=4,
+        action=Action(type="click"),
+        target=Target(name="Update Password", role="button"),
+        instruction_text="Click Update Password",
+    )
+    page = PageState(url="/user/settings/account", title="Account", aria_excerpt=aria)
+
+    decision = await PolicyService().check_action(step, page)
+
+    assert decision.verdict == "pause"
+    assert decision.reason == "destructive_action"
+
+
+@pytest.mark.parametrize("aria", SETTINGS_ARIA_VARIANTS)
+def test_password_field_on_settings_page_is_not_auth_wall(aria: str) -> None:
+    page = PageState(url="/user/settings/account", title="Account", aria_excerpt=aria)
+    assert check_barrier(page).should_stop is False
+
+
+@pytest.mark.parametrize(
+    "url", ["/user/login", "/login", "/signin", "/user/oauth2/github", "/auth", "/sso/start"]
+)
+def test_password_field_on_login_path_is_auth_wall(url: str) -> None:
+    aria = '- textbox "Username or Email Address"\n- textbox "Password"'
+    result = check_barrier(PageState(url=url, title="Sign In", aria_excerpt=aria))
+    assert result.should_stop is True
+    assert result.barrier_type == BarrierType.AUTH_WALL
+
+
+def test_sign_in_form_on_other_path_is_auth_wall() -> None:
+    aria = '- heading "Sign In" [level=4]\n- textbox "Password"\n- button "Sign In"'
+    result = check_barrier(PageState(url="/demo/private-repo", title="Gitea", aria_excerpt=aria))
+    assert result.should_stop is True
+    assert result.barrier_type == BarrierType.AUTH_WALL
+
+
+def test_password_field_without_sign_in_form_off_login_path_is_not_auth_wall() -> None:
+    aria = '- textbox "Webhook Secret Password"\n- button "Add Webhook"'
+    result = check_barrier(PageState(url="/demo/repo/webhooks/new", title="Webhooks", aria_excerpt=aria))
+    assert result.should_stop is False
+
+
+@pytest.mark.parametrize(
+    ("title", "aria"),
+    [
+        ("Issue #3: recaptcha is broken", '- heading "recaptcha is broken"\n- paragraph: hcaptcha too'),
+        ("Security docs", "- paragraph: We use reCAPTCHA, hCaptcha and Cloudflare Turnstile against bots."),
+    ],
+)
+def test_bare_captcha_mention_in_page_text_does_not_stop(title: str, aria: str) -> None:
+    """Regression: an issue titled "recaptcha" stopped the run."""
+    result = check_barrier(PageState(url="/demo/repo/issues/3", title=title, aria_excerpt=aria))
+    assert result.should_stop is False
+
+
+@pytest.mark.parametrize(
+    ("title", "aria", "barrier"),
+    [
+        ("Just a moment...", "", BarrierType.CLOUDFLARE_CHALLENGE),
+        ("Attention Required! | Cloudflare", "", BarrierType.CLOUDFLARE_CHALLENGE),
+        ("Verify you are human", "", BarrierType.CLOUDFLARE_CHALLENGE),
+        (
+            "example.com",
+            '- iframe "Widget containing a Cloudflare security challenge"',
+            BarrierType.CLOUDFLARE_CHALLENGE,
+        ),
+        ("example.com", '- checkbox "Verify you are human"', BarrierType.CLOUDFLARE_CHALLENGE),
+        ("Sign up", '- iframe "reCAPTCHA"', BarrierType.RECAPTCHA),
+        ("Sign up", '- checkbox "I\'m not a robot"', BarrierType.RECAPTCHA),
+        (
+            "Sign up",
+            '- iframe "Widget containing checkbox for hCaptcha security challenge"',
+            BarrierType.HCAPTCHA,
+        ),
+        ("Sign up", '- checkbox "I am human"', BarrierType.HCAPTCHA),
+    ],
+)
+@pytest.mark.anyio
+async def test_strong_captcha_signals_stop_through_page_state(
+    title: str, aria: str, barrier: BarrierType
+) -> None:
+    page = PageState(url="/user/sign_up", title=title, aria_excerpt=aria)
+    result = check_barrier(page)
+    assert result.should_stop is True
+    assert result.barrier_type == barrier
+
+    decision = await PolicyService().check_action(_register_step(), page)
+    assert decision.verdict == "stop"
+    assert decision.reason == "captcha"
