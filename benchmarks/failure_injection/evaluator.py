@@ -1,4 +1,12 @@
-"""Evaluator for executing failure-injection cases and computing verifier accuracy metrics."""
+"""Evaluator for executing failure-injection cases and computing verifier accuracy metrics.
+
+Scoring rules (table in `benchmarks.failure_injection.models`):
+- a verifier crash is never free: on an injected case it is a miss (FN), on a control a false alarm (FP);
+- `skipped` is its own outcome: on an injected case it is "caught for a human" (the run pauses), on a
+  control it is a needless pause;
+- `verified` on an injected case is the dangerous one: the run silently continues on a broken step;
+- every rate is 0 when there is nothing to count (no free 100%).
+"""
 
 from __future__ import annotations
 
@@ -6,7 +14,7 @@ import asyncio
 import inspect
 from collections.abc import Sequence
 from datetime import UTC, datetime
-from typing import Any
+from typing import Any, cast
 
 from app.contracts_gen.common_schema import (
     ExpectedState,
@@ -15,6 +23,7 @@ from app.verifier.layered import (
     LayeredVerifier,
     StepEvidence,
 )
+from app.verifier.verifier import RuleVerifier
 
 from benchmarks.failure_injection.cases import ALL_CASES
 from benchmarks.failure_injection.models import (
@@ -23,6 +32,8 @@ from benchmarks.failure_injection.models import (
     Classification,
     FailureCase,
     FailureType,
+    Outcome,
+    OutcomeCounts,
     TypeMetrics,
 )
 
@@ -31,7 +42,75 @@ FAILURE_TYPES: tuple[FailureType, ...] = (
     "missing_element",
     "unexpected_dialog",
     "wrong_form_value",
+    "weak_signal",
 )
+
+
+def classify(is_failure: bool, outcome: Outcome) -> Classification:
+    """Confusion-matrix label for one verifier outcome."""
+    if is_failure:
+        if outcome == "failed":
+            return "TP"
+        if outcome == "skipped":
+            return "TP_PAUSED"
+        return "FN"  # verified (silently passed) or crashed
+    if outcome == "verified":
+        return "TN"
+    if outcome == "skipped":
+        return "FP_PAUSED"
+    return "FP"  # failed or crashed
+
+
+def _to_outcome(raw: str) -> Outcome:
+    if raw in ("verified", "failed", "skipped"):
+        return cast(Outcome, raw)
+    raise ValueError(f"verifier returned unknown result {raw!r}")
+
+
+def _rate(numerator: int, denominator: int) -> float:
+    return round(numerator / denominator, 4) if denominator > 0 else 0.0
+
+
+def _outcomes(results: Sequence[CaseResult]) -> OutcomeCounts:
+    def n(outcome: Outcome) -> int:
+        return sum(1 for r in results if r.outcome_result == outcome)
+
+    return OutcomeCounts(
+        verified=n("verified"),
+        failed=n("failed"),
+        skipped=n("skipped"),
+        error=n("error"),
+    )
+
+
+def _type_metrics(ft: FailureType, results: Sequence[CaseResult]) -> TypeMetrics:
+    def count(label: Classification) -> int:
+        return sum(1 for r in results if r.classification == label)
+
+    injected = [r for r in results if r.is_failure]
+    controls = [r for r in results if not r.is_failure]
+    inj_out, ctrl_out = _outcomes(injected), _outcomes(controls)
+    tp, paused = count("TP"), count("TP_PAUSED")
+    return TypeMetrics(
+        failure_type=ft,
+        total_cases=len(results),
+        injected_failures=len(injected),
+        clean_controls=len(controls),
+        true_positives=tp,
+        paused_failures=paused,
+        false_negatives=count("FN"),
+        true_negatives=count("TN"),
+        false_positives=count("FP"),
+        needless_pauses=count("FP_PAUSED"),
+        errors=inj_out.error + ctrl_out.error,
+        injected_outcomes=inj_out,
+        control_outcomes=ctrl_out,
+        recall=_rate(tp + paused, len(injected)),
+        hard_detection_rate=_rate(tp, len(injected)),
+        silently_passed_rate=_rate(inj_out.verified, len(injected)),
+        false_alarm_rate=_rate(count("FP"), len(controls)),
+        needless_pause_rate=_rate(count("FP_PAUSED"), len(controls)),
+    )
 
 
 class FailureInjectionEvaluator:
@@ -43,8 +122,6 @@ class FailureInjectionEvaluator:
     async def _call_verifier(
         self, expected: ExpectedState, evidence: StepEvidence
     ) -> Any:
-        from app.verifier.verifier import RuleVerifier
-
         v: Any = self.verifier
         if isinstance(v, RuleVerifier):
             res = v.verify(expected, evidence.after)
@@ -62,51 +139,36 @@ class FailureInjectionEvaluator:
 
     async def evaluate_case(self, case: FailureCase) -> CaseResult:
         """Run a single failure case through the verifier and classify the outcome."""
+        outcome_result: Outcome
+        error_message: str | None = None
+        failed_checks: list[str] = []
         try:
             outcome = await self._call_verifier(case.expected, case.evidence)
-
-            outcome_result: str = str(outcome.verification.result)
-            confidence: float = float(outcome.verification.confidence)
-
-            # Details on failed checks
+            outcome_result = _to_outcome(str(outcome.verification.result))
+            confidence = float(outcome.verification.confidence)
             failures = outcome.failures() if hasattr(outcome, "failures") else []
             failed_checks = [
                 f"{getattr(c, 'kind', 'check')}: {getattr(c, 'detail', '')}"
                 for c in failures
             ]
+        except Exception as exc:  # noqa: BLE001 - a crash is scored, never raised
+            outcome_result = "error"
+            confidence = 0.0
+            error_message = f"{type(exc).__name__}: {exc}"
 
-            detected_as_failure = outcome_result == "failed"
-
-            classification: Classification
-            if case.is_failure:
-                # We expected failure. If flagged failed -> TP, otherwise FN (missed)
-                classification = "TP" if detected_as_failure else "FN"
-            else:
-                # We expected clean pass. If flagged failed -> FP (false alarm), otherwise TN
-                classification = "FP" if detected_as_failure else "TN"
-
-            return CaseResult(
-                case_name=case.name,
-                failure_type=case.failure_type,
-                is_failure=case.is_failure,
-                detected_as_failure=detected_as_failure,
-                outcome_result=outcome_result,
-                confidence=round(confidence, 2),
-                classification=classification,
-                failed_checks=failed_checks,
-            )
-        except Exception as exc:  # noqa: BLE001
-            return CaseResult(
-                case_name=case.name,
-                failure_type=case.failure_type,
-                is_failure=case.is_failure,
-                detected_as_failure=False,
-                outcome_result="error",
-                confidence=0.0,
-                classification="ERROR",
-                error_message=f"{type(exc).__name__}: {exc}",
-                failed_checks=[],
-            )
+        return CaseResult(
+            case_name=case.name,
+            failure_type=case.failure_type,
+            is_failure=case.is_failure,
+            detected_as_failure=outcome_result == "failed",
+            outcome_result=outcome_result,
+            expected_result=case.expected_result,
+            matches_expected=outcome_result == case.expected_result,
+            confidence=round(confidence, 2),
+            classification=classify(case.is_failure, outcome_result),
+            error_message=error_message,
+            failed_checks=failed_checks,
+        )
 
     async def evaluate_all(self, cases: Sequence[FailureCase]) -> AccuracyReport:
         """Evaluate all specified cases and aggregate detection and false alarm metrics."""
@@ -122,63 +184,34 @@ class FailureInjectionEvaluator:
         results: Sequence[CaseResult],
         timestamp: datetime | None = None,
     ) -> AccuracyReport:
-        """Compute aggregated metrics (recall, false alarm rate) across all evaluated cases."""
+        """Compute aggregated metrics across all evaluated cases."""
         ts = (timestamp or datetime.now(UTC)).isoformat()
-
-        tp = sum(1 for r in results if r.classification == "TP")
-        fn = sum(1 for r in results if r.classification == "FN")
-        tn = sum(1 for r in results if r.classification == "TN")
-        fp = sum(1 for r in results if r.classification == "FP")
-        errors = sum(1 for r in results if r.classification == "ERROR")
-
-        injected = tp + fn
-        controls = tn + fp
-        overall_recall = (tp / injected) if injected > 0 else 1.0
-        overall_false_alarm = (fp / controls) if controls > 0 else 0.0
-
-        by_type: dict[FailureType, TypeMetrics] = {}
-        for ft in FAILURE_TYPES:
-            type_results = [r for r in results if r.failure_type == ft]
-            t_tp = sum(1 for r in type_results if r.classification == "TP")
-            t_fn = sum(1 for r in type_results if r.classification == "FN")
-            t_tn = sum(1 for r in type_results if r.classification == "TN")
-            t_fp = sum(1 for r in type_results if r.classification == "FP")
-            t_err = sum(1 for r in type_results if r.classification == "ERROR")
-
-            t_inj = t_tp + t_fn
-            t_ctrl = t_tn + t_fp
-            t_recall = (t_tp / t_inj) if t_inj > 0 else 1.0
-            t_far = (t_fp / t_ctrl) if t_ctrl > 0 else 0.0
-
-            by_type[ft] = TypeMetrics(
-                failure_type=ft,
-                total_cases=len(type_results),
-                injected_failures=t_inj,
-                clean_controls=t_ctrl,
-                true_positives=t_tp,
-                false_negatives=t_fn,
-                true_negatives=t_tn,
-                false_positives=t_fp,
-                errors=t_err,
-                recall=round(t_recall, 4),
-                false_alarm_rate=round(t_far, 4),
-            )
-
-        verifier_name = type(self.verifier).__name__
+        by_type: dict[FailureType, TypeMetrics] = {
+            ft: _type_metrics(ft, [r for r in results if r.failure_type == ft])
+            for ft in FAILURE_TYPES
+        }
+        o = _type_metrics("weak_signal", results)  # all cases; the label is unused
 
         return AccuracyReport(
             timestamp=ts,
-            verifier_name=verifier_name,
-            total_cases=len(results),
-            injected_failures=injected,
-            clean_controls=controls,
-            true_positives=tp,
-            false_negatives=fn,
-            true_negatives=tn,
-            false_positives=fp,
-            errors=errors,
-            detection_accuracy=round(overall_recall, 4),
-            false_alarm_rate=round(overall_false_alarm, 4),
+            verifier_name=type(self.verifier).__name__,
+            total_cases=o.total_cases,
+            injected_failures=o.injected_failures,
+            clean_controls=o.clean_controls,
+            true_positives=o.true_positives,
+            paused_failures=o.paused_failures,
+            false_negatives=o.false_negatives,
+            silently_passed=o.injected_outcomes.verified,
+            true_negatives=o.true_negatives,
+            false_positives=o.false_positives,
+            needless_pauses=o.needless_pauses,
+            errors=o.errors,
+            expected_mismatches=sum(1 for r in results if r.matches_expected is False),
+            detection_accuracy=o.recall,
+            hard_detection_rate=o.hard_detection_rate,
+            silently_passed_rate=o.silently_passed_rate,
+            false_alarm_rate=o.false_alarm_rate,
+            needless_pause_rate=o.needless_pause_rate,
             by_type=by_type,
             cases=list(results),
         )
