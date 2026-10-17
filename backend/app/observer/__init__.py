@@ -1,6 +1,13 @@
 """Observer module: captures and records what the agent sees and executes."""
 
-from app.observer.models import NetworkRequest, NetworkSummary, Observation, ObserverStorageError
+from app.observer.models import (
+    NetworkRequest,
+    NetworkSummary,
+    Observation,
+    ObserverStorageError,
+    StepObservation,
+    StepTiming,
+)
 from app.observer.network import NetworkTracker
 from app.observer.observer import PageObserver
 from app.observer.protocol import ObserverPort
@@ -17,5 +24,7 @@ __all__ = [
     "PageObserver",
     "RRWebRecorder",
     "SessionRecorder",
+    "StepObservation",
+    "StepTiming",
     "get_rrweb_init_script",
 ]
