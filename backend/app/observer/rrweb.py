@@ -18,6 +18,7 @@ import asyncio
 import contextlib
 import gzip
 import json
+import time
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -55,6 +56,7 @@ class RRWebRecorder(SessionRecorder):
         self._is_recording: bool = False
         self._started_at: datetime | None = None
         self._ended_at: datetime | None = None
+        self._recording_start_epoch_ms: int | None = None
         self._lock = asyncio.Lock()
         self._bound_contexts: set[BrowserContext] = set()
         self._bound_pages: set[Page] = set()
@@ -125,6 +127,21 @@ class RRWebRecorder(SessionRecorder):
         """Timestamp when recording stopped."""
         return self._ended_at
 
+    @property
+    def recording_start_epoch_ms(self) -> int | None:
+        """Baseline epoch timestamp in integer milliseconds when recording started."""
+        return self._recording_start_epoch_ms
+
+    @recording_start_epoch_ms.setter
+    def recording_start_epoch_ms(self, val: int | None) -> None:
+        self._recording_start_epoch_ms = val
+
+    def get_relative_ms(self, epoch_ms: int) -> int:
+        """Return non-negative milliseconds elapsed from recording baseline to epoch_ms."""
+        if self._recording_start_epoch_ms is None:
+            return 0
+        return max(0, epoch_ms - self._recording_start_epoch_ms)
+
     async def _handle_browser_event(self, source: dict[str, Any], payload: Any) -> None:
         """Handle incoming event from the JavaScript browser binding."""
         if not self._is_recording:
@@ -132,17 +149,28 @@ class RRWebRecorder(SessionRecorder):
 
         async with self._lock:
             # Payload may be direct rrweb event dict or wrapped payload envelope
+            ev_candidate: dict[str, Any] | None = None
             if isinstance(payload, dict):
                 self._raw_records.append(payload)
                 ev = payload.get("event")
                 if isinstance(ev, dict):
                     self._events.append(ev)
+                    ev_candidate = ev
                 else:
                     self._events.append(payload)
+                    ev_candidate = payload
             elif isinstance(payload, list):
                 for item in payload:
                     if isinstance(item, dict):
                         self._events.append(item)
+                        if ev_candidate is None:
+                            ev_candidate = item
+
+            # If recording baseline hasn't been set yet, anchor to first incoming event
+            if self._recording_start_epoch_ms is None and ev_candidate is not None:
+                ts = ev_candidate.get("timestamp")
+                if isinstance(ts, (int, float)):
+                    self._recording_start_epoch_ms = int(ts)
 
     async def attach_binding(self, target: BrowserContext | Page) -> None:
         """Expose the python bridge binding to a browser context or page."""
@@ -159,6 +187,8 @@ class RRWebRecorder(SessionRecorder):
         """Start listening, expose bridge binding, and inject init script across navigations."""
         self._is_recording = True
         self._started_at = datetime.now(UTC)
+        if self._recording_start_epoch_ms is None:
+            self._recording_start_epoch_ms = int(time.time() * 1000)
         self._ended_at = None
 
         init_script = get_rrweb_init_script()
@@ -202,9 +232,24 @@ class RRWebRecorder(SessionRecorder):
         self._ended_at = datetime.now(UTC)
         return self.get_events()
 
+    def add_event(self, event: dict[str, Any]) -> None:
+        """Manually add an rrweb event to accumulated events."""
+        self._events.append(event)
+
     def get_events(self) -> list[dict[str, Any]]:
         """Return a copy of all collected rrweb events sorted by timestamp if available."""
         return sorted(self._events, key=lambda ev: ev.get("timestamp", 0))
+
+    def get_relative_events(self) -> list[dict[str, Any]]:
+        """Return recorded events with relative_timestamp normalized against recording start."""
+        res: list[dict[str, Any]] = []
+        for ev in self.get_events():
+            item = dict(ev)
+            ts = ev.get("timestamp")
+            if isinstance(ts, (int, float)):
+                item["relative_timestamp"] = self.get_relative_ms(int(ts))
+            res.append(item)
+        return res
 
     def get_raw_records(self) -> list[dict[str, Any]]:
         """Return raw event envelopes including doc_id and sequence metadata."""
@@ -216,6 +261,7 @@ class RRWebRecorder(SessionRecorder):
         self._raw_records.clear()
         self._started_at = None
         self._ended_at = None
+        self._recording_start_epoch_ms = None
         self._recording_path = None
 
     def get_storage_stats(self) -> dict[str, Any]:

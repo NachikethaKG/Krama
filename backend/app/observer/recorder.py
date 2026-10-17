@@ -72,6 +72,22 @@ DEFAULT_BOOTSTRAP_TEMPLATE = r"""
           input: 'last'
         }
       });
+      try {
+        const addCustom = (typeof recordFn.addCustomEvent === 'function')
+          ? recordFn.addCustomEvent
+          : (typeof rrwebRecord !== 'undefined' && typeof rrwebRecord.addCustomEvent === 'function')
+            ? rrwebRecord.addCustomEvent
+            : null;
+        if (addCustom) {
+          addCustom("krama:epoch", {
+            wall_time_ms: Date.now(),
+            perf_time_ms: typeof performance !== 'undefined' ? Math.round(performance.now()) : 0,
+            doc_id: docId
+          });
+        }
+      } catch (e) {
+        // Custom anchor event optional
+      }
     } catch (e) {
       console.error('[Krama rrweb] Failed to initialize recorder:', e);
     }
@@ -111,6 +127,15 @@ class SessionRecorder(Protocol):
     @property
     def artifact_store(self) -> ArtifactStore | None:
         """Underlying ArtifactStore port dependency if configured."""
+        ...
+
+    @property
+    def recording_start_epoch_ms(self) -> int | None:
+        """Baseline epoch timestamp in integer milliseconds when recording started."""
+        ...
+
+    def get_relative_ms(self, epoch_ms: int) -> int:
+        """Return milliseconds elapsed from recording baseline to epoch_ms (clamped to >= 0)."""
         ...
 
     async def start(self, target: BrowserContext | Page) -> None:

@@ -14,7 +14,7 @@ from typing import Any
 from playwright.async_api import Page
 
 from app.observer.masking import blur_bounding_boxes
-from app.observer.models import Observation
+from app.observer.models import Observation, StepTiming
 from app.observer.network import NetworkTracker
 from app.observer.recorder import _persist_to_store
 from app.observer.rrweb import RRWebRecorder
@@ -53,6 +53,10 @@ class PageObserver(Observer):
         self._recording: bool = False
         self._recording_started_at: datetime | None = None
         self._attached_page: Page | None = None
+        self._step_starts: dict[str, int] = {}
+        self._current_step_start_ms: int | None = None
+        self._last_step_end_epoch_ms: int | None = None
+        self._last_step_timing: StepTiming | None = None
 
     @property
     def artifact_store(self) -> ArtifactStore | None:
@@ -74,6 +78,74 @@ class PageObserver(Observer):
         """Access the underlying network tracker."""
         return self._tracker
 
+    @property
+    def recording_start_epoch_ms(self) -> int | None:
+        """Baseline epoch timestamp in integer milliseconds when recording started."""
+        return self._recorder.recording_start_epoch_ms
+
+    def get_relative_ms(self, epoch_ms: int) -> int:
+        """Calculate relative milliseconds from recording start baseline."""
+        return self._recorder.get_relative_ms(epoch_ms)
+
+    def _step_key(self, step: StepRef | int | str | None) -> str:
+        if step is None:
+            return "current"
+        if hasattr(step, "seq"):
+            return str(step.seq)
+        return str(step)
+
+    def start_step(
+        self,
+        step: StepRef | int | str | None = None,
+        *,
+        start_epoch_ms: int | None = None,
+    ) -> int:
+        """Record the start of a step execution in epoch milliseconds."""
+        now_ms = int(time.time() * 1000) if start_epoch_ms is None else int(start_epoch_ms)
+        key = self._step_key(step)
+        self._step_starts[key] = now_ms
+        self._current_step_start_ms = now_ms
+        return now_ms
+
+    def finish_step(
+        self,
+        step: StepRef | int | str | None = None,
+        *,
+        end_epoch_ms: int | None = None,
+        start_epoch_ms: int | None = None,
+    ) -> StepTiming:
+        """Record the completion of a step and compute its relative StepTiming."""
+        now_ms = int(time.time() * 1000) if end_epoch_ms is None else int(end_epoch_ms)
+        key = self._step_key(step)
+        start_ms = start_epoch_ms
+        if start_ms is None:
+            start_ms = self._step_starts.pop(key, None)
+        if start_ms is None:
+            start_ms = self._current_step_start_ms
+        if start_ms is None:
+            start_ms = self._last_step_end_epoch_ms or (self._recorder.recording_start_epoch_ms or now_ms)
+
+        timing = self.calculate_step_timing(int(start_ms), now_ms)
+        self._last_step_end_epoch_ms = now_ms
+        self._last_step_timing = timing
+        return timing
+
+    def calculate_step_timing(
+        self,
+        step_start_epoch_ms: int,
+        step_end_epoch_ms: int,
+    ) -> StepTiming:
+        """Calculate relative StepTiming from start and end epoch milliseconds."""
+        start_rel = self._recorder.get_relative_ms(int(step_start_epoch_ms))
+        end_rel = self._recorder.get_relative_ms(int(step_end_epoch_ms))
+        if end_rel < start_rel:
+            end_rel = start_rel
+        return StepTiming(
+            start_ms=start_rel,
+            end_ms=end_rel,
+            duration_ms=end_rel - start_rel,
+        )
+
     def attach(self, page: Page) -> None:
         """Attach the network listener to the page."""
         self._attached_page = page
@@ -90,6 +162,9 @@ class PageObserver(Observer):
         self._recording = True
         self._recording_started_at = datetime.now(UTC)
         await self._recorder.start(page.context or page)
+        self._last_step_end_epoch_ms = self._recorder.recording_start_epoch_ms
+        self._step_starts.clear()
+        self._current_step_start_ms = None
 
     async def stop_recording(self) -> RecordingRef:
         """Stop tracking and return recording metadata."""
@@ -100,6 +175,8 @@ class PageObserver(Observer):
         now = datetime.now(UTC)
         summary = self._tracker.get_summary()
         self._recording = False
+        self._step_starts.clear()
+        self._current_step_start_ms = None
         record_path = ""
         store = self._artifact_store or self._recorder.artifact_store
         if store is not None:
@@ -154,6 +231,9 @@ class PageObserver(Observer):
         run_id: str | None = None,
         screenshot_bytes: bytes | None = None,
         artifact_store: ArtifactStore | None = None,
+        step_start_epoch_ms: int | None = None,
+        step_end_epoch_ms: int | None = None,
+        timing: StepTiming | None = None,
     ) -> Observation:
         """Capture the complete page state right after an action.
 
@@ -260,6 +340,33 @@ class PageObserver(Observer):
 
         latency_ms = round((time.perf_counter() - t0) * 1000, 2)
 
+        # 5. Determine relative step timing
+        t_capture_end = int(time.time() * 1000)
+        end_epoch = step_end_epoch_ms if step_end_epoch_ms is not None else t_capture_end
+
+        if timing is not None:
+            step_timing = timing
+            self._last_step_end_epoch_ms = end_epoch
+        elif step_start_epoch_ms is not None:
+            step_timing = self.calculate_step_timing(step_start_epoch_ms, end_epoch)
+            self._last_step_end_epoch_ms = end_epoch
+        else:
+            key = self._step_key(step if step is not None else step_id)
+            if key in self._step_starts:
+                start_epoch_int = self._step_starts.pop(key)
+            elif self._current_step_start_ms is not None:
+                start_epoch_int = self._current_step_start_ms
+                self._current_step_start_ms = None
+            elif self._last_step_end_epoch_ms is not None:
+                start_epoch_int = self._last_step_end_epoch_ms
+            elif self._recorder.recording_start_epoch_ms is not None:
+                start_epoch_int = self._recorder.recording_start_epoch_ms
+            else:
+                start_epoch_int = end_epoch
+
+            step_timing = self.calculate_step_timing(start_epoch_int, end_epoch)
+            self._last_step_end_epoch_ms = end_epoch
+
         return Observation.create(
             url=mask_text(path_url),
             raw_url=mask_text(raw_url),
@@ -273,6 +380,7 @@ class PageObserver(Observer):
             network_summary=net_summary,
             capture_duration_ms=latency_ms,
             captured_at=datetime.now(UTC),
+            timing=step_timing,
         )
 
     async def _safe_title(self, page: Page) -> str:
