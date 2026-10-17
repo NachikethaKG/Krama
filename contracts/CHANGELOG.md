@@ -2,6 +2,24 @@
 
 Every change to `contracts/` is listed here. Additive change = minor version bump; breaking change = major bump + ADR.
 
+## 1.6 (#71)
+
+The tutorial spec, plus the scroll a step's bbox was measured at. Additive.
+
+- New `tutorial-spec.schema.json` v1.0: `TutorialSpec` = the output of `packages/tutorial-compiler`
+  (`Workflow → TutorialSpec`), read by the player now and the Remotion export in Phase 5. One `Scene` per step with
+  `start_ms` on the tutorial timeline, `action`, `caption` (`words` optional), `recording` slice (ms since the
+  recording's first event), optional `scroll`, and nullable `camera` / `cursor` / `highlight` (steps without an
+  element have none). All times are integer ms; geometry is page CSS px. Based on the #70 design note, moved into
+  the contract rules (draft 2020-12, titles, shared `BoundingBox`), with `step_index` renamed `step_seq`.
+- `common.schema.json` v1.1: new `ScrollOffset` (`{x, y}`, window scroll in CSS px).
+- `step.schema.json` v1.1: `StepTarget.scroll` (optional): the window scroll when the action ran, so a replay places
+  the bbox without relying on rrweb's scroll events (they can land just after the click;
+  `docs/research/phase-2-vishwas-coordinates.md`). Stored inside `workflow_steps.target` (jsonb): no migration.
+- Fixtures: `fixtures/tutorial-spec/gitea-create-repo.json` (compiled by hand from `gitea-create-repo-workflow.json`,
+  in a subfolder because every top-level fixture is validated as a `Workflow`); the workflow fixture's steps now
+  carry `target.scroll` (step 4 is below the fold: bbox y 936, scroll 544).
+
 ## 1.5 (#216)
 
 More reasons a run can pause for a human, and the plan to review after a replan. Additive.

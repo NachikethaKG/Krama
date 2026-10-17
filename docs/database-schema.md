@@ -80,7 +80,7 @@ Stored as rows (not jsonb) so steps can be queried, compared across versions and
 | workflow_id | uuid fk → workflows | unique with `seq` |
 | seq | int | |
 | action | jsonb | `{type, value}` (value masked if sensitive) |
-| target | jsonb | `{role, name, selector, bbox}` |
+| target | jsonb | `{role, name, selector, bbox, scroll}`; `scroll` = `{x, y}` window scroll when the action ran |
 | instruction_text | text | |
 | before_state / expected_state / observed_state | jsonb | |
 | verification | jsonb | `{result, method[], confidence}` |

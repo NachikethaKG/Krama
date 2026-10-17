@@ -84,6 +84,14 @@ type BoundingBox = Annotated[
 ]
 
 
+class ScrollOffset(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+    x: Annotated[float, Field(ge=0.0)]
+    y: Annotated[float, Field(ge=0.0)]
+
+
 type ErrorCode = Annotated[
     Literal[
         "validation_error",

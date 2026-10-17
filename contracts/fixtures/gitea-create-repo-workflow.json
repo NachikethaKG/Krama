@@ -42,7 +42,8 @@
         "role": "menu",
         "name": "Create…",
         "selector": null,
-        "bbox": [1146, 6, 56, 36]
+        "bbox": [1146, 6, 56, 36],
+        "scroll": { "x": 0, "y": 0 }
       },
       "instruction_text": "Open the + menu at the top right.",
       "before_state": {
@@ -105,7 +106,8 @@
         "role": "menuitem",
         "name": "New Repository",
         "selector": "a[href='/repo/create']",
-        "bbox": [1044, 44, 156, 38]
+        "bbox": [1044, 44, 156, 38],
+        "scroll": { "x": 0, "y": 0 }
       },
       "instruction_text": "Click New Repository in the menu.",
       "before_state": {
@@ -168,7 +170,8 @@
         "role": "textbox",
         "name": "Repository Name *",
         "selector": "#repo_name",
-        "bbox": [519, 262, 386, 38]
+        "bbox": [519, 262, 386, 38],
+        "scroll": { "x": 0, "y": 0 }
       },
       "instruction_text": "Enter demo-repo as the repository name.",
       "before_state": {
@@ -229,7 +232,8 @@
         "role": "checkbox",
         "name": "Initialize Repository (Adds .gitignore, License and README)",
         "selector": "input[name='auto_init']",
-        "bbox": [519, 936, 15, 15]
+        "bbox": [519, 936, 15, 15],
+        "scroll": { "x": 0, "y": 544 }
       },
       "instruction_text": "Check Initialize Repository to add .gitignore, License and README.",
       "before_state": {
@@ -289,7 +293,8 @@
         "role": "button",
         "name": "Create Repository",
         "selector": "button.ui.primary.button",
-        "bbox": [519, 650, 154, 38]
+        "bbox": [519, 650, 154, 38],
+        "scroll": { "x": 0, "y": 544 }
       },
       "instruction_text": "Click Create Repository button to submit the form.",
       "before_state": {

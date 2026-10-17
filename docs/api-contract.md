@@ -41,7 +41,7 @@
 | 4 | GET | `/workflows/{id}/versions` | → `WorkflowVersion[]` | Drift and self-healing |
 | 5 | POST | `/workflows/{id}/exports` | `{format: "mp4", preset}` → `202 Export` | |
 
-The tutorial itself has **no endpoint**: the frontend compiles `Workflow → TutorialSpec` with `packages/tutorial-compiler`.
+The tutorial itself has **no endpoint**: the frontend compiles `Workflow → TutorialSpec` with `packages/tutorial-compiler`. The spec's shape is `contracts/schemas/tutorial-spec.schema.json`.
 
 ## Core objects (full schemas in `contracts/schemas/`)
 

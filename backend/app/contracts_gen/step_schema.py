@@ -32,6 +32,12 @@ class StepTarget(BaseModel):
     name: str | None = None
     selector: str | None = None
     bbox: common_schema.BoundingBox | None = None
+    scroll: Annotated[
+        common_schema.ScrollOffset | None,
+        Field(
+            description="Window scroll when the action ran (measured after scrolling the element into view). Lets a replay place bbox without relying on rrweb's scroll events, which can land just after the click."
+        ),
+    ] = None
 
 
 class StepTiming(BaseModel):

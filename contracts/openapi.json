@@ -753,6 +753,27 @@
         "title": "RunStatus",
         "type": "string"
       },
+      "ScrollOffset": {
+        "additionalProperties": false,
+        "properties": {
+          "x": {
+            "minimum": 0.0,
+            "title": "X",
+            "type": "number"
+          },
+          "y": {
+            "minimum": 0.0,
+            "title": "Y",
+            "type": "number"
+          }
+        },
+        "required": [
+          "x",
+          "y"
+        ],
+        "title": "ScrollOffset",
+        "type": "object"
+      },
       "Step": {
         "additionalProperties": false,
         "properties": {
@@ -917,6 +938,17 @@
               }
             ],
             "title": "Role"
+          },
+          "scroll": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ScrollOffset"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Window scroll when the action ran (measured after scrolling the element into view). Lets a replay place bbox without relying on rrweb's scroll events, which can land just after the click."
           },
           "selector": {
             "anyOf": [
