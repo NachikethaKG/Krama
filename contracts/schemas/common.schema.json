@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "common.schema.json",
   "title": "Common",
-  "$comment": "v1.0. Building blocks shared by plan, step, workflow and event schemas. See contracts/README.md for the schema rules.",
+  "$comment": "v1.1. Building blocks shared by plan, step, workflow, event and tutorial-spec schemas. See contracts/README.md for the schema rules.",
   "$defs": {
     "Risk": {
       "title": "Risk",
@@ -92,6 +92,17 @@
       "items": false,
       "minItems": 4,
       "maxItems": 4
+    },
+    "ScrollOffset": {
+      "title": "ScrollOffset",
+      "type": "object",
+      "description": "Window scroll position (window.scrollX / scrollY) in CSS pixels. viewport box = page bbox - scroll.",
+      "required": ["x", "y"],
+      "additionalProperties": false,
+      "properties": {
+        "x": { "type": "number", "minimum": 0 },
+        "y": { "type": "number", "minimum": 0 }
+      }
     },
     "ErrorCode": {
       "title": "ErrorCode",

@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "step.schema.json",
   "title": "Step",
-  "$comment": "v1.0. One executed and verified step of a Verified Workflow (docs/phases/README.md §3.1, docs/database-schema.md).",
+  "$comment": "v1.1. One executed and verified step of a Verified Workflow (docs/phases/README.md §3.1, docs/database-schema.md).",
   "type": "object",
   "required": [
     "id",
@@ -69,6 +69,10 @@
         "selector": { "type": ["string", "null"] },
         "bbox": {
           "oneOf": [{ "$ref": "common.schema.json#/$defs/BoundingBox" }, { "type": "null" }]
+        },
+        "scroll": {
+          "description": "Window scroll when the action ran (measured after scrolling the element into view). Lets a replay place bbox without relying on rrweb's scroll events, which can land just after the click.",
+          "oneOf": [{ "$ref": "common.schema.json#/$defs/ScrollOffset" }, { "type": "null" }]
         }
       }
     },
