@@ -93,6 +93,16 @@ export type VerificationResult = "verified" | "failed" | "skipped";
  */
 export type TaskStatus = "planning" | "needs_clarification" | "planned" | "failed";
 /**
+ * This interface was referenced by `TutorialSpec`'s JSON-Schema
+ * via the `definition` "ClickType".
+ */
+export type ClickType = "single" | "double" | "none";
+/**
+ * This interface was referenced by `TutorialSpec`'s JSON-Schema
+ * via the `definition` "HighlightStyle".
+ */
+export type HighlightStyle = "pulsing_ring" | "solid_box" | "spotlight";
+/**
  * This interface was referenced by `Workflow`'s JSON-Schema
  * via the `definition` "WorkflowStatus".
  */
@@ -106,6 +116,7 @@ export interface KramaContracts {
   run?: Run;
   step?: Step;
   task?: Task;
+  "tutorial-spec"?: TutorialSpec;
   workflow?: Workflow;
 }
 export interface Common {
@@ -171,6 +182,16 @@ export interface ExpectedState {
   absent?: ElementRef[];
   field_values?: FieldValue[];
   checked?: ElementRef[];
+}
+/**
+ * Window scroll position (window.scrollX / scrollY) in CSS pixels. viewport box = page bbox - scroll.
+ *
+ * This interface was referenced by `Common`'s JSON-Schema
+ * via the `definition` "ScrollOffset".
+ */
+export interface ScrollOffset {
+  x: number;
+  y: number;
 }
 /**
  * This interface was referenced by `Common`'s JSON-Schema
@@ -435,6 +456,10 @@ export interface StepTarget {
   name?: string | null;
   selector?: string | null;
   bbox?: BoundingBox | null;
+  /**
+   * Window scroll when the action ran (measured after scrolling the element into view). Lets a replay place bbox without relying on rrweb's scroll events, which can land just after the click.
+   */
+  scroll?: ScrollOffset | null;
 }
 /**
  * The page state captured after executing the step.
@@ -520,6 +545,203 @@ export interface TaskCreateRequest {
 export interface TaskClarifyRequest {
   answer: string;
 }
+/**
+ * An interactive tutorial compiled from one Verified Workflow. Times are integer milliseconds; geometry is CSS pixels in page coordinates. Frames are derived only at video export: frame = round(ms / 1000 * fps).
+ */
+export interface TutorialSpec {
+  /**
+   * Spec format version.
+   */
+  version: "1.0";
+  workflow_id: string;
+  title: string;
+  description?: string | null;
+  viewport: WorkflowViewport;
+  /**
+   * Frame rate for the video export only. The player ignores it.
+   */
+  fps?: number;
+  /**
+   * End of the last scene (start_ms + duration_ms).
+   */
+  total_duration_ms: number;
+  /**
+   * One scene per workflow step, in step order.
+   *
+   * @minItems 1
+   */
+  scenes: [Scene, ...Scene[]];
+}
+/**
+ * The recording's viewport: the coordinate space of every bbox and point.
+ */
+export interface WorkflowViewport {
+  width: number;
+  height: number;
+  device_scale_factor?: number | null;
+}
+/**
+ * One workflow step. start_ms is on the tutorial timeline; every other time inside a scene (cursor, caption words) is relative to the scene's start.
+ *
+ * This interface was referenced by `TutorialSpec`'s JSON-Schema
+ * via the `definition` "Scene".
+ */
+export interface Scene {
+  id: string;
+  /**
+   * seq of the workflow step this scene shows.
+   */
+  step_seq: number;
+  /**
+   * Short label for the step list.
+   */
+  title?: string | null;
+  /**
+   * Scene start on the tutorial timeline.
+   */
+  start_ms: number;
+  duration_ms: number;
+  action: Action1;
+  /**
+   * The step typed a secret: show no typed text, only that something was entered.
+   */
+  sensitive?: boolean;
+  caption: Caption;
+  recording: RecordingSlice;
+  /**
+   * Window scroll during the action, from the step. The highlight's viewport box is highlight.bbox - scroll.
+   */
+  scroll?: ScrollOffset | null;
+  /**
+   * Zoom and pan. Null: show the whole viewport.
+   */
+  camera?: Camera | null;
+  /**
+   * Null for steps without an element (navigate, a key press without target, wait).
+   */
+  cursor?: Cursor | null;
+  /**
+   * Null for steps without an element.
+   */
+  highlight?: Highlight | null;
+}
+/**
+ * What the step does. value is copied from the workflow and is already masked if the step is sensitive.
+ */
+export interface Action1 {
+  type: ActionType;
+  /**
+   * Text to fill, option to select, URL path to navigate to, or key to press. Null for click/wait.
+   */
+  value?: string | null;
+}
+/**
+ * This interface was referenced by `TutorialSpec`'s JSON-Schema
+ * via the `definition` "Caption".
+ */
+export interface Caption {
+  /**
+   * The step's instruction text, shown and narrated.
+   */
+  text: string;
+  /**
+   * Word timings relative to the scene start, when known at compile time (Piper, Phase 5). Null when they only exist at playback (Web Speech boundary events).
+   */
+  words?: WordTiming[] | null;
+}
+/**
+ * This interface was referenced by `TutorialSpec`'s JSON-Schema
+ * via the `definition` "WordTiming".
+ */
+export interface WordTiming {
+  word: string;
+  start_ms: number;
+  end_ms: number;
+}
+/**
+ * The part of the workflow's rrweb recording this scene replays.
+ *
+ * This interface was referenced by `TutorialSpec`'s JSON-Schema
+ * via the `definition` "RecordingSlice".
+ */
+export interface RecordingSlice {
+  /**
+   * Milliseconds since the recording's first event.
+   */
+  start_ms: number;
+  /**
+   * Milliseconds since the recording's first event.
+   */
+  end_ms: number;
+  /**
+   * Index (in the recording's event list) of the FullSnapshot to start from, so the slice renders on its own.
+   */
+  baseline_snapshot_index?: number | null;
+}
+/**
+ * This interface was referenced by `TutorialSpec`'s JSON-Schema
+ * via the `definition` "Camera".
+ */
+export interface Camera {
+  scale: number;
+  center: Point;
+  /**
+   * CSS easing function for the pan/zoom.
+   */
+  easing?: string;
+  pan_duration_ms?: number;
+}
+/**
+ * A point in CSS pixels, page coordinates.
+ *
+ * This interface was referenced by `TutorialSpec`'s JSON-Schema
+ * via the `definition` "Point".
+ */
+export interface Point {
+  x: number;
+  y: number;
+}
+/**
+ * A cubic Bezier glide from path[0] to path[3]; times relative to the scene start.
+ *
+ * This interface was referenced by `TutorialSpec`'s JSON-Schema
+ * via the `definition` "Cursor".
+ */
+export interface Cursor {
+  /**
+   * Bezier control points P0..P3.
+   *
+   * @minItems 4
+   * @maxItems 4
+   */
+  path: [Point, Point, Point, Point];
+  start_ms: number;
+  end_ms: number;
+  click_ms?: number | null;
+  click_type: ClickType;
+  /**
+   * Click ripple. Null: no ripple.
+   */
+  ripple?: Ripple | null;
+}
+/**
+ * This interface was referenced by `TutorialSpec`'s JSON-Schema
+ * via the `definition` "Ripple".
+ */
+export interface Ripple {
+  radius?: number;
+  color?: string;
+}
+/**
+ * This interface was referenced by `TutorialSpec`'s JSON-Schema
+ * via the `definition` "Highlight".
+ */
+export interface Highlight {
+  bbox: BoundingBox;
+  style: HighlightStyle;
+  padding?: number;
+  color?: string;
+}
 export interface Workflow {
   id: string;
   /**
@@ -551,7 +773,7 @@ export interface Workflow {
    * Required preconditions before running (e.g. {logged_in_as: 'demo'}).
    */
   preconditions?: {} | null;
-  viewport?: WorkflowViewport | null;
+  viewport?: WorkflowViewport1 | null;
   recording?: WorkflowRecording | null;
   /**
    * Relative artifact path to rrweb recording.
@@ -576,7 +798,7 @@ export interface WorkflowTarget {
  * This interface was referenced by `Workflow`'s JSON-Schema
  * via the `definition` "WorkflowViewport".
  */
-export interface WorkflowViewport {
+export interface WorkflowViewport1 {
   width: number;
   height: number;
   device_scale_factor?: number | null;
