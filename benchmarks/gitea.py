@@ -13,6 +13,10 @@ import subprocess
 import urllib.error
 import urllib.request
 from pathlib import Path
+from urllib.parse import urlsplit, urlunsplit
+
+# Gitea's API returns at most this many repos per page; the reset pages until a short page.
+PAGE_SIZE = 50
 
 
 class GiteaResetError(Exception):
@@ -21,6 +25,14 @@ class GiteaResetError(Exception):
 
 class GiteaTimeoutError(GiteaResetError):
     """Raised when Gitea environment reset times out."""
+
+
+def _ipv4(url: str) -> str:
+    """localhost -> 127.0.0.1: on Windows, Python tries IPv6 first and each request waits ~21 s."""
+    parts = urlsplit(url)
+    if parts.hostname != "localhost":
+        return url
+    return urlunsplit(parts._replace(netloc="127.0.0.1" + (f":{parts.port}" if parts.port else "")))
 
 
 def _get_auth_header(user: str, password: str) -> str:
@@ -39,7 +51,7 @@ def reset_gitea_api(
 
     Returns the list of deleted repository names.
     """
-    clean_url = base_url.rstrip("/")
+    clean_url = _ipv4(base_url.rstrip("/"))
     auth = _get_auth_header(user, password)
     headers = {"Authorization": auth, "Accept": "application/json"}
 
@@ -63,15 +75,21 @@ def reset_gitea_api(
     if repo_name:
         repos_to_delete.append(repo_name)
     else:
-        list_req = urllib.request.Request(
-            f"{clean_url}/api/v1/users/{user}/repos", headers=headers
-        )
+        page = 1
         try:
-            with urllib.request.urlopen(list_req, timeout=timeout) as resp:
-                data = json.loads(resp.read().decode("utf-8"))
-                repos_to_delete = [
+            while True:
+                list_req = urllib.request.Request(
+                    f"{clean_url}/api/v1/users/{user}/repos?limit={PAGE_SIZE}&page={page}",
+                    headers=headers,
+                )
+                with urllib.request.urlopen(list_req, timeout=timeout) as resp:
+                    data = json.loads(resp.read().decode("utf-8"))
+                repos_to_delete += [
                     r["name"] for r in data if isinstance(r, dict) and "name" in r
                 ]
+                if len(data) < PAGE_SIZE:
+                    break
+                page += 1
         except (TimeoutError, urllib.error.URLError) as e:
             if isinstance(e, TimeoutError) or "timed out" in str(e).lower():
                 raise GiteaTimeoutError(

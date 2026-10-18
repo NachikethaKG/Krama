@@ -121,3 +121,15 @@ async def test_capture_against_live_gitea(gitea_live_url: str) -> None:
 
         await context.close()
         await browser.close()
+
+
+async def test_capture_includes_an_open_dialog_outside_main(mock_gitea_page: Page) -> None:
+    observer = PageObserver()
+    await mock_gitea_page.goto("http://gitea.local/demo/repo/branches")
+
+    obs = await observer.capture(mock_gitea_page)
+
+    assert 'heading "Branches"' in obs.aria_snapshot
+    assert 'textbox "Branch Name *"' in obs.aria_snapshot and 'button "Confirm"' in obs.aria_snapshot
+    assert "Delete branch" not in obs.aria_snapshot  # a closed dialog stays out
+    assert "hunter2" not in obs.aria_snapshot  # dialog fields are masked like the rest
