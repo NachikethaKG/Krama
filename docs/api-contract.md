@@ -36,6 +36,7 @@
 | 2 | GET | `/workflows/{id}/recording` | → rrweb event JSON | Masked before storage |
 | 1 | GET | `/artifacts/{path}` | → image/json | Screenshots, read-only |
 | 2 | POST | `/workflows/{id}/reverify` | → `202 Run` | Replays the stored workflow headlessly |
+| 2 | GET | `/workflows/{id}/guide.md` | → `text/markdown` | Text guide: the tutorial's step texts, numbered, one screenshot each (absolute image URLs) |
 | 3 | POST | `/runs/{id}/takeover` | → `Run` | The user finishes manually after a CAPTCHA/bot wall |
 | 3 | POST | `/auth/*`, `/tutorials/{id}/share` | — | Specified in Phase 3 |
 | 4 | GET | `/workflows/{id}/versions` | → `WorkflowVersion[]` | Drift and self-healing |

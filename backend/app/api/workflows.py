@@ -1,12 +1,15 @@
-"""GET /workflows/{id} (the Verified Workflow, the main output) and GET /workflows (docs/api-contract.md)."""
+"""GET /workflows/{id} (the Verified Workflow, the main output), its text guide, and GET /workflows
+(docs/api-contract.md)."""
 
 from typing import Annotated
+from urllib.parse import quote
 from uuid import UUID
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, Request, Response
 
 from app.api.convert import decode_cursor, encode_cursor, workflow_out, workflow_summary
 from app.api.errors import ApiException
+from app.api.guide import guide_markdown
 from app.api.services import ServicesDep
 from app.contracts_gen.common_schema import ErrorResponse
 from app.contracts_gen.workflow_schema import Workflow, WorkflowPage
@@ -24,6 +27,29 @@ async def get_workflow(workflow_id: UUID, services: ServicesDep) -> Workflow:
             raise ApiException(404, "not_found", "Workflow not found")
         task = await s.get(TaskRow, workflow.task_id)
         return workflow_out(workflow, task.prompt if task else None)
+
+
+@router.get(
+    "/workflows/{workflow_id}/guide.md",
+    response_class=Response,
+    responses={
+        200: {"content": {"text/markdown": {}}, "description": "Numbered steps with one screenshot each"},
+        404: {"model": ErrorResponse, "description": "Not found"},
+    },
+)
+async def get_workflow_guide(workflow_id: UUID, request: Request, services: ServicesDep) -> Response:
+    """The workflow as a plain text guide: the tutorial's step texts, numbered, each with its screenshot."""
+    workflow = await get_workflow(workflow_id, services)
+
+    def artifact_url(key: str) -> str:
+        # Absolute, so the file still shows its images when opened outside the app.
+        return str(request.url_for("get_artifact", key=quote(key)))
+
+    return Response(
+        guide_markdown(workflow, artifact_url),
+        media_type="text/markdown; charset=utf-8",
+        headers={"Content-Disposition": f'inline; filename="workflow-{workflow_id}.md"'},
+    )
 
 
 @router.get("/workflows")

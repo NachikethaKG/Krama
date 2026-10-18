@@ -2794,6 +2794,66 @@
           "workflows"
         ]
       }
+    },
+    "/api/v1/workflows/{workflow_id}/guide.md": {
+      "get": {
+        "description": "The workflow as a plain text guide: the tutorial's step texts, numbered, each with its screenshot.",
+        "operationId": "get_workflow_guide_api_v1_workflows__workflow_id__guide_md_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workflow_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workflow Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "text/markdown": {}
+            },
+            "description": "Numbered steps with one screenshot each"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal error"
+          }
+        },
+        "summary": "Get Workflow Guide",
+        "tags": [
+          "workflows"
+        ]
+      }
     }
   }
 }
