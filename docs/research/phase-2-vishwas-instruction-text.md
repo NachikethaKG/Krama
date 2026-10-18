@@ -41,7 +41,8 @@ direction words, no invented bold labels [verified locally: `out-*.json`]:
 |---|---|---|
 | Template (no LLM) | 22/22 | 0 s |
 | gemini-2.5-flash | 9/9 answered (13 steps lost: free-tier quota ran out mid-test) | 39.6 s incl. errors |
-| gemini-3.8-flash, gemini-3.5-flash | not measured: daily quota already used up (`429`) | — |
+| gemini-3.8-flash (rerun 2026-10-18) | 22/22, and 16/22 word for word the template | 175.6 s (6–53 s per call) |
+| gemini-3.5-flash (rerun 2026-10-18) | 22/22, and 16/22 word for word the template | 93.3 s (6–47 s per call) |
 | Llama 3.1 8B (Ollama, RTX 4050) | 19/22 | 56 s |
 
 Reading the outputs (my judgement, check `comparison.md` yourself):
@@ -75,14 +76,15 @@ For #73 (`planner/`, mine):
    Capturing the context (dialog/menu/section) needs a small DOM read at action time, in `agent/` (mine). It should
    be stored with the step; where (the observer state or a new step field) is a #71 question.
 3. **Use an LLM only as an optional polish** for labels a person can't use as is ("Editor content" → "the file
-   editor"), if at all. The data says it adds little today. Re-test with Gemini 3.x once the quota is available,
-   with a screenshot, which is the one input the template can't use.
+   editor"), if at all. The data says it adds little: Gemini 3.x matched the template on 16/22 steps and was worse on
+   the other 6 (raw page titles). If it's ever tried again, it should be with a screenshot, the one input the
+   template can't use.
 4. Prefer containers to screen positions. Keep the bbox region only as a last fallback when no container is known
    (e.g. "the **+** button in the top bar").
 
 ## Open questions
-- **Gemini 3.x not measured** (quota). Planned: rerun `instruct.py gemini:gemini-3.8-flash gemini:gemini-3.5-flash`
-  after the daily reset (midnight Pacific ≈ 12:30 IST) and update this note before the PR leaves draft.
+- ~~Gemini 3.x not measured~~: measured on 2026-10-18 after the quota reset (rows above, `out-gemini-gemini-3.*.json`).
+  Decision taken in [ADR 0003](../adr/0003-no-local-model-for-text-jobs.md).
 - Does the post-run rewrite replace the approved plan text in the tutorial, or is it shown next to it? Replacing is
   cleaner for the learner; the plan review keeps the original. **Decision for Vishwas + Nachiketha** (the player
   shows it).

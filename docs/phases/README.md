@@ -10,7 +10,7 @@ Vishwas and Nachiketha are building the PRD's "Verified UI Workflow Engine": a n
 4. a real-world GitHub workflow (Issues, Projects, PRs, CODEOWNERS, branch protection, CI).
 
 Decisions made:
-- **LLM:** a provider abstraction. **Gemini (free tier) is the reference model on both laptops.** An optional local Ollama 8B on Vishwas's RTX 4050 handles cheap text jobs only (captions/descriptions). Tests use recorded LLM fixtures, so they need no network and no GPU.
+- **LLM:** a provider abstraction. **Gemini (free tier) is the reference model on both laptops.** No local model: cheap text jobs are done in code or with Gemini ([ADR 0003](../adr/0003-no-local-model-for-text-jobs.md), Phase 2). Tests use recorded LLM fixtures, so they need no network and no GPU.
 - **First target:** **self-hosted Gitea in Docker** (a GitHub-like UI that can be reset to a clean state). Real GitHub with a throwaway account comes in Phase 3.
 - **Docker Desktop (WSL2) on both laptops** for Postgres, Redis and Gitea.
 - **GitHub Issues + Projects** for tracking.
@@ -227,7 +227,7 @@ All acceptance criteria for Phase F and Contracts v1 have been met:
 
 ## 7. Hardware rules ("if it runs on Nachiketha's laptop")
 
-- No step in the core pipeline may require a GPU. Ollama is **opt-in** (`LLM_PROVIDER_TEXT=ollama`), never the default.
+- No step in the core pipeline may require a GPU. There is no local model ([ADR 0003](../adr/0003-no-local-model-for-text-jobs.md)).
 - Chromium always runs headless in tests. Headed mode only for manual login or debugging.
 - One browser worker at a time locally (`MAX_CONCURRENT_RUNS=1`).
 - Every PR checks "Tested on Nachiketha laptop" before merging if it touches runtime behaviour, infra or deps. CI on ubuntu without a GPU is the automatic baseline.
