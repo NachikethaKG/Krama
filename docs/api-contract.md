@@ -35,7 +35,7 @@
 | 1 | GET | `/workflows` | `?target_app&limit&cursor` → page of `WorkflowSummary` | |
 | 2 | GET | `/workflows/{id}/recording` | → rrweb event JSON | Masked before storage |
 | 1 | GET | `/artifacts/{path}` | → image/json | Screenshots, read-only |
-| 2 | POST | `/workflows/{id}/reverify` | → `202 Run` (`kind: "reverify"`) | Replays the stored workflow's steps headlessly, without the planner; the run stores no new workflow. `404` unknown workflow; `409 conflict` if a step is high risk or the target can't be reset to the workflow's starting state |
+| 2 | POST | `/workflows/{id}/reverify` | → `202 Run` (`kind: "reverify"`) | Replays the stored workflow's steps headlessly, without the planner; the run stores no new workflow. `404` unknown workflow; `409 conflict` if a step is high risk, a step typed a secret (never stored), or the target can't be reset to the workflow's starting state (`error.details.reason`). A step that no longer works fails the run: `locator_miss`, `action_failed` or `state_mismatch` in `error.details` |
 | 2 | GET | `/workflows/{id}/guide.md` | → `text/markdown` | Text guide: the tutorial's step texts, numbered, one screenshot each (absolute image URLs) |
 | 3 | POST | `/runs/{id}/takeover` | → `Run` | The user finishes manually after a CAPTCHA/bot wall |
 | 3 | POST | `/auth/*`, `/tutorials/{id}/share` | — | Specified in Phase 3 |
