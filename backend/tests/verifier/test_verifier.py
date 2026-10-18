@@ -144,6 +144,17 @@ def test_url_regex_searches_the_path_only() -> None:
     assert bad.failures()[0].detail.startswith("invalid regex")
 
 
+def test_url_regex_ignores_one_trailing_slash() -> None:
+    # Gitea answers /o/r/src/branch/x/ after creating branch x; a plan expecting ^/o/r/src/branch/x$ is right.
+    branch = observed("/demo/r/src/branch/feature-docs/", TITLE_REPO, None)
+
+    assert verifier.verify(ExpectedState(url_matches="^/demo/r/src/branch/feature-docs$"), branch).verified
+    assert not verifier.verify(ExpectedState(url_matches="^/demo/r/src/branch/other$"), branch).verified
+    # The root path keeps its slash, and a pattern that wants the slash still gets it.
+    assert verifier.verify(ExpectedState(url_matches="^/$"), observed("/", TITLE_REPO, None)).verified
+    assert verifier.verify(ExpectedState(url_matches="/feature-docs/$"), branch).verified
+
+
 def test_empty_expected_state_is_skipped() -> None:
     outcome = verifier.verify(ExpectedState(), observed("/", "Dashboard", None))
 

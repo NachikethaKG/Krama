@@ -46,6 +46,12 @@ _CONTEXT_ROLES = frozenset(
     {"text", "paragraph", "heading", "strong", "emphasis", "generic", "dialog", "alert"}
 )
 _SIBLING_BUTTON_NAMES = frozenset({"no", "cancel", "close", "dismiss"})
+_DIALOG_ROLES = frozenset({"dialog", "alertdialog"})
+# Form fields a dialog asks for before its confirm button (e.g. Gitea's "Branch Name *"). Skipped only inside
+# a dialog, to reach its own text. Outside one, a field right before a confirm still means no context.
+_FORM_FIELD_ROLES = frozenset(
+    {"textbox", "searchbox", "combobox", "spinbutton", "checkbox", "radio", "switch", "slider", "listbox"}
+)
 _MAX_CONTEXT_LINES = 3
 
 
@@ -151,7 +157,9 @@ def _text_before_control(aria_excerpt: str, name: str) -> str | None:
     """The text just before the last control named `name` in an ARIA snapshot.
 
     Gitea dialogs have no dialog role: the dialog is text + paragraph + "No" + "Yes". None if the control,
-    or any text right before it, isn't there."""
+    or any text right before it, isn't there. Inside a `- dialog` block (the observer puts open dialogs in
+    one), the dialog's form fields are skipped and the scan stops at the dialog's edge; the dialog's own name
+    counts as its text."""
     lines = aria_excerpt.splitlines()
     wanted = name.strip().lower()
     index = None
@@ -162,15 +170,22 @@ def _text_before_control(aria_excerpt: str, name: str) -> str | None:
     if index is None:
         return None
 
+    dialog_line = _enclosing_dialog(lines, index)
     collected: list[str] = []
-    for line in reversed(lines[:index]):
-        m = _ARIA_LINE.match(line)
+    for i in range(index - 1, -1, -1):
+        m = _ARIA_LINE.match(lines[i])
         if not m:
             continue
         role = m.group("role")
         label = (m.group("name") or "").strip()
+        if i == dialog_line:
+            if label and not collected:
+                collected.append(label)  # a titled dialog with no other text
+            break  # the dialog's edge: what is above it is the page, not the dialog
         if role == "button" and label.lower() in _SIBLING_BUTTON_NAMES and not collected:
             continue  # the "No" / "Cancel" next to the "Yes"
+        if dialog_line is not None and role in _FORM_FIELD_ROLES and not collected:
+            continue  # the field the dialog asks for, between its text and its confirm
         if role in _CONTEXT_ROLES:
             text = " ".join(p for p in (label, (m.group("text") or "").strip()) if p)
             if text:
@@ -185,6 +200,23 @@ def _text_before_control(aria_excerpt: str, name: str) -> str | None:
     if not collected:
         return None
     return " ".join(reversed(collected))
+
+
+def _indent(line: str) -> int:
+    return len(line) - len(line.lstrip())
+
+
+def _enclosing_dialog(lines: list[str], index: int) -> int | None:
+    """Index of the `- dialog` / `- alertdialog` line that contains lines[index] (by indentation), or None."""
+    level = _indent(lines[index])
+    for i in range(index - 1, -1, -1):
+        m = _ARIA_LINE.match(lines[i])
+        if not m or _indent(lines[i]) >= level:
+            continue
+        if m.group("role") in _DIALOG_ROLES:
+            return i
+        level = _indent(lines[i])
+    return None
 
 
 def _check_generic_confirm(name: str, intent: str, ctx: ActionContext) -> RiskAssessment:

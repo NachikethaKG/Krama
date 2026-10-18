@@ -88,6 +88,14 @@ class PlaywrightSession:
 OPEN_DIALOGS = "dialog[open], [role=dialog], [role=alertdialog], .ui.modal.visible"
 
 
+def _as_dialog(snapshot: str) -> str:
+    """The dialog's ARIA lines under a `- dialog:` line, as Playwright prints a real role=dialog."""
+    lines = snapshot.splitlines()
+    if lines and lines[0].lstrip().startswith(("- dialog", "- alertdialog")):
+        return snapshot
+    return "\n".join(["- dialog:", *(f"  {line}" for line in lines)])
+
+
 async def page_snapshot(page: Page) -> str:
     """ARIA snapshot of the current page for the planner (`main` if there is one, else `body`), plus any open
     dialog outside it. Untrusted: the planner redacts and delimits it before an LLM sees it."""
@@ -107,7 +115,7 @@ async def _dialogs_outside_main(page: Page) -> list[str]:
         for i in range(await dialogs.count()):
             dialog = dialogs.nth(i)
             if await dialog.evaluate("e => !e.closest('main, [role=main]')"):
-                found.append(await dialog.aria_snapshot(timeout=2_000))
+                found.append(_as_dialog(await dialog.aria_snapshot(timeout=2_000)))
     except Exception:
         return found  # a dialog closing mid-read is not an error
     return found

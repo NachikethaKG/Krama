@@ -67,7 +67,7 @@ SITE_HINTS: dict[str, str] = {
             'button "Create Issue". After creation the URL is /<owner>/<repo>/issues/<number>.',
             "New branch: /<owner>/<repo>/branches has a button 'Create new branch from \"<branch>\"'",
             'for each branch. It opens a dialog with textbox "Branch Name *" and button "Confirm".',
-            "After creation the URL is /<owner>/<repo>/src/branch/<new branch>.",
+            "After creation the URL is /<owner>/<repo>/src/branch/<new branch>/ (with a trailing slash).",
             'New file: /<owner>/<repo>/_new/<branch>/ has textbox "Name your file…" (a path like',
             'docs/a.md is allowed), textbox "Editor content" for the content and button "Commit Changes".',
             'After the commit the URL is /<owner>/<repo>/src/branch/<branch>/<path>. Typing a "/" in that',
