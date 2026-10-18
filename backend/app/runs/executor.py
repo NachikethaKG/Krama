@@ -229,7 +229,11 @@ class InProcessExecutor:
             rows,
             confidence=min((r.verification["confidence"] for r in rows), default=1.0),
             recording_path=self._artifact_key(recording.path),
-            viewport={"width": config.viewport_width, "height": config.viewport_height},
+            viewport={
+                "width": config.viewport_width,
+                "height": config.viewport_height,
+                "device_scale_factor": config.device_scale_factor,
+            },
             duration_ms=round((time.perf_counter() - t0) * 1000),
         )
 
@@ -478,6 +482,7 @@ class InProcessExecutor:
             target={
                 **step.target.model_dump(mode="json", exclude_none=True),
                 "bbox": list(out.result.bbox) if out.result.bbox else None,
+                "scroll": out.result.scroll.model_dump() if out.result.scroll else None,
             },
             instruction_text=step.instruction_text,
             expected_state=mask_expected(step.expected_state).model_dump(mode="json", exclude_none=True),
