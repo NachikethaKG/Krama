@@ -11,6 +11,12 @@ async def test_session_uses_configured_viewport() -> None:
         assert s.page.viewport_size == {"width": 800, "height": 800}
 
 
+async def test_session_uses_configured_device_scale() -> None:
+    config = SessionConfig(base_url="http://krama.test", device_scale_factor=2)
+    async with PlaywrightSession(config) as s:
+        assert await s.page.evaluate("window.devicePixelRatio") == 2
+
+
 async def test_session_is_closed_after_exit() -> None:
     session = PlaywrightSession(SessionConfig(base_url="http://krama.test"))
     async with session:
@@ -40,6 +46,36 @@ async def test_bbox_is_in_page_coordinates(executor: ActionExecutor, session: Pl
     assert result.bbox is not None
     # The button sits below a 2000px spacer: in viewport coordinates it would be ~500px, not > 2000.
     assert result.bbox[1] > 2000
+
+
+async def test_scroll_is_the_one_the_click_happened_at(
+    executor: ActionExecutor, session: PlaywrightSession
+) -> None:
+    # Starts at the top, so the click scrolls ~2000px down. Measuring before that scroll (Phase 1) stored 0.
+    result = await executor.execute(Action(type="click"), Target(role="button", name="Far away"))
+
+    assert result.ok, result.error
+    assert result.bbox is not None and result.scroll is not None
+    assert result.scroll.y > 0
+    assert [result.scroll.x, result.scroll.y] == await session.page.evaluate("[scrollX, scrollY]")
+    on_screen_y = result.bbox[1] - result.scroll.y
+    viewport = session.page.viewport_size
+    assert viewport is not None and 0 <= on_screen_y < viewport["height"]
+
+
+async def test_scroll_is_zero_when_nothing_scrolls(executor: ActionExecutor) -> None:
+    result = await executor.execute(Action(type="click"), Target(role="link", name="Go to form"))
+
+    assert result.ok, result.error
+    assert result.scroll is not None and (result.scroll.x, result.scroll.y) == (0, 0)
+
+
+async def test_step_without_target_records_the_scroll_after_it(executor: ActionExecutor) -> None:
+    result = await executor.execute(Action(type="navigate", value="/form"))
+
+    assert result.ok, result.error
+    assert result.bbox is None
+    assert result.scroll is not None and result.scroll.y == 0
 
 
 async def test_fill_matches_name_as_substring(executor: ActionExecutor, session: PlaywrightSession) -> None:
@@ -106,6 +142,7 @@ async def test_missing_target_fails_with_target_not_found(fast_fail_executor: Ac
     assert result.error is not None
     assert result.error.code == "target_not_found"
     assert 900 <= result.duration_ms < 5_000  # the 1 s test timeout, not Playwright's 30 s default
+    assert result.bbox is None and result.scroll is None
 
 
 async def test_ambiguous_target_is_reported_not_guessed(executor: ActionExecutor) -> None:

@@ -133,13 +133,15 @@ async def test_approved_plan_runs_to_a_stored_verified_workflow(
         workflow = await s.get(WorkflowRow, UUID(stream[-1]["workflow_id"]))
         assert workflow is not None and workflow.run_id == run_id and workflow.status == "verified"
         assert [st.seq for st in workflow.steps] == [1, 2, 3, 4, 5]
-        assert workflow.confidence == 1.0 and workflow.viewport == {"width": 1280, "height": 800}
+        assert workflow.confidence == 1.0
+        assert workflow.viewport == {"width": 1280, "height": 800, "device_scale_factor": 1.0}
         assert workflow.recording_path and (tmp_path / workflow.recording_path).is_file()
         password = workflow.steps[2]
         assert password.sensitive and password.action == {"type": "fill", "value": "***"}
         assert workflow.steps[1].action["value"] == "demo-item"
         assert workflow.steps[0].verification["method"] == ["url", "aria"]
         assert workflow.steps[0].target["bbox"] is not None
+        assert workflow.steps[0].target["scroll"] == {"x": 0, "y": 0}
 
 
 async def test_the_password_is_in_no_row_the_executor_writes(
