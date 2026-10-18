@@ -15,7 +15,6 @@ def text(
     context: ElementContext | None = None,
     *,
     page_title: str | None = "Settings - demo-repo - Gitea",
-    title_after: str | None = None,
     sensitive: bool = False,
 ) -> str | None:
     target = Target(role=role, name=name) if role or name else None
@@ -24,7 +23,6 @@ def text(
         target,
         context,
         page_title=page_title,
-        title_after=title_after,
         sensitive=sensitive,
     )
 
@@ -47,11 +45,6 @@ def text(
             "Click 'Confirm' to create the new branch.",
             "In the “Create new branch” dialog, click “Confirm”.",
             text("click", name="Confirm", context=DIALOG),
-        ),
-        (
-            "Navigate to the branches page of the repository.",
-            "Go to the “Branches” page.",
-            text("navigate", "/demo/r/branches", role=None, name=None, title_after="Branches - r - Gitea"),
         ),
     ],
 )
@@ -124,7 +117,7 @@ def test_page_text_stays_a_quoted_word() -> None:
     "got",
     [
         text("wait", role=None, name=None),
-        text("navigate", "/x", role=None, name=None, title_after=None),
+        text("navigate", "/x", role=None, name=None),  # the planner names the page by its purpose
         text("click", role=None, name=None),  # selector-only target: no words for a person
         text("click", role="button", name=" * "),
         text("press", None, role=None, name=None),

@@ -13,6 +13,23 @@ class TaskFormatError(ValueError):
     """Raised when a task file contains malformed YAML or invalid structure."""
 
 
+class ApiCall(BaseModel):
+    """One HTTP request against the target's API, sent as the demo user (benchmarks/tasks/runner.py).
+
+    `url` is a path on the task's target (`/api/v1/...`); `{user}` stands for the demo user's name.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    method: str = Field(default="GET", description="HTTP method")
+    url: str = Field(min_length=1, description="Path on the target, e.g. /api/v1/repos/{user}/x")
+    body: dict[str, Any] | None = Field(default=None, description="JSON body")
+    ok_status: list[int] = Field(
+        default_factory=lambda: [200, 201, 204],
+        description="Statuses that count as done (e.g. add 404 for a delete of something absent)",
+    )
+
+
 class SetupConfig(BaseModel):
     """Optional pre-run environment setup and teardown configuration."""
 
@@ -23,6 +40,10 @@ class SetupConfig(BaseModel):
     )
     api_call: dict[str, Any] | None = Field(
         default=None, description="Structured API request parameters for reset"
+    )
+    api_calls: list[ApiCall] = Field(
+        default_factory=list,
+        description="Requests run in order before every trial, e.g. delete then re-create a repo",
     )
 
 

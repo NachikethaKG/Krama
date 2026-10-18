@@ -16,7 +16,6 @@ from app.contracts_gen.common_schema import Action, Target
 _MAX_WORDS = 8
 _REQUIRED_MARK = re.compile(r"\s*\*$")
 _TOGGLES = frozenset({"checkbox", "switch"})
-_TITLE_SPLIT = " - "
 
 
 def tutorial_text(
@@ -25,19 +24,17 @@ def tutorial_text(
     context: ElementContext | None,
     *,
     page_title: str | None,
-    title_after: str | None,
     sensitive: bool,
 ) -> str | None:
     """One imperative sentence for the step, or None when the facts aren't enough (keep the planner's text).
 
-    `page_title` is the page the step started on, `title_after` the page it ended on (used by navigate steps).
+    `page_title` is the title of the page the step started on.
     """
     label = _clean(target.name) if target is not None else None
     match action.type:
-        case "navigate":
-            page = _page_name(title_after)
-            return f"Go to the {_q(page)} page." if page else None
-        case "wait":
+        case "navigate" | "wait":
+            # The planner names the page by what it is for ("Settings"); the page's own title can say
+            # something else (Gitea's settings page is titled "Repository"), so its text is kept.
             return None
         case "press" if target is None:
             return f"Press {_q(action.value or '')}." if action.value else None
@@ -91,13 +88,6 @@ def _clean(name: str | None) -> str | None:
     if not name:
         return None
     return _REQUIRED_MARK.sub("", " ".join(name.split())) or None
-
-
-def _page_name(title: str | None) -> str | None:
-    """ "Issues - my-repo - Gitea: Git with a cup of tea" -> "Issues"."""
-    if not title:
-        return None
-    return title.split(_TITLE_SPLIT, 1)[0].strip() or None
 
 
 def _q(text: str) -> str:
