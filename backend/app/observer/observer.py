@@ -23,6 +23,9 @@ from app.ports import ArtifactStore
 from app.ports.models import RecordingRef, StepRef
 from app.ports.observer import Observer
 
+# Open dialogs; Gitea's Fomantic UI marks them only with classes (no role=dialog).
+_OPEN_DIALOGS = "dialog[open], [role=dialog], [role=alertdialog], .ui.modal.visible"
+
 
 class PageObserver(Observer):
     """Observes and captures browser page state after actions.
@@ -390,9 +393,12 @@ class PageObserver(Observer):
             return ""
 
     async def _safe_aria_snapshot(self, page: Page) -> str:
-        # Prefer landmark role='main' to capture relevant content first
+        # Prefer landmark role='main' to capture relevant content first, plus any open dialog outside it:
+        # Gitea (Fomantic UI) renders dialogs outside <main> and without role=dialog, so a step expecting a
+        # field in the dialog could never be verified (#78).
         try:
-            return await page.get_by_role("main").first.aria_snapshot(timeout=600)
+            snapshot = await page.get_by_role("main").first.aria_snapshot(timeout=600)
+            return "\n".join([snapshot, *await self._dialogs_outside_main(page)])
         except Exception:
             pass
 
@@ -401,6 +407,18 @@ class PageObserver(Observer):
             return await page.locator("body").aria_snapshot(timeout=600)
         except Exception:
             return ""
+
+    async def _dialogs_outside_main(self, page: Page) -> list[str]:
+        dialogs = page.locator(_OPEN_DIALOGS).filter(visible=True)
+        found: list[str] = []
+        try:
+            for i in range(await dialogs.count()):
+                dialog = dialogs.nth(i)
+                if await dialog.evaluate("e => !e.closest('main, [role=main]')"):
+                    found.append(await dialog.aria_snapshot(timeout=600))
+        except Exception:
+            return found  # a dialog closing mid-read is not an error
+        return found
 
     async def _find_sensitive_bounding_boxes(self, page: Page) -> list[dict[str, float]]:
         """Identify bounding boxes of password inputs and elements marked sensitive."""
