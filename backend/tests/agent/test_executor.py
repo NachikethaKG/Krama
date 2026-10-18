@@ -1,6 +1,6 @@
 import pytest
 
-from app.agent import ActionExecutor, PlaywrightSession, SessionConfig
+from app.agent import ActionExecutor, PlaywrightSession, SessionConfig, page_snapshot
 from app.contracts_gen.common_schema import Action, Target
 
 pytestmark = pytest.mark.anyio
@@ -193,3 +193,13 @@ async def test_fill_value_never_appears_in_errors(executor: ActionExecutor) -> N
     assert result.error is not None
     assert secret not in result.error.message
     assert secret not in result.model_dump_json()
+
+
+async def test_planner_snapshot_includes_open_dialogs_outside_main(session: PlaywrightSession) -> None:
+    await session.page.goto("/dialogs")
+
+    snapshot = await page_snapshot(session.page)
+
+    assert 'textbox "Branch Name *"' in snapshot and 'button "Confirm"' in snapshot
+    assert snapshot.count('button "Inside main"') == 1  # a dialog inside main isn't added twice
+    assert "Closed dialog" not in snapshot
