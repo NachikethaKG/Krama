@@ -634,6 +634,18 @@
             "title": "Id",
             "type": "string"
           },
+          "kind": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RunKind"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "task",
+            "description": "task: a run of a newly approved plan, which stores a new workflow when verified. reverify: a replay of a stored workflow's steps (POST /workflows/{id}/reverify), which stores none."
+          },
           "plan_id": {
             "format": "uuid",
             "title": "Plan Id",
@@ -649,6 +661,19 @@
             "minimum": 0.0,
             "title": "Retry Count",
             "type": "integer"
+          },
+          "source_workflow_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "reverify only: the stored workflow this run replays.",
+            "title": "Source Workflow Id"
           },
           "started_at": {
             "anyOf": [
@@ -675,6 +700,7 @@
                 "type": "null"
               }
             ],
+            "description": "The workflow this run stored. Null until a task run is verified, and always null for a reverify run (see source_workflow_id).",
             "title": "Workflow Id"
           }
         },
@@ -712,6 +738,14 @@
         ],
         "title": "RunConfirmRequest",
         "type": "object"
+      },
+      "RunKind": {
+        "enum": [
+          "task",
+          "reverify"
+        ],
+        "title": "RunKind",
+        "type": "string"
       },
       "RunPage": {
         "additionalProperties": false,

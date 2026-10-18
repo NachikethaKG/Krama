@@ -83,6 +83,15 @@ export type PlanStatus = "proposed" | "approved" | "rejected";
  */
 export type RunStatus = "queued" | "running" | "paused" | "verified" | "failed" | "cancelled";
 /**
+ * task: a run of a newly approved plan, which stores a new workflow when verified. reverify: a replay of a stored workflow's steps (POST /workflows/{id}/reverify), which stores none.
+ */
+export type RunKind = "task" | "reverify";
+/**
+ * This interface was referenced by `Run`'s JSON-Schema
+ * via the `definition` "RunKind".
+ */
+export type RunKind1 = "task" | "reverify";
+/**
  * This interface was referenced by `Step`'s JSON-Schema
  * via the `definition` "VerificationResult".
  */
@@ -294,6 +303,9 @@ export interface RunCompletedEvent {
   run_id: string;
   seq: number;
   ts: string;
+  /**
+   * The workflow the run stored; for a reverify run, the stored workflow it re-verified.
+   */
   workflow_id: string;
   verified_steps: number;
   failed_actions: number;
@@ -403,6 +415,14 @@ export interface Run {
   status: RunStatus;
   current_seq?: number | null;
   retry_count: number;
+  kind?: RunKind;
+  /**
+   * reverify only: the stored workflow this run replays.
+   */
+  source_workflow_id?: string | null;
+  /**
+   * The workflow this run stored. Null until a task run is verified, and always null for a reverify run (see source_workflow_id).
+   */
   workflow_id?: string | null;
   error?: ApiError | null;
   created_at: string;
