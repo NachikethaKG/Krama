@@ -13,35 +13,37 @@ Stored Phase 1 workflow `c4a44aac` (create repo): "Click the New Repository link
 
 ## After: rewrite from the executed steps
 
-| task | step | template | gemini-gemini-2.5-flash | ollama-llama3.1-8b |
-|---|---|---|---|---|
-| create-repo | 1 click New Repository | Under **Repositories**, click **New Repository**. | In the **Repositories** section, click **New Repository**. | In the **Repositories** section, click **New Repository**. |
-| create-repo | 2 fill Repository Name | Enter `team-docs` in **Repository Name**. | Enter `team-docs` in **Repository Name**. | Enter `team-docs` in **Repository Name**. |
-| create-repo | 3 click Initialize Repository | Select the **Initialize Repository** checkbox. | Select the **Initialize Repository** checkbox. | Select the **Initialize Repository** checkbox. |
-| create-repo | 4 click Create Repository | Click **Create Repository**. | Click **Create Repository**. | Click **Create Repository**. |
-| create-issue | 1 navigate /demo/krama-research-tasks/i | Go to the **Issues** page. | Go to the **Issues - krama-research-tasks** page. | Go to the **Issues - krama-research-tasks** page. |
-| create-issue | 2 click New Issue | Under **Labels Milestones**, click **New Issue**. | Under **Labels Milestones**, click **New Issue**. | In the Labels Milestones section, click **New Issue**. |
-| create-issue | 3 fill Title | Enter `Login page shows a blank screen` in **Title**. | Enter `Login page shows a blank screen` in **Title**. | Enter `Login page shows a blank screen` in **Title**. |
-| create-issue | 4 fill Leave a comment | Enter `Steps: open /user/login on a small window.` in **Leave a comment**. | Enter `Steps: open /user/login on a small window.` in **Leave a comment**. | Enter `Steps: open /user/login on a small window.` in **Leave a comment**. |
-| create-issue | 5 click Create Issue | Click **Create Issue**. | Click **Create Issue**. | Click **Create Issue**. |
-| create-branch | 1 navigate /demo/krama-research-tasks/b | Go to the **Branches** page. | — | Go to the **Branches** page of the repository. |
-| create-branch | 2 click Create new branch from "main | Under **Default Branch**, click **Create new branch from "main"**. | — | In the Default Branch section, click **Create new branch from "main"**. |
-| create-branch | 3 fill Branch Name | In the **Create new branch** dialog, enter `feature-docs` in **Branch Name**. | — | In the Create new branch dialog, enter `feature-docs` in **Branch Name**. |
-| create-branch | 4 click Confirm | In the **Create new branch** dialog, click **Confirm**. | — | In the Create new branch dialog, click **Confirm**. |
-| add-file | 1 navigate /demo/krama-research-tasks | Go to the **demo/krama-research-tasks** page. | — | Go to the demo/krama-research-tasks - krama-research-tasks page. |
-| add-file | 2 click Add File | In the menu, click **Add File**. | — | In the dropdown menu, click **Add File**. |
-| add-file | 3 click New File | In the menu, click **New File**. | — | In the dropdown menu, click **New File**. |
-| add-file | 4 fill Name your file… | Enter `docs/notes.md` in **Name your file…**. | — | Enter `docs/notes.md` in **Name your file…**. |
-| add-file | 5 fill Editor content | Enter the file content in **Editor content**. | — | Enter `# Notes\n\nFirst note.` in **Editor content**. |
-| add-file | 6 click Commit Changes | Under **Commit Changes**, click **Commit Changes**. | — | In the Commit Changes section, click **Commit Changes**. |
-| repo-settings-selector | 1 navigate /demo/krama-research-tasks/s | Go to the **Repository** page. | — | Go to the Repository - krama-research-tasks page. |
-| repo-settings-selector | 2 fill Description | Under **Basic Settings**, enter `Docs for the team` in **Description**. | — | In the Basic Settings section, enter **Description** with `Docs for the team`. |
-| repo-settings-selector | 3 click Update Settings | Under **Basic Settings**, click **Update Settings**. | — | In the Basic Settings section, click **Update Settings**. |
+| task | step | template | gemini-gemini-3.8-flash | gemini-gemini-3.5-flash | gemini-gemini-2.5-flash | ollama-llama3.1-8b |
+|---|---|---|---|---|---|---|
+| create-repo | 1 click New Repository | Under **Repositories**, click **New Repository**. | Under **Repositories**, click **New Repository**. | Under **Repositories**, click **New Repository**. | In the **Repositories** section, click **New Repository**. | In the **Repositories** section, click **New Repository**. |
+| create-repo | 2 fill Repository Name | Enter `team-docs` in **Repository Name**. | Enter `team-docs` in **Repository Name**. | Enter `team-docs` in **Repository Name**. | Enter `team-docs` in **Repository Name**. | Enter `team-docs` in **Repository Name**. |
+| create-repo | 3 click Initialize Repository | Select the **Initialize Repository** checkbox. | Select the **Initialize Repository** checkbox. | Select the **Initialize Repository** checkbox. | Select the **Initialize Repository** checkbox. | Select the **Initialize Repository** checkbox. |
+| create-repo | 4 click Create Repository | Click **Create Repository**. | Click **Create Repository**. | Click **Create Repository**. | Click **Create Repository**. | Click **Create Repository**. |
+| create-issue | 1 navigate /demo/krama-research-tasks/i | Go to the **Issues** page. | Go to the **Issues - krama-research-tasks** page. | Go to the **Issues - krama-research-tasks** page. | Go to the **Issues - krama-research-tasks** page. | Go to the **Issues - krama-research-tasks** page. |
+| create-issue | 2 click New Issue | Under **Labels Milestones**, click **New Issue**. | Under **Labels Milestones**, click **New Issue**. | Under **Labels Milestones**, click **New Issue**. | Under **Labels Milestones**, click **New Issue**. | In the Labels Milestones section, click **New Issue**. |
+| create-issue | 3 fill Title | Enter `Login page shows a blank screen` in **Title**. | Enter `Login page shows a blank screen` in **Title**. | Enter `Login page shows a blank screen` in **Title**. | Enter `Login page shows a blank screen` in **Title**. | Enter `Login page shows a blank screen` in **Title**. |
+| create-issue | 4 fill Leave a comment | Enter `Steps: open /user/login on a small window.` in **Leave a comment**. | Enter `Steps: open /user/login on a small window.` in **Leave a comment**. | Enter `Steps: open /user/login on a small window.` in **Leave a comment**. | Enter `Steps: open /user/login on a small window.` in **Leave a comment**. | Enter `Steps: open /user/login on a small window.` in **Leave a comment**. |
+| create-issue | 5 click Create Issue | Click **Create Issue**. | Click **Create Issue**. | Click **Create Issue**. | Click **Create Issue**. | Click **Create Issue**. |
+| create-branch | 1 navigate /demo/krama-research-tasks/b | Go to the **Branches** page. | Go to the **Branches - krama-research-tasks** page. | Go to the **Branches - krama-research-tasks** page. | — | Go to the **Branches** page of the repository. |
+| create-branch | 2 click Create new branch from "main | Under **Default Branch**, click **Create new branch from "main"**. | Under **Default Branch**, click **Create new branch from "main"**. | Under **Default Branch**, click **Create new branch from "main"**. | — | In the Default Branch section, click **Create new branch from "main"**. |
+| create-branch | 3 fill Branch Name | In the **Create new branch** dialog, enter `feature-docs` in **Branch Name**. | In the **Create new branch** dialog, enter `feature-docs` in **Branch Name**. | In the **Create new branch** dialog, enter `feature-docs` in **Branch Name**. | — | In the Create new branch dialog, enter `feature-docs` in **Branch Name**. |
+| create-branch | 4 click Confirm | In the **Create new branch** dialog, click **Confirm**. | In the **Create new branch** dialog, click **Confirm**. | In the **Create new branch** dialog, click **Confirm**. | — | In the Create new branch dialog, click **Confirm**. |
+| add-file | 1 navigate /demo/krama-research-tasks | Go to the **demo/krama-research-tasks** page. | Go to the **demo/krama-research-tasks - krama-research-tasks** page. | Go to the **demo/krama-research-tasks - krama-research-tasks** page. | — | Go to the demo/krama-research-tasks - krama-research-tasks page. |
+| add-file | 2 click Add File | In the menu, click **Add File**. | In the dropdown menu, click **Add File**. | In the dropdown menu, click **Add File**. | — | In the dropdown menu, click **Add File**. |
+| add-file | 3 click New File | In the menu, click **New File**. | In the dropdown menu, click **New File**. | In the dropdown menu, click **New File**. | — | In the dropdown menu, click **New File**. |
+| add-file | 4 fill Name your file… | Enter `docs/notes.md` in **Name your file…**. | Enter `docs/notes.md` in **Name your file…**. | Enter `docs/notes.md` in **Name your file…**. | — | Enter `docs/notes.md` in **Name your file…**. |
+| add-file | 5 fill Editor content | Enter the file content in **Editor content**. | Enter the file content in **Editor content**. | Enter the file content in **Editor content**. | — | Enter `# Notes\n\nFirst note.` in **Editor content**. |
+| add-file | 6 click Commit Changes | Under **Commit Changes**, click **Commit Changes**. | Under **Commit Changes**, click **Commit Changes**. | Under **Commit Changes**, click **Commit Changes**. | — | In the Commit Changes section, click **Commit Changes**. |
+| repo-settings-selector | 1 navigate /demo/krama-research-tasks/s | Go to the **Repository** page. | Go to the **Repository - krama-research-tasks** page. | Go to the **Repository - krama-research-tasks** page. | — | Go to the Repository - krama-research-tasks page. |
+| repo-settings-selector | 2 fill Description | Under **Basic Settings**, enter `Docs for the team` in **Description**. | Under **Basic Settings**, enter `Docs for the team` in **Description**. | Under **Basic Settings**, enter `Docs for the team` in **Description**. | — | In the Basic Settings section, enter **Description** with `Docs for the team`. |
+| repo-settings-selector | 3 click Update Settings | Under **Basic Settings**, click **Update Settings**. | Under **Basic Settings**, click **Update Settings**. | Under **Basic Settings**, click **Update Settings**. | — | In the Basic Settings section, click **Update Settings**. |
 
 ## Automatic checks (steps passing all / 22) and time
 
 | provider | all checks | seconds (5 workflows) | errors |
 |---|---|---|---|
 | template | 22/22 | 0.0 | 0 |
+| gemini-gemini-3.8-flash | 22/22 | 175.6 | 0 |
+| gemini-gemini-3.5-flash | 22/22 | 93.3 | 0 |
 | gemini-gemini-2.5-flash | 9/22 | 39.6 | 3 |
 | ollama-llama3.1-8b | 19/22 | 56.2 | 0 |
