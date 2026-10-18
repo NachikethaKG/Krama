@@ -28,7 +28,7 @@ Verified Workflow JSON ──► tutorial-compiler (TS, pure function) ──►
 |---|---|---|
 | Backend | Python, uv, FastAPI, Pydantic v2, SQLAlchemy 2 + Alembic | `.python-version` (3.12) |
 | Browser | Playwright for Python, headless Chromium | `backend/uv.lock` |
-| LLM | `LLMProvider` interface: Gemini (reference), Ollama (opt-in), Fake (tests) | — |
+| LLM | `LLMProvider` interface: Gemini (reference), Fake (tests). No local model ([ADR 0003](adr/0003-no-local-model-for-text-jobs.md)) | — |
 | Jobs | In-process asyncio (Phases 0–2) → Redis + arq (Phase 3) | Redis 7 |
 | Frontend | Next.js (App Router), TypeScript, Tailwind, pnpm | `.nvmrc` (Node 22), `packageManager` field |
 | Replay | rrweb recording + SVG overlay layer | `pnpm-lock.yaml` |
@@ -50,7 +50,7 @@ Ownership is by module ([ADR 0001](adr/0001-ownership-by-module.md)). Modules ow
 | `planner/` | Vishwas | Task interpretation + plan generation (`instruction_text`, `expected_state` per step) |
 | `agent/` | Vishwas | Browser session, action execution, locator fallback chain, self-healing (Phase 4) |
 | `verifier/` | Vishwas | Compares expected vs observed state, returns result + method + confidence |
-| `llm/` | Vishwas | `LLMProvider` + Gemini / Ollama / Fake implementations, prompt templates |
+| `llm/` | Vishwas | `LLMProvider` + Gemini / Fake implementations, prompt templates |
 | `db/` | Vishwas | SQLAlchemy models, repositories, Alembic migrations (schema: [`database-schema.md`](database-schema.md)) |
 | `storage/` | Vishwas | `ArtifactStore` (local FS → S3 later) |
 | `tts/` | Vishwas | Piper narration audio (Phase 5) |
@@ -68,7 +68,7 @@ Every boundary is an interface with a mock that ships *before* the real implemen
 
 | Seam | Interface | Mock (exists first) | Real | Who uses the mock |
 |---|---|---|---|---|
-| LLM | `LLMProvider` | `FakeProvider`: replays `backend/tests/llm_fixtures/*.json` | `GeminiProvider`, `OllamaProvider` | backend tests, CI, offline dev |
+| LLM | `LLMProvider` | `FakeProvider`: replays `backend/tests/llm_fixtures/*.json` | `GeminiProvider` | backend tests, CI, offline dev |
 | Planner | `Planner` | `StaticPlanner`: returns a fixture plan | `LLMPlanner` | executor + API work before the planner is good |
 | Browser | `BrowserSession` | `RecordedSession`: replays stored observations | `PlaywrightSession` | verifier/policy unit tests |
 | Verifier | `Verifier` | `ScriptedVerifier`: results given by the test | `LayeredVerifier` | executor/replan tests |
@@ -91,10 +91,11 @@ Every boundary is an interface with a mock that ships *before* the real implemen
 | DB migrations owned by Vishwas only | Two people writing migrations is a classic source of conflicts | — |
 | Ownership by module, cross-owner calls only via `ports/` | Both people work on the backend without sharing files | [0001](adr/0001-ownership-by-module.md) |
 | Thin Playwright layer over browser-use/Stagehand | Deterministic execution, fits free-tier quota (1 planning call), strict plan-approve-execute control | [0002](adr/0002-own-playwright-layer.md) |
+| No local model; instruction text written by code | Template = Gemini = Llama 3.1 on real steps; the reference laptop can't run Ollama | [0003](adr/0003-no-local-model-for-text-jobs.md) |
 
 ## 6. Hardware rules
 
-- No GPU anywhere in the default path. Ollama is opt-in (`LLM_PROVIDER_TEXT=ollama`).
+- No GPU anywhere. No local model: text jobs use code or Gemini ([ADR 0003](adr/0003-no-local-model-for-text-jobs.md)).
 - Chromium is headless in tests. Headed mode is only for manual login/debugging.
 - `MAX_CONCURRENT_RUNS=1` locally. Docker is limited to 4GB through `.wslconfig`.
 - CI (ubuntu, no GPU) is the automatic stand-in for "runs on Nachiketha's laptop".

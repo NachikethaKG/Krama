@@ -33,8 +33,11 @@ model can only ever be an opt-in on Vishwas's machine, never the default or anyt
   and the poor steps come from the input data (see the instruction-text note), which no model fixed.
 - One CPU-only run (`num_gpu: 0`) was made before the decision above: same text, 232 s for 5 workflows plus about
   40 s model load, 5.2 GB RAM [verified locally: `out-ollama-cpu-llama3.1-8b.json`]. Kept only as a data point.
-- **Not tested:** Gemini 3.x (quota used up on the test day), more prompt variants, and Llama with a screenshot
-  (Llama 3.1 8B is text-only).
+- **Gemini 3.x (rerun 2026-10-18, after the quota reset):** gemini-3.8-flash and gemini-3.5-flash both passed 22/22
+  checks and wrote the template's sentence word for word on 16/22 steps. On the other 6 (navigate steps) they copied
+  raw page titles, worse than the template. 6–53 s per call [verified locally: `out-gemini-gemini-3.*.json`].
+  Llama 3.1 matched the template on only 7/22.
+- **Not tested:** more prompt variants, and Llama with a screenshot (Llama 3.1 8B is text-only).
 
 ## Recommendation
 For the ADR (#74), decision is Vishwas's:
@@ -48,8 +51,7 @@ For the ADR (#74), decision is Vishwas's:
   `architecture.md` §2/§4/§6 become stale; changing them needs the ADR plus both owners' approval.
 
 ## Open questions
-- Re-run the Gemini 3.x side after the quota reset, so the ADR has a full Gemini column (planned with the
-  instruction-text rerun).
+- None left for this question. Decided in [ADR 0003](../adr/0003-no-local-model-for-text-jobs.md) (#74): no local model.
 
 ## Links
 - https://docs.ollama.com/capabilities/structured-outputs
