@@ -106,6 +106,8 @@ Spatial alignment across diverse browser environments, devices, and video render
 
 ## 5. Canonical JSON Schema (`tutorial-spec.schema.json`)
 
+> **Superseded (2026-10-17):** the contract is now [`contracts/schemas/tutorial-spec.schema.json`](../../contracts/schemas/tutorial-spec.schema.json) (#71, PR #242): draft 2020-12, element fields nullable, `step_index` renamed `step_seq`, and more; the differences are listed in PR #242. The Draft-07 version below is kept as the research record. Its copies in `packages/tutorial-compiler/src/schema/` and `docs/specs/` were removed.
+
 The schema conforms to **JSON Schema Draft-07** (`http://json-schema.org/draft-07/schema#`) for universal toolchain compatibility across TypeScript (via `json-schema-to-typescript`) and Python (via `jsonschema`):
 
 ```json
@@ -326,7 +328,7 @@ The schema conforms to **JSON Schema Draft-07** (`http://json-schema.org/draft-0
 
 ## 6. Verification and Validation
 
-The schema and its canonical fixture ([tutorial-spec.fixture.json](file:///c:/Git/Krama/packages/tutorial-compiler/src/schema/fixtures/tutorial-spec.fixture.json)) have been verified programmatically against standard JSON Schema Draft-07 validators:
+The draft schema and its fixture (both since removed; see the note at the top of §5) have been verified programmatically against standard JSON Schema Draft-07 validators:
 - Validated with Python `jsonschema.Draft7Validator`: passes with 0 errors [verified locally].
 - Negative validation test confirmed: omission of required scene keys immediately trips `ValidationError` [verified locally].
 - Dual storage location: committed to both `packages/tutorial-compiler/src/schema/tutorial-spec.schema.json` and mirrored in `docs/specs/tutorial-spec.schema.json`.
@@ -350,5 +352,5 @@ The schema and its canonical fixture ([tutorial-spec.fixture.json](file:///c:/Gi
 - [phase-2-vishwas-coordinates.md](phase-2-vishwas-coordinates.md)
 - [phase-2-nachiketha-cursor-motion-and-zoom.md](phase-2-nachiketha-cursor-motion-and-zoom.md)
 - [phase-2-nachiketha-timing-alignment.md](phase-2-nachiketha-timing-alignment.md)
-- [packages/tutorial-compiler/src/schema/tutorial-spec.schema.json](../../packages/tutorial-compiler/src/schema/tutorial-spec.schema.json)
-- [packages/tutorial-compiler/src/schema/fixtures/tutorial-spec.fixture.json](../../packages/tutorial-compiler/src/schema/fixtures/tutorial-spec.fixture.json)
+- [contracts/schemas/tutorial-spec.schema.json](../../contracts/schemas/tutorial-spec.schema.json) (the contract, #71)
+- [contracts/fixtures/tutorial-spec/gitea-create-repo.json](../../contracts/fixtures/tutorial-spec/gitea-create-repo.json)
