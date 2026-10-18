@@ -16,6 +16,8 @@ class SessionConfig:
     base_url: str
     viewport_width: int = 1280
     viewport_height: int = 800
+    device_scale_factor: float = 1.0
+    """CSS px stay the same at any scale; only screenshots get `scale` times more pixels."""
     headless: bool = True
     # Playwright's default is 30 s, far too long to notice that one agent step failed.
     action_timeout_ms: int = 5_000
@@ -54,6 +56,7 @@ class PlaywrightSession:
             self._context = await self._browser.new_context(
                 base_url=self.config.base_url,
                 viewport={"width": self.config.viewport_width, "height": self.config.viewport_height},
+                device_scale_factor=self.config.device_scale_factor,
             )
             self._context.set_default_timeout(self.config.action_timeout_ms)
             self._context.set_default_navigation_timeout(self.config.navigation_timeout_ms)
