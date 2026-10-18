@@ -42,6 +42,23 @@ PAGES: dict[str, str] = {
         <label>Password <input type="password" name="password" value="hunter2"></label>
         <label>Notes <input name="notes" value="visible"></label>
     </main>""",
+    # Where elements sit, for the step text (#73): dialog, top bar, dropdown menu, form sections, tab strip.
+    "/context": """<title>Settings - demo-repo</title>
+        <nav id="navbar"><a href="/">Explore</a></nav>
+        <main>
+          <h4 class="tabs"><a href="#">Labels</a> <a href="#">Milestones</a></h4>
+          <div><a href="#">New Issue</a></div>
+          <h4>Basic Settings</h4>
+          <div class="segment"><form><label>Description <textarea></textarea></label>
+            <button>Update Settings</button></form></div>
+          <h3>Commit Changes</h3>
+          <div><button>Commit Changes</button></div>
+          <div style="position: relative"><div role="menu" style="position: absolute">
+            <a role="menuitem" href="#">New File</a></div></div>
+          <div class="ui modal" role="dialog"><div class="header">Create new branch</div>
+            <label>Branch Name * <input></label><button>Confirm</button></div>
+          <button>Alone</button>
+        </main>""",
 }
 
 
