@@ -2,6 +2,18 @@
 
 Every change to `contracts/` is listed here. Additive change = minor version bump; breaking change = major bump + ADR.
 
+## 1.7 (#253)
+
+Runs that re-verify a stored workflow (#77). Additive.
+
+- `run.schema.json` v1.1: `Run.kind` (new enum `RunKind`: `task` | `reverify`, default `task`) and
+  `Run.source_workflow_id` (the stored workflow a reverify run replays). `workflow_id` is documented: null until a
+  task run is verified, always null for a reverify run, which stores no new workflow.
+- `events.schema.json` v1.3: `RunCompletedEvent.workflow_id` is documented as the re-verified workflow for a reverify
+  run (description only).
+- `docs/api-contract.md`: `POST /workflows/{id}/reverify` returns a `kind: "reverify"` run; `404` / `409` cases.
+- `docs/database-schema.md`: `runs.kind`, `runs.source_workflow_id` (migration in #77).
+
 ## 1.6 (#71)
 
 The tutorial spec, plus the scroll a step's bbox was measured at. Additive.
