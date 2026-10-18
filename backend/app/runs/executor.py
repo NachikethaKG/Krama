@@ -26,6 +26,7 @@ from app.contracts_gen.plan_schema import PlannedStep
 from app.db import WorkflowStepRow
 from app.db.base import literal_values
 from app.llm import LLMError
+from app.planner.instructions import tutorial_text
 from app.planner.planner import Planner, PlannerError, PlanRequest
 from app.ports.models import (
     InvalidArtifactKeyError,
@@ -262,7 +263,7 @@ class InProcessExecutor:
             if out is None:
                 return None  # stopped by the policy, or cancelled
             if out.verified:
-                rows.append(self._row(step, out))
+                rows.append(self._row(job, step, out))
                 budget.succeeded()
                 i += 1
                 continue
@@ -272,7 +273,7 @@ class InProcessExecutor:
                 )
                 if not await self._pause(job, step.seq, "verification_unclear", message):
                     return None
-                rows.append(self._row(step, out))  # a human accepted it; its confidence stays below 0.8
+                rows.append(self._row(job, step, out))  # a human accepted it; its confidence stays below 0.8
                 budget.succeeded()
                 i += 1
                 continue
@@ -469,9 +470,10 @@ class InProcessExecutor:
             if job.run_id in self._paused_s:
                 self._paused_s[job.run_id] += time.perf_counter() - t0
 
-    def _row(self, step: PlannedStep, out: StepOutcome) -> WorkflowStepRow:
+    def _row(self, job: RunJob, step: PlannedStep, out: StepOutcome) -> WorkflowStepRow:
         """The stored step. Sensitive fill values are masked; the ARIA text stays out (it can hold typed
-        values), the screenshot is referenced by its artifact key."""
+        values), the screenshot is referenced by its artifact key. The step text is rewritten from what ran
+        (label, dialog/section, page reached); the plan keeps the text the human approved."""
         sensitive = step.action.value is not None and looks_sensitive(step.target.name)
         action = step.action.model_copy(update={"value": MASK}) if sensitive else step.action
         key = self._artifact_key(out.observed.screenshot_path)
@@ -484,7 +486,7 @@ class InProcessExecutor:
                 "bbox": list(out.result.bbox) if out.result.bbox else None,
                 "scroll": out.result.scroll.model_dump() if out.result.scroll else None,
             },
-            instruction_text=step.instruction_text,
+            instruction_text=self._step_text(job, step, out, sensitive=sensitive),
             expected_state=mask_expected(step.expected_state).model_dump(mode="json", exclude_none=True),
             before_state=_summary(out.before) if out.before else None,
             observed_state={
@@ -499,6 +501,21 @@ class InProcessExecutor:
             sensitive=sensitive,
             screenshot_path=key,
         )
+
+    @staticmethod
+    def _step_text(job: RunJob, step: PlannedStep, out: StepOutcome, *, sensitive: bool) -> str:
+        """The tutorial text: rewritten from what ran, unless a human edited the plan (their words win)."""
+        if job.plan_revision > 1:
+            return step.instruction_text
+        rewritten = tutorial_text(
+            step.action,
+            step.target,
+            out.result.context,
+            page_title=out.before.title if out.before else None,
+            title_after=out.observed.title,
+            sensitive=sensitive,
+        )
+        return rewritten or step.instruction_text
 
     def _artifact_key(self, path: str | None) -> str | None:
         """The key the API serves an observer artifact by (`/api/v1/artifacts/<key>`).

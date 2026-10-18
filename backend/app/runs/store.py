@@ -31,6 +31,8 @@ class RunJob:
     target_url: str
     status: RunStatus
     steps: list[PlannedStep]
+    plan_revision: int = 1
+    """The approved revision. Above 1, a human edited the plan, so their step texts are kept as written."""
 
 
 _RISK_ORDER = {"low": 0, "medium": 1, "high": 2}
@@ -77,6 +79,7 @@ class RunStore:
                 target_url=task.target_url,
                 status=RunStatus(run.status),
                 steps=[PlannedStep.model_validate(step) for step in plan.steps],
+                plan_revision=run.plan_revision,
             )
 
     async def status(self, run_id: UUID) -> RunStatus:

@@ -142,6 +142,14 @@ async def test_approved_plan_runs_to_a_stored_verified_workflow(
         assert workflow.steps[0].verification["method"] == ["url", "aria"]
         assert workflow.steps[0].target["bbox"] is not None
         assert workflow.steps[0].target["scroll"] == {"x": 0, "y": 0}
+        # Step text rewritten from what ran (#73); the password's value is never written out.
+        assert [st.instruction_text for st in workflow.steps] == [
+            "Click “New item”.",
+            "Enter “demo-item” in “Item name”.",
+            "Fill in “Password”.",
+            "Select the “Add a README” checkbox.",
+            "Click “Create item”.",
+        ]
 
 
 async def test_the_password_is_in_no_row_the_executor_writes(
