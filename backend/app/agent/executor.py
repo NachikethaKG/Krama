@@ -8,6 +8,7 @@ from playwright.async_api import FloatRect, Locator, Page
 from playwright.async_api import TimeoutError as PlaywrightTimeoutError
 from pydantic import BaseModel, ConfigDict
 
+from app.agent.context import ElementContext, element_context
 from app.agent.vision import VisionLocator
 from app.contracts_gen.common_schema import Action, ActionType, BoundingBox, ScrollOffset, Target
 from app.llm import LLMAttempt
@@ -49,6 +50,8 @@ class ActionResult(BaseModel):
     """URL path after the action (no scheme or host), like `url_matches` in the contract."""
     strategy: LocatorStrategy | None = None
     """Which locator strategy found the target. None without target, or if nothing was found."""
+    context: ElementContext | None = None
+    """The dialog, menu, top bar or form section the target sits in, read before acting (for step text)."""
     llm_attempts: list[LLMAttempt] = []
     """LLM requests made by the vision fallback (for the run log and the benchmark)."""
     error: ActionError | None = None
@@ -94,12 +97,14 @@ class ActionExecutor:
         scroll: ScrollOffset | None = None
         locator: Locator | None = None
         strategy: LocatorStrategy | None = None
+        context: ElementContext | None = None
         attempts: list[LLMAttempt] = []
         error: ActionError | None = None
         try:
             _validate(action, target)
             if target is not None and (target.role or target.selector):
                 locator, strategy = await self._resolve(target, instruction, attempts)
+                context = await element_context(locator)
                 bbox, scroll = await self._page_bbox(locator)
             await self._perform(action, locator)
             if locator is None:
@@ -123,6 +128,7 @@ class ActionExecutor:
             scroll=scroll,
             url_after=self.current_path(),
             strategy=strategy,
+            context=context,
             llm_attempts=attempts,
             error=error,
         )
