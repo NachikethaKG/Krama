@@ -10,6 +10,7 @@ from pydantic import TypeAdapter, ValidationError
 from app.contracts_gen.common_schema import BoundingBox, ErrorResponse, ExpectedState
 from app.contracts_gen.events_schema import RunEvent, RunPausedEvent, StepVerifiedEvent
 from app.contracts_gen.plan_schema import Plan
+from app.contracts_gen.run_schema import Run
 from app.contracts_gen.task_schema import Task
 from app.contracts_gen.tutorial_spec_schema import Scene, TutorialSpec
 from app.contracts_gen.workflow_schema import Workflow
@@ -217,3 +218,29 @@ def test_invalid_scenes_are_rejected(change: dict[str, object]) -> None:
 
     with pytest.raises(ValidationError):
         TutorialSpec.model_validate(spec)
+
+
+QUEUED_RUN = {
+    "id": RUN,
+    "plan_id": RUN,
+    "plan_revision": 1,
+    "status": "queued",
+    "retry_count": 0,
+    "created_at": TS,
+}
+
+
+def test_a_run_without_kind_is_a_task_run() -> None:
+    run = Run.model_validate(QUEUED_RUN)  # what every Phase 1 client and fixture sends
+
+    assert run.kind == "task" and run.source_workflow_id is None
+
+
+def test_a_reverify_run_names_the_workflow_it_replays() -> None:
+    run = Run.model_validate(
+        QUEUED_RUN | {"kind": "reverify", "source_workflow_id": RUN, "workflow_id": None}
+    )
+
+    assert run.kind == "reverify" and str(run.source_workflow_id) == RUN and run.workflow_id is None
+    with pytest.raises(ValidationError):
+        Run.model_validate(QUEUED_RUN | {"kind": "replay"})
