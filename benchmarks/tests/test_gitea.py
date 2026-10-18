@@ -42,7 +42,7 @@ def test_reset_gitea_api_happy_path() -> None:
 
         if url.endswith("/api/v1/version"):
             return MockHTTPResponse(200, json.dumps({"version": "1.22.6"}).encode())
-        if url.endswith("/api/v1/users/demo/repos"):
+        if "/api/v1/users/demo/repos?" in url:
             return MockHTTPResponse(
                 200,
                 json.dumps([{"name": "repo-a"}, {"name": "repo-b"}]).encode(),
@@ -56,10 +56,10 @@ def test_reset_gitea_api_happy_path() -> None:
         assert deleted == ["repo-a", "repo-b"]
 
     assert any(
-        "DELETE http://localhost:3001/api/v1/repos/demo/repo-a" in c for c in calls
+        "DELETE http://127.0.0.1:3001/api/v1/repos/demo/repo-a" in c for c in calls
     )
     assert any(
-        "DELETE http://localhost:3001/api/v1/repos/demo/repo-b" in c for c in calls
+        "DELETE http://127.0.0.1:3001/api/v1/repos/demo/repo-b" in c for c in calls
     )
 
 
@@ -139,3 +139,46 @@ def test_reset_gitea_api_delete_error_raises() -> None:
         pytest.raises(GiteaResetError, match="Failed to delete repo"),
     ):
         reset_gitea(repo_name="corrupt-repo")
+
+
+def test_reset_gitea_api_pages_through_every_repo() -> None:
+    # Gitea returns at most one page of repos per request; with 53 repos a single request missed 3.
+    names = [f"repo-{i}" for i in range(53)]
+    deleted_urls: list[str] = []
+
+    def fake_urlopen(
+        req: urllib.request.Request, timeout: float = 10.0
+    ) -> MockHTTPResponse:
+        url = req.full_url
+        if url.endswith("/api/v1/version"):
+            return MockHTTPResponse(200, b"{}")
+        if "/api/v1/users/demo/repos?" in url:
+            page = int(url.rsplit("page=", 1)[1])
+            chunk = names[(page - 1) * 50 : page * 50]
+            return MockHTTPResponse(200, json.dumps([{"name": n} for n in chunk]).encode())
+        if req.get_method() == "DELETE":
+            deleted_urls.append(url)
+            return MockHTTPResponse(204)
+        return MockHTTPResponse(404)
+
+    with patch("urllib.request.urlopen", side_effect=fake_urlopen):
+        deleted = reset_gitea_api(base_url="http://localhost:3001", user="demo")
+
+    assert deleted == names
+    assert len(deleted_urls) == 53
+
+
+def test_reset_gitea_api_sends_localhost_to_ipv4() -> None:
+    # On Windows, localhost tries IPv6 first and every request waits ~21 s before falling back.
+    seen: list[str] = []
+
+    def fake_urlopen(
+        req: urllib.request.Request, timeout: float = 10.0
+    ) -> MockHTTPResponse:
+        seen.append(req.full_url)
+        return MockHTTPResponse(200, b"[]")
+
+    with patch("urllib.request.urlopen", side_effect=fake_urlopen):
+        reset_gitea_api(base_url="http://localhost:3001", user="demo")
+
+    assert seen and all(u.startswith("http://127.0.0.1:3001/") for u in seen)
