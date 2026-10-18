@@ -33,6 +33,9 @@ class RunJob:
     steps: list[PlannedStep]
     plan_revision: int = 1
     """The approved revision. Above 1, a human edited the plan, so their step texts are kept as written."""
+    kind: str = "task"
+    """task, or reverify: a replay of `source_workflow_id`'s stored steps that stores no workflow (#77)."""
+    source_workflow_id: UUID | None = None
 
 
 _RISK_ORDER = {"low": 0, "medium": 1, "high": 2}
@@ -80,6 +83,8 @@ class RunStore:
                 status=RunStatus(run.status),
                 steps=[PlannedStep.model_validate(step) for step in plan.steps],
                 plan_revision=run.plan_revision,
+                kind=run.kind,
+                source_workflow_id=run.source_workflow_id,
             )
 
     async def status(self, run_id: UUID) -> RunStatus:
@@ -186,6 +191,26 @@ class RunStore:
             return None  # the transaction rolled back, workflow included
         await self._committed(job.run_id, True)
         return workflow_id
+
+    async def complete_reverify(self, job: RunJob, *, verified_steps: int, **changes: Any) -> bool:
+        """End a reverify run as verified. No workflow is stored; run.completed names the re-verified one."""
+        assert job.source_workflow_id is not None
+        async with self._sessions.begin() as s:
+            row = await transition_run(
+                s,
+                job.run_id,
+                to=RunStatus.VERIFIED,
+                allowed_from=(RunStatus.RUNNING,),
+                event_type="run.completed",
+                event_data={
+                    "workflow_id": str(job.source_workflow_id),
+                    "verified_steps": verified_steps,
+                    "failed_actions": 0,
+                },
+                finished_at=datetime.now(UTC),
+                **changes,
+            )
+        return await self._committed(job.run_id, row is not None)
 
     async def _complete(
         self,

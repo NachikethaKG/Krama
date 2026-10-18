@@ -225,6 +225,10 @@ class InProcessExecutor:
                 recording = await observer.stop_recording()
         if rows is None:
             return  # failed, paused out or cancelled; the store already says so
+        if job.kind == "reverify":
+            duration_ms = round((time.perf_counter() - t0) * 1000)
+            await self._store.complete_reverify(job, verified_steps=len(rows), duration_ms=duration_ms)
+            return
         await self._store.complete(
             job,
             rows,
@@ -281,6 +285,9 @@ class InProcessExecutor:
             move, why = budget.after_failure(step, out)
             if move == "retry":
                 continue  # same step again; budget.retry_count already counts it
+            if job.kind == "reverify":
+                await self._fail_reverify(job, step, out)
+                return None  # the later steps depend on this one: they are not run
             if move == "replan":
                 replanned = await self._replan(job, steps, i, out, page, budget)
                 if replanned is not None:
@@ -430,6 +437,21 @@ class InProcessExecutor:
         )
         return False
 
+    async def _fail_reverify(self, job: RunJob, step: PlannedStep, out: StepOutcome) -> None:
+        """A stored step no longer works. locator_miss: its element is gone or ambiguous (the UI changed);
+        action_failed: the action itself failed; state_mismatch: it ran but its expected state didn't hold."""
+        error = out.result.error
+        if error is not None and error.code in ("target_not_found", "ambiguous_target"):
+            reason, what = "locator_miss", f"its element wasn't found ({error.code})"
+        elif error is not None:
+            reason, what = "action_failed", f"its action failed ({error.code})"
+        else:
+            reason, what = "state_mismatch", "it ran, but the expected state didn't hold"
+        await self._store.fail(
+            job.run_id, from_=RunStatus.RUNNING, message=f"Step {step.seq} no longer works: {what}",
+            reason=reason, step_seq=step.seq,
+        )  # fmt: skip
+
     async def _pause(
         self,
         job: RunJob,
@@ -439,7 +461,16 @@ class InProcessExecutor:
         *,
         plan_id: UUID | None = None,
     ) -> bool:
-        """Pause with the browser open until /confirm. True if a human allowed it (deny cancels the task)."""
+        """Pause with the browser open until /confirm. True if a human allowed it (deny cancels the task).
+
+        A reverify run has nobody watching it: instead of pausing it fails, with the pause reason."""
+        if job.kind == "reverify":
+            text = message or f"Step {step_seq} needs a human ({reason})"
+            await self._store.fail(
+                job.run_id, from_=RunStatus.RUNNING, message=f"Re-verification stopped: {text}",
+                reason=reason, step_seq=step_seq,
+            )  # fmt: skip
+            return False
         answer: asyncio.Future[None] = asyncio.get_running_loop().create_future()
         self._answers[job.run_id] = answer
         t0 = time.perf_counter()

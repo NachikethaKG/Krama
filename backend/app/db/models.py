@@ -12,7 +12,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.contracts_gen.common_schema import Risk
 from app.contracts_gen.plan_schema import PlanStatus
-from app.contracts_gen.run_schema import RunStatus
+from app.contracts_gen.run_schema import RunKind, RunStatus
 from app.contracts_gen.task_schema import TaskStatus
 from app.contracts_gen.workflow_schema import WorkflowStatus
 from app.db.base import Base, Timestamps, literal_values, status_check
@@ -20,6 +20,7 @@ from app.db.base import Base, Timestamps, literal_values, status_check
 TASK_STATUSES = literal_values(TaskStatus)
 PLAN_STATUSES = literal_values(PlanStatus)
 RUN_STATUSES = literal_values(RunStatus)
+RUN_KINDS = literal_values(RunKind)
 WORKFLOW_STATUSES = literal_values(WorkflowStatus)
 RISKS = literal_values(Risk)
 
@@ -60,6 +61,7 @@ class RunRow(Timestamps, Base):
     __tablename__ = "runs"
     __table_args__ = (
         status_check("status", RUN_STATUSES, "status"),
+        status_check("kind", RUN_KINDS, "kind"),
         Index(None, "plan_id"),
         Index(None, "status"),
         Index(None, "created_at"),  # run history pages, newest first
@@ -68,6 +70,12 @@ class RunRow(Timestamps, Base):
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
     plan_id: Mapped[UUID] = mapped_column(ForeignKey("plans.id"))
     plan_revision: Mapped[int] = mapped_column(Integer)
+    kind: Mapped[str] = mapped_column(Text, default="task", server_default="task")
+    """task: a run of a newly approved plan. reverify: a replay of a stored workflow's steps (#77)."""
+    source_workflow_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("workflows.id", ondelete="SET NULL", use_alter=True), default=None
+    )
+    """reverify only: the stored workflow this run replays. It stores no new workflow."""
     status: Mapped[str] = mapped_column(Text, default="queued", server_default="queued")
     current_seq: Mapped[int | None] = mapped_column(Integer, default=None)
     retry_count: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
