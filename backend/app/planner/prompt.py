@@ -59,6 +59,23 @@ SITE_HINTS: dict[str, str] = {
             '.gitignore, License and README)" and button "Create Repository". Leave other fields alone.',
             "After creation the URL is /<owner>/<repo>. If the name is taken, the page stays on",
             '/repo/create and shows "The repository name is already used."',
+            # The 4 flows below were tested live (docs/research/phase-2-vishwas-gitea-tasks.md): without
+            # these hints the planner guessed names on pages it can't see and failed all 4; with them, 4/4.
+            "A repository's pages are under /<owner>/<repo> (owner = the signed-in user unless the task",
+            "names another). Navigate there directly; the dashboard lists repositories twice.",
+            'New issue: /<owner>/<repo>/issues/new has textbox "Title", textbox "Leave a comment" and',
+            'button "Create Issue". After creation the URL is /<owner>/<repo>/issues/<number>.',
+            "New branch: /<owner>/<repo>/branches has a button 'Create new branch from \"<branch>\"'",
+            'for each branch. It opens a dialog with textbox "Branch Name *" and button "Confirm".',
+            "After creation the URL is /<owner>/<repo>/src/branch/<new branch>.",
+            'New file: /<owner>/<repo>/_new/<branch>/ has textbox "Name your file…" (a path like',
+            'docs/a.md is allowed), textbox "Editor content" for the content and button "Commit Changes".',
+            'After the commit the URL is /<owner>/<repo>/src/branch/<branch>/<path>. Typing a "/" in that',
+            "textbox moves the folder into the path in front of it, so after filling docs/a.md the textbox",
+            'holds only "a.md": expect the part after the last "/".',
+            'Repository settings: /<owner>/<repo>/settings has textbox "Description". The page has THREE',
+            'buttons "Update Settings"; the one that saves the description has selector',
+            "form:has(textarea#description) button.primary. After saving, the page stays on settings.",
         ]
     ),
 }

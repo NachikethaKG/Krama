@@ -51,6 +51,19 @@ GITEA_HTML_PAGES: dict[str, str] = {
   </div>
 </body>
 </html>""",
+    # Gitea renders dialogs outside <main> with Fomantic UI classes only (no role=dialog) (#78).
+    "/demo/repo/branches": """<!DOCTYPE html>
+<html>
+<head><title>Branches - repo - Gitea</title></head>
+<body>
+  <div role="main"><h1>Branches</h1><button>Create new branch from "main"</button></div>
+  <div class="ui modal visible"><div class="header">Create new branch</div>
+    <label>Branch Name * <input value="feature-docs"></label>
+    <label>Password <input type="password" value="hunter2"></label>
+    <button>Confirm</button></div>
+  <div class="ui modal" style="display: none"><button>Delete branch</button></div>
+</body>
+</html>""",
 }
 
 

@@ -512,7 +512,6 @@ class InProcessExecutor:
             step.target,
             out.result.context,
             page_title=out.before.title if out.before else None,
-            title_after=out.observed.title,
             sensitive=sensitive,
         )
         return rewritten or step.instruction_text

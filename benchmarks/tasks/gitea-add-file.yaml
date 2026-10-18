@@ -1,0 +1,14 @@
+name: gitea-add-file
+prompt: "Add a file notes.md containing 'First note' to the main branch of the repository bench-files."
+target: "http://localhost:3001"
+setup:
+  api_calls:
+    - { method: DELETE, url: "/api/v1/repos/{user}/bench-files", ok_status: [204, 404] }
+    - { method: POST, url: "/api/v1/user/repos", body: { name: bench-files, auto_init: true }, ok_status: [201] }
+success_check:
+  type: api
+  assertion:
+    method: GET
+    url: "/api/v1/repos/{user}/bench-files/raw/notes.md"
+    expected_status: 200
+    body_contains: "First note"

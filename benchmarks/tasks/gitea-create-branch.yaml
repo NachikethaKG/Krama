@@ -1,0 +1,13 @@
+name: gitea-create-branch
+prompt: "Create a branch named feature-docs from main in the repository bench-branches."
+target: "http://localhost:3001"
+setup:
+  api_calls:
+    - { method: DELETE, url: "/api/v1/repos/{user}/bench-branches", ok_status: [204, 404] }
+    - { method: POST, url: "/api/v1/user/repos", body: { name: bench-branches, auto_init: true }, ok_status: [201] }
+success_check:
+  type: api
+  assertion:
+    method: GET
+    url: "/api/v1/repos/{user}/bench-branches/branches/feature-docs"
+    expected_status: 200
