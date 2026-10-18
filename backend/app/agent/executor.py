@@ -9,7 +9,7 @@ from playwright.async_api import TimeoutError as PlaywrightTimeoutError
 from pydantic import BaseModel, ConfigDict
 
 from app.agent.vision import VisionLocator
-from app.contracts_gen.common_schema import Action, ActionType, BoundingBox, Target
+from app.contracts_gen.common_schema import Action, ActionType, BoundingBox, ScrollOffset, Target
 from app.llm import LLMAttempt
 
 type ActionErrorCode = Literal[
@@ -42,6 +42,9 @@ class ActionResult(BaseModel):
     duration_ms: int
     bbox: BoundingBox | None = None
     """The resolved element in page coordinates (CSS px), measured just before acting. None without target."""
+    scroll: ScrollOffset | None = None
+    """Window scroll when the action ran: with a target, after scrolling it into view (the scroll the action
+    itself uses); without one, after the action. `bbox - scroll` is the element's box on screen."""
     url_after: str
     """URL path after the action (no scheme or host), like `url_matches` in the contract."""
     strategy: LocatorStrategy | None = None
@@ -88,6 +91,7 @@ class ActionExecutor:
         started_at = datetime.now(UTC)
         t0 = time.perf_counter()
         bbox: BoundingBox | None = None
+        scroll: ScrollOffset | None = None
         locator: Locator | None = None
         strategy: LocatorStrategy | None = None
         attempts: list[LLMAttempt] = []
@@ -96,8 +100,10 @@ class ActionExecutor:
             _validate(action, target)
             if target is not None and (target.role or target.selector):
                 locator, strategy = await self._resolve(target, instruction, attempts)
-                bbox = await self._page_bbox(locator)
+                bbox, scroll = await self._page_bbox(locator)
             await self._perform(action, locator)
+            if locator is None:
+                scroll = await self._scroll()
         except _InvalidActionError as e:
             error = ActionError(code="invalid_action", message=str(e))
         except _UnresolvedTargetError as e:
@@ -114,6 +120,7 @@ class ActionExecutor:
             started_at=started_at,
             duration_ms=round((time.perf_counter() - t0) * 1000),
             bbox=bbox,
+            scroll=scroll,
             url_after=self.current_path(),
             strategy=strategy,
             llm_attempts=attempts,
@@ -216,13 +223,20 @@ class ActionExecutor:
                 if locator is None:
                     await self._page.wait_for_load_state("domcontentloaded")
 
-    async def _page_bbox(self, locator: Locator) -> BoundingBox | None:
+    async def _page_bbox(self, locator: Locator) -> tuple[BoundingBox | None, ScrollOffset]:
+        # The action scrolls the element into view before acting. Doing it first means the scroll measured
+        # here is the one the action (and the recording) happens at (phase-2-vishwas-coordinates.md).
+        await locator.scroll_into_view_if_needed()
         box = await locator.bounding_box()
+        scroll = await self._scroll()
         if box is None:
-            return None
+            return None, scroll
         # bounding_box() is relative to the viewport; the contract wants page coordinates.
-        scroll_x, scroll_y = await self._page.evaluate("[window.scrollX, window.scrollY]")
-        return (box["x"] + scroll_x, box["y"] + scroll_y, box["width"], box["height"])
+        return (box["x"] + scroll.x, box["y"] + scroll.y, box["width"], box["height"]), scroll
+
+    async def _scroll(self) -> ScrollOffset:
+        x, y = await self._page.evaluate("[window.scrollX, window.scrollY]")
+        return ScrollOffset(x=max(x, 0), y=max(y, 0))
 
 
 def _validate(action: Action, target: Target | None) -> None:
