@@ -25,6 +25,16 @@ from app.ports.observer import Observer
 
 # Open dialogs; Gitea's Fomantic UI marks them only with classes (no role=dialog).
 _OPEN_DIALOGS = "dialog[open], [role=dialog], [role=alertdialog], .ui.modal.visible"
+_DIALOG_LINE = re.compile(r"^\s*- (?:dialog|alertdialog)\b")
+
+
+def _as_dialog(snapshot: str) -> str:
+    """The dialog's ARIA lines under a `- dialog:` line, as Playwright prints a real role=dialog, so readers
+    (the policy) can tell what is inside the dialog."""
+    lines = snapshot.splitlines()
+    if lines and _DIALOG_LINE.match(lines[0]):
+        return snapshot
+    return "\n".join(["- dialog:", *(f"  {line}" for line in lines)])
 
 
 class PageObserver(Observer):
@@ -415,7 +425,7 @@ class PageObserver(Observer):
             for i in range(await dialogs.count()):
                 dialog = dialogs.nth(i)
                 if await dialog.evaluate("e => !e.closest('main, [role=main]')"):
-                    found.append(await dialog.aria_snapshot(timeout=600))
+                    found.append(_as_dialog(await dialog.aria_snapshot(timeout=600)))
         except Exception:
             return found  # a dialog closing mid-read is not an error
         return found
