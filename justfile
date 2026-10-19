@@ -59,6 +59,10 @@ reset-gitea:
 bench task runs="1" *extra:
     uv run --project backend python -m benchmarks.runner --task {{task}} --runs {{ if runs == "--runs" { extra } else if replace(runs, "--runs=", "") != runs { replace(runs, "--runs=", "") } else { runs } }}
 
+# Generate benchmark reliability HTML and Markdown report
+bench-report *args:
+    uv run --project backend python -m benchmarks.report {{args}}
+
 
 # Regenerate everything derived from contracts: Python models, openapi.json, TypeScript types (once #17 adds them)
 gen-contracts:
