@@ -29,7 +29,7 @@ from app.contracts_gen.step_schema import StepVerification
 from app.llm import LLMAttempt
 from app.ports.models import ObservedState
 from app.verifier.aria import AriaNode, parse_aria_snapshot
-from app.verifier.verifier import Check, RuleVerifier, VerificationOutcome
+from app.verifier.verifier import Check, RuleVerifier, VerificationOutcome, url_path_matches
 
 THRESHOLD = 0.8
 CONFIDENCE: dict[VerificationMethod, float] = {
@@ -246,7 +246,7 @@ def _methods(expected: ExpectedState) -> list[VerificationMethod]:
 def _url_check(expected: ExpectedState, path: str) -> bool:
     assert expected.url_matches is not None
     try:
-        return re.search(expected.url_matches, path) is not None
+        return url_path_matches(expected.url_matches, path)
     except re.error:
         return False
 

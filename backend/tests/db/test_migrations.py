@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from alembic import command
 from app.db import Base
-from app.db.models import PLAN_STATUSES, RISKS, RUN_STATUSES, TASK_STATUSES, WORKFLOW_STATUSES
+from app.db.models import PLAN_STATUSES, RISKS, RUN_KINDS, RUN_STATUSES, TASK_STATUSES, WORKFLOW_STATUSES
 from tests.conftest import alembic_config
 
 pytestmark = pytest.mark.anyio
@@ -58,6 +58,7 @@ async def test_models_and_migrations_have_not_drifted(sessions: async_sessionmak
         ("ck_plans_status", PLAN_STATUSES),
         ("ck_plans_risk", RISKS),
         ("ck_runs_status", RUN_STATUSES),
+        ("ck_runs_kind", RUN_KINDS),
         ("ck_workflows_status", WORKFLOW_STATUSES),
         ("ck_workflow_steps_risk", RISKS),
     ],

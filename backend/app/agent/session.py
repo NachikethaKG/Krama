@@ -84,12 +84,38 @@ class PlaywrightSession:
         self._page = self._context = self._browser = self._playwright = None
 
 
+# Open dialogs. Many sites (Gitea's Fomantic UI among them) render them outside <main>, without role=dialog.
+OPEN_DIALOGS = "dialog[open], [role=dialog], [role=alertdialog], .ui.modal.visible"
+
+
+def _as_dialog(snapshot: str) -> str:
+    """The dialog's ARIA lines under a `- dialog:` line, as Playwright prints a real role=dialog."""
+    lines = snapshot.splitlines()
+    if lines and lines[0].lstrip().startswith(("- dialog", "- alertdialog")):
+        return snapshot
+    return "\n".join(["- dialog:", *(f"  {line}" for line in lines)])
+
+
 async def page_snapshot(page: Page) -> str:
-    """ARIA snapshot of the current page for the planner (`main` if there is one, else `body`). Untrusted:
-    the planner redacts and delimits it before an LLM sees it."""
+    """ARIA snapshot of the current page for the planner (`main` if there is one, else `body`), plus any open
+    dialog outside it. Untrusted: the planner redacts and delimits it before an LLM sees it."""
     for locator in (page.get_by_role("main").first, page.locator("body")):
         try:
-            return await locator.aria_snapshot(timeout=2_000)
+            snapshot = await locator.aria_snapshot(timeout=2_000)
         except Exception:
             continue
+        return "\n".join([snapshot, *await _dialogs_outside_main(page)])
     return ""
+
+
+async def _dialogs_outside_main(page: Page) -> list[str]:
+    dialogs = page.locator(OPEN_DIALOGS).filter(visible=True)
+    found: list[str] = []
+    try:
+        for i in range(await dialogs.count()):
+            dialog = dialogs.nth(i)
+            if await dialog.evaluate("e => !e.closest('main, [role=main]')"):
+                found.append(_as_dialog(await dialog.aria_snapshot(timeout=2_000)))
+    except Exception:
+        return found  # a dialog closing mid-read is not an error
+    return found

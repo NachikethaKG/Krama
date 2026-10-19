@@ -1,0 +1,14 @@
+name: gitea-create-issue
+prompt: "In the repository bench-issues, open an issue titled 'Login page shows a blank screen'."
+target: "http://localhost:3001"
+setup:
+  api_calls:
+    - { method: DELETE, url: "/api/v1/repos/{user}/bench-issues", ok_status: [204, 404] }
+    - { method: POST, url: "/api/v1/user/repos", body: { name: bench-issues, auto_init: true }, ok_status: [201] }
+success_check:
+  type: api
+  assertion:
+    method: GET
+    url: "/api/v1/repos/{user}/bench-issues/issues?state=all&type=issues"
+    expected_status: 200
+    body_contains: "Login page shows a blank screen"

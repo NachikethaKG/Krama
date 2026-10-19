@@ -4,7 +4,8 @@ This is the one place that picks the concrete classes behind the ports (observer
 does for `krama run`. Tests build `Services` themselves with fakes where the architecture allows it.
 """
 
-from dataclasses import dataclass
+from collections.abc import Callable
+from dataclasses import dataclass, field
 from typing import Annotated
 
 from fastapi import Depends, Request
@@ -21,7 +22,7 @@ from app.policy import LLMClassifier, PolicyService
 from app.runs import InProcessExecutor, RunEnvironment, RunStore
 from app.runs.events import EventHub
 from app.storage import LocalFsStore
-from app.targets import target_setup
+from app.targets import TargetSetup, target_setup
 from app.verifier import LayeredVerifier
 from app.verifier.vision import GeminiVisionJudge
 
@@ -34,6 +35,8 @@ class Services:
     executor: InProcessExecutor
     planning: PlanningService
     engine: AsyncEngine | None = None
+    target: Callable[[str], TargetSetup] = field(default=lambda _url: TargetSetup())
+    """What we know about a target URL: hints, sign-in, and its reset for reverify (#77)."""
 
     async def start(self) -> None:
         # A restart leaves queued/running runs without a browser: fail them honestly.
@@ -80,6 +83,7 @@ def build_services(settings: Settings) -> Services:
             sessions, LLMPlanner(llm), lambda url: target_setup(url, settings), policy=policy
         ),
         engine=engine,
+        target=lambda url: target_setup(url, settings),
     )
 
 

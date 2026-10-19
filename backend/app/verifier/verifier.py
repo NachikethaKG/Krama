@@ -121,9 +121,18 @@ class ScriptedVerifier:
         return self._outcomes.pop(0)
 
 
+def url_path_matches(pattern: str, path: str) -> bool:
+    """`url_matches` on a path, ignoring one trailing slash: Gitea answers /o/r/src/branch/x/ for .../x.
+
+    Raises re.error for an invalid pattern."""
+    if re.search(pattern, path) is not None:
+        return True
+    return len(path) > 1 and path.endswith("/") and re.search(pattern, path.rstrip("/")) is not None
+
+
 def _check_url(pattern: str, path: str) -> Check:
     try:
-        ok = re.search(pattern, path) is not None
+        ok = url_path_matches(pattern, path)
     except re.error as e:
         return Check(kind="url_matches", expected=pattern, passed=False, detail=f"invalid regex: {e}")
     return Check(kind="url_matches", expected=pattern, passed=ok, detail=f"path is {path!r}")

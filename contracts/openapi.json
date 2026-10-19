@@ -634,6 +634,18 @@
             "title": "Id",
             "type": "string"
           },
+          "kind": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RunKind"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "task",
+            "description": "task: a run of a newly approved plan, which stores a new workflow when verified. reverify: a replay of a stored workflow's steps (POST /workflows/{id}/reverify), which stores none."
+          },
           "plan_id": {
             "format": "uuid",
             "title": "Plan Id",
@@ -649,6 +661,19 @@
             "minimum": 0.0,
             "title": "Retry Count",
             "type": "integer"
+          },
+          "source_workflow_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "reverify only: the stored workflow this run replays.",
+            "title": "Source Workflow Id"
           },
           "started_at": {
             "anyOf": [
@@ -675,6 +700,7 @@
                 "type": "null"
               }
             ],
+            "description": "The workflow this run stored. Null until a task run is verified, and always null for a reverify run (see source_workflow_id).",
             "title": "Workflow Id"
           }
         },
@@ -712,6 +738,14 @@
         ],
         "title": "RunConfirmRequest",
         "type": "object"
+      },
+      "RunKind": {
+        "enum": [
+          "task",
+          "reverify"
+        ],
+        "title": "RunKind",
+        "type": "string"
       },
       "RunPage": {
         "additionalProperties": false,
@@ -2790,6 +2824,140 @@
           }
         },
         "summary": "Get Workflow",
+        "tags": [
+          "workflows"
+        ]
+      }
+    },
+    "/api/v1/workflows/{workflow_id}/guide.md": {
+      "get": {
+        "description": "The workflow as a plain text guide: the tutorial's step texts, numbered, each with its screenshot.",
+        "operationId": "get_workflow_guide_api_v1_workflows__workflow_id__guide_md_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workflow_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workflow Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "text/markdown": {}
+            },
+            "description": "Numbered steps with one screenshot each"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal error"
+          }
+        },
+        "summary": "Get Workflow Guide",
+        "tags": [
+          "workflows"
+        ]
+      }
+    },
+    "/api/v1/workflows/{workflow_id}/reverify": {
+      "post": {
+        "description": "Replay the stored workflow's steps headlessly, without the planner (#77). The run stores no new\nworkflow; its events and final status say whether every step still works.",
+        "operationId": "reverify_workflow_api_v1_workflows__workflow_id__reverify_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workflow_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workflow Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Run"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "A step is high risk or typed a secret, or the reset failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal error"
+          }
+        },
+        "summary": "Reverify Workflow",
         "tags": [
           "workflows"
         ]

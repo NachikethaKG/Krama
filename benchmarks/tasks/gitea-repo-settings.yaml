@@ -1,0 +1,14 @@
+name: gitea-repo-settings
+prompt: "Set the description of the repository bench-settings to 'Docs for the team'."
+target: "http://localhost:3001"
+setup:
+  api_calls:
+    - { method: DELETE, url: "/api/v1/repos/{user}/bench-settings", ok_status: [204, 404] }
+    - { method: POST, url: "/api/v1/user/repos", body: { name: bench-settings, auto_init: true }, ok_status: [201] }
+success_check:
+  type: api
+  assertion:
+    method: GET
+    url: "/api/v1/repos/{user}/bench-settings"
+    expected_status: 200
+    body_contains: "\"description\":\"Docs for the team\""

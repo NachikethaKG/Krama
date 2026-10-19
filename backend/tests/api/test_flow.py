@@ -6,6 +6,7 @@ Real Postgres, real Chromium, real observer and verifier on a real local site, t
 
 import asyncio
 import json
+import re
 from pathlib import Path
 from typing import Any
 from uuid import UUID, uuid4
@@ -163,6 +164,16 @@ async def test_task_to_verified_workflow(sessions: Sessions, tmp_path: Path, sit
         assert workflow.steps[0].instruction_text == "Open the New item form."
         assert all(s.verification.result == "verified" for s in workflow.steps)
 
+        # The text guide (#79): the same step texts, numbered, each with a screenshot that really downloads.
+        guide = await c.get(f"/workflows/{run.workflow_id}/guide.md")
+        assert guide.status_code == 200 and guide.headers["content-type"].startswith("text/markdown")
+        numbered = [line for line in guide.text.splitlines() if line[:1].isdigit()]
+        assert numbered == [f"{i}. {s.instruction_text}" for i, s in enumerate(workflow.steps, start=1)]
+        images = re.findall(r"!\[Step \d+\]\((http://test/api/v1/artifacts/[^)]+)\)", guide.text)
+        assert len(images) == 3
+        shot = await c.get(images[0].removeprefix("http://test/api/v1"))
+        assert shot.status_code == 200 and shot.headers["content-type"] == "image/png"
+
         page = WorkflowPage.model_validate((await c.get("/workflows", params={"target_app": "gitea"})).json())
         assert [w.id for w in page.items] == [workflow.id] and page.items[0].step_count == 3
         runs = RunPage.model_validate((await c.get("/runs")).json())
@@ -245,7 +256,7 @@ async def test_unknown_ids_and_bad_input(sessions: Sessions, tmp_path: Path) -> 
     async with Api(services(sessions, tmp_path)) as api:
         c = api.client
         for path in (f"/tasks/{unknown}", f"/plans/{unknown}", f"/runs/{unknown}", f"/workflows/{unknown}",
-                     f"/runs/{unknown}/events"):  # fmt: skip
+                     f"/workflows/{unknown}/guide.md", f"/runs/{unknown}/events"):  # fmt: skip
             response = await c.get(path)
             assert response.status_code == 404 and response.json()["error"]["code"] == "not_found", path
         assert (await c.post(f"/runs/{unknown}/cancel")).status_code == 404

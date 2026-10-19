@@ -59,12 +59,12 @@ def test_gitea_create_repo_task_schema_conformance() -> None:
     assert task.name == "gitea-create-repo"
     assert "Create a new public repository" in task.prompt
     assert "test-repo" in task.prompt
-    assert task.target == "http://localhost:3000"
+    # Our Gitea runs on :3001 with the demo user (`just up`, `just seed`); setup deletes the repo via the API.
+    assert task.target == "http://localhost:3001"
 
     assert task.setup is not None
-    assert task.setup.command is not None
-    assert "curl" in task.setup.command
-    assert "test-repo" in task.setup.command
+    assert [(c.method, c.url) for c in task.setup.api_calls] == [("DELETE", "/api/v1/repos/{user}/test-repo")]
+    assert 404 in task.setup.api_calls[0].ok_status
 
     assert task.success_check.type == "api"
     assert isinstance(task.success_check.assertion, dict)

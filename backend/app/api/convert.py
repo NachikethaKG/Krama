@@ -53,6 +53,8 @@ def run_out(row: RunRow, workflow_id: UUID | None) -> Run:
             "id": row.id,
             "plan_id": row.plan_id,
             "plan_revision": row.plan_revision,
+            "kind": row.kind,
+            "source_workflow_id": row.source_workflow_id,
             "status": row.status,
             "current_seq": row.current_seq,
             "retry_count": row.retry_count,

@@ -37,6 +37,8 @@ PostgreSQL 16. All ids are UUID, timestamps are `timestamptz` (UTC), and every t
 | id | uuid pk | |
 | plan_id | uuid fk → plans | |
 | plan_revision | int | the exact revision that was approved |
+| kind | text not null default 'task' | `task\|reverify` (#253) |
+| source_workflow_id | uuid fk → workflows, null | reverify only: the stored workflow being replayed |
 | status | text | `queued\|running\|paused\|verified\|failed\|cancelled` |
 | current_seq | int | |
 | retry_count | int | |
