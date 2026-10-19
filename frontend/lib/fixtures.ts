@@ -1,9 +1,19 @@
 import type { Plan, PlannedStep, RunEvent, Step, Workflow } from "@krama/contracts-ts";
+import type { TutorialSpec } from "@krama/tutorial-compiler";
+import giteaTutorialSpecJson from "../../contracts/fixtures/tutorial-spec/gitea-create-repo.json";
 import giteaWorkflowJson from "../../contracts/fixtures/gitea-create-repo-workflow.json";
 import validWorkflowJson from "../../contracts/fixtures/valid_workflow.json";
 
 export const giteaWorkflowFixture = giteaWorkflowJson as unknown as Workflow;
 export const validWorkflowFixture = validWorkflowJson as unknown as Workflow;
+export const giteaTutorialSpecFixture = giteaTutorialSpecJson as unknown as TutorialSpec;
+
+export const tutorialSpecFixtures: Record<string, TutorialSpec> = {
+  [giteaTutorialSpecFixture.workflow_id]: giteaTutorialSpecFixture,
+  "gitea": giteaTutorialSpecFixture,
+  "default": giteaTutorialSpecFixture,
+  "mock": giteaTutorialSpecFixture,
+};
 
 /** The plan-shaped part of a workflow step (what /plans/{id} returns). */
 export function toPlannedStep(s: Step): PlannedStep {

@@ -1,0 +1,252 @@
+"use client";
+
+import { useEffect, useRef } from "react";
+import type { TutorialSpec } from "@krama/tutorial-compiler";
+import { CopyableText } from "./CopyableText";
+import { TutorialControls } from "./TutorialControls";
+import { TutorialStage } from "./TutorialStage";
+import { TutorialStepList } from "./TutorialStepList";
+import { useTutorialPlayer } from "./useTutorialPlayer";
+
+export interface TutorialPlayerProps {
+  spec: TutorialSpec;
+  autoPlay?: boolean;
+  initialStep?: number;
+  initialZoom?: boolean;
+  initialCaptions?: boolean;
+  className?: string;
+  onComplete?: () => void;
+}
+
+export function TutorialPlayer({
+  spec,
+  autoPlay = false,
+  initialStep = 0,
+  initialZoom = true,
+  initialCaptions = true,
+  className = "",
+  onComplete,
+}: TutorialPlayerProps) {
+  const player = useTutorialPlayer({
+    spec,
+    autoPlay,
+    initialSceneIndex: initialStep,
+    initialZoom,
+    initialCaptions,
+    onComplete,
+  });
+
+  const playerContainerRef = useRef<HTMLDivElement>(null);
+
+  // Global / Container keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Do not capture keys when user is typing in an input or textarea
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+
+      switch (e.key) {
+        case " ":
+          e.preventDefault();
+          player.togglePlay();
+          break;
+        case "ArrowRight":
+          e.preventDefault();
+          player.nextStep();
+          break;
+        case "ArrowLeft":
+          e.preventDefault();
+          player.prevStep();
+          break;
+        case "r":
+        case "R":
+          e.preventDefault();
+          player.replayCurrentStep();
+          break;
+        case "z":
+        case "Z":
+          e.preventDefault();
+          player.toggleZoom();
+          break;
+        case "c":
+        case "C":
+          e.preventDefault();
+          player.toggleCaptions();
+          break;
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [player]);
+
+  const currentScene = player.currentScene;
+  const actionValue = currentScene?.action?.value;
+
+  return (
+    <div
+      ref={playerContainerRef}
+      data-testid="tutorial-player-root"
+      className={`mx-auto flex w-full max-w-7xl flex-col gap-6 p-4 md:p-6 ${className}`}
+    >
+      {/* Tutorial Header */}
+      <header className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between border-b border-zinc-200 pb-4 dark:border-zinc-800">
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="rounded bg-indigo-100 px-2 py-0.5 text-xs font-semibold text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
+              Interactive Tutorial
+            </span>
+            <span className="text-xs text-zinc-500 dark:text-zinc-400">
+              v{spec.version}
+            </span>
+          </div>
+          <h1 className="mt-1 text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
+            {spec.title}
+          </h1>
+          {spec.description && (
+            <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+              {spec.description}
+            </p>
+          )}
+        </div>
+
+        <div className="flex shrink-0 items-center gap-3">
+          <div className="flex flex-col items-end text-xs text-zinc-500 dark:text-zinc-400">
+            <span>Viewport: {spec.viewport.width} × {spec.viewport.height}</span>
+            <span>Duration: {(spec.total_duration_ms / 1000).toFixed(1)}s</span>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Grid: Stage & Controls (Left/Center) + Step List Sidebar (Right) */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        {/* Stage and Controls Section (2 cols on large screen) */}
+        <div className="flex flex-col gap-4 lg:col-span-2">
+          {/* Visual Replay Stage */}
+          <TutorialStage
+            spec={spec}
+            currentScene={currentScene}
+            currentTimeMs={player.currentTimeMs}
+            isZoomEnabled={player.isZoomEnabled}
+            isCaptionsEnabled={player.isCaptionsEnabled}
+          />
+
+          {/* Controls Bar */}
+          <TutorialControls
+            spec={spec}
+            currentSceneIndex={player.currentSceneIndex}
+            currentScene={currentScene}
+            currentTimeMs={player.currentTimeMs}
+            isPlaying={player.isPlaying}
+            isZoomEnabled={player.isZoomEnabled}
+            isCaptionsEnabled={player.isCaptionsEnabled}
+            isFirstStep={player.isFirstStep}
+            isLastStep={player.isLastStep}
+            sceneProgress={player.sceneProgress}
+            overallProgress={player.overallProgress}
+            onPlay={player.play}
+            onPause={player.pause}
+            onTogglePlay={player.togglePlay}
+            onNextStep={player.nextStep}
+            onPrevStep={player.prevStep}
+            onReplayCurrentStep={player.replayCurrentStep}
+            onToggleZoom={player.toggleZoom}
+            onToggleCaptions={player.toggleCaptions}
+            onSeek={player.seekTo}
+          />
+
+          {/* Current Step Instruction & Copyable Card */}
+          {currentScene && (
+            <div
+              data-testid="current-step-card"
+              className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-950"
+            >
+              <div className="flex items-center justify-between gap-2 border-b border-zinc-100 pb-3 dark:border-zinc-900">
+                <div className="flex items-center gap-2">
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-600 text-xs font-bold text-white dark:bg-indigo-500">
+                    {currentScene.step_seq}
+                  </span>
+                  <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                    {currentScene.title || `Step ${currentScene.step_seq}`}
+                  </span>
+                  <span className="rounded bg-zinc-100 px-2 py-0.5 text-xs font-mono font-medium text-zinc-700 uppercase dark:bg-zinc-800 dark:text-zinc-300">
+                    {currentScene.action.type}
+                  </span>
+                  {currentScene.sensitive && (
+                    <span className="rounded bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
+                      Sensitive
+                    </span>
+                  )}
+                </div>
+
+                <span className="text-xs text-zinc-400">
+                  Duration: {(currentScene.duration_ms / 1000).toFixed(1)}s
+                </span>
+              </div>
+
+              {/* Instruction Text with Copyable Action */}
+              <div className="mt-3 space-y-3">
+                <div>
+                  <h3 className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                    Instruction
+                  </h3>
+                  <p
+                    data-testid="instruction-text"
+                    className="mt-1 text-sm font-medium text-zinc-800 dark:text-zinc-200"
+                  >
+                    {currentScene.caption?.text}
+                  </p>
+                </div>
+
+                {/* Copyable Action Value (e.g. text entered, selector, command) */}
+                {actionValue && (
+                  <div>
+                    <h3 className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1">
+                      Input Value
+                    </h3>
+                    <CopyableText
+                      text={actionValue}
+                      label="Value"
+                      code={true}
+                    />
+                  </div>
+                )}
+
+                {/* Copy full instruction text */}
+                {currentScene.caption?.text && (
+                  <div className="pt-1">
+                    <CopyableText
+                      text={currentScene.caption.text}
+                      label="Instruction"
+                      code={false}
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Step List Sidebar */}
+        <div className="lg:col-span-1">
+          <TutorialStepList
+            spec={spec}
+            currentSceneIndex={player.currentSceneIndex}
+            onSelectStep={(idx) => {
+              player.goToStep(idx);
+              player.pause();
+            }}
+            className="sticky top-6 max-h-[calc(100vh-6rem)]"
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
