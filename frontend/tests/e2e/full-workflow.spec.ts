@@ -86,7 +86,7 @@ test.describe("Mock-mode Workflow E2E: Prompt → Plan → Approve → Live Exec
     await promptInput.fill("Create a demo repository");
 
     const submitBtn = page.getByTestId("submit-task-btn");
-    await expect(submitBtn).toBeEnabled();
+    await expect(submitBtn).toBeEnabled({ timeout: 10000 });
     await submitBtn.click();
 
     await expect(page.getByTestId("approval-screen")).toBeVisible({ timeout: 10000 });

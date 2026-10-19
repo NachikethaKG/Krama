@@ -1,11 +1,14 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useRef, useState } from "react";
 import type { TutorialSpec } from "@krama/tutorial-compiler";
+import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 import { CopyableText } from "./CopyableText";
 import { TutorialControls } from "./TutorialControls";
 import { TutorialStage } from "./TutorialStage";
 import { TutorialStepList } from "./TutorialStepList";
+import { usePlayerKeyboardShortcuts } from "./usePlayerKeyboardShortcuts";
+import { useStepNarration } from "./useStepNarration";
 import { useTutorialPlayer } from "./useTutorialPlayer";
 
 export interface TutorialPlayerProps {
@@ -14,6 +17,8 @@ export interface TutorialPlayerProps {
   initialStep?: number;
   initialZoom?: boolean;
   initialCaptions?: boolean;
+  initialMuted?: boolean;
+  isReducedMotion?: boolean;
   className?: string;
   onComplete?: () => void;
 }
@@ -24,6 +29,8 @@ export function TutorialPlayer({
   initialStep = 0,
   initialZoom = true,
   initialCaptions = true,
+  initialMuted = false,
+  isReducedMotion,
   className = "",
   onComplete,
 }: TutorialPlayerProps) {
@@ -37,65 +44,61 @@ export function TutorialPlayer({
   });
 
   const playerContainerRef = useRef<HTMLDivElement>(null);
+  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
 
-  // Global / Container keyboard shortcuts
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Do not capture keys when user is typing in an input or textarea
-      const target = e.target as HTMLElement | null;
-      if (
-        target &&
-        (target.tagName === "INPUT" ||
-          target.tagName === "TEXTAREA" ||
-          target.isContentEditable)
-      ) {
-        return;
-      }
-
-      switch (e.key) {
-        case " ":
-          e.preventDefault();
-          player.togglePlay();
-          break;
-        case "ArrowRight":
-          e.preventDefault();
-          player.nextStep();
-          break;
-        case "ArrowLeft":
-          e.preventDefault();
-          player.prevStep();
-          break;
-        case "r":
-        case "R":
-          e.preventDefault();
-          player.replayCurrentStep();
-          break;
-        case "z":
-        case "Z":
-          e.preventDefault();
-          player.toggleZoom();
-          break;
-        case "c":
-        case "C":
-          e.preventDefault();
-          player.toggleCaptions();
-          break;
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [player]);
+  const systemReducedMotion = usePrefersReducedMotion();
+  const effectiveReducedMotion = isReducedMotion ?? systemReducedMotion;
 
   const currentScene = player.currentScene;
   const actionValue = currentScene?.action?.value;
 
+  // Web Speech API Narration with onboundary word sync
+  const narration = useStepNarration({
+    text: currentScene?.caption?.text,
+    isPlaying: player.isPlaying,
+    currentStepIndex: player.currentSceneIndex,
+    initialMuted,
+  });
+
+  // WCAG Keyboard Navigation Shortcuts
+  usePlayerKeyboardShortcuts({
+    onTogglePlay: player.togglePlay,
+    onNextStep: player.nextStep,
+    onPrevStep: player.prevStep,
+    onReplayCurrentStep: player.replayCurrentStep,
+    onToggleZoom: player.toggleZoom,
+    onToggleCaptions: player.toggleCaptions,
+    onToggleMute: narration.toggleMute,
+    isEnabled: true,
+  });
+
+  // Screen Reader polite live region text derived synchronously from active scene
+  const announcement = currentScene
+    ? `Step ${currentScene.step_seq} of ${player.totalScenes}: ${
+        currentScene.caption?.text || currentScene.title || `Step ${currentScene.step_seq}`
+      }`
+    : "";
+
   return (
-    <div
+    <section
       ref={playerContainerRef}
+      role="region"
+      aria-label="Interactive Tutorial Player"
+      aria-roledescription="interactive video tutorial"
       data-testid="tutorial-player-root"
-      className={`mx-auto flex w-full max-w-7xl flex-col gap-6 p-4 md:p-6 ${className}`}
+      className={`mx-auto flex w-full max-w-7xl flex-col gap-6 overflow-x-hidden p-3 sm:p-4 md:p-6 ${className}`}
     >
+      {/* Dedicated Screen Reader Live Region */}
+      <div
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        data-testid="screen-reader-announcer"
+        className="sr-only"
+      >
+        {announcement}
+      </div>
+
       {/* Tutorial Header */}
       <header className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between border-b border-zinc-200 pb-4 dark:border-zinc-800">
         <div>
@@ -107,7 +110,7 @@ export function TutorialPlayer({
               v{spec.version}
             </span>
           </div>
-          <h1 className="mt-1 text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
+          <h1 className="mt-1 text-xl sm:text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
             {spec.title}
           </h1>
           {spec.description && (
@@ -118,9 +121,13 @@ export function TutorialPlayer({
         </div>
 
         <div className="flex shrink-0 items-center gap-3">
-          <div className="flex flex-col items-end text-xs text-zinc-500 dark:text-zinc-400">
-            <span>Viewport: {spec.viewport.width} × {spec.viewport.height}</span>
-            <span>Duration: {(spec.total_duration_ms / 1000).toFixed(1)}s</span>
+          <div className="flex flex-col items-start md:items-end text-xs text-zinc-500 dark:text-zinc-400">
+            <span>
+              Viewport: {spec.viewport.width} × {spec.viewport.height}
+            </span>
+            <span>
+              Duration: {((spec.total_duration_ms || 1) / 1000).toFixed(1)}s
+            </span>
           </div>
         </div>
       </header>
@@ -136,6 +143,8 @@ export function TutorialPlayer({
             currentTimeMs={player.currentTimeMs}
             isZoomEnabled={player.isZoomEnabled}
             isCaptionsEnabled={player.isCaptionsEnabled}
+            isReducedMotion={effectiveReducedMotion}
+            activeWordIndex={narration.activeWordIndex}
           />
 
           {/* Controls Bar */}
@@ -147,6 +156,7 @@ export function TutorialPlayer({
             isPlaying={player.isPlaying}
             isZoomEnabled={player.isZoomEnabled}
             isCaptionsEnabled={player.isCaptionsEnabled}
+            isMuted={narration.isMuted}
             isFirstStep={player.isFirstStep}
             isLastStep={player.isLastStep}
             sceneProgress={player.sceneProgress}
@@ -159,7 +169,10 @@ export function TutorialPlayer({
             onReplayCurrentStep={player.replayCurrentStep}
             onToggleZoom={player.toggleZoom}
             onToggleCaptions={player.toggleCaptions}
+            onToggleMute={narration.toggleMute}
             onSeek={player.seekTo}
+            onToggleDrawer={() => setIsMobileDrawerOpen((prev) => !prev)}
+            isDrawerOpen={isMobileDrawerOpen}
           />
 
           {/* Current Step Instruction & Copyable Card */}
@@ -205,7 +218,7 @@ export function TutorialPlayer({
                   </p>
                 </div>
 
-                {/* Copyable Action Value (e.g. text entered, selector, command) */}
+                {/* Copyable Action Value */}
                 {actionValue && (
                   <div>
                     <h3 className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1">
@@ -234,8 +247,8 @@ export function TutorialPlayer({
           )}
         </div>
 
-        {/* Step List Sidebar */}
-        <div className="lg:col-span-1">
+        {/* Step List Desktop Sidebar (visible on lg screens >= 1024px) */}
+        <div className="hidden lg:block lg:col-span-1">
           <TutorialStepList
             spec={spec}
             currentSceneIndex={player.currentSceneIndex}
@@ -247,6 +260,36 @@ export function TutorialPlayer({
           />
         </div>
       </div>
-    </div>
+
+      {/* Mobile Step List Drawer Sheet (for screens < 1024px) */}
+      {isMobileDrawerOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Steps drawer"
+          data-testid="mobile-step-drawer"
+          className="fixed inset-0 z-50 flex flex-col justify-end bg-black/60 backdrop-blur-xs lg:hidden"
+          onClick={() => setIsMobileDrawerOpen(false)}
+        >
+          <div
+            className="max-h-[80vh] w-full rounded-t-2xl bg-white p-4 shadow-2xl dark:bg-zinc-950 flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <TutorialStepList
+              spec={spec}
+              currentSceneIndex={player.currentSceneIndex}
+              onSelectStep={(idx) => {
+                player.goToStep(idx);
+                player.pause();
+                setIsMobileDrawerOpen(false);
+              }}
+              isDrawer={true}
+              onClose={() => setIsMobileDrawerOpen(false)}
+              className="border-none shadow-none"
+            />
+          </div>
+        </div>
+      )}
+    </section>
   );
 }

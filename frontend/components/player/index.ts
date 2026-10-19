@@ -8,3 +8,14 @@ export {
   type UseTutorialPlayerOptions,
   type UseTutorialPlayerReturn,
 } from "./useTutorialPlayer";
+export {
+  useStepNarration,
+  calculateWordIndex,
+  selectOptimalVoice,
+  type UseStepNarrationOptions,
+  type UseStepNarrationReturn,
+} from "./useStepNarration";
+export {
+  usePlayerKeyboardShortcuts,
+  type UsePlayerKeyboardShortcutsOptions,
+} from "./usePlayerKeyboardShortcuts";
