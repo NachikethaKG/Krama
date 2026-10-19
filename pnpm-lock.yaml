@@ -255,6 +255,25 @@ importers:
         specifier: ^5
         version: 5.9.3
 
+  packages/tutorial-compiler:
+    dependencies:
+      '@krama/contracts-ts':
+        specifier: workspace:*
+        version: link:../contracts-ts
+    devDependencies:
+      ajv:
+        specifier: ^8.20.0
+        version: 8.20.0
+      ajv-formats:
+        specifier: ^3.0.1
+        version: 3.0.1(ajv@8.20.0)
+      typescript:
+        specifier: ^5
+        version: 5.9.3
+      vitest:
+        specifier: ^5.0.3
+        version: 5.0.3(@types/node@20.19.43)(jsdom@30.1.1)(vite@8.3.2(@types/node@20.19.43)(jiti@2.7.0))
+
 packages:
 
   '@adobe/css-tools@4.5.0':
@@ -3722,7 +3741,7 @@ snapshots:
       '@rolldown/pluginutils': 1.0.1
       vite: 8.3.2(@types/node@20.19.43)(jiti@2.7.0)
 
-  '@vitest/mocker@5.0.3(vite@8.3.2(@types/node@20.19.43)(jiti@2.7.0))':
+  '@vitest/mocker@5.0.3(vite@8.3.2(jiti@2.7.0))':
     dependencies:
       '@jridgewell/trace-mapping': 0.3.31
       '@vitest/spy': 5.0.3
@@ -5531,7 +5550,7 @@ snapshots:
   vitest@5.0.3(@types/node@20.19.43)(jsdom@30.1.1)(vite@8.3.2(@types/node@20.19.43)(jiti@2.7.0)):
     dependencies:
       '@types/chai': 5.2.3
-      '@vitest/mocker': 5.0.3(vite@8.3.2(@types/node@20.19.43)(jiti@2.7.0))
+      '@vitest/mocker': 5.0.3(vite@8.3.2(jiti@2.7.0))
       chai: 6.3.0
       es-module-lexer: 2.3.2
       expect-type: 1.4.0
