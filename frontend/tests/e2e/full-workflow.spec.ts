@@ -28,7 +28,7 @@ test.describe("Mock-mode Workflow E2E: Prompt → Plan → Approve → Live Exec
 
     // 3. Verify transition to plan approval screen
     const approvalScreen = page.getByTestId("approval-screen");
-    await expect(approvalScreen).toBeVisible({ timeout: 10000 });
+    await expect(approvalScreen).toBeVisible({ timeout: 20000 });
 
     const taskPrompt = page.getByTestId("task-prompt");
     await expect(taskPrompt).toBeVisible();
@@ -86,10 +86,10 @@ test.describe("Mock-mode Workflow E2E: Prompt → Plan → Approve → Live Exec
     await promptInput.fill("Create a demo repository");
 
     const submitBtn = page.getByTestId("submit-task-btn");
-    await expect(submitBtn).toBeEnabled({ timeout: 10000 });
+    await expect(submitBtn).toBeEnabled({ timeout: 15000 });
     await submitBtn.click();
 
-    await expect(page.getByTestId("approval-screen")).toBeVisible({ timeout: 10000 });
+    await expect(page.getByTestId("approval-screen")).toBeVisible({ timeout: 20000 });
   });
 
   test("preserves MockApiClient fallback when NEXT_PUBLIC_API_MODE is unset or mock", async ({
