@@ -74,7 +74,7 @@ export function CopyableText({
         onClick={handleCopy}
         data-testid="copy-button"
         aria-label={copied ? "Copied to clipboard" : `Copy ${text} to clipboard`}
-        className="flex shrink-0 items-center gap-1 rounded px-1.5 py-0.5 text-xs font-medium text-zinc-600 hover:bg-zinc-200 hover:text-zinc-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+        className="flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center gap-1.5 rounded-md px-2.5 py-2 text-xs font-medium text-zinc-600 hover:bg-zinc-200 hover:text-zinc-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
       >
         {copied ? (
           <>

@@ -9,6 +9,7 @@ import {
   type TutorialSpec,
   type WordTiming,
 } from "@krama/tutorial-compiler";
+import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 
 export interface TutorialStageProps {
   spec: TutorialSpec;
@@ -16,6 +17,8 @@ export interface TutorialStageProps {
   currentTimeMs: number;
   isZoomEnabled: boolean;
   isCaptionsEnabled: boolean;
+  isReducedMotion?: boolean;
+  activeWordIndex?: number | null;
   className?: string;
 }
 
@@ -25,10 +28,15 @@ export function TutorialStage({
   currentTimeMs,
   isZoomEnabled,
   isCaptionsEnabled,
+  isReducedMotion,
+  activeWordIndex,
   className = "",
 }: TutorialStageProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState<number>(0);
+
+  const systemReducedMotion = usePrefersReducedMotion();
+  const effectiveReducedMotion = isReducedMotion ?? systemReducedMotion;
 
   const viewport = spec.viewport ?? { width: 1280, height: 800 };
 
@@ -58,11 +66,11 @@ export function TutorialStage({
 
   const stageScale = containerWidth > 0 ? containerWidth / viewport.width : 1;
 
-  // Camera calculations
+  // Camera calculations (reduced motion disables zoom transforms completely)
   let cameraTransform = "none";
-  let cameraTransition = "transform 300ms ease";
+  let cameraTransition = "none";
 
-  if (isZoomEnabled && currentScene?.camera) {
+  if (!effectiveReducedMotion && isZoomEnabled && currentScene?.camera) {
     const { panX, panY } = computeClampedOffsets(
       currentScene.camera.center,
       currentScene.camera.scale,
@@ -78,7 +86,10 @@ export function TutorialStage({
   let cursorPos: Point | null = null;
   if (currentScene?.cursor?.path && currentScene.cursor.path.length === 4) {
     const { path, start_ms, end_ms } = currentScene.cursor;
-    if (currentTimeMs <= start_ms) {
+    if (effectiveReducedMotion) {
+      // Reduced motion: snap cursor instantly to target without Bezier interpolation
+      cursorPos = currentTimeMs >= start_ms ? path[3] : path[0];
+    } else if (currentTimeMs <= start_ms) {
       cursorPos = path[0];
     } else if (currentTimeMs >= end_ms) {
       cursorPos = path[3];
@@ -103,12 +114,14 @@ export function TutorialStage({
     currentScene.cursor.path.length === 4
   ) {
     const clickMs = currentScene.cursor.click_ms;
-    const rippleDuration = 600;
+    const rippleDuration = effectiveReducedMotion ? 200 : 600;
     if (currentTimeMs >= clickMs && currentTimeMs < clickMs + rippleDuration) {
       rippleActive = true;
       const t = (currentTimeMs - clickMs) / rippleDuration;
       const maxRadius = currentScene.cursor.ripple.radius ?? 24;
-      rippleRadius = Math.max(4, maxRadius * Math.sin((t * Math.PI) / 2));
+      rippleRadius = effectiveReducedMotion
+        ? maxRadius
+        : Math.max(4, maxRadius * Math.sin((t * Math.PI) / 2));
       rippleOpacity = Math.max(0, 1 - t);
       rippleCenter = currentScene.cursor.path[3];
     }
@@ -120,6 +133,8 @@ export function TutorialStage({
   const highlightPadding = highlight?.padding ?? 8;
   const highlightColor = highlight?.color ?? "#4f46e5";
   const highlightStyle = highlight?.style ?? "pulsing_ring";
+  const isPulsing =
+    !effectiveReducedMotion && highlightStyle === "pulsing_ring";
 
   return (
     <div
@@ -228,9 +243,7 @@ export function TutorialStage({
             <div
               data-testid="target-highlight"
               className={`absolute pointer-events-none rounded transition-all duration-300 ${
-                highlightStyle === "pulsing_ring"
-                  ? "animate-pulse"
-                  : ""
+                isPulsing ? "animate-pulse" : ""
               }`}
               style={{
                 left: `${highlightBbox[0] - highlightPadding}px`,
@@ -238,10 +251,9 @@ export function TutorialStage({
                 width: `${highlightBbox[2] + highlightPadding * 2}px`,
                 height: `${highlightBbox[3] + highlightPadding * 2}px`,
                 border: `2px solid ${highlightColor}`,
-                boxShadow:
-                  highlightStyle === "pulsing_ring"
-                    ? `0 0 0 4px ${highlightColor}40, 0 0 16px ${highlightColor}80`
-                    : `0 0 8px ${highlightColor}50`,
+                boxShadow: isPulsing
+                  ? `0 0 0 4px ${highlightColor}40, 0 0 16px ${highlightColor}80`
+                  : `0 0 4px ${highlightColor}40`,
                 backgroundColor: `${highlightColor}10`,
               }}
             />
@@ -260,7 +272,9 @@ export function TutorialStage({
                 border: `2px solid ${currentScene?.cursor?.ripple?.color || "rgba(99, 102, 241, 0.8)"}`,
                 backgroundColor: `${currentScene?.cursor?.ripple?.color || "rgba(99, 102, 241, 0.3)"}`,
                 opacity: rippleOpacity,
-                transition: "opacity 100ms ease-out",
+                transition: effectiveReducedMotion
+                  ? "none"
+                  : "opacity 100ms ease-out",
               }}
             />
           )}
@@ -269,14 +283,17 @@ export function TutorialStage({
           {cursorPos && (
             <div
               data-testid="tutorial-cursor"
-              className="absolute pointer-events-none z-30 transition-transform duration-75"
+              className="absolute pointer-events-none z-30"
               style={{
                 left: `${cursorPos.x}px`,
                 top: `${cursorPos.y}px`,
                 transform: "translate(-2px, -2px)",
+                transition: effectiveReducedMotion
+                  ? "none"
+                  : "transform 75ms linear",
               }}
             >
-              {/* Realistic macOS / Modern Pointer Cursor */}
+              {/* Realistic Pointer Cursor */}
               <svg
                 width="28"
                 height="28"
@@ -307,9 +324,15 @@ export function TutorialStage({
           {currentScene.caption.words && currentScene.caption.words.length > 0 ? (
             <div className="flex flex-wrap items-center justify-center gap-x-1.5 gap-y-0.5">
               {currentScene.caption.words.map((wordObj: WordTiming, wIdx: number) => {
-                const isWordSpoken = currentTimeMs >= wordObj.end_ms;
-                const isWordActive =
-                  currentTimeMs >= wordObj.start_ms && currentTimeMs < wordObj.end_ms;
+                const hasSpeechSync =
+                  activeWordIndex !== null && activeWordIndex !== undefined;
+                const isWordActive = hasSpeechSync
+                  ? wIdx === activeWordIndex
+                  : currentTimeMs >= wordObj.start_ms &&
+                    currentTimeMs < wordObj.end_ms;
+                const isWordSpoken = hasSpeechSync
+                  ? wIdx < activeWordIndex
+                  : currentTimeMs >= wordObj.end_ms;
 
                 return (
                   <span key={`${wordObj.word}-${wIdx}`}>

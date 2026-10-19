@@ -6,6 +6,8 @@ export interface TutorialStepListProps {
   spec: TutorialSpec;
   currentSceneIndex: number;
   onSelectStep: (index: number) => void;
+  onClose?: () => void;
+  isDrawer?: boolean;
   className?: string;
 }
 
@@ -13,6 +15,8 @@ export function TutorialStepList({
   spec,
   currentSceneIndex,
   onSelectStep,
+  onClose,
+  isDrawer = false,
   className = "",
 }: TutorialStepListProps) {
   const scenes = spec.scenes ?? [];
@@ -24,12 +28,35 @@ export function TutorialStepList({
       className={`flex flex-col rounded-lg border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950 ${className}`}
     >
       <div className="flex items-center justify-between border-b border-zinc-200 px-4 py-3 dark:border-zinc-800">
-        <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-          Steps ({scenes.length})
-        </h2>
-        <span className="text-xs text-zinc-500 dark:text-zinc-400">
-          Total: {(spec.total_duration_ms / 1000).toFixed(1)}s
-        </span>
+        <div className="flex items-center gap-2">
+          <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+            Steps ({scenes.length})
+          </h2>
+          <span className="text-xs text-zinc-500 dark:text-zinc-400">
+            Total: {((spec.total_duration_ms || 1) / 1000).toFixed(1)}s
+          </span>
+        </div>
+
+        {isDrawer && onClose && (
+          <button
+            type="button"
+            onClick={onClose}
+            data-testid="drawer-close-button"
+            aria-label="Close steps list"
+            className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+          >
+            <svg
+              className="h-5 w-5"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        )}
       </div>
 
       <nav className="flex-1 overflow-y-auto p-2" aria-label="Steps">
@@ -37,16 +64,22 @@ export function TutorialStepList({
           {scenes.map((scene: Scene, index: number) => {
             const isActive = index === currentSceneIndex;
             const durationSec = (scene.duration_ms / 1000).toFixed(1);
-            const stepTitle = scene.title || `${scene.action.type.toUpperCase()}`;
+            const stepTitle =
+              scene.title || `${scene.action.type.toUpperCase()}`;
 
             return (
               <li key={scene.id ?? `step-${scene.step_seq}`}>
                 <button
                   type="button"
                   data-testid={`step-item-${scene.step_seq}`}
-                  onClick={() => onSelectStep(index)}
+                  onClick={() => {
+                    onSelectStep(index);
+                    if (isDrawer && onClose) {
+                      onClose();
+                    }
+                  }}
                   aria-current={isActive ? "step" : undefined}
-                  className={`w-full rounded-md border p-2.5 text-left transition-all ${
+                  className={`flex min-h-[44px] w-full flex-col justify-center rounded-md border p-2.5 text-left transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-950 ${
                     isActive
                       ? "border-indigo-500 bg-indigo-50/70 shadow-xs dark:border-indigo-500 dark:bg-indigo-950/40"
                       : "border-transparent bg-transparent hover:border-zinc-200 hover:bg-zinc-50 dark:hover:border-zinc-800 dark:hover:bg-zinc-900/50"
