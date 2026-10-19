@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --port 3000",
-    "build": "next build",
+    "dev": "next dev --webpack --port 3000",
+    "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
     "typecheck": "next typegen && tsc --noEmit",
@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@krama/contracts-ts": "workspace:*",
+    "@krama/tutorial-compiler": "workspace:*",
     "@next/env": "16.3.8",
     "@rrweb/types": "^2.1.7",
     "next": "16.3.8",
