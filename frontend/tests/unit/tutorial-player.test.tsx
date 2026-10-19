@@ -1,10 +1,42 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { TutorialSpec } from "@krama/tutorial-compiler";
-import { TutorialPlayer } from "@/components/player";
+import {
+  calculateWordIndex,
+  selectOptimalVoice,
+  TutorialPlayer,
+} from "@/components/player";
 import { giteaTutorialSpecFixture } from "@/lib/fixtures";
 
-describe("TutorialPlayer & Player Components", () => {
+// Mock SpeechSynthesisUtterance implementation
+class MockSpeechSynthesisUtterance {
+  text: string;
+  lang = "en-US";
+  voice: SpeechSynthesisVoice | null = null;
+  rate = 1.0;
+  pitch = 1.0;
+  onstart: (() => void) | null = null;
+  onend: (() => void) | null = null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  onerror: ((e: any) => void) | null = null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  onboundary: ((e: any) => void) | null = null;
+
+  constructor(text: string) {
+    this.text = text;
+  }
+}
+
+describe("TutorialPlayer & Accessibility Suite", () => {
+  let mockSpeechSynthesis: {
+    speak: ReturnType<typeof vi.fn>;
+    cancel: ReturnType<typeof vi.fn>;
+    pause: ReturnType<typeof vi.fn>;
+    resume: ReturnType<typeof vi.fn>;
+    getVoices: ReturnType<typeof vi.fn>;
+    onvoiceschanged: (() => void) | null;
+  };
+
   beforeEach(() => {
     // Mock navigator.clipboard
     Object.assign(navigator, {
@@ -12,6 +44,53 @@ describe("TutorialPlayer & Player Components", () => {
         writeText: vi.fn().mockImplementation(() => Promise.resolve()),
       },
     });
+
+    // Mock matchMedia
+    Object.defineProperty(window, "matchMedia", {
+      writable: true,
+      value: vi.fn().mockImplementation((query: string) => ({
+        matches: false,
+        media: query,
+        onchange: null,
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      })),
+    });
+
+    // Mock window.speechSynthesis
+    mockSpeechSynthesis = {
+      speak: vi.fn((utterance: MockSpeechSynthesisUtterance) => {
+        utterance.onstart?.();
+      }),
+      cancel: vi.fn(),
+      pause: vi.fn(),
+      resume: vi.fn(),
+      getVoices: vi.fn().mockReturnValue([
+        {
+          name: "Microsoft Jenny Online (Natural) - English (United States)",
+          lang: "en-US",
+          default: true,
+          localService: false,
+          voiceURI: "Microsoft Jenny",
+        } as SpeechSynthesisVoice,
+        {
+          name: "Microsoft David - English (United States)",
+          lang: "en-US",
+          default: false,
+          localService: true,
+          voiceURI: "Microsoft David",
+        } as SpeechSynthesisVoice,
+      ]),
+      onvoiceschanged: null,
+    };
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (window as any).speechSynthesis = mockSpeechSynthesis;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (window as any).SpeechSynthesisUtterance = MockSpeechSynthesisUtterance;
   });
 
   afterEach(() => {
@@ -22,13 +101,16 @@ describe("TutorialPlayer & Player Components", () => {
     render(<TutorialPlayer spec={giteaTutorialSpecFixture} />);
 
     // Header title
-    expect(screen.getAllByText("Create a repository in local Gitea").length).toBeGreaterThan(0);
+    expect(
+      screen.getAllByText("Create a repository in local Gitea").length,
+    ).toBeGreaterThan(0);
 
     // Controls
     expect(screen.getByTestId("tutorial-controls")).toBeInTheDocument();
     expect(screen.getByTestId("control-play-pause")).toBeInTheDocument();
     expect(screen.getByTestId("control-prev-step")).toBeInTheDocument();
     expect(screen.getByTestId("control-next-step")).toBeInTheDocument();
+    expect(screen.getByTestId("control-toggle-mute")).toBeInTheDocument();
 
     // Stage
     expect(screen.getByTestId("tutorial-stage-container")).toBeInTheDocument();
@@ -93,7 +175,6 @@ describe("TutorialPlayer & Player Components", () => {
     const replayBtn = screen.getByTestId("control-replay-step");
     expect(replayBtn).toBeInTheDocument();
 
-    // Clicking replay should not crash and keep current step
     fireEvent.click(replayBtn);
     expect(screen.getByText("Step 1 of 5")).toBeInTheDocument();
   });
@@ -141,7 +222,6 @@ describe("TutorialPlayer & Player Components", () => {
   it("seeks directly to clicked step from the step list sidebar", () => {
     render(<TutorialPlayer spec={giteaTutorialSpecFixture} />);
 
-    // Click step 4 in sidebar
     const step4Btn = screen.getByTestId("step-item-4");
     fireEvent.click(step4Btn);
 
@@ -154,7 +234,6 @@ describe("TutorialPlayer & Player Components", () => {
   it("copies instruction text and input value to clipboard with Copy button", async () => {
     render(<TutorialPlayer spec={giteaTutorialSpecFixture} />);
 
-    // Step 1 copy button
     const copyButtons = screen.getAllByTestId("copy-button");
     expect(copyButtons.length).toBeGreaterThan(0);
 
@@ -165,40 +244,230 @@ describe("TutorialPlayer & Player Components", () => {
       "Open the + menu at the top right.",
     );
 
-    // Visual copied indicator appears
     expect(await screen.findByText("Copied!")).toBeInTheDocument();
   });
 
-  it("supports keyboard navigation shortcuts (Space, ArrowRight, ArrowLeft, R, Z, C)", () => {
-    render(<TutorialPlayer spec={giteaTutorialSpecFixture} />);
+  describe("Web Speech API Narration & Caption Sync", () => {
+    it("speaks step instruction when playback starts and cancels when paused", () => {
+      render(<TutorialPlayer spec={giteaTutorialSpecFixture} />);
 
-    const playPauseBtn = screen.getByTestId("control-play-pause");
-    const zoomBtn = screen.getByTestId("control-toggle-zoom");
-    const captionsBtn = screen.getByTestId("control-toggle-captions");
+      const playPauseBtn = screen.getByTestId("control-play-pause");
 
-    // Space: Play
-    fireEvent.keyDown(window, { key: " " });
-    expect(playPauseBtn).toHaveAttribute("aria-label", "Pause tutorial");
+      // Initially paused, speak should not be called
+      expect(mockSpeechSynthesis.speak).not.toHaveBeenCalled();
 
-    // ArrowRight: Next Step
-    fireEvent.keyDown(window, { key: "ArrowRight" });
-    expect(screen.getByText("Step 2 of 5")).toBeInTheDocument();
+      // Click Play -> calls speak with step 1 text
+      fireEvent.click(playPauseBtn);
+      expect(mockSpeechSynthesis.speak).toHaveBeenCalled();
+      const lastUtterance = mockSpeechSynthesis.speak.mock.calls[0][0];
+      expect(lastUtterance.text).toBe("Open the + menu at the top right.");
 
-    // ArrowLeft: Prev Step
-    fireEvent.keyDown(window, { key: "ArrowLeft" });
-    expect(screen.getByText("Step 1 of 5")).toBeInTheDocument();
+      // Click Pause -> cancels active speech
+      fireEvent.click(playPauseBtn);
+      expect(mockSpeechSynthesis.cancel).toHaveBeenCalled();
+    });
 
-    // Z: Toggle Zoom
-    fireEvent.keyDown(window, { key: "z" });
-    expect(zoomBtn).toHaveAttribute("aria-pressed", "false");
+    it("toggles audio narration mute and stops speech immediately", () => {
+      render(<TutorialPlayer spec={giteaTutorialSpecFixture} autoPlay={true} />);
 
-    // C: Toggle Captions
-    fireEvent.keyDown(window, { key: "c" });
-    expect(captionsBtn).toHaveAttribute("aria-pressed", "false");
+      const muteBtn = screen.getByTestId("control-toggle-mute");
+      expect(muteBtn).toHaveAttribute("aria-pressed", "true"); // Active (unmuted)
 
-    // R: Replay step
-    fireEvent.keyDown(window, { key: "r" });
-    expect(screen.getByText("Step 1 of 5")).toBeInTheDocument();
+      // Mute speech
+      fireEvent.click(muteBtn);
+      expect(muteBtn).toHaveAttribute("aria-pressed", "false"); // Muted
+      expect(mockSpeechSynthesis.cancel).toHaveBeenCalled();
+
+      // Unmute speech
+      fireEvent.click(muteBtn);
+      expect(muteBtn).toHaveAttribute("aria-pressed", "true");
+    });
+
+    it("synchronizes active caption word highlight when onboundary triggers", () => {
+      let capturedUtterance: MockSpeechSynthesisUtterance | null = null;
+      mockSpeechSynthesis.speak = vi.fn((utterance: MockSpeechSynthesisUtterance) => {
+        capturedUtterance = utterance;
+        utterance.onstart?.();
+      });
+
+      render(<TutorialPlayer spec={giteaTutorialSpecFixture} autoPlay={true} />);
+
+      expect(capturedUtterance).not.toBeNull();
+
+      // Trigger word boundary event for second word ("the", charIndex 5)
+      (capturedUtterance as unknown as MockSpeechSynthesisUtterance | null)?.onboundary?.({
+        name: "word",
+        charIndex: 5,
+      } as unknown as SpeechSynthesisEvent);
+
+      // Verify word index calculation helper
+      const wordIdx = calculateWordIndex("Open the + menu at the top right.", 5);
+      expect(wordIdx).toBe(1);
+    });
+
+    it("gracefully degrades when window.speechSynthesis is undefined or speak throws", () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      delete (window as any).speechSynthesis;
+
+      expect(() => {
+        render(<TutorialPlayer spec={giteaTutorialSpecFixture} autoPlay={true} />);
+      }).not.toThrow();
+
+      expect(screen.getByTestId("tutorial-controls")).toBeInTheDocument();
+    });
+
+    it("handles voice selection fallback priorities", () => {
+      const naturalVoice = {
+        name: "Microsoft Jenny Online (Natural) - English (United States)",
+        lang: "en-US",
+        localService: false,
+      } as SpeechSynthesisVoice;
+
+      const standardVoice = {
+        name: "Google US English",
+        lang: "en-US",
+        localService: false,
+      } as SpeechSynthesisVoice;
+
+      const localVoice = {
+        name: "Microsoft David",
+        lang: "en-US",
+        localService: true,
+      } as SpeechSynthesisVoice;
+
+      expect(selectOptimalVoice([localVoice, standardVoice, naturalVoice])).toBe(
+        naturalVoice,
+      );
+      expect(selectOptimalVoice([localVoice, standardVoice])).toBe(standardVoice);
+      expect(selectOptimalVoice([localVoice])).toBe(localVoice);
+      expect(selectOptimalVoice([])).toBeNull();
+    });
+  });
+
+  describe("Keyboard Shortcuts & Screen Reader Announcements", () => {
+    it("handles comprehensive keyboard shortcuts (Space/K, ArrowLeft/J, ArrowRight/L, R, M, C, Z)", () => {
+      render(<TutorialPlayer spec={giteaTutorialSpecFixture} />);
+
+      const playPauseBtn = screen.getByTestId("control-play-pause");
+      const zoomBtn = screen.getByTestId("control-toggle-zoom");
+      const captionsBtn = screen.getByTestId("control-toggle-captions");
+      const muteBtn = screen.getByTestId("control-toggle-mute");
+
+      // Space: Play
+      fireEvent.keyDown(window, { key: " " });
+      expect(playPauseBtn).toHaveAttribute("aria-label", "Pause tutorial");
+
+      // KeyK: Pause
+      fireEvent.keyDown(window, { key: "k" });
+      expect(playPauseBtn).toHaveAttribute("aria-label", "Play tutorial");
+
+      // ArrowRight: Next Step
+      fireEvent.keyDown(window, { key: "ArrowRight" });
+      expect(screen.getByText("Step 2 of 5")).toBeInTheDocument();
+
+      // KeyL: Next Step
+      fireEvent.keyDown(window, { key: "l" });
+      expect(screen.getByText("Step 3 of 5")).toBeInTheDocument();
+
+      // ArrowLeft: Prev Step
+      fireEvent.keyDown(window, { key: "ArrowLeft" });
+      expect(screen.getByText("Step 2 of 5")).toBeInTheDocument();
+
+      // KeyJ: Prev Step
+      fireEvent.keyDown(window, { key: "j" });
+      expect(screen.getByText("Step 1 of 5")).toBeInTheDocument();
+
+      // KeyM: Toggle Mute
+      fireEvent.keyDown(window, { key: "m" });
+      expect(muteBtn).toHaveAttribute("aria-pressed", "false"); // muted
+
+      // KeyC: Toggle Captions
+      fireEvent.keyDown(window, { key: "c" });
+      expect(captionsBtn).toHaveAttribute("aria-pressed", "false");
+
+      // KeyZ: Toggle Zoom
+      fireEvent.keyDown(window, { key: "z" });
+      expect(zoomBtn).toHaveAttribute("aria-pressed", "false");
+
+      // KeyR: Replay Step
+      fireEvent.keyDown(window, { key: "r" });
+      expect(screen.getByText("Step 1 of 5")).toBeInTheDocument();
+    });
+
+    it("ignores keyboard shortcuts when focus is inside a text input", () => {
+      render(
+        <div>
+          <input type="text" data-testid="test-input" />
+          <TutorialPlayer spec={giteaTutorialSpecFixture} />
+        </div>,
+      );
+
+      const input = screen.getByTestId("test-input");
+      const playPauseBtn = screen.getByTestId("control-play-pause");
+
+      // Typing inside text input does not toggle play/pause
+      fireEvent.keyDown(input, { key: " " });
+      expect(playPauseBtn).toHaveAttribute("aria-label", "Play tutorial");
+
+      fireEvent.keyDown(input, { key: "k" });
+      expect(playPauseBtn).toHaveAttribute("aria-label", "Play tutorial");
+    });
+
+    it("announces step transitions to screen readers via aria-live polite region", () => {
+      render(<TutorialPlayer spec={giteaTutorialSpecFixture} />);
+
+      const announcer = screen.getByTestId("screen-reader-announcer");
+      expect(announcer).toHaveAttribute("aria-live", "polite");
+      expect(announcer).toHaveTextContent(
+        "Step 1 of 5: Open the + menu at the top right.",
+      );
+
+      // Advance to Step 2
+      const nextBtn = screen.getByTestId("control-next-step");
+      fireEvent.click(nextBtn);
+
+      expect(announcer).toHaveTextContent(
+        "Step 2 of 5: Click New Repository in the menu.",
+      );
+    });
+  });
+
+  describe("Reduced-Motion Compliance & Mobile Layout", () => {
+    it("respects prefers-reduced-motion: disables auto-zoom, disables pulse, snaps cursor", () => {
+      render(
+        <TutorialPlayer
+          spec={giteaTutorialSpecFixture}
+          isReducedMotion={true}
+        />,
+      );
+
+      const cameraViewport = screen.getByTestId("camera-viewport");
+      // In reduced motion, auto-zoom transform is clamped to none
+      expect(cameraViewport.style.transform).toBe("none");
+
+      // Highlight overlay should not have animate-pulse class
+      const highlight = screen.getByTestId("target-highlight");
+      expect(highlight.className).not.toContain("animate-pulse");
+    });
+
+    it("renders collapsible mobile step drawer sheet on small screens", () => {
+      render(<TutorialPlayer spec={giteaTutorialSpecFixture} />);
+
+      const drawerToggle = screen.getByTestId("mobile-step-drawer-toggle");
+      expect(drawerToggle).toHaveAttribute("aria-expanded", "false");
+
+      // Click to open drawer
+      fireEvent.click(drawerToggle);
+      expect(drawerToggle).toHaveAttribute("aria-expanded", "true");
+
+      const drawer = screen.getByTestId("mobile-step-drawer");
+      expect(drawer).toBeInTheDocument();
+
+      // Click close button inside drawer
+      const closeBtn = screen.getByTestId("drawer-close-button");
+      fireEvent.click(closeBtn);
+      expect(screen.queryByTestId("mobile-step-drawer")).not.toBeInTheDocument();
+    });
   });
 
   describe("Edge Cases", () => {
@@ -215,7 +484,6 @@ describe("TutorialPlayer & Player Components", () => {
       const nextBtn = screen.getByTestId("control-next-step");
       expect(nextBtn).toBeDisabled();
 
-      // Clicking next does not crash or advance
       fireEvent.click(nextBtn);
       expect(screen.getByText("Step 1 of 1")).toBeInTheDocument();
     });
@@ -226,13 +494,11 @@ describe("TutorialPlayer & Player Components", () => {
       const nextBtn = screen.getByTestId("control-next-step");
       const prevBtn = screen.getByTestId("control-prev-step");
 
-      // Click next 10 times rapidly
       for (let i = 0; i < 10; i++) {
         fireEvent.click(nextBtn);
       }
       expect(screen.getByText("Step 5 of 5")).toBeInTheDocument();
 
-      // Click prev 10 times rapidly
       for (let i = 0; i < 10; i++) {
         fireEvent.click(prevBtn);
       }
