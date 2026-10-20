@@ -163,4 +163,114 @@ test.describe("Interactive Tutorial Player", () => {
     await nextBtn.click();
     await expect(controls.getByText("Step 4 of 5")).toBeVisible();
   });
+
+  test("supports keyboard-only navigation, muted audio, captions, and screen reader announcements", async ({
+    page,
+  }) => {
+    // 1. Navigate to the tutorial player page
+    await page.goto("/tutorials");
+
+    // Click root to ensure page/window focus
+    const root = page.getByTestId("tutorial-player-root");
+    await expect(root).toBeVisible();
+    await root.click();
+
+    const controls = page.getByTestId("tutorial-controls");
+    await expect(controls).toBeVisible();
+
+    const caption = page.getByTestId("tutorial-caption");
+    const announcer = page.getByTestId("screen-reader-announcer");
+    const playPauseBtn = page.getByTestId("control-play-pause");
+    const muteBtn = page.getByTestId("control-toggle-mute");
+
+    // Initial state: Step 1
+    await expect(controls.getByText("Step 1 of 5")).toBeVisible();
+    await expect(announcer).toContainText("Step 1 of 5: Open the + menu at the top right.");
+    await expect(caption).toContainText("Open the + menu at the top right.");
+
+    // Keyboard-only: Space toggles play/pause
+    await page.keyboard.press("Space");
+    await expect(playPauseBtn).toHaveAttribute("aria-label", /pause/i);
+    await page.keyboard.press("Space");
+    await expect(playPauseBtn).toHaveAttribute("aria-label", /play/i);
+
+    // Keyboard-only: ArrowRight advances to Step 2
+    await page.keyboard.press("ArrowRight");
+    await expect(controls.getByText("Step 2 of 5")).toBeVisible();
+    await expect(caption).toContainText("Click New Repository in the menu.");
+    await expect(announcer).toContainText("Step 2 of 5: Click New Repository in the menu.");
+
+    // Keyboard-only: L advances to Step 3
+    await page.keyboard.press("l");
+    await expect(controls.getByText("Step 3 of 5")).toBeVisible();
+    await expect(caption).toContainText("Enter demo-repo as the repository name.");
+
+    // Keyboard-only: ArrowLeft steps back to Step 2
+    await page.keyboard.press("ArrowLeft");
+    await expect(controls.getByText("Step 2 of 5")).toBeVisible();
+    await expect(caption).toContainText("Click New Repository in the menu.");
+
+    // Keyboard-only: J steps back to Step 1
+    await page.keyboard.press("j");
+    await expect(controls.getByText("Step 1 of 5")).toBeVisible();
+    await expect(caption).toContainText("Open the + menu at the top right.");
+
+    // Keyboard-only: R replays current step
+    await page.keyboard.press("r");
+    await expect(controls.getByText("Step 1 of 5")).toBeVisible();
+
+    // Keyboard-only: M key toggles narration audio mute
+    await page.keyboard.press("m");
+    await expect(muteBtn).toHaveAttribute("aria-pressed", "false"); // Audio muted
+    // With audio muted, captions remain 100% visible and synchronized
+    await expect(caption).toBeVisible();
+    await expect(caption).toContainText("Open the + menu at the top right.");
+
+    // Advance with ArrowRight while muted — captions still advance and screen reader announces
+    await page.keyboard.press("ArrowRight");
+    await expect(controls.getByText("Step 2 of 5")).toBeVisible();
+    await expect(caption).toContainText("Click New Repository in the menu.");
+    await expect(announcer).toContainText("Step 2 of 5: Click New Repository in the menu.");
+
+    // Keyboard-only: Tab navigation through controls
+    await page.keyboard.press("Tab");
+    const activeTagName = await page.evaluate(() => document.activeElement?.tagName);
+    const activeRole = await page.evaluate(() => document.activeElement?.getAttribute("role"));
+    expect(["BUTTON", "A", "DIV"]).toContain(activeTagName);
+    if (activeTagName === "DIV") {
+      expect(activeRole).toBe("slider");
+    }
+
+    // Tab again to focus button
+    await page.keyboard.press("Tab");
+    const secondActiveTagName = await page.evaluate(() => document.activeElement?.tagName);
+    expect(["BUTTON", "A"]).toContain(secondActiveTagName);
+  });
+
+  test("respects prefers-reduced-motion: reduce by disabling zoom animations and scaling", async ({
+    page,
+  }) => {
+    // Emulate prefers-reduced-motion: reduce
+    await page.emulateMedia({ reducedMotion: "reduce" });
+
+    // Navigate to tutorial player
+    await page.goto("/tutorials");
+
+    const root = page.getByTestId("tutorial-player-root");
+    await expect(root).toBeVisible();
+
+    // Verify camera viewport transform is 'none' (scale 1.0, no pan/zoom)
+    const cameraViewport = page.getByTestId("camera-viewport");
+    await expect(cameraViewport).toBeVisible();
+    await expect(cameraViewport).toHaveCSS("transform", "none");
+
+    // Step forward and verify camera remains static at 1.0 (transform: none)
+    const nextBtn = page.getByTestId("control-next-step");
+    await nextBtn.click();
+    await expect(cameraViewport).toHaveCSS("transform", "none");
+
+    // Caption and step progress still work completely under reduced motion
+    const caption = page.getByTestId("tutorial-caption");
+    await expect(caption).toContainText("Click New Repository in the menu.");
+  });
 });
