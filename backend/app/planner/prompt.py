@@ -53,8 +53,9 @@ SYSTEM_PROMPT = "\n".join(
 SITE_HINTS: dict[str, str] = {
     "gitea": "\n".join(
         [
-            'The + in the top bar is menu "Create…"; its menuitem "New Repository" opens /repo/create.',
-            'The dashboard also has a link "New Repository" to the same page.',
+            'To create a repository, click the dashboard\'s link "New Repository" or navigate to',
+            "/repo/create. Don't use the top bar's + menu: its items are outside the main content, so the",
+            "step can't be checked (#83).",
             'The create form has textbox "Repository Name *", checkbox "Initialize Repository (Adds',
             '.gitignore, License and README)" and button "Create Repository". Leave other fields alone.',
             "After creation the URL is /<owner>/<repo>. If the name is taken, the page stays on",
