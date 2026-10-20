@@ -65,8 +65,12 @@ SITE_HINTS: dict[str, str] = {
             "names another). Navigate there directly; the dashboard lists repositories twice.",
             'New issue: /<owner>/<repo>/issues/new has textbox "Title", textbox "Leave a comment" and',
             'button "Create Issue". After creation the URL is /<owner>/<repo>/issues/<number>.',
-            "New branch: /<owner>/<repo>/branches has a button 'Create new branch from \"<branch>\"'",
-            'for each branch. It opens a dialog with textbox "Branch Name *" and button "Confirm".',
+            # The button's real name contains quotes (Create new branch from "main"). Quoting it in a plan
+            # broke Gemini's output mid-step and cut the plan short (#83): the hint gives a quote-free part.
+            "New branch: /<owner>/<repo>/branches has one button per branch whose name starts with",
+            '"Create new branch from"; target it with exactly that text (names match as a substring).',
+            'It opens a dialog with textbox "Branch Name *" and button "Confirm": fill the name, then click',
+            "Confirm.",
             "After creation the URL is /<owner>/<repo>/src/branch/<new branch>/ (with a trailing slash).",
             'New file: /<owner>/<repo>/_new/<branch>/ has textbox "Name your file…" (a path like',
             'docs/a.md is allowed), textbox "Editor content" for the content and button "Commit Changes".',
