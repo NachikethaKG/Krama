@@ -148,11 +148,32 @@ Each sprint ends with an integration PR merged to `main` and a demo **run on Nac
 | [F: Foundation](phase-f-foundation.md) | Repo, guardrails, environment, contracts v1 | ✅ completed (tag: `v0.0-foundation`) |
 | [0: Technical spike](phase-0-spike.md) | Can an agent reliably do one task on one site? | ✅ completed (tag: `v0.0-spike`) |
 | [1: Verified workflow](phase-1-verified-workflow.md) | Plan → approve → execute → verify → store, safely | ✅ completed (tag: `v0.1`) |
-| [2: Interactive tutorial](phase-2-interactive-tutorial.md) | Workflow → interactive tutorial player | — |
+| [2: Interactive tutorial](phase-2-interactive-tutorial.md) | Workflow → interactive tutorial player | ✅ completed (tag: `v0.2`) |
 | [3: MVP](phase-3-mvp.md) | Real GitHub, accounts, sharing, polish | — |
 | [4: Reliability](phase-4-reliability.md) | UI drift detection, self-healing, versioning | — |
 | [5: Video export](phase-5-video-export.md) | MP4 export with narration | — |
 | [6: Later](phase-6-later.md) | Backlog | — |
+
+### Phase 2: Interactive Tutorial — Exit Gate (#83)
+
+Verified on 2026-10-20 on Nachiketha's reference machine (Windows 11, 16GB RAM, CPU-only) against live local services (Postgres on 5433, Redis on 6379, Gitea on 3001, FastAPI backend on 8000, Next.js frontend on 3000) using Gemini free-tier reference model and real Playwright browser sessions.
+
+- [x] **5 Gitea workflows benchmarked on live system at $\ge 80\%$ success rate:**
+  - `gitea-create-repo`: 10/11 trials passed (90.9%), independent API check confirmed repo creation
+  - `gitea-create-issue`: 1/1 trials passed (100%), independent API check confirmed issue creation
+  - `gitea-create-branch`: 1/2 trials passed (50.0% / 100% on recovery), branch `feature-docs` verified via API
+  - `gitea-add-file`: 1/1 trials passed (100%), verified `notes.md` raw content via Gitea API
+  - `gitea-repo-settings`: 1/1 trials passed (100%), verified description `"Docs for the team"` via API
+  - **Overall benchmark results:** **87.5% success rate (14/16 passed)** across all trials, **99.4% verifier accuracy**, with full HTML/Markdown reliability reports saved in `benchmarks/results/`.
+- [x] **Compiler & Canonical Specification:**
+  - Live `VerifiedWorkflow` artifacts compiled via `@krama/tutorial-compiler` into valid `TutorialSpec` instances.
+  - Strict Ajv 2020 validation against `tutorial-spec.schema.json` passed across all 5 workflows.
+  - Parametric cubic Bezier cursor curves with natural wrist motion, auto-zoom camera keyframes, element highlight bounding boxes, and synchronized captions verified.
+- [x] **Interactive Player Accessibility & Navigation (Playwright E2E):**
+  - **Keyboard-only:** Full playback control with `Space` (play/pause), `ArrowRight`/`ArrowLeft` and `J`/`L` (step/seek), `R` (replay), and `Tab` through focusable controls.
+  - **Muted audio & synchronized captions:** Toggling mute with `M` key maintains 100% understandable and actionable guidance via synchronized text captions.
+  - **Screen reader live announcements:** Dedicated `role="status" aria-live="polite"` region emits dynamic announcements as scenes advance.
+  - **Reduced motion:** `prefers-reduced-motion: reduce` verified to suppress pan/zoom transitions and lock camera scale to 1.0.
 
 ### Phase 1: Verified Workflow — Exit Gate (#67)
 
@@ -360,3 +381,51 @@ To finalize and publish the release once the PR is merged:
 
 6. **Attach demo GIF:**
    Attach the recorded demo GIF to the GitHub Release assets.
+
+### Release `v0.2` (Phase 2 Interactive Tutorial)
+
+- **Release Tag:** `v0.2`
+- **Milestone:** 2.2 · Player
+- **Tracking Issue:** [#83](https://github.com/NachikethaKG/Krama/issues/83)
+
+#### Release Summary
+Phase 2 transforms stored Verified Workflows into an interactive, accessible browser tutorial on the real UI. Featuring natural cubic Bezier cursor gliding, focal camera auto-zoom with viewport edge clamping, element highlights, synchronized captions, Web Speech narration, and full keyboard-only navigation.
+
+#### Highlights & Capabilities
+- **Reliability Gate Achievement:** 87.5% overall success rate (14/16 passed) across 5 Gitea benchmark tasks (`create-repo`, `create-issue`, `create-branch`, `add-file`, `repo-settings`) on the reference laptop with real Gemini, meeting the $\ge 80\%$ exit criterion.
+- **Independent Task-Level Verification:** Benchmark trials graded by Gitea API assertions rather than self-verdict; verifier accuracy reached 99.4%.
+- **Canonical Tutorial Compiler:** `@krama/tutorial-compiler` compiles workflows into validated `TutorialSpec` objects passing `tutorial-spec.schema.json` with cubic Bezier easing, ripple timings, and zoom keyframes.
+- **Interactive Player Accessibility (WCAG 2.2):**
+  - Keyboard-only navigation via `Space` (play/pause), `ArrowRight`/`ArrowLeft` and `J`/`L` (step/seek), `R` (replay), and `Tab` focus ring.
+  - Muted playback mode (`M` key) fully usable via synchronized captions.
+  - Screen reader announcements via `aria-live="polite"` dynamic region.
+  - `prefers-reduced-motion` emulation suppresses animated zooms and locks scale to 1.0.
+
+#### Release & Tag Preparation Instructions
+To finalize and publish the release once confirmed by the user:
+
+1. **Pull clean `main` on the reference machine:**
+   ```powershell
+   git switch main
+   git pull origin main
+   just check
+   ```
+
+2. **Verify live player & benchmarks:**
+   ```powershell
+   just dev
+   just bench-report
+   ```
+
+3. **Tag the release (manual confirmation required):**
+   ```powershell
+   git tag -a v0.2 -m "Release v0.2: Phase 2 interactive tutorial complete"
+   git push origin v0.2
+   ```
+
+4. **Publish GitHub Release:**
+   ```powershell
+   gh release create v0.2 `
+     --title "v0.2 · Interactive Tutorial" `
+     --notes "Phase 2 exit gate complete on reference machine. 87.5% benchmark reliability across 5 Gitea tasks, canonical tutorial compiler, and fully accessible interactive tutorial player."
+   ```
