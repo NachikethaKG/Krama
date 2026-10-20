@@ -41,6 +41,7 @@ PAGES: dict[str, str] = {
         <section><h2>Publish</h2><button onclick="document.title = 'published'">Save</button></section>
         <label>Password <input type="password" name="password" value="hunter2"></label>
         <label>Notes <input name="notes" value="visible"></label>
+        <button onclick="document.title = 'branch'">Create new branch from "main"</button>
     </main>""",
     # A Fomantic-UI style dialog outside <main> without role=dialog, as Gitea renders it (#78).
     "/dialogs": """<title>Branches</title>
