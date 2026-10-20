@@ -197,3 +197,62 @@ async def test_live_gemini_picks_the_save_in_the_publish_section(session: Playwr
     assert result.ok, (result.error, result.llm_attempts)
     assert result.strategy == "vision"
     assert await session.page.title() == "published"
+
+
+@pytest.mark.parametrize(
+    "planned",
+    ["Create new branch from main", "create new branch from “main”", "Create new branch from"],
+)
+async def test_a_name_whose_quotes_the_plan_dropped_or_changed_is_still_found(
+    session: PlaywrightSession, planned: str
+) -> None:
+    # Gitea's button is `Create new branch from "main"`; LLM plans write it without or with other quotes.
+    executor = await on_locate_page(session)
+
+    result = await executor.execute(CLICK, Target(role="button", name=planned))
+
+    assert result.ok, result.error
+    assert result.strategy == "role" and await session.page.title() == "branch"
+
+
+async def test_quote_insensitive_matching_still_needs_the_same_words(session: PlaywrightSession) -> None:
+    executor = await on_locate_page(session)
+    executor_page = session.page
+    executor_page.set_default_timeout(1_000)
+
+    result = await executor.execute(CLICK, Target(role="button", name="Create new branch from develop"))
+
+    assert not result.ok and result.error is not None and result.error.code == "target_not_found"
+
+
+async def test_several_matches_are_told_apart_by_the_form_just_filled(session: PlaywrightSession) -> None:
+    await session.page.goto("/forms")
+    executor = ActionExecutor(session.page)  # no vision: the form rule alone must decide
+    save = Target(role="button", name="Update Settings")
+
+    wiki = Target(role="textbox", name="Wiki URL")
+    filled = await executor.execute(Action(type="fill", value="Docs"), wiki)
+    result = await executor.execute(CLICK, save)
+
+    assert filled.ok and result.ok, result.error
+    assert result.strategy == "form" and await session.page.title() == "advanced saved"
+
+
+async def test_without_a_filled_field_several_matches_stay_ambiguous(session: PlaywrightSession) -> None:
+    await session.page.goto("/forms")
+    executor = ActionExecutor(session.page)
+
+    result = await executor.execute(CLICK, Target(role="button", name="Update Settings"))
+
+    assert not result.ok and result.error is not None and result.error.code == "ambiguous_target"
+
+
+async def test_a_navigation_forgets_the_filled_field(session: PlaywrightSession) -> None:
+    await session.page.goto("/forms")
+    executor = ActionExecutor(session.page)
+    await executor.execute(Action(type="fill", value="Docs"), Target(role="textbox", name="Description"))
+
+    await executor.execute(Action(type="navigate", value="/forms"))
+    result = await executor.execute(CLICK, Target(role="button", name="Update Settings"))
+
+    assert not result.ok and result.error is not None and result.error.code == "ambiguous_target"
