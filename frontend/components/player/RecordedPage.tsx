@@ -9,6 +9,8 @@ export interface RecordedPageProps {
   /** Milliseconds since the recording's first event: the moment to show (workflow_steps.start_ms/end_ms). */
   timeOffsetMs: number;
   viewport: { width: number; height: number };
+  /** The window scroll the step ran at. The page is put there, so it matches the overlays exactly. */
+  scroll?: { x: number; y: number } | null;
 }
 
 interface ReplayerLike {
@@ -25,7 +27,7 @@ interface ReplayerLike {
  * It renders at the recording's viewport size in CSS px, the same space as the step bboxes, so overlays drawn
  * on top line up after subtracting the step's scroll. It is never interactive: the tutorial controls it.
  */
-export function RecordedPage({ events, timeOffsetMs, viewport }: RecordedPageProps) {
+export function RecordedPage({ events, timeOffsetMs, viewport, scroll = null }: RecordedPageProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const replayerRef = useRef<ReplayerLike | null>(null);
   const [ready, setReady] = useState(false);
@@ -62,9 +64,19 @@ export function RecordedPage({ events, timeOffsetMs, viewport }: RecordedPagePro
     };
   }, [events]);
 
+  const scrollX = scroll?.x ?? null;
+  const scrollY = scroll?.y ?? null;
   useEffect(() => {
-    if (ready) replayerRef.current?.pause(Math.max(0, timeOffsetMs));
-  }, [ready, timeOffsetMs]);
+    const replayer = replayerRef.current;
+    if (!ready || !replayer) return;
+    replayer.pause(Math.max(0, timeOffsetMs));
+    // A step's start is taken before its action scrolls the target into view, and rrweb records that scroll
+    // around the click, in either order (docs/research/phase-2-vishwas-coordinates.md). The stored scroll is
+    // the truth, so the page is put there: the highlight (bbox - scroll) then sits on the element.
+    if (scrollX !== null && scrollY !== null) {
+      replayer.iframe.contentWindow?.scrollTo(scrollX, scrollY);
+    }
+  }, [ready, timeOffsetMs, scrollX, scrollY]);
 
   return (
     <div

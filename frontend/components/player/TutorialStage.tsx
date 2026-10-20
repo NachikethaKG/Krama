@@ -183,7 +183,12 @@ export function TutorialStage({
           }}
         >
           {showRecording && recording ? (
-            <RecordedPage events={recording} timeOffsetMs={recordingOffsetMs} viewport={viewport} />
+            <RecordedPage
+              events={recording}
+              timeOffsetMs={recordingOffsetMs}
+              viewport={viewport}
+              scroll={scroll}
+            />
           ) : (
           <>
           {/* Mock Browser & Page Content Backdrop */}
