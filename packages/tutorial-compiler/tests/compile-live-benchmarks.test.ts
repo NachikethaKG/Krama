@@ -118,15 +118,19 @@ function runLogToVerifiedWorkflow(runLog: RunLog): VerifiedWorkflow {
   };
 }
 
-describe("Compile Live Benchmark Workflows to Tutorial Specs", () => {
-  const liveRunIds = [
-    { id: "72a23429-38f2-4c2a-a784-32ca2e5e3387", task: "create-repo" },
-    { id: "72f89363-569f-4be8-acb2-b6df81bdb41e", task: "create-issue" },
-    { id: "c65a9093-8c87-434d-a672-a2eca1812c8a", task: "create-branch" },
-    { id: "5de44648-b0c7-4a01-b62c-fe36f54610a1", task: "add-file" },
-    { id: "0005bf56-72cb-41eb-84c5-c065d7347acc", task: "repo-settings" },
-  ];
+const liveRunIds = [
+  { id: "72a23429-38f2-4c2a-a784-32ca2e5e3387", task: "create-repo" },
+  { id: "72f89363-569f-4be8-acb2-b6df81bdb41e", task: "create-issue" },
+  { id: "c65a9093-8c87-434d-a672-a2eca1812c8a", task: "create-branch" },
+  { id: "5de44648-b0c7-4a01-b62c-fe36f54610a1", task: "add-file" },
+  { id: "0005bf56-72cb-41eb-84c5-c065d7347acc", task: "repo-settings" },
+];
 
+const hasLiveRuns =
+  existsSync(RUNS_DIR) &&
+  liveRunIds.every(({ id }) => existsSync(path.join(RUNS_DIR, id, "run-log.json")));
+
+describe.skipIf(!hasLiveRuns)("Compile Live Benchmark Workflows to Tutorial Specs", () => {
   if (!existsSync(OUTPUT_DIR)) {
     mkdirSync(OUTPUT_DIR, { recursive: true });
   }
