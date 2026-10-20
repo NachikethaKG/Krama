@@ -10,6 +10,7 @@ import type {
   RunPage,
   Task,
   Workflow,
+  WorkflowPage,
 } from "@krama/contracts-ts";
 
 import { apiBaseUrl, artifactUrl, normalizeBaseUrl } from "./artifacts";
@@ -170,6 +171,8 @@ export interface ApiClient {
   streamRunEvents(runId: string, options?: StreamOptions): AsyncIterable<RunEvent>;
   /** GET /workflows/{id}: the verified workflow. */
   getWorkflow(id: string): Promise<Workflow>;
+  /** GET /workflows: stored workflows, newest first (the tutorial library). */
+  getWorkflows(limit?: number): Promise<WorkflowPage>;
   /** Run + plan + task + workflow, shaped for the run detail / evidence page. */
   getRunDetails(runId: string): Promise<RunDetails>;
 }
@@ -493,6 +496,10 @@ export class HttpApiClient implements ApiClient {
 
   getWorkflow(id: string): Promise<Workflow> {
     return this.request<Workflow>(`/workflows/${encodeURIComponent(id)}`);
+  }
+
+  getWorkflows(limit = 50): Promise<WorkflowPage> {
+    return this.request<WorkflowPage>(`/workflows?limit=${limit}`);
   }
 
   /** Run → plan → task.prompt, cached per plan (the run list shows the real prompt). */
@@ -894,6 +901,22 @@ export class MockApiClient implements ApiClient {
     const fixture = this.workflows[id];
     if (!fixture) throw mockError(404, "not_found", `Workflow not found: ${id}`);
     return fixture;
+  }
+
+  async getWorkflows(limit = 50): Promise<WorkflowPage> {
+    const items = Object.values(this.workflows)
+      .filter((w) => w.status === "verified")
+      .slice(0, limit)
+      .map((w) => ({
+        id: w.id,
+        title: w.title,
+        status: w.status,
+        target_app: w.target_app ?? null,
+        step_count: w.steps.length,
+        confidence: w.confidence ?? null,
+        created_at: w.created_at ?? null,
+      }));
+    return { items, next_cursor: null };
   }
 
   async *streamRunEvents(runId: string, options: StreamOptions = {}): AsyncIterable<RunEvent> {
