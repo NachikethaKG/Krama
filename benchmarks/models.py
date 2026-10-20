@@ -31,6 +31,13 @@ class RunTrial(BaseModel):
     tokens_out: int = Field(
         default=0, ge=0, description="Output tokens used in LLM requests."
     )
+    agent_verified: bool | None = Field(
+        default=None,
+        description="Task-file trials only: what the agent reported. `success` is the independent check.",
+    )
+    independent_check: str | None = Field(
+        default=None, description="Task-file trials only: the result of the task's success_check."
+    )
 
 
 class BenchmarkReport(BaseModel):

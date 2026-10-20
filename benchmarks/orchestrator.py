@@ -4,12 +4,21 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from pathlib import Path
+from typing import Protocol
 
 from benchmarks.agent_runner import AgentRunner
 from benchmarks.collector import MetricsCollector
 from benchmarks.gitea import GiteaResetError, GiteaTimeoutError, reset_gitea
 from benchmarks.models import BenchmarkReport, RunTrial
 from benchmarks.reporter import ConsoleReporter
+from benchmarks.tasks.runner import TaskSetupError, check_success, run_setup
+from benchmarks.tasks.schema import BenchmarkTask
+
+
+class TrialRunner(Protocol):
+    """Runs one trial of a task prompt: AgentRunner (the CLI loop) or ApiAgentRunner (the backend API)."""
+
+    def run(self, run_index: int, task: str) -> RunTrial: ...
 
 
 class BenchmarkOrchestrator:
@@ -19,20 +28,28 @@ class BenchmarkOrchestrator:
         self,
         task: str,
         runs: int = 1,
-        runner: AgentRunner | None = None,
+        runner: TrialRunner | None = None,
         reset_fn: Callable[[], None] | None = None,
         collector: MetricsCollector | None = None,
         reporter: ConsoleReporter | None = None,
         results_dir: Path | None = None,
         skip_reset: bool = False,
+        spec: BenchmarkTask | None = None,
     ) -> None:
+        """`spec`: a task file (benchmarks/tasks/*.yaml). Then each trial starts from the task's own setup and
+        succeeds only if the task's success_check passes; the agent never grades itself."""
         if runs < 1:
             raise ValueError(f"Runs must be >= 1, got {runs}")
-        self.task = task
+        self.spec = spec
+        self.task = spec.prompt if spec is not None else task
         self.runs = runs
-        self.runner = runner or AgentRunner()
+        self.runner: TrialRunner = runner or AgentRunner()
+        if reset_fn is None and spec is not None:
+
+            def reset_fn() -> None:
+                run_setup(spec)
         self.reset_fn = reset_fn or (lambda: None if skip_reset else reset_gitea())
-        self.collector = collector or MetricsCollector(task_name=task)
+        self.collector = collector or MetricsCollector(task_name=spec.name if spec is not None else task)
         self.reporter = reporter or ConsoleReporter()
         self.results_dir = results_dir
         self.skip_reset = skip_reset
@@ -44,7 +61,7 @@ class BenchmarkOrchestrator:
             if not self.skip_reset:
                 try:
                     self.reset_fn()
-                except (GiteaTimeoutError, GiteaResetError) as exc:
+                except (GiteaTimeoutError, GiteaResetError, TaskSetupError) as exc:
                     # Record environment reset failure as a failed trial
                     failed_trial = RunTrial(
                         run_index=i,
@@ -60,6 +77,15 @@ class BenchmarkOrchestrator:
 
             # 2. Invoke the agent via the runner
             trial = self.runner.run(run_index=i, task=self.task)
+            if self.spec is not None:
+                check = check_success(self.spec)
+                trial = trial.model_copy(
+                    update={
+                        "agent_verified": trial.success,
+                        "success": check.passed,
+                        "independent_check": check.detail,
+                    }
+                )
             self.collector.record_trial(trial)
 
         # 3. Aggregate metrics, save report and render summary

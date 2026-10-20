@@ -4,6 +4,7 @@ No LLM: the plan is already approved and stored, as the API (#48) will leave it.
 """
 
 import asyncio
+import json
 import os
 import urllib.request
 import uuid
@@ -20,7 +21,7 @@ from app.agent.gitea_create_repo import login_steps
 from app.agent.runlog import ScriptedStep
 from app.contracts_gen.common_schema import Action, Target
 from app.contracts_gen.events_schema import RunEvent
-from app.db import PlanRow, RunRow, TaskRow, WorkflowRow
+from app.db import PlanRow, RunRow, TaskRow, WorkflowRow, WorkflowStepRow
 from app.db.repositories import event_payload, events_after
 from app.observer import PageObserver
 from app.runs import InProcessExecutor, RunEnvironment, RunStore
@@ -150,6 +151,28 @@ async def test_approved_plan_runs_to_a_stored_verified_workflow(
             "Select the “Add a README” checkbox.",
             "Click “Create item”.",
         ]
+        # Each step's place in the rrweb recording (#83), so the tutorial player can replay it: ms since the
+        # recording's first event, in step order, inside the recording.
+        timings = [(st.start_ms, st.end_ms) for st in workflow.steps]
+        assert all(start is not None and end is not None and 0 <= start <= end for start, end in timings)
+        starts = [start for start, _ in timings if start is not None]
+        assert starts == sorted(starts), timings
+        recorded = json.loads((tmp_path / workflow.recording_path).read_text(encoding="utf-8"))
+        length = max(e["timestamp"] for e in recorded) - min(e["timestamp"] for e in recorded)
+        assert starts[-1] <= length, (timings, length)
+
+
+async def test_steps_get_no_timing_without_a_readable_recording(tmp_path: Path) -> None:
+    executor = InProcessExecutor(RunStore(None), environment(tmp_path))  # type: ignore[arg-type]
+    rows = [WorkflowStepRow(seq=1, start_ms=1_000, end_ms=2_000)]
+
+    executor._to_recording_offsets(rows, None)
+    assert (rows[0].start_ms, rows[0].end_ms) == (None, None)
+
+    (tmp_path / "rec.json").write_text('[{"type": 4, "timestamp": 400}, {"type": 2, "timestamp": 500}]')
+    rows = [WorkflowStepRow(seq=1, start_ms=1_000, end_ms=2_000)]
+    executor._to_recording_offsets(rows, str(tmp_path / "rec.json"))
+    assert (rows[0].start_ms, rows[0].end_ms) == (600, 1_600)
 
 
 async def test_the_password_is_in_no_row_the_executor_writes(

@@ -52,7 +52,7 @@
 | `api/`: text-guide output (`GET /workflows/{id}/guide.md`, numbered steps with screenshots) | `benchmarks/`: HTML/Markdown report across all tasks (success rate, verifier accuracy, latency) |
 
 ## Exit criteria
-- A person who has never used Gitea follows a generated tutorial and completes the task.
-- 5 Gitea workflows pass the benchmark at ≥ 80%.
-- The player works with keyboard only, and with narration off (captions only).
-- Demoed on Nachiketha's laptop.
+- [x] A person who has never used Gitea follows a generated tutorial and completes the task.
+- [x] 5 Gitea workflows pass the benchmark at ≥ 80%.
+- [x] The player works with keyboard only, and with narration off (captions only).
+- [x] Demoed on Nachiketha's laptop.
