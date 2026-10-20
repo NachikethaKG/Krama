@@ -6,6 +6,7 @@ from collections import deque
 from collections.abc import Awaitable, Callable, Sequence
 from typing import Any
 
+import httpx
 from google import genai
 from google.genai import errors, types
 from pydantic import BaseModel, ValidationError
@@ -50,7 +51,8 @@ class GeminiProvider:
 
     - per-minute 429: wait the server's `retryDelay`, retry the same model (at most `max_rate_retries` times)
     - per-day 429: move to the next model at once
-    - 500/502/503/504: one retry with backoff, then the next model
+    - 500/502/503/504, or the connection dropped (e.g. a failed TLS handshake): one retry with backoff,
+      then the next model
     - no answer within `timeout_s`: the next model (retrying a stall would cost another `timeout_s`)
     - reply that doesn't validate against the schema: the next model
     - any other error (bad key, bad request): raise at once, since another model won't fix it
@@ -116,6 +118,21 @@ class GeminiProvider:
                             message=f"no answer within {self._timeout_s:g} s",
                         )
                     )
+                    break
+                except httpx.TransportError as e:
+                    # The network, not Gemini: seen as bursts of failed TLS handshakes in a benchmark (#83).
+                    attempts.append(
+                        LLMAttempt(
+                            model=model,
+                            status="unavailable",
+                            latency_ms=_ms_since(t0),
+                            message=f"connection failed: {type(e).__name__}",
+                        )
+                    )
+                    if server_retries < 1:
+                        server_retries += 1
+                        await self._sleep(self._server_retry_delay_s * (1 + random.random()))
+                        continue
                     break
                 except errors.APIError as e:
                     ms = _ms_since(t0)

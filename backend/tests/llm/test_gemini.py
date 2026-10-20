@@ -2,6 +2,7 @@ import json
 import os
 from pathlib import Path
 
+import httpx
 import pytest
 
 from app.llm import (
@@ -94,6 +95,26 @@ async def test_server_error_retries_once_then_falls_back() -> None:
     assert [a.status for a in result.attempts] == ["unavailable", "unavailable", "ok"]
     assert result.model == "m2"
     assert len(sleep.slept) == 1
+
+
+async def test_a_dropped_connection_retries_once_then_falls_back() -> None:
+    dropped = httpx.ConnectError("TLS handshake failed")
+    client = FakeGenaiClient([dropped, dropped, ok(PLAN_JSON)])
+    sleep = FakeSleep()
+
+    result = await provider(client, sleep).generate(system="s", prompt="p", schema=PlanOut)
+
+    assert client.models_called == ["m1", "m1", "m2"]
+    assert [a.status for a in result.attempts] == ["unavailable", "unavailable", "ok"]
+    assert result.attempts[0].message == "connection failed: ConnectError"
+    assert len(sleep.slept) == 1
+
+
+async def test_no_connection_at_all_raises_unavailable_not_a_crash() -> None:
+    client = FakeGenaiClient([httpx.ReadError("connection reset")] * 6)
+
+    with pytest.raises(LLMUnavailableError):
+        await provider(client, FakeSleep()).generate(system="s", prompt="p", schema=PlanOut)
 
 
 async def test_per_minute_429_waits_retry_delay_and_retries_same_model() -> None:
