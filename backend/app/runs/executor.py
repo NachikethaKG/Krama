@@ -6,6 +6,7 @@ the truth. A crash leaves the run at its last committed status, and `recover()` 
 """
 
 import asyncio
+import json
 import logging
 import time
 from collections.abc import Callable, Sequence
@@ -225,6 +226,7 @@ class InProcessExecutor:
                 recording = await observer.stop_recording()
         if rows is None:
             return  # failed, paused out or cancelled; the store already says so
+        self._to_recording_offsets(rows, recording.path)
         if job.kind == "reverify":
             duration_ms = round((time.perf_counter() - t0) * 1000)
             await self._store.complete_reverify(job, verified_steps=len(rows), duration_ms=duration_ms)
@@ -531,7 +533,37 @@ class InProcessExecutor:
             risk=step.risk,
             sensitive=sensitive,
             screenshot_path=key,
+            # Wall-clock epoch ms for now; _to_recording_offsets turns them into offsets into the recording.
+            start_ms=_epoch_ms(out.result.started_at),
+            end_ms=_epoch_ms(out.observed.captured_at),
         )
+
+    def _to_recording_offsets(self, rows: list[WorkflowStepRow], recording_path: str | None) -> None:
+        """Each step's start/end as ms since the recording's first event: the timeline the player replays
+        (contract: workflow_steps.start_ms/end_ms). rrweb timestamps are the browser's Date.now(), the same
+        clock as ours. Without a readable recording the steps get no timing rather than a wrong one."""
+        base = self._first_event_ms(recording_path)
+        for row in rows:
+            if base is None or row.start_ms is None or row.end_ms is None:
+                row.start_ms = row.end_ms = None
+                continue
+            row.start_ms = max(0, row.start_ms - base)
+            row.end_ms = max(row.start_ms, row.end_ms - base)
+
+    def _first_event_ms(self, recording_path: str | None) -> int | None:
+        key = self._artifact_key(recording_path)
+        if key is None:
+            return None
+        try:
+            events = json.loads((self._env.artifacts_dir / key).read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            return None
+        if isinstance(events, dict):
+            events = events.get("events", [])
+        stamps: list[int] = [
+            e["timestamp"] for e in events if isinstance(e, dict) and isinstance(e.get("timestamp"), int)
+        ]
+        return min(stamps) if stamps else None
 
     @staticmethod
     def _step_text(job: RunJob, step: PlannedStep, out: StepOutcome, *, sensitive: bool) -> str:
@@ -583,6 +615,11 @@ def _summary(state: ObservedState) -> dict[str, Any]:
 IDEMPOTENT = frozenset({"navigate", "wait", "fill", "select"})
 """Safe to repeat. A click or key press is never repeated automatically: the first one may already have
 worked (a second "Create Repository" could make a duplicate)."""
+
+
+def _epoch_ms(moment: datetime | None) -> int | None:
+    return round(moment.timestamp() * 1000) if moment is not None else None
+
 
 type Move = Literal["retry", "replan", "pause"]
 
