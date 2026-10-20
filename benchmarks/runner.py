@@ -13,8 +13,10 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from benchmarks.agent_runner import AgentRunner
+from benchmarks.api_runner import ApiAgentRunner
 from benchmarks.gitea import reset_gitea
 from benchmarks.orchestrator import BenchmarkOrchestrator
+from benchmarks.tasks.schema import load_all_tasks
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -68,6 +70,17 @@ def build_parser() -> argparse.ArgumentParser:
         help="Maximum duration for Gitea reset in seconds (default: 10.0)",
     )
     parser.add_argument(
+        "--via",
+        choices=["cli", "api"],
+        default="cli",
+        help="cli: the `krama run` loop (default). api: the running backend API, the product path",
+    )
+    parser.add_argument(
+        "--api-url",
+        default="http://127.0.0.1:8000/api/v1",
+        help="Backend API for --via api (default: http://127.0.0.1:8000/api/v1)",
+    )
+    parser.add_argument(
         "--results-dir",
         type=Path,
         default=None,
@@ -104,14 +117,21 @@ def parse_args(
 
 def main(argv: Sequence[str] | None = None) -> int:
     task, runs, args = parse_args(argv)
+    # A task file name (e.g. gitea-create-issue) runs that file: its prompt, target, setup and success_check.
+    spec = next((t for t in load_all_tasks() if t.name == task), None)
+    target = spec.target if spec is not None else args.target
 
-    runner = AgentRunner(
-        target_url=args.target,
-        site=args.site,
-        login=not args.no_login,
-        auto_approve=True,
-        timeout=args.timeout,
-    )
+    runner: AgentRunner | ApiAgentRunner
+    if args.via == "api":
+        runner = ApiAgentRunner(target_url=target, api_url=args.api_url, timeout=args.timeout)
+    else:
+        runner = AgentRunner(
+            target_url=target,
+            site=args.site,
+            login=not args.no_login,
+            auto_approve=True,
+            timeout=args.timeout,
+        )
 
     def do_reset() -> None:
         reset_gitea(base_url=args.target, timeout=args.reset_timeout)
@@ -120,9 +140,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         task=task,
         runs=runs,
         runner=runner,
-        reset_fn=do_reset,
+        reset_fn=None if spec is not None else do_reset,
         results_dir=args.results_dir,
         skip_reset=args.no_reset,
+        spec=spec,
     )
 
     report, _path = orchestrator.run()
