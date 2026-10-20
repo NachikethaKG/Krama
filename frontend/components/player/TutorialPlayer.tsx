@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import type { TutorialSpec } from "@krama/tutorial-compiler";
+import type { eventWithTime } from "@rrweb/types";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 import { CopyableText } from "./CopyableText";
 import { TutorialControls } from "./TutorialControls";
@@ -21,6 +22,8 @@ export interface TutorialPlayerProps {
   isReducedMotion?: boolean;
   className?: string;
   onComplete?: () => void;
+  /** The workflow's rrweb recording: the stage then shows the real page instead of the wireframe. */
+  recording?: eventWithTime[] | null;
 }
 
 export function TutorialPlayer({
@@ -33,6 +36,7 @@ export function TutorialPlayer({
   isReducedMotion,
   className = "",
   onComplete,
+  recording = null,
 }: TutorialPlayerProps) {
   const player = useTutorialPlayer({
     spec,
@@ -145,6 +149,7 @@ export function TutorialPlayer({
             isCaptionsEnabled={player.isCaptionsEnabled}
             isReducedMotion={effectiveReducedMotion}
             activeWordIndex={narration.activeWordIndex}
+            recording={recording}
           />
 
           {/* Controls Bar */}
