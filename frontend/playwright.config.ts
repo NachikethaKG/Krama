@@ -8,7 +8,9 @@ export default defineConfig({
   use: { baseURL: "http://localhost:3000" },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: {
-    command: "pnpm dev",
+    // CI runs `pnpm -r build` first, so serve that build: `next dev` compiles each route on its first visit
+    // (measured cold: 30 s for /, 14 s for /tasks), which made tests time out at random on CI runners.
+    command: process.env.CI ? "pnpm start --port 3000" : "pnpm dev",
     url: "http://localhost:3000",
     reuseExistingServer: !process.env.CI,
     env: { NEXT_PUBLIC_API_MODE: "mock" },
