@@ -1,7 +1,7 @@
 import { Suspense, use } from "react";
 import Link from "next/link";
 import { compileWorkflow, type TutorialSpec } from "@krama/tutorial-compiler";
-import { TutorialPlayer } from "@/components/player";
+import { TutorialPlayer, WorkflowTutorial } from "@/components/player";
 import {
   giteaTutorialSpecFixture,
   tutorialSpecFixtures,
@@ -30,9 +30,15 @@ function resolveTutorialSpec(id: string): TutorialSpec {
   return giteaTutorialSpecFixture;
 }
 
+/** Real API mode: an id that isn't a fixture is a stored workflow, loaded and played over its recording. */
+function isStoredWorkflow(id: string): boolean {
+  return process.env.NEXT_PUBLIC_API_MODE === "http" && !tutorialSpecFixtures[id] && !workflowFixtures[id];
+}
+
 function TutorialDetailInner({ params }: TutorialDetailPageProps) {
   const { id } = use(params);
   const spec = resolveTutorialSpec(id);
+  const stored = isStoredWorkflow(id);
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900/50">
@@ -54,7 +60,7 @@ function TutorialDetailInner({ params }: TutorialDetailPageProps) {
             </Link>
             <span className="text-zinc-300 dark:text-zinc-700">/</span>
             <span className="text-sm font-medium text-zinc-800 dark:text-zinc-200 truncate max-w-xs">
-              {spec.title}
+              {stored ? "Tutorial" : spec.title}
             </span>
           </div>
 
@@ -70,7 +76,7 @@ function TutorialDetailInner({ params }: TutorialDetailPageProps) {
       </nav>
 
       <main className="py-6">
-        <TutorialPlayer spec={spec} />
+        {stored ? <WorkflowTutorial workflowId={id} /> : <TutorialPlayer spec={spec} />}
       </main>
     </div>
   );

@@ -9,7 +9,9 @@ import {
   type TutorialSpec,
   type WordTiming,
 } from "@krama/tutorial-compiler";
+import type { eventWithTime } from "@rrweb/types";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
+import { RecordedPage } from "./RecordedPage";
 
 export interface TutorialStageProps {
   spec: TutorialSpec;
@@ -20,6 +22,8 @@ export interface TutorialStageProps {
   isReducedMotion?: boolean;
   activeWordIndex?: number | null;
   className?: string;
+  /** The workflow's rrweb recording. With it, the stage shows the real page instead of the wireframe. */
+  recording?: eventWithTime[] | null;
 }
 
 export function TutorialStage({
@@ -31,6 +35,7 @@ export function TutorialStage({
   isReducedMotion,
   activeWordIndex,
   className = "",
+  recording = null,
 }: TutorialStageProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState<number>(0);
@@ -66,13 +71,27 @@ export function TutorialStage({
 
   const stageScale = containerWidth > 0 ? containerWidth / viewport.width : 1;
 
+  // Over the real page, page coordinates (bbox, cursor, camera) become viewport coordinates by subtracting the
+  // window scroll the step ran at (#72). The wireframe backdrop never scrolls.
+  const showRecording = Boolean(recording && recording.length > 1 && currentScene);
+  const scroll = showRecording && currentScene?.scroll ? currentScene.scroll : { x: 0, y: 0 };
+  const onScreen = (p: Point): Point => ({ x: p.x - scroll.x, y: p.y - scroll.y });
+  // Before the click: the page the learner acts on. After it (or for a step without an element): the result.
+  const clickMs = currentScene?.cursor?.click_ms;
+  const showResult = clickMs === null || clickMs === undefined || currentTimeMs >= clickMs;
+  const recordingOffsetMs = currentScene
+    ? showResult
+      ? currentScene.recording.end_ms
+      : currentScene.recording.start_ms
+    : 0;
+
   // Camera calculations (reduced motion disables zoom transforms completely)
   let cameraTransform = "none";
   let cameraTransition = "none";
 
   if (!effectiveReducedMotion && isZoomEnabled && currentScene?.camera) {
     const { panX, panY } = computeClampedOffsets(
-      currentScene.camera.center,
+      onScreen(currentScene.camera.center),
       currentScene.camera.scale,
       viewport,
     );
@@ -88,15 +107,15 @@ export function TutorialStage({
     const { path, start_ms, end_ms } = currentScene.cursor;
     if (effectiveReducedMotion) {
       // Reduced motion: snap cursor instantly to target without Bezier interpolation
-      cursorPos = currentTimeMs >= start_ms ? path[3] : path[0];
+      cursorPos = onScreen(currentTimeMs >= start_ms ? path[3] : path[0]);
     } else if (currentTimeMs <= start_ms) {
-      cursorPos = path[0];
+      cursorPos = onScreen(path[0]);
     } else if (currentTimeMs >= end_ms) {
-      cursorPos = path[3];
+      cursorPos = onScreen(path[3]);
     } else {
       const duration = Math.max(1, end_ms - start_ms);
       const t = (currentTimeMs - start_ms) / duration;
-      cursorPos = evaluateBezierPoint(path as [Point, Point, Point, Point], t);
+      cursorPos = onScreen(evaluateBezierPoint(path as [Point, Point, Point, Point], t));
     }
   }
 
@@ -123,7 +142,7 @@ export function TutorialStage({
         ? maxRadius
         : Math.max(4, maxRadius * Math.sin((t * Math.PI) / 2));
       rippleOpacity = Math.max(0, 1 - t);
-      rippleCenter = currentScene.cursor.path[3];
+      rippleCenter = onScreen(currentScene.cursor.path[3]);
     }
   }
 
@@ -163,6 +182,15 @@ export function TutorialStage({
             transition: cameraTransition,
           }}
         >
+          {showRecording && recording ? (
+            <RecordedPage
+              events={recording}
+              timeOffsetMs={recordingOffsetMs}
+              viewport={viewport}
+              scroll={scroll}
+            />
+          ) : (
+          <>
           {/* Mock Browser & Page Content Backdrop */}
           <div className="absolute inset-0 bg-zinc-900 text-zinc-100 flex flex-col">
             {/* Browser Chrome Header */}
@@ -238,6 +266,9 @@ export function TutorialStage({
             </div>
           </div>
 
+          </>
+          )}
+
           {/* Target Highlight Overlay */}
           {highlightBbox && highlightBbox.length === 4 && (
             <div
@@ -246,8 +277,8 @@ export function TutorialStage({
                 isPulsing ? "animate-pulse" : ""
               }`}
               style={{
-                left: `${highlightBbox[0] - highlightPadding}px`,
-                top: `${highlightBbox[1] - highlightPadding}px`,
+                left: `${highlightBbox[0] - scroll.x - highlightPadding}px`,
+                top: `${highlightBbox[1] - scroll.y - highlightPadding}px`,
                 width: `${highlightBbox[2] + highlightPadding * 2}px`,
                 height: `${highlightBbox[3] + highlightPadding * 2}px`,
                 border: `2px solid ${highlightColor}`,

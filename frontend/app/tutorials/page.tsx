@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { TutorialPlayer } from "@/components/player";
+import { TutorialLibrary, TutorialPlayer } from "@/components/player";
 import { giteaTutorialSpecFixture } from "@/lib/fixtures";
 
 export const metadata = {
@@ -37,7 +37,12 @@ export default function TutorialsPage() {
       </nav>
 
       <main className="py-6">
-        <TutorialPlayer spec={giteaTutorialSpecFixture} />
+        {/* Real API mode: the stored workflows, each a tutorial. Mock mode: the demo tutorial. */}
+        {process.env.NEXT_PUBLIC_API_MODE === "http" ? (
+          <TutorialLibrary />
+        ) : (
+          <TutorialPlayer spec={giteaTutorialSpecFixture} />
+        )}
       </main>
     </div>
   );
