@@ -17,9 +17,9 @@ from app.llm import LLMAttempt
 type ActionErrorCode = Literal[
     "invalid_action", "target_not_found", "ambiguous_target", "timeout", "action_failed"
 ]
-type LocatorStrategy = Literal["role", "label", "text", "selector", "vision"]
-"""How the target was found: ARIA role + name, aria-label/<label>, visible text, CSS selector, or a
-vision pick among several role/text matches."""
+type LocatorStrategy = Literal["role", "label", "text", "selector", "form", "vision"]
+"""How the target was found: ARIA role + name, aria-label/<label>, visible text, CSS selector, or among
+several role/text matches: the one in the form the previous step filled in, or a vision pick."""
 
 _NEEDS_TARGET: frozenset[str] = frozenset({"click", "fill", "select"})
 _NEEDS_VALUE: frozenset[str] = frozenset({"fill", "select", "navigate", "press"})
@@ -87,6 +87,9 @@ class ActionExecutor:
     def __init__(self, page: Page, vision: VisionLocator | None = None) -> None:
         self._page = page
         self._vision = vision
+        self._last_filled: Locator | None = None
+        """The field the last successful fill/select typed into: several identical buttons (Gitea's three
+        "Update Settings") are told apart by which one belongs to that field's form (#83)."""
 
     async def execute(
         self, action: Action, target: Target | None = None, *, instruction: str | None = None
@@ -108,6 +111,9 @@ class ActionExecutor:
                 context = await element_context(locator)
                 bbox, scroll = await self._page_bbox(locator)
             await self._perform(action, locator)
+            self._last_filled = locator if action.type in ("fill", "select") else self._last_filled
+            if action.type == "navigate":
+                self._last_filled = None
             if locator is None:
                 scroll = await self._scroll()
         except _InvalidActionError as e:
@@ -181,12 +187,36 @@ class ActionExecutor:
                 several.append(visible)
         if not several:
             raise _UnresolvedTargetError("target_not_found", f"no visible element for {_describe(target)}")
+        in_form = await self._pick_in_filled_form(several)
+        if in_form is not None:
+            return in_form, "form"
         picked = await self._pick_with_vision(target, instruction, several, attempts)
         if picked is None:
             raise _UnresolvedTargetError(
                 "ambiguous_target", f"several elements match {_describe(target)} and none could be picked"
             )
         return picked, "vision"
+
+    async def _pick_in_filled_form(self, several: list[Locator]) -> Locator | None:
+        """The one candidate inside the form of the field filled just before, or None. Deterministic and free,
+        so it goes before the vision fallback: "fill a field, then submit its form" is the usual flow."""
+        if self._last_filled is None:
+            return None
+        try:
+            form = await self._last_filled.evaluate_handle("e => e.closest('form')")
+            if await form.evaluate("f => f === null"):
+                return None
+            for candidates in several:  # role matches first, then text matches
+                hits = [
+                    candidates.nth(i)
+                    for i in range(await candidates.count())
+                    if await candidates.nth(i).evaluate("(e, f) => f.contains(e)", form)
+                ]
+                if len(hits) == 1:
+                    return hits[0]
+        except PlaywrightError:
+            return None  # the field is gone (another page): no form to go by
+        return None
 
     async def _pick_with_vision(
         self, target: Target, instruction: str | None, several: list[Locator], attempts: list[LLMAttempt]

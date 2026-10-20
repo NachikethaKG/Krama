@@ -49,6 +49,13 @@ PAGES: dict[str, str] = {
         <div class="ui modal visible"><div class="header">Create new branch</div>
           <label>Branch Name * <input></label><button>Confirm</button></div>
         <div class="ui modal" hidden><button>Closed dialog</button></div>""",
+    # Two forms with the same button name, like Gitea's settings page (#83).
+    "/forms": """<title>Settings</title><main>
+        <form onsubmit="document.title = 'basic saved'; return false">
+          <label>Description <input></label><button>Update Settings</button></form>
+        <form onsubmit="document.title = 'advanced saved'; return false">
+          <label>Wiki URL <input></label><button>Update Settings</button></form>
+    </main>""",
     # Where elements sit, for the step text (#73): dialog, top bar, dropdown menu, form sections, tab strip.
     "/context": """<title>Settings - demo-repo</title>
         <nav id="navbar"><a href="/">Explore</a></nav>

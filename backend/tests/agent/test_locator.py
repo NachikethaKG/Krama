@@ -223,3 +223,36 @@ async def test_quote_insensitive_matching_still_needs_the_same_words(session: Pl
     result = await executor.execute(CLICK, Target(role="button", name="Create new branch from develop"))
 
     assert not result.ok and result.error is not None and result.error.code == "target_not_found"
+
+
+async def test_several_matches_are_told_apart_by_the_form_just_filled(session: PlaywrightSession) -> None:
+    await session.page.goto("/forms")
+    executor = ActionExecutor(session.page)  # no vision: the form rule alone must decide
+    save = Target(role="button", name="Update Settings")
+
+    wiki = Target(role="textbox", name="Wiki URL")
+    filled = await executor.execute(Action(type="fill", value="Docs"), wiki)
+    result = await executor.execute(CLICK, save)
+
+    assert filled.ok and result.ok, result.error
+    assert result.strategy == "form" and await session.page.title() == "advanced saved"
+
+
+async def test_without_a_filled_field_several_matches_stay_ambiguous(session: PlaywrightSession) -> None:
+    await session.page.goto("/forms")
+    executor = ActionExecutor(session.page)
+
+    result = await executor.execute(CLICK, Target(role="button", name="Update Settings"))
+
+    assert not result.ok and result.error is not None and result.error.code == "ambiguous_target"
+
+
+async def test_a_navigation_forgets_the_filled_field(session: PlaywrightSession) -> None:
+    await session.page.goto("/forms")
+    executor = ActionExecutor(session.page)
+    await executor.execute(Action(type="fill", value="Docs"), Target(role="textbox", name="Description"))
+
+    await executor.execute(Action(type="navigate", value="/forms"))
+    result = await executor.execute(CLICK, Target(role="button", name="Update Settings"))
+
+    assert not result.ok and result.error is not None and result.error.code == "ambiguous_target"
