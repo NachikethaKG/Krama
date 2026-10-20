@@ -1,3 +1,4 @@
+import re
 import time
 from datetime import UTC, datetime
 from typing import Literal
@@ -143,6 +144,11 @@ class ActionExecutor:
         if target.role:
             # Roles come from ARIA snapshots / the LLM as plain strings; Playwright checks them at runtime.
             found.append(("role", page.get_by_role(target.role, name=name)))  # type: ignore[arg-type]
+            loose = _quote_insensitive(name) if name else None
+            if loose is not None:
+                # An LLM often drops or changes the quotes inside a name: "Create new branch from main" for
+                # Gitea's button `Create new branch from "main"` (#83). Same words, anything in between.
+                found.append(("role", page.get_by_role(target.role, name=loose)))  # type: ignore[arg-type]
             if name:
                 found += [("label", page.get_by_label(name)), ("text", page.get_by_text(name))]
         if target.selector:
@@ -258,6 +264,16 @@ def _validate(action: Action, target: Target | None) -> None:
         raise _InvalidActionError("navigate takes a URL path starting with '/', not a full URL")
     if action.type == "navigate" and (action.value or "").startswith("//"):
         raise _InvalidActionError("navigate takes a URL path, not a protocol-relative URL")
+
+
+def _quote_insensitive(name: str) -> re.Pattern[str] | None:
+    """The name's words in order, with anything but letters and digits between them (quotes, typographic
+    quotes, punctuation), case-insensitive. No literal quote characters: Playwright puts the regex into a
+    selector string, and a quote inside it breaks that selector."""
+    words = re.findall(r"\w+", name)
+    if not words:
+        return None
+    return re.compile(r"\W*" + r"\W+".join(re.escape(w) for w in words), re.IGNORECASE)
 
 
 def _contains(box: FloatRect, x: float, y: float) -> bool:
