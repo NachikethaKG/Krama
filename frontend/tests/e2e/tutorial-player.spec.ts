@@ -44,8 +44,8 @@ test.describe("Interactive Tutorial Player", () => {
 
     const cameraViewport = page.getByTestId("camera-viewport");
     await expect(cameraViewport).toBeVisible();
-    // Default zoom is enabled (scale 1.35)
-    await expect(cameraViewport).toHaveCSS("transform", /matrix/);
+    // Default is the overview (no zoom)
+    await expect(cameraViewport).toHaveCSS("transform", "none");
 
     const caption = page.getByTestId("tutorial-caption");
     await expect(caption).toBeVisible();
@@ -88,15 +88,15 @@ test.describe("Interactive Tutorial Player", () => {
       "Check Initialize Repository to add .gitignore, License and README.",
     );
 
-    // 9. Toggle Zoom to Overview (1.0x) and back
+    // 9. Toggle auto-zoom on (scale 1.35) and back to the overview
     const zoomToggle = page.getByTestId("control-toggle-zoom");
-    await zoomToggle.click();
-    await expect(zoomToggle).toHaveAttribute("aria-pressed", "false");
-    await expect(cameraViewport).toHaveCSS("transform", "none");
-
     await zoomToggle.click();
     await expect(zoomToggle).toHaveAttribute("aria-pressed", "true");
     await expect(cameraViewport).toHaveCSS("transform", /matrix/);
+
+    await zoomToggle.click();
+    await expect(zoomToggle).toHaveAttribute("aria-pressed", "false");
+    await expect(cameraViewport).toHaveCSS("transform", "none");
 
     // 10. Toggle Audio Narration Mute
     await muteBtn.click();

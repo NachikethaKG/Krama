@@ -187,19 +187,19 @@ describe("TutorialPlayer & Accessibility Suite", () => {
     const zoomBtn = screen.getByTestId("control-toggle-zoom");
     const cameraViewport = screen.getByTestId("camera-viewport");
 
-    // Default: Zoom is enabled (spec camera scale = 1.35)
-    expect(zoomBtn).toHaveAttribute("aria-pressed", "true");
-    expect(cameraViewport.style.transform).toContain("scale(1.35)");
-
-    // Toggle Zoom Off -> Overview (1.0x)
-    fireEvent.click(zoomBtn);
+    // Default: Overview (1.0x): the whole page is easier to follow than a zoomed crop (#83 newcomer test)
     expect(zoomBtn).toHaveAttribute("aria-pressed", "false");
     expect(cameraViewport.style.transform).toBe("none");
 
-    // Toggle Zoom On -> Auto-zoom
+    // Toggle Zoom On -> Auto-zoom (spec camera scale = 1.35)
     fireEvent.click(zoomBtn);
     expect(zoomBtn).toHaveAttribute("aria-pressed", "true");
     expect(cameraViewport.style.transform).toContain("scale(1.35)");
+
+    // Toggle Zoom Off -> Overview
+    fireEvent.click(zoomBtn);
+    expect(zoomBtn).toHaveAttribute("aria-pressed", "false");
+    expect(cameraViewport.style.transform).toBe("none");
   });
 
   it("toggles caption overlay visibility with Captions Toggle", () => {
@@ -389,7 +389,7 @@ describe("TutorialPlayer & Accessibility Suite", () => {
 
       // KeyZ: Toggle Zoom
       fireEvent.keyDown(window, { key: "z" });
-      expect(zoomBtn).toHaveAttribute("aria-pressed", "false");
+      expect(zoomBtn).toHaveAttribute("aria-pressed", "true");
 
       // KeyR: Replay Step
       fireEvent.keyDown(window, { key: "r" });

@@ -30,7 +30,7 @@ export function TutorialPlayer({
   spec,
   autoPlay = false,
   initialStep = 0,
-  initialZoom = true,
+  initialZoom = false,
   initialCaptions = true,
   initialMuted = false,
   isReducedMotion,
