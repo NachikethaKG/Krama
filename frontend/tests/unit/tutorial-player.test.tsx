@@ -1,8 +1,10 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { TutorialSpec } from "@krama/tutorial-compiler";
 import {
   calculateWordIndex,
+  MAX_SCENE_HOLD_MS,
+  NARRATION_TAIL_MS,
   selectOptimalVoice,
   TutorialPlayer,
 } from "@/components/player";
@@ -537,6 +539,80 @@ describe("TutorialPlayer & Accessibility Suite", () => {
 
       const cameraViewport = screen.getByTestId("camera-viewport");
       expect(cameraViewport.style.transform).toBe("none");
+    });
+  });
+
+  describe("Narration holds the step until the voice is done (#83)", () => {
+    const FIRST = "Open the + menu at the top right.";
+    let utterances: MockSpeechSynthesisUtterance[];
+
+    beforeEach(() => {
+      vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "requestAnimationFrame", "cancelAnimationFrame", "performance"] });
+      utterances = [];
+      // Speech that only ends when the test says so, like a sentence longer than the step.
+      mockSpeechSynthesis.speak = vi.fn((utterance: MockSpeechSynthesisUtterance) => {
+        utterances.push(utterance);
+        utterance.onstart?.();
+      });
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    const advance = (ms: number) => act(() => vi.advanceTimersByTime(ms));
+
+    it("stays on the step while the narration is still speaking past the step's length", () => {
+      render(<TutorialPlayer spec={giteaTutorialSpecFixture} autoPlay={true} />);
+
+      advance(giteaTutorialSpecFixture.scenes[0].duration_ms + 3000);
+
+      expect(screen.getByTestId("instruction-text")).toHaveTextContent(FIRST);
+      expect(mockSpeechSynthesis.speak).toHaveBeenCalledTimes(1);
+    });
+
+    it("moves on only after the last word plus a short pause", () => {
+      render(<TutorialPlayer spec={giteaTutorialSpecFixture} autoPlay={true} />);
+      advance(giteaTutorialSpecFixture.scenes[0].duration_ms + 1000);
+
+      act(() => utterances[0].onend?.());
+      advance(NARRATION_TAIL_MS / 2);
+      expect(screen.getByTestId("instruction-text")).toHaveTextContent(FIRST);
+
+      advance(NARRATION_TAIL_MS);
+      expect(screen.getByTestId("instruction-text")).not.toHaveTextContent(FIRST);
+      expect(utterances).toHaveLength(2);
+    });
+
+    it("ignores the late end of a cancelled utterance", () => {
+      render(<TutorialPlayer spec={giteaTutorialSpecFixture} autoPlay={true} />);
+      advance(giteaTutorialSpecFixture.scenes[0].duration_ms + 1000);
+      act(() => utterances[0].onend?.());
+      advance(NARRATION_TAIL_MS * 2);
+      const second = screen.getByTestId("instruction-text").textContent;
+
+      // Chrome reports the first utterance's cancel after the second one started.
+      act(() => utterances[0].onerror?.({ error: "interrupted" }));
+      advance(giteaTutorialSpecFixture.scenes[1].duration_ms + 1000);
+
+      expect(screen.getByTestId("instruction-text").textContent).toBe(second);
+    });
+
+    it("gives up waiting if the browser never reports the end of speech", () => {
+      render(<TutorialPlayer spec={giteaTutorialSpecFixture} autoPlay={true} />);
+
+      advance(giteaTutorialSpecFixture.scenes[0].duration_ms + MAX_SCENE_HOLD_MS + 500);
+
+      expect(screen.getByTestId("instruction-text")).not.toHaveTextContent(FIRST);
+    });
+
+    it("muted, the step moves on at its own length", () => {
+      render(<TutorialPlayer spec={giteaTutorialSpecFixture} autoPlay={true} initialMuted={true} />);
+
+      advance(giteaTutorialSpecFixture.scenes[0].duration_ms + 200);
+
+      expect(mockSpeechSynthesis.speak).not.toHaveBeenCalled();
+      expect(screen.getByTestId("instruction-text")).not.toHaveTextContent(FIRST);
     });
   });
 });
