@@ -1,0 +1,63 @@
+# Recorded 2026-10-21 on Windows 11 (10.0.26200), Python 3.12, Redis 7.4.11 (Docker Desktop), arq 0.28.0,
+# playwright 1.64.0 (Chromium 156), cryptography 50.0.2, argon2-cffi 25.1.0, pywin32 312.
+
+## arqcheck2.py
+[  0.02s] duplicate _job_id -> None
+[  0.02s] R1 running
+[  1.53s] status before abort: JobStatus.in_progress
+[  1.69s] R1 got CancelledError (cleanup would close the page here)
+[  2.05s] abort -> True
+[  2.05s] after abort: success=False result=CancelledError
+[  2.11s] R2 running
+[  3.06s] run-3 status while run-2 runs: JobStatus.queued
+[  4.08s] abort queued run-3: flag set, result not ready while the slot is busy
+[  4.17s] R2 got CancelledError (cleanup would close the page here)
+[  4.59s] abort running run-2 -> True
+[  5.59s] run-3 after slot freed: status=JobStatus.complete success=False result=CancelledError
+[  5.80s] api: SSE would send b'paused at step 2'
+[  5.80s] worker: paused, waiting for confirm
+[  5.80s] worker: got confirm b'allow'
+[  5.80s] api: SSE would send b'resumed: allow'
+[  6.30s] paused_run result: 'allow'
+[  6.42s] R-at-shutdown running
+[  7.30s] R-at-shutdown got CancelledError (cleanup would close the page here)
+[  7.30s] on_shutdown ran
+[  7.30s] run-last status after stop: JobStatus.queued
+[  7.30s] worker closed; jobs complete=1 failed=3
+
+## cryptocheck.py
+github / meta user-login: ''
+/settings/profile -> 200 https://github.com/login
+cookies (name, httpOnly, secure): [('_gh_sess', True, True), ('_octo', False, True), ('cpu_bucket', False, True), ('logged_in', True, True), ('preferred_color_mode', False, True)]
+logged_in cookie: ['no'] | storage_state keys: ['cookies', 'origins'] | origins: 0
+storage_state JSON size: 1164 bytes
+Fernet round trip ok (1.14 ms), key len 44, token 1636 bytes
+MultiFernet.rotate: new key decrypts, old key alone no longer does
+decrypt(ttl=0) after 1 s -> InvalidToken (age check works)
+DPAPI round trip ok (current Windows user), 296 bytes
+argon2 params: t=3 m=65536KiB p=4
+argon2 verify: 39.0 ms each; hash prefix $argon2id$v=19$m=65536,t=3,p=4
+needs rehash: False
+token_urlsafe(32): 43 chars; sha256 hex 64 chars
+## arqcheck.py (worker log, abridged)
+21:35:01: Starting worker for 3 functions: browse, flaky, cron:tick
+[  0.72s] startup: loop=ProactorEventLoop chromium=156.0.8078.4
+[  4.05s] A start (try 1)
+[  5.19s] A end
+[  5.30s] B start (try 1)
+[  6.36s] B end
+[  6.55s] SLOW start (try 1)
+21:35:10:   3.01s ! eb9b904109e84b22924075d7b8b4c7b2:browse failed, TimeoutError:
+[  9.64s] flaky try 1
+21:35:11:   0.00s \u21bb 4e3c6b9dcae846c68a2ba7573da2628d:flaky retrying job in 0.50s
+[  9.83s] ABORTME start (try 1)
+21:35:14:   3.00s ! abort-me:browse failed, TimeoutError:
+[ 12.94s] flaky try 2
+21:35:14:   0.00s \u21bb 4e3c6b9dcae846c68a2ba7573da2628d:flaky retrying job in 0.50s
+[ 13.56s] flaky try 3
+21:35:15:   0.81s \u2192 cron:tick()
+[ 13.75s] cron tick
+21:35:15:   0.00s \u2190 cron:tick \u25cf
+21:35:30:   1.01s \u2192 cron:tick()
+[ 28.81s] cron tick
+21:35:30:   0.00s \u2190 cron:tick \u25cf
