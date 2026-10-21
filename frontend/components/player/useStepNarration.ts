@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type MutableRefObject } from "react";
 
 export interface UseStepNarrationOptions {
   text?: string;
@@ -11,7 +11,15 @@ export interface UseStepNarrationOptions {
   pitch?: number;
   onWordBoundary?: (wordIndex: number, charIndex: number) => void;
   onNarrationEnd?: () => void;
+  /**
+   * Set to true from the moment a step's narration starts until a short pause after its last word, so the
+   * player can hold the step until the voice is done instead of cutting it off mid-word (#83).
+   */
+  narratingRef?: MutableRefObject<boolean>;
 }
+
+/** Pause after the last word before the player may move on, so steps don't run into each other. */
+export const NARRATION_TAIL_MS = 400;
 
 export interface UseStepNarrationReturn {
   isSupported: boolean;
@@ -80,6 +88,7 @@ export function useStepNarration({
   pitch = 1.0,
   onWordBoundary,
   onNarrationEnd,
+  narratingRef,
 }: UseStepNarrationOptions): UseStepNarrationReturn {
   const isSupported =
     typeof window !== "undefined" &&
@@ -103,6 +112,26 @@ export function useStepNarration({
     }
     return [];
   });
+
+  // Events of a cancelled utterance can arrive after the next one started (Chrome fires them async):
+  // only the current utterance may change state.
+  const currentUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const tailTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const stopNarrating = useCallback(() => {
+    if (tailTimerRef.current !== null) clearTimeout(tailTimerRef.current);
+    tailTimerRef.current = null;
+    currentUtteranceRef.current = null;
+    if (narratingRef) narratingRef.current = false;
+  }, [narratingRef]);
+
+  const finishNarration = useCallback(() => {
+    if (tailTimerRef.current !== null) clearTimeout(tailTimerRef.current);
+    tailTimerRef.current = setTimeout(() => {
+      tailTimerRef.current = null;
+      if (narratingRef) narratingRef.current = false;
+    }, NARRATION_TAIL_MS);
+  }, [narratingRef]);
 
   const isMutedRef = useRef(isMuted);
   useEffect(() => {
@@ -144,9 +173,10 @@ export function useStepNarration({
     } catch (err) {
       console.warn("Error cancelling speech synthesis:", err);
     }
+    stopNarrating();
     setIsSpeaking(false);
     setActiveWordIndex(null);
-  }, [isSupported]);
+  }, [isSupported, stopNarrating]);
 
   const speak = useCallback(() => {
     if (!isSupported || isMutedRef.current || !text || text.trim() === "") {
@@ -168,11 +198,13 @@ export function useStepNarration({
       utterance.pitch = pitch;
 
       utterance.onstart = () => {
+        if (currentUtteranceRef.current !== utterance) return;
         setIsSpeaking(true);
         setActiveWordIndex(0);
       };
 
       utterance.onboundary = (e: SpeechSynthesisEvent) => {
+        if (currentUtteranceRef.current !== utterance) return;
         if (e.name === "word") {
           const wIdx = calculateWordIndex(text, e.charIndex);
           setActiveWordIndex(wIdx);
@@ -181,19 +213,25 @@ export function useStepNarration({
       };
 
       utterance.onend = () => {
+        if (currentUtteranceRef.current !== utterance) return;
         setIsSpeaking(false);
         setActiveWordIndex(null);
+        finishNarration();
         onNarrationEnd?.();
       };
 
       utterance.onerror = (e: SpeechSynthesisErrorEvent) => {
+        if (currentUtteranceRef.current !== utterance) return;
         if (e.error !== "canceled" && e.error !== "interrupted") {
           console.warn("Speech synthesis utterance error:", e.error);
         }
         setIsSpeaking(false);
         setActiveWordIndex(null);
+        stopNarrating();
       };
 
+      currentUtteranceRef.current = utterance;
+      if (narratingRef) narratingRef.current = true;
       window.speechSynthesis.speak(utterance);
     } catch (err) {
       console.warn("Failed to speak utterance via Speech API:", err);
@@ -206,6 +244,9 @@ export function useStepNarration({
     pitch,
     onWordBoundary,
     onNarrationEnd,
+    finishNarration,
+    stopNarrating,
+    narratingRef,
   ]);
 
   const toggleMute = useCallback(() => {
@@ -243,11 +284,13 @@ export function useStepNarration({
         utterance.pitch = pitch;
 
         utterance.onstart = () => {
+          if (currentUtteranceRef.current !== utterance) return;
           setIsSpeaking(true);
           setActiveWordIndex(0);
         };
 
         utterance.onboundary = (e: SpeechSynthesisEvent) => {
+          if (currentUtteranceRef.current !== utterance) return;
           if (e.name === "word") {
             const wIdx = calculateWordIndex(text, e.charIndex);
             setActiveWordIndex(wIdx);
@@ -256,19 +299,25 @@ export function useStepNarration({
         };
 
         utterance.onend = () => {
+          if (currentUtteranceRef.current !== utterance) return;
           setIsSpeaking(false);
           setActiveWordIndex(null);
+          finishNarration();
           onNarrationEnd?.();
         };
 
         utterance.onerror = (e: SpeechSynthesisErrorEvent) => {
+          if (currentUtteranceRef.current !== utterance) return;
           if (e.error !== "canceled" && e.error !== "interrupted") {
             console.warn("Speech synthesis utterance error:", e.error);
           }
           setIsSpeaking(false);
           setActiveWordIndex(null);
+          stopNarrating();
         };
 
+        currentUtteranceRef.current = utterance;
+        if (narratingRef) narratingRef.current = true;
         window.speechSynthesis.speak(utterance);
       } catch (err) {
         console.warn("Failed to speak utterance via Speech API:", err);
@@ -279,6 +328,7 @@ export function useStepNarration({
       } catch {
         // ignore
       }
+      stopNarrating();
     }
 
     return () => {
@@ -287,6 +337,7 @@ export function useStepNarration({
       } catch {
         // ignore
       }
+      stopNarrating();
     };
   }, [
     isSupported,
@@ -299,6 +350,9 @@ export function useStepNarration({
     pitch,
     onWordBoundary,
     onNarrationEnd,
+    finishNarration,
+    stopNarrating,
+    narratingRef,
   ]);
 
   return {
