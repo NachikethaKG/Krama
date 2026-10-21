@@ -2,7 +2,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Scene, TutorialSpec } from "@krama/tutorial-compiler";
 import type { eventWithTime } from "@rrweb/types";
-import { TutorialStage, WorkflowTutorial } from "@/components/player";
+import { SETTLED_FRAME_STYLE, TutorialStage, WorkflowTutorial } from "@/components/player";
 import { MockApiClient } from "@/lib/api";
 import { giteaTutorialSpecFixture } from "@/lib/fixtures";
 
@@ -50,6 +50,16 @@ describe("tutorial on the real UI (#83)", () => {
     // Page y 1200 with the window scrolled to 900 is 300 px down the screen (minus the 8 px padding).
     expect(box.style.top).toBe("292px");
     expect(box.style.left).toBe("492px");
+  });
+
+  it("shows each frame settled, so elements that fade in (Gitea's dialogs) aren't frozen invisible", async () => {
+    const { Replayer } = await import("rrweb");
+    stage(scene({}), RECORDING);
+
+    await waitFor(() => expect(Replayer).toHaveBeenCalled());
+    const config = vi.mocked(Replayer).mock.calls[0][1] as { insertStyleRules?: string[] };
+    expect(config.insertStyleRules).toContain(SETTLED_FRAME_STYLE);
+    expect(SETTLED_FRAME_STYLE).toMatch(/html\.rrweb-paused \*[^{]*\{[^}]*animation: none !important/);
   });
 
   it("keeps the wireframe and page coordinates without a recording", () => {

@@ -22,6 +22,10 @@ describe("LiveExecutionView", () => {
 
     await waitFor(() => expect(screen.getByTestId("completion-banner")).toBeInTheDocument(), T);
     expect(screen.getByTestId("view-workflow-link")).toHaveAttribute("href", "/runs/default");
+    // The verified run's tutorial is one click away.
+    await waitFor(() =>
+      expect(screen.getByTestId("watch-tutorial-link").getAttribute("href")).toMatch(/^\/tutorials\/[0-9a-f-]{36}$/),
+    );
   });
 
   it("a destructive pause shows ONE control: the modal, not the banner", async () => {

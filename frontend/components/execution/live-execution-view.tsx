@@ -83,6 +83,7 @@ export function LiveExecutionView({ runId, speed, client, className = "" }: Live
     progressPercent,
     verifiedCount,
     totalSteps,
+    workflowId,
     isLoading,
     loadError,
     streamState,
@@ -328,13 +329,25 @@ export function LiveExecutionView({ runId, speed, client, className = "" }: Live
               All {totalSteps} steps verified against the live system.
             </div>
           </div>
-          <a
-            href={`/runs/${runId}`}
-            data-testid="view-workflow-link"
-            className="shrink-0 rounded-lg bg-emerald-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-emerald-500"
-          >
-            View verified workflow &rarr;
-          </a>
+          <div className="flex shrink-0 flex-wrap gap-2">
+            {/* The point of a verified run: the tutorial built from it (#83 newcomer test). */}
+            {workflowId && (
+              <a
+                href={`/tutorials/${workflowId}`}
+                data-testid="watch-tutorial-link"
+                className="rounded-lg bg-indigo-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-indigo-500"
+              >
+                &#9654; Watch the tutorial
+              </a>
+            )}
+            <a
+              href={`/runs/${runId}`}
+              data-testid="view-workflow-link"
+              className="rounded-lg bg-emerald-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-emerald-500"
+            >
+              View verified workflow &rarr;
+            </a>
+          </div>
         </div>
       )}
 

@@ -3,7 +3,7 @@ export { TutorialStage, type TutorialStageProps } from "./TutorialStage";
 export { TutorialControls, type TutorialControlsProps } from "./TutorialControls";
 export { TutorialStepList, type TutorialStepListProps } from "./TutorialStepList";
 export { CopyableText, type CopyableTextProps } from "./CopyableText";
-export { RecordedPage, type RecordedPageProps } from "./RecordedPage";
+export { RecordedPage, SETTLED_FRAME_STYLE, type RecordedPageProps } from "./RecordedPage";
 export { TutorialLibrary } from "./TutorialLibrary";
 export { WorkflowTutorial } from "./WorkflowTutorial";
 export {

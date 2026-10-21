@@ -52,7 +52,7 @@ export function useTutorialPlayer({
   spec,
   autoPlay = false,
   initialSceneIndex = 0,
-  initialZoom = true,
+  initialZoom = false,
   initialCaptions = true,
   playbackSpeed = 1.0,
   onSceneChange,
