@@ -13,6 +13,15 @@ export interface RecordedPageProps {
   scroll?: { x: number; y: number } | null;
 }
 
+/**
+ * The replayer is always paused here, and rrweb pauses CSS animations (`html.rrweb-paused`), so an element that
+ * fades in (Gitea's dialogs) stays frozen on its first frame: opacity 0, invisible (#83 newcomer test). A frozen
+ * frame should show each element's resting state, so animations and transitions are switched off instead.
+ */
+export const SETTLED_FRAME_STYLE = `html.rrweb-paused *, html.rrweb-paused *::before, html.rrweb-paused *::after {
+  animation: none !important; transition: none !important;
+}`;
+
 interface ReplayerLike {
   pause(timeOffset?: number): void;
   destroy(): void;
@@ -48,6 +57,7 @@ export function RecordedPage({ events, timeOffsetMs, viewport, scroll = null }: 
           skipInactive: false,
           triggerFocus: false,
           UNSAFE_replayCanvas: false,
+          insertStyleRules: [SETTLED_FRAME_STYLE],
         }) as unknown as ReplayerLike;
         replayer.wrapper.style.pointerEvents = "none";
         replayer.iframe.style.border = "0"; // a default border would shift the page against the overlays
