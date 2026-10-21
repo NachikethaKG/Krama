@@ -156,24 +156,44 @@ Each sprint ends with an integration PR merged to `main` and a demo **run on Nac
 
 ### Phase 2: Interactive Tutorial — Exit Gate (#83)
 
-Verified on 2026-10-20 on Nachiketha's reference machine (Windows 11, 16GB RAM, CPU-only) against live local services (Postgres on 5433, Redis on 6379, Gitea on 3001, FastAPI backend on 8000, Next.js frontend on 3000) using Gemini free-tier reference model and real Playwright browser sessions.
+Run on 2026-10-20 and 2026-10-21 on the real stack (Postgres, Gitea, real Gemini, Windows), from `main`. The demo
+ran on Vishwas's laptop instead of Nachiketha's, by decision of the project admin. Release with the demo GIF and
+evidence: [v0.2](https://github.com/NachikethaKG/Krama/releases/tag/v0.2).
 
-- [x] **5 Gitea workflows benchmarked on live system at $\ge 80\%$ success rate:**
-  - `gitea-create-repo`: 10/11 trials passed (90.9%), independent API check confirmed repo creation
-  - `gitea-create-issue`: 1/1 trials passed (100%), independent API check confirmed issue creation
-  - `gitea-create-branch`: 1/2 trials passed (50.0% / 100% on recovery), branch `feature-docs` verified via API
-  - `gitea-add-file`: 1/1 trials passed (100%), verified `notes.md` raw content via Gitea API
-  - `gitea-repo-settings`: 1/1 trials passed (100%), verified description `"Docs for the team"` via API
-  - **Overall benchmark results:** **87.5% success rate (14/16 passed)** across all trials, **99.4% verifier accuracy**, with full HTML/Markdown reliability reports saved in `benchmarks/results/`.
-- [x] **Compiler & Canonical Specification:**
-  - Live `VerifiedWorkflow` artifacts compiled via `@krama/tutorial-compiler` into valid `TutorialSpec` instances.
-  - Strict Ajv 2020 validation against `tutorial-spec.schema.json` passed across all 5 workflows.
-  - Parametric cubic Bezier cursor curves with natural wrist motion, auto-zoom camera keyframes, element highlight bounding boxes, and synchronized captions verified.
-- [x] **Interactive Player Accessibility & Navigation (Playwright E2E):**
-  - **Keyboard-only:** Full playback control with `Space` (play/pause), `ArrowRight`/`ArrowLeft` and `J`/`L` (step/seek), `R` (replay), and `Tab` through focusable controls.
-  - **Muted audio & synchronized captions:** Toggling mute with `M` key maintains 100% understandable and actionable guidance via synchronized text captions.
-  - **Screen reader live announcements:** Dedicated `role="status" aria-live="polite"` region emits dynamic announcements as scenes advance.
-  - **Reduced motion:** `prefers-reduced-motion: reduce` verified to suppress pan/zoom transitions and lock camera scale to 1.0.
+- [x] **A person who has never used Gitea follows a generated tutorial.** A newcomer watched the "open an issue"
+  tutorial on the real UI and understood what to do, but didn't create the issue themselves. The criterion asks for
+  the task to be completed, so this is passed **by decision of the project admin**. Their session found four player
+  problems, fixed before the tag: narration cut off its last words (#267), dialogs that fade in were invisible in
+  the replay, auto-zoom on by default was hard to follow, and a verified run didn't link to its tutorial (#268).
+- [x] **5 Gitea workflows pass the benchmark at ≥ 80%.** Run through the product API (`--via api`), 5 trials per
+  task, each graded independently by Gitea's own API (`benchmarks/tasks/`), not by the agent's verdict:
+
+  | Task | Result |
+  |---|---|
+  | `gitea-create-repo` | 4/5 |
+  | `gitea-create-issue` | 5/5 |
+  | `gitea-add-file` | 5/5 |
+  | `gitea-create-branch` | 5/5 (rerun after #266; 3/5 before) |
+  | `gitea-repo-settings` | 4/5 (rerun after #266; 1/5 before) |
+
+  The reruns of branch and settings came after #266 fixed the locator problems the first run found (a name whose
+  quotes changed, several identical "Update Settings" buttons). The one settings failure was the planner asking for
+  clarification, because its site hint still mentions a CSS selector.
+- [x] **The player works with keyboard only, and with narration off (captions only).** Checked live on two stored
+  workflows on the real UI: every highlight on its target element, keyboard only, narration muted, captions on,
+  the screen-reader announcer updating per step.
+- [x] **Demoed** on Vishwas's laptop (admin decision, as in Phase 1).
+- [x] **Suites:** backend **725 passed** (7 opt-in live/platform skips), `ruff` + `mypy --strict` clean; frontend **271 passed**, `tsc` + `eslint` clean.
+
+Known follow-ups (not gate blockers):
+- The recorder masks all typed input (`maskAllInputs`), so replays show filled fields empty; masking only
+  sensitive fields is a privacy decision for Nachiketha.
+- The progress bar counts each scene's fixed length, so it waits at the end while the narration finishes; sizing
+  `duration_ms` from the instruction text in `tutorial-compiler` would match it.
+- The planner's Gitea settings hint mentions a CSS selector a plan can't express; drop it now that the agent tells
+  identical buttons apart by the form filled before.
+- Nothing checks that a plan covers the whole task: an incomplete plan whose steps all verify ends as "verified".
+- The UI is still basic (landing page, run pages); the polished screens are Phase 3.
 
 ### Phase 1: Verified Workflow — Exit Gate (#67)
 
@@ -385,47 +405,11 @@ To finalize and publish the release once the PR is merged:
 ### Release `v0.2` (Phase 2 Interactive Tutorial)
 
 - **Release Tag:** `v0.2`
-- **Milestone:** 2.2 · Player
 - **Tracking Issue:** [#83](https://github.com/NachikethaKG/Krama/issues/83)
+- **Release:** https://github.com/NachikethaKG/Krama/releases/tag/v0.2 (demo GIF and benchmark results attached)
 
-#### Release Summary
-Phase 2 transforms stored Verified Workflows into an interactive, accessible browser tutorial on the real UI. Featuring natural cubic Bezier cursor gliding, focal camera auto-zoom with viewport edge clamping, element highlights, synchronized captions, Web Speech narration, and full keyboard-only navigation.
-
-#### Highlights & Capabilities
-- **Reliability Gate Achievement:** 87.5% overall success rate (14/16 passed) across 5 Gitea benchmark tasks (`create-repo`, `create-issue`, `create-branch`, `add-file`, `repo-settings`) on the reference laptop with real Gemini, meeting the $\ge 80\%$ exit criterion.
-- **Independent Task-Level Verification:** Benchmark trials graded by Gitea API assertions rather than self-verdict; verifier accuracy reached 99.4%.
-- **Canonical Tutorial Compiler:** `@krama/tutorial-compiler` compiles workflows into validated `TutorialSpec` objects passing `tutorial-spec.schema.json` with cubic Bezier easing, ripple timings, and zoom keyframes.
-- **Interactive Player Accessibility (WCAG 2.2):**
-  - Keyboard-only navigation via `Space` (play/pause), `ArrowRight`/`ArrowLeft` and `J`/`L` (step/seek), `R` (replay), and `Tab` focus ring.
-  - Muted playback mode (`M` key) fully usable via synchronized captions.
-  - Screen reader announcements via `aria-live="polite"` dynamic region.
-  - `prefers-reduced-motion` emulation suppresses animated zooms and locks scale to 1.0.
-
-#### Release & Tag Preparation Instructions
-To finalize and publish the release once confirmed by the user:
-
-1. **Pull clean `main` on the reference machine:**
-   ```powershell
-   git switch main
-   git pull origin main
-   just check
-   ```
-
-2. **Verify live player & benchmarks:**
-   ```powershell
-   just dev
-   just bench-report
-   ```
-
-3. **Tag the release (manual confirmation required):**
-   ```powershell
-   git tag -a v0.2 -m "Release v0.2: Phase 2 interactive tutorial complete"
-   git push origin v0.2
-   ```
-
-4. **Publish GitHub Release:**
-   ```powershell
-   gh release create v0.2 `
-     --title "v0.2 · Interactive Tutorial" `
-     --notes "Phase 2 exit gate complete on reference machine. 87.5% benchmark reliability across 5 Gitea tasks, canonical tutorial compiler, and fully accessible interactive tutorial player."
-   ```
+A stored Verified Workflow plays as an interactive tutorial on the real recorded UI (rrweb replay): cursor,
+highlights, optional zoom, captions, narration, copyable text, keyboard control. Also in Phase 2: human-friendly
+step text, exact coordinates (scroll + device scale), re-verification of stored workflows
+(`POST /workflows/{id}/reverify`), a text guide (`GET /workflows/{id}/guide.md`), five Gitea benchmark tasks with
+independent success checks, and ADR 0003 (no local model). Exit-gate results: §6, Phase 2.
