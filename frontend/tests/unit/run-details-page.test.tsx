@@ -20,6 +20,19 @@ describe("RunDetailHeader", () => {
     expect(screen.getByTestId("stat-duration")).toHaveTextContent("5s");
     expect(screen.getByTestId("stat-target-url")).toHaveTextContent("http://localhost:3001");
   });
+
+  it("links a verified run to the tutorial of the workflow it stored", () => {
+    const wid = "6f1c2a4e-1111-4b8a-9a1b-123456789abc";
+    render(<RunDetailHeader runDetails={{ ...details, run: { ...details.run, workflowId: wid } }} />);
+
+    expect(screen.getByTestId("watch-tutorial-link")).toHaveAttribute("href", `/tutorials/${wid}`);
+  });
+
+  it("offers no tutorial for a run that stored no workflow", () => {
+    render(<RunDetailHeader runDetails={{ ...details, run: { ...details.run, workflowId: null } }} />);
+
+    expect(screen.queryByTestId("watch-tutorial-link")).not.toBeInTheDocument();
+  });
 });
 
 describe("RunDetailView", () => {

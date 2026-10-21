@@ -53,7 +53,16 @@ export function RunDetailHeader({ runDetails, className = "" }: RunDetailHeaderP
           )}
         </div>
 
-        <div className="text-xs text-zinc-500 dark:text-zinc-400 shrink-0">
+        <div className="text-xs text-zinc-500 dark:text-zinc-400 shrink-0 space-y-2">
+          {run.workflowId && (
+            <Link
+              href={`/tutorials/${run.workflowId}`}
+              data-testid="watch-tutorial-link"
+              className="inline-block rounded-lg bg-indigo-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-indigo-500"
+            >
+              &#9654; Watch the tutorial
+            </Link>
+          )}
           <div>Started: <span className="font-medium text-zinc-700 dark:text-zinc-300">{formatDateTime(run.startedAt || run.createdAt)}</span></div>
           {run.finishedAt && (
             <div>Finished: <span className="font-medium text-zinc-700 dark:text-zinc-300">{formatDateTime(run.finishedAt)}</span></div>
