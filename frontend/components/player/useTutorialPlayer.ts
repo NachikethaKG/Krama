@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 import type { Scene, TutorialSpec } from "@krama/tutorial-compiler";
 
 export interface UseTutorialPlayerOptions {
@@ -12,7 +12,12 @@ export interface UseTutorialPlayerOptions {
   playbackSpeed?: number;
   onSceneChange?: (sceneIndex: number) => void;
   onComplete?: () => void;
+  /** While true, a scene that reached its end waits instead of moving on (the narration is still talking). */
+  holdSceneEndRef?: RefObject<boolean>;
 }
+
+/** Longest a scene waits for its narration, in case the browser never reports the end of speech. */
+export const MAX_SCENE_HOLD_MS = 15000;
 
 export interface UseTutorialPlayerReturn {
   // State
@@ -52,6 +57,7 @@ export function useTutorialPlayer({
   playbackSpeed = 1.0,
   onSceneChange,
   onComplete,
+  holdSceneEndRef,
 }: UseTutorialPlayerOptions): UseTutorialPlayerReturn {
   const totalScenes = spec?.scenes?.length ?? 0;
 
@@ -68,6 +74,7 @@ export function useTutorialPlayer({
   // Keep refs to avoid stale closures in requestAnimationFrame
   const currentSceneIndexRef = useRef(currentSceneIndex);
   const scenesRef = useRef(spec?.scenes ?? []);
+  const heldMsRef = useRef(0);
 
   useEffect(() => {
     currentSceneIndexRef.current = currentSceneIndex;
@@ -202,7 +209,14 @@ export function useTutorialPlayer({
         if (!curScene) return prevTime;
 
         const nextTime = prevTime + delta;
+        if (nextTime < curScene.duration_ms) {
+          heldMsRef.current = 0;
+        } else if (holdSceneEndRef?.current && heldMsRef.current < MAX_SCENE_HOLD_MS) {
+          heldMsRef.current += delta;
+          return curScene.duration_ms;
+        }
         if (nextTime >= curScene.duration_ms) {
+          heldMsRef.current = 0;
           // Check if there is a subsequent scene
           if (curIdx < scenes.length - 1) {
             const nextIdx = curIdx + 1;
@@ -228,7 +242,7 @@ export function useTutorialPlayer({
     return () => {
       cancelAnimationFrame(animId);
     };
-  }, [isPlaying, spec, playbackSpeed, onSceneChange, onComplete]);
+  }, [isPlaying, spec, playbackSpeed, onSceneChange, onComplete, holdSceneEndRef]);
 
   // Derived progress values
   const sceneDuration = currentScene?.duration_ms ?? 1;

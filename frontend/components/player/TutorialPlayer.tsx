@@ -38,6 +38,8 @@ export function TutorialPlayer({
   onComplete,
   recording = null,
 }: TutorialPlayerProps) {
+  // The narration sets this while it talks; the player holds the step's end until it's done (#83).
+  const narratingRef = useRef(false);
   const player = useTutorialPlayer({
     spec,
     autoPlay,
@@ -45,6 +47,7 @@ export function TutorialPlayer({
     initialZoom,
     initialCaptions,
     onComplete,
+    holdSceneEndRef: narratingRef,
   });
 
   const playerContainerRef = useRef<HTMLDivElement>(null);
@@ -62,6 +65,7 @@ export function TutorialPlayer({
     isPlaying: player.isPlaying,
     currentStepIndex: player.currentSceneIndex,
     initialMuted,
+    narratingRef,
   });
 
   // WCAG Keyboard Navigation Shortcuts

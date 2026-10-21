@@ -8,11 +8,13 @@ export { TutorialLibrary } from "./TutorialLibrary";
 export { WorkflowTutorial } from "./WorkflowTutorial";
 export {
   useTutorialPlayer,
+  MAX_SCENE_HOLD_MS,
   type UseTutorialPlayerOptions,
   type UseTutorialPlayerReturn,
 } from "./useTutorialPlayer";
 export {
   useStepNarration,
+  NARRATION_TAIL_MS,
   calculateWordIndex,
   selectOptimalVoice,
   type UseStepNarrationOptions,
