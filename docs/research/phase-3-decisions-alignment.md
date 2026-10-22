@@ -20,9 +20,9 @@
 This document records the consensus architectural decisions agreed upon by Nachiketha and Vishwas for Phase 3 (MVP: Real GitHub, Accounts, Sharing, and Technical Metrics). It resolves all open research questions raised across the Phase 3 individual research documents (`#84`, `#85`, `#86`), aligns module boundaries under `OWNERSHIP.toml`, and locks the task catalog for the benchmark harness.
 
 All decisions adhere to Krama's core architectural tenets:
-1. No local GPU / CPU-only execution on a 16GB reference laptop [verified: architectural decision].
-2. Strict module ownership separation talking only through typed ports and contracts [verified: architectural decision].
-3. Defense-in-depth safety against bot triggers, rate limiting, and destructive actions [verified: architectural decision].
+1. No local GPU / CPU-only execution on a 16GB reference laptop.
+2. Strict module ownership separation talking only through typed ports and contracts.
+3. Defense-in-depth safety against bot triggers, rate limiting, and destructive actions.
 
 ---
 
@@ -30,24 +30,24 @@ All decisions adhere to Krama's core architectural tenets:
 
 ### Consensus Decision
 1. **Custom Header Requirement (`X-Krama: 1`):**
-   - Every mutating request (`POST`, `PUT`, `DELETE`, `PATCH`) sent from the frontend to FastAPI must include the custom header `X-Krama: 1` [verified: architectural decision].
-   - **Rationale:** Under standard browser security models, plain HTML forms (`<form action="...">`), images, and standard cross-origin script tags cannot attach custom headers without triggering a preflight `OPTIONS` request. Any request originating from an unauthorized site is blocked at the browser level or rejected by FastAPI's CSRF middleware before hitting endpoint logic [verified locally]. This eliminates reliance on complex signed double-submit CSRF tokens.
+   - Every mutating request (`POST`, `PUT`, `DELETE`, `PATCH`) sent from the frontend to FastAPI must include the custom header `X-Krama: 1`.
+   - **Rationale:** Under standard browser security models, plain HTML forms (`<form action="...">`), images, and standard cross-origin script tags cannot attach custom headers without triggering a preflight `OPTIONS` request. Any request originating from an unauthorized site is blocked at the browser level or rejected by FastAPI's CSRF middleware before hitting endpoint logic [verified: OWASP CSRF Prevention Cheat Sheet, see `phase-3-vishwas-accounts-and-csrf.md`]. This eliminates reliance on complex signed double-submit CSRF tokens.
 
 2. **Cookie Policy:**
-   - Standardize on FastAPI-issued HTTP-only session cookies: `krama_session` [verified: architectural decision].
-   - Cookie flags: `HttpOnly=True`, `SameSite=Lax`, `Path=/`, and `Secure=False` in local development (`Secure=True` in production HTTPS) [verified locally].
-   - **Lifetimes:** Idle timeout of 7 days, absolute timeout of 30 days. Validated against a PostgreSQL `sessions` table storing `token_hash = sha256(token)` [verified locally].
+   - Standardize on FastAPI-issued HTTP-only session cookies: `krama_session`.
+   - Cookie flags: `HttpOnly=True`, `SameSite=Lax`, `Path=/`, and `Secure=False` in local development (`Secure=True` in production HTTPS).
+   - **Lifetimes:** Idle timeout of 7 days, absolute timeout of 30 days. Validated against a PostgreSQL `sessions` table storing `token_hash = sha256(token)`.
 
 3. **React Server Components (RSC) vs. Client Components:**
-   - **React Server Components (RSC):** In Next.js 16, server-rendered components fetch data directly from FastAPI over the internal network (`http://127.0.0.1:8000/api/v1/...`). They read the incoming browser cookies via `await cookies()` from `next/headers` and forward the `Cookie: krama_session=...` header in the server-to-server request [verified locally]. This requires zero client-side JavaScript, avoids CORS preflight roundtrips, and yields instant server-rendered HTML.
-   - **Client Components:** Interactive client components communicate through Next.js route proxies / rewrites (e.g. `/api/v1/...` rewritten or routed through Next.js) or same-origin fetch wrappers. The client fetch wrapper automatically attaches `X-Krama: 1` on mutating methods and ensures session cookies are forwarded without third-party cookie restrictions or cross-origin preflight complications [verified: architectural decision].
+   - **React Server Components (RSC):** In Next.js 16, server-rendered components fetch data directly from FastAPI over the internal network (`http://127.0.0.1:8000/api/v1/...`). They read the incoming browser cookies via `await cookies()` from `next/headers` and forward the `Cookie: krama_session=...` header in the server-to-server request [unverified: not built yet]. This requires zero client-side JavaScript, avoids CORS preflight roundtrips, and yields instant server-rendered HTML.
+   - **Client Components:** Interactive client components communicate through Next.js route proxies / rewrites (e.g. `/api/v1/...` rewritten or routed through Next.js) or same-origin fetch wrappers. The client fetch wrapper automatically attaches `X-Krama: 1` on mutating methods and ensures session cookies are forwarded without third-party cookie restrictions or cross-origin preflight complications.
 
 ### Module Ownership & Implementation Seams
 - **Vishwas (`backend/app/api/`):**
-  - Implement CSRF middleware in `backend/app/api/middleware.py` verifying `X-Krama: 1`, checking `Origin` against `CORS_ORIGINS`, and rejecting cross-site unsafe requests [verified: architectural decision].
+  - Implement CSRF middleware in `backend/app/api/middleware.py` verifying `X-Krama: 1`, checking `Origin` against `CORS_ORIGINS`, and rejecting cross-site unsafe requests.
   - Implement session management in `backend/app/api/auth.py` and database migrations for `users` and `sessions` tables (`backend/app/db/`).
 - **Nachiketha (`frontend/`):**
-  - Implement `frontend/middleware.ts` for fast optimistic route guarding (`/runs/*`, `/workflows/*`, `/dashboard`) by checking cookie presence [verified: architectural decision].
+  - Implement `frontend/middleware.ts` for fast optimistic route guarding (`/runs/*`, `/workflows/*`, `/dashboard`) by checking cookie presence.
   - Implement `frontend/lib/api-server.ts` helper with `await cookies()` forwarding for Server Components.
   - Implement client API client in `frontend/lib/api.ts` injecting `X-Krama: 1` on mutating requests.
 
@@ -61,20 +61,20 @@ All decisions adhere to Krama's core architectural tenets:
    - Produces 43 URL-safe characters with 256 bits of entropy, exceeding OWASP session ID recommendations (minimum 64 bits) [verified locally].
 
 2. **Database Storage:**
-   - Stored in the `tutorial_shares` table exclusively as SHA-256 hashes (`token_hash` column with a unique index) [verified: architectural decision].
+   - Stored in the `tutorial_shares` table exclusively as SHA-256 hashes (`token_hash` column with a unique index).
    - The plaintext token is returned to the tutorial owner once upon creation and is never persisted in plaintext or logged.
    - Prevents link exposure if database dumps are leaked.
 
 3. **Expiry Policy for MVP:**
-   - **Support `never` only for Phase 3 MVP release** [verified: architectural decision].
-   - **Rationale:** Supporting TTL-based automatic expiration (e.g., 7 days, 30 days) requires scheduled background workers or cron sweeps to purge or invalidate expired links. To eliminate background cron overhead on developer laptops, TTL expirations are deferred to Phase 4.
-   - **Manual Revocation:** Tutorial owners can revoke any share link at any time via `DELETE /api/v1/workflows/{id}/shares/{share_id}`, setting `revoked_at = NOW()` [verified: architectural decision].
+   - **Support `never` only for Phase 3 MVP release**.
+   - **Rationale:** keep the MVP small. An expiry needs no background job (the read checks `expires_at > now()`), so the nullable `expires_at` column is added now and the UI choice comes in Phase 4.
+   - **Manual Revocation:** Tutorial owners can revoke any share link at any time via `DELETE /api/v1/workflows/{id}/shares/{share_id}`, setting `revoked_at = NOW()`.
 
 4. **Security Headers & Information Leakage:**
    - Public view (`GET /api/v1/shared/{token}` and `frontend/app/share/[token]/page.tsx`):
-     - Both unknown tokens and revoked tokens return an identical `404 Not Found` response to prevent timing probes and token enumeration [verified: architectural decision].
+     - Both unknown tokens and revoked tokens return an identical `404 Not Found` response to prevent timing probes and token enumeration.
      - HTTP Headers: `Referrer-Policy: no-referrer`, `X-Robots-Tag: noindex, nofollow`, `Cache-Control: private, no-store`.
-     - Zero third-party scripts, analytics, or edit controls on shared tutorial pages [verified: architectural decision].
+     - Zero third-party scripts, analytics, or edit controls on shared tutorial pages.
 
 ### Module Ownership
 - **Vishwas (`backend/app/api/`):** Share endpoints (`POST /api/v1/workflows/{id}/shares`, `GET .../shares`, `DELETE .../shares/{share_id}`, `GET /api/v1/shared/{token}`).
@@ -86,15 +86,15 @@ All decisions adhere to Krama's core architectural tenets:
 
 ### Consensus Decision
 1. **Access Model: Seeded Accounts Only for MVP:**
-   - **No open public self-registration/sign-up** for the Phase 3 MVP release [verified: architectural decision].
+   - **No open public self-registration/sign-up** for the Phase 3 MVP release.
    - Access is restricted strictly to pre-seeded user accounts.
 
 2. **Rationale:**
-   - **Abuse & Quota Exhaustion:** Krama utilizes a shared GitHub machine account (`krama-bench`) and Gemini LLM API keys. Open sign-up on a deployed instance risks arbitrary users triggering rapid automated actions, exhausting LLM quotas or prompting GitHub abuse detection algorithms to suspend the test account [verified: architectural decision].
+   - **Abuse & Quota Exhaustion:** Krama utilizes a shared GitHub machine account (`krama-bench`) and Gemini LLM API keys. Open sign-up on a deployed instance risks arbitrary users triggering rapid automated actions, exhausting LLM quotas or prompting GitHub abuse detection algorithms to suspend the test account.
    - **Reduced Surface Area:** Eliminates out-of-scope requirements for Phase 3 (email verification services, transactional SMTP, password reset tokens, and CAPTCHAs on registration).
 
 3. **Gating & Seeding Mechanism:**
-   - Gated via a local seed recipe: `just seed-users` [verified: architectural decision].
+   - Gated via a local seed recipe: `just seed-users`.
    - Seeds default development accounts:
      - Developer accounts for Vishwas and Nachiketha.
      - Dedicated demo account: `demo@krama.dev` (used for exit gate demos and the 5 usability testing participants).
@@ -110,23 +110,23 @@ All decisions adhere to Krama's core architectural tenets:
 
 ### Consensus Decision
 1. **12 Total Benchmark Workflows (6 Gitea + 6 GitHub):**
-   - Both target environments have parity across fundamental repository operations [verified: architectural decision].
-   - Each task runs 5 trials, resetting its state via REST API, executed through `--via api`, and graded by the site's own API [verified locally].
+   - Both target environments have parity across fundamental repository operations.
+   - Each task runs 5 trials, resetting its state via REST API, executed through `--via api`, and graded by the site's own API [verified locally for Gitea in the Phase 2 gate; GitHub not run yet].
 
 2. **Retained Workflows:**
    - `gitea-comment-issue`: Confirmed for inclusion. Tests markdown text area interaction, tabbed preview verification, and comment submission.
    - `github-repo-description`: Confirmed for inclusion. Tests navigation to repository settings and updating description metadata.
 
 3. **Collaborator Swap:**
-   - **Replaced `github-add-collaborator` with `github-create-label`** [verified: architectural decision].
+   - **Replaced `github-add-collaborator` with `github-create-label`**.
    - **Rationale:** `github-add-collaborator` required inviting a secondary GitHub user account. This introduced external invitation state, email throttling, and account pollution across multiple test runs.
-   - `github-create-label` tests the agent's ability to navigate repository settings/labels, fill a label name (`needs-docs`), input a custom hex color code (`#d73a4a`), write an optional description, and submit the creation form. Grading is deterministic via GitHub REST API (`GET /repos/{org}/{repo}/labels/needs-docs`) [verified locally].
+   - `github-create-label` tests the agent's ability to navigate repository settings/labels, fill a label name (`needs-docs`), input a custom hex color code (`#d73a4a`), write an optional description, and submit the creation form. Grading is deterministic via GitHub REST API (`GET /repos/{org}/{repo}/labels/needs-docs`) [unverified: no GitHub run yet].
 
 ### Refined 12-Task Matrix
 | # | Task ID | Target Platform | Workflow Prompt Summary | Verification & Grading Mechanism |
 |---|---|---|---|---|
 | 1 | `gitea-create-repo` | Gitea | Create repository `bench-new` | `GET /api/v1/repos/{user}/bench-new` returns 200 |
-| 2 | `gitea-create-issue` | Gitea | Open an issue titled `Bug: fix login` | Issue list API contains matching title |
+| 2 | `gitea-create-issue` | Gitea | Open an issue titled `Login page shows a blank screen` | Issue list API contains matching title |
 | 3 | `gitea-add-file` | Gitea | Add `notes.md` with content to `main` | Contents API returns 200 and matches file content |
 | 4 | `gitea-create-branch` | Gitea | Create branch `feature-docs` from `main` | Branches API returns 200 for branch |
 | 5 | `gitea-repo-settings` | Gitea | Set repository description | Repo JSON metadata contains updated text |
@@ -149,7 +149,7 @@ All decisions adhere to Krama's core architectural tenets:
 
 ### Consensus Decision
 1. **Narrowing the `/branches` Danger Rule:**
-   - **Crucial Refinement:** The `/branches` route must **NOT** be classified wholesale as a danger zone [verified: architectural decision].
+   - **Crucial Refinement:** The `/branches` route must **NOT** be classified wholesale as a danger zone.
    - **Destructive Scope Only:** Danger classification is strictly restricted to **destructive branch controls**:
      - Trash icon / delete branch buttons: `button[aria-label="Delete branch"]`, `button[title="Delete branch"]`, or `form[action*="/branches/"] button[type="submit"]` [verified locally].
      - Confirmation dialogs for branch deletion.
@@ -182,16 +182,18 @@ All decisions adhere to Krama's core architectural tenets:
 
 ### Consensus Decision
 1. **Requirement:**
-   - FastAPI must expose `GET /api/v1/metrics/summary` [verified: architectural decision].
+   - FastAPI must expose `GET /api/v1/metrics/summary`.
    - Eliminates need for frontend to parse filesystem JSON artifacts directly or duplicate benchmark aggregation logic.
 
 2. **Handler Implementation:**
-   - The endpoint handler directly calls `benchmarks.reporter.collector.collect_benchmark_metrics("benchmarks/results")` [verified locally].
-   - Returns the validated `BenchmarkReportData` model as a structured JSON response.
-   - Caching: In-memory evaluation is fast ($< 5\text{ ms}$ for standard run counts); Redis caching deferred until high request volume warrants it [verified locally].
+   - The response shape is a contract: `contracts/schemas/metrics-summary.schema.json` (contract-change PR), so the backend gets a generated Pydantic model and the frontend generated TS types.
+   - The benchmark reporter (`benchmarks/reporter/`) writes `benchmarks/results/summary.json`, valid against that schema, after each benchmark run.
+   - The endpoint reads that file (path from settings), validates it with the generated model and returns it; `404` until a benchmark has run.
+   - `backend/app` never imports `benchmarks`: different owners talk only through contracts and ports (AGENTS.md §2), and the backend package ships only `app` (`backend/pyproject.toml`).
+   - Caching: In-memory evaluation is fast ($< 5\text{ ms}$ for standard run counts); Redis caching deferred until high request volume warrants it [unverified].
 
 3. **Frontend Integration:**
-   - React Server Component in `frontend/app/metrics/page.tsx` fetches `GET /api/v1/metrics/summary` over internal HTTP during server rendering [verified: architectural decision].
+   - React Server Component in `frontend/app/metrics/page.tsx` fetches `GET /api/v1/metrics/summary` over internal HTTP during server rendering.
    - Renders zero-JS pure SVG sparklines and horizontal bar charts for:
      - Task Success Rate ($\ge 80\%$).
      - Verifier Accuracy ($\ge 90\%$ true positive, $\le 5\%$ false alarm).
@@ -199,8 +201,9 @@ All decisions adhere to Krama's core architectural tenets:
      - Latency Profile (P50 and P90 durations for planning and execution).
 
 ### Module Ownership
-- **Vishwas (`backend/app/api/`):** Add `metrics.py` router exposing `GET /api/v1/metrics/summary` calling the collector.
-- **Nachiketha (`benchmarks/` & `frontend/`):** Maintain `BenchmarkReportData` model in `benchmarks/reporter/models.py`, implement SVG chart components, and author `frontend/app/metrics/page.tsx`.
+- **Both (`contracts/`):** `metrics-summary.schema.json` in a contract-change PR.
+- **Vishwas (`backend/app/api/`):** `metrics.py` router serving `GET /api/v1/metrics/summary` from `summary.json`.
+- **Nachiketha (`benchmarks/` & `frontend/`):** the reporter writes `summary.json` from `BenchmarkReportData`; SVG chart components and `frontend/app/metrics/page.tsx`.
 
 ---
 
@@ -214,7 +217,7 @@ All decisions adhere to Krama's core architectural tenets:
 | **Onboarding** | Seeded accounts only (`demo@krama.dev`) | `just seed-users` script & user seeding | Login form UX & participant usability sessions |
 | **Tasks** | 12 tasks (6 Gitea + 6 GitHub), label swap | GitHub runner client & token auth (#89) | Benchmark suite execution, reporting, & analysis (#102) |
 | **Danger Rules** | Narrow `/branches` to delete controls only | None (consumer of policy) | `backend/app/policy/` rules, selectors, & tests (#91) |
-| **Metrics API** | `GET /api/v1/metrics/summary` | FastAPI endpoint serving `BenchmarkReportData` | `BenchmarkReportData` model & pure SVG charts UI |
+| **Metrics API** | `GET /api/v1/metrics/summary`, shape in `contracts/` | FastAPI endpoint serving `summary.json` | Reporter writes `summary.json`; pure SVG charts UI |
 
 ---
 
