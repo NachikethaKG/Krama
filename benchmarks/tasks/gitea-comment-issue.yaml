@@ -1,0 +1,15 @@
+name: gitea-comment-issue
+prompt: "In the repository bench-comments, add the comment 'Reproduced on the latest build.' to issue #1."
+target: "http://localhost:3001"
+setup:
+  api_calls:
+    - { method: DELETE, url: "/api/v1/repos/{user}/bench-comments", ok_status: [204, 404] }
+    - { method: POST, url: "/api/v1/user/repos", body: { name: bench-comments, auto_init: true }, ok_status: [201] }
+    - { method: POST, url: "/api/v1/repos/{user}/bench-comments/issues", body: { title: "Login page shows a blank screen" }, ok_status: [201] }
+success_check:
+  type: api
+  assertion:
+    method: GET
+    url: "/api/v1/repos/{user}/bench-comments/issues/1/comments"
+    expected_status: 200
+    body_contains: "Reproduced on the latest build."
