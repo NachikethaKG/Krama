@@ -79,7 +79,7 @@ export interface CompilerOptions {
   panDurationMs?: number;
 
   /**
-   * Default scene duration in milliseconds for normal steps.
+   * Default scene duration in milliseconds for normal steps (fallback/minimum).
    * Default: 1650.
    */
   baseDurationMs?: number;
@@ -89,6 +89,30 @@ export interface CompilerOptions {
    * Default: 400.
    */
   fillExtraDurationMs?: number;
+
+  /**
+   * Speaking time multiplier per word in milliseconds.
+   * Default: 375 (~160 words per minute).
+   */
+  msPerWord?: number;
+
+  /**
+   * Sentence boundary trailing buffer in milliseconds.
+   * Default: 400.
+   */
+  sentenceEndBufferMs?: number;
+
+  /**
+   * Minimum step duration in milliseconds when estimating from speech.
+   * Default: 1500.
+   */
+  minStepDurationMs?: number;
+
+  /**
+   * Maximum step duration in milliseconds when estimating from speech.
+   * Default: 14000.
+   */
+  maxStepDurationMs?: number;
 
   /**
    * Milliseconds after scene start when cursor glide begins.
