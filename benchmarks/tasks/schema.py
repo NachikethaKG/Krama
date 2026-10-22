@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 import yaml  # type: ignore[import-untyped]
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -16,7 +16,8 @@ class TaskFormatError(ValueError):
 class ApiCall(BaseModel):
     """One HTTP request against the target's API, sent as the demo user (benchmarks/tasks/runner.py).
 
-    `url` is a path on the task's target (`/api/v1/...`); `{user}` stands for the demo user's name.
+    `url` is a path on the task's API (`/api/v1/...` on Gitea, `/repos/...` on GitHub). `{user}` stands for
+    the signed-in account's name and `{org}` for the GitHub test organization (GITHUB_TEST_ORG).
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -79,6 +80,15 @@ class BenchmarkTask(BaseModel):
     prompt: str = Field(min_length=1, description="Instructions provided to the agent")
     target: str = Field(
         min_length=1, description="Target application URL or identifier"
+    )
+    site: Literal["gitea", "github"] = Field(
+        default="gitea",
+        description="Whose API the setup and check call, and how they sign in: Gitea's demo user (basic "
+        "auth) or the GitHub test account's token (GITHUB_BENCH_TOKEN)",
+    )
+    api_base: str | None = Field(
+        default=None,
+        description="API root when it isn't the target, e.g. https://api.github.com for target https://github.com",
     )
     setup: SetupConfig | None = Field(
         default=None, description="Pre-run environment reset hook"
