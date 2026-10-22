@@ -43,6 +43,7 @@ from app.runs.steps import StepOutcome, act_and_verify, step_ref
 from app.runs.store import RunJob, RunNotFoundError, RunStore
 from app.targets import TargetSetup
 from app.verifier import StepVerifier
+from app.verifier.task_check import TaskChecker
 
 logger = logging.getLogger(__name__)
 
@@ -97,6 +98,8 @@ class RunEnvironment:
     run_timeout_s: float = 600.0
     """Time a run may spend running (pauses don't count). Then it fails."""
     max_replans_per_run: int = 3
+    task_check: TaskChecker | None = None
+    """Asked once after the last step whether the steps did the whole task (#274). None: not checked."""
 
 
 class InProcessExecutor:
@@ -224,8 +227,15 @@ class InProcessExecutor:
                 rows = await self._steps(job, executor, observer, page)
             finally:
                 recording = await observer.stop_recording()
+            missing = await self._missing_part(job, rows, page) if rows is not None else None
         if rows is None:
             return  # failed, paused out or cancelled; the store already says so
+        if missing is not None:
+            await self._store.fail(
+                run_id, from_=RunStatus.RUNNING, message=f"The steps didn't do the whole task: {missing}",
+                reason="task_incomplete", missing=missing,
+            )  # fmt: skip
+            return
         self._to_recording_offsets(rows, recording.path)
         if job.kind == "reverify":
             duration_ms = round((time.perf_counter() - t0) * 1000)
@@ -401,6 +411,23 @@ class InProcessExecutor:
             job, [*steps[:i], *new_steps], expected_result=result.plan.expected_result
         )
         return new_steps, plan_id
+
+    async def _missing_part(self, job: RunJob, rows: Sequence[WorkflowStepRow], page: Page) -> str | None:
+        """What part of the task the verified steps left out, or None (done, unsure, or not checked). A
+        reverify replays a stored workflow, so only task runs are checked."""
+        if self._env.task_check is None or job.kind != "task":
+            return None
+        verdict = await self._env.task_check.check(
+            job.prompt,
+            [r.instruction_text for r in rows],
+            self._mask(urlsplit(page.url).path or "/"),
+            await self._masked_snapshot(page),
+        )
+        logger.info("task check for run %s: done=%s (%d LLM attempts)", job.run_id, verdict.done,
+                    len(verdict.attempts))  # fmt: skip
+        if verdict.done is not False:
+            return None
+        return verdict.missing or "part of the task"
 
     async def _masked_snapshot(self, page: Page) -> str:
         """The page's ARIA snapshot with secrets masked by the policy (#63) before it goes to an LLM."""
