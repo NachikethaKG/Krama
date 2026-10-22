@@ -1,4 +1,34 @@
-"""rrweb session recording interfaces, assets, and script builder."""
+"""rrweb session recording interfaces, assets, and script builder.
+
+Privacy & Input Masking Architecture (Issue #271):
+--------------------------------------------------
+In tutorial replays, viewers need to see what was typed into ordinary workflow fields
+(e.g., repository name, issue title, branch name, comment markdown) so the visual playback
+matches the step narration and captions. Previously, configuring `maskAllInputs: true`
+without a custom filter caused every field to be replaced with `*****`, creating a contradiction
+between what the caption said and what the replay showed.
+
+Under the Phase 3 privacy policy (Nachiketha, `phase-1-nachiketha-masking-and-privacy.md`):
+1. Sensitive inputs that STAY MASKED:
+   - Password fields (`type="password"`, `autocomplete="current-password|new-password"`):
+     Credentials must never enter the event stream or persist to artifacts.
+   - Token & API key fields (`name`, `id`, `aria-label`, `placeholder` matching
+     `pass(word|code|phrase)?|secret|token|api.?key|otp|pin|cvv|csc|card|credential|ssn|auth.?key`):
+     Personal access tokens, secrets, and auth credentials must stay private even if rendered in text inputs.
+   - Card and payment data (`cc-number`, `cvv`, `csc`, `card`):
+     Financial data protection.
+   - OTP and 2FA codes (`otp`, `one-time-code`, `pin`):
+     Verification codes must not leak into shareable tutorials.
+   - Contact PII (`type="email"`, `type="tel"`, `autocomplete="email|tel"`):
+     Personal contact data is masked in shareable recordings.
+   - Elements marked with `.krama-mask-text` or within `.krama-mask-text` / `.krama-block`:
+     Explicit application-level privacy markers.
+   - Values matching known high-entropy token signatures (`ghp_...`, `github_pat_...`, `sk-...`, `AKIA...`):
+     Defense-in-depth against credentials pasted into untyped inputs.
+2. Non-sensitive inputs that REMAIN UNMASKED:
+   - Benign workflow inputs such as repository names, issue titles, issue comments, branch names,
+     labels, tags, file paths, and general descriptions.
+"""
 
 from __future__ import annotations
 
@@ -16,7 +46,8 @@ RRWEB_RECORD_BUNDLE = ASSETS_DIR / "record.umd.min.cjs"
 # Standard rrweb bootstrap: records mutations/inputs and dispatches them via Playwright binding.
 # - Guarded with window.top === window so iframe events are handled via main document.
 # - Ignores about:blank initial states.
-# - Masks passwords by default so credentials never enter the event stream.
+# - Selectively masks sensitive inputs (passwords, tokens, cards, PII) while preserving
+#   ordinary workflow inputs (repo names, issue titles) for tutorial replay clarity (Issue #271).
 DEFAULT_BOOTSTRAP_TEMPLATE = r"""
 (() => {
   if (typeof window === 'undefined') return;
@@ -45,6 +76,66 @@ DEFAULT_BOOTSTRAP_TEMPLATE = r"""
     }
   };
 
+  // Deterministic sensitive field heuristic:
+  // Aligns with looks_sensitive in app/agent/runlog.py and _SENSITIVE_FIELD in app/planner/prompt.py.
+  const SENSITIVE_ATTR_REGEX = new RegExp(
+    "(pass(word|code|phrase)?|secret|token|api[_-]?key|otp|pin\\b|cvv|csc|card|credential|ssn|auth[_-]?key)",
+    "i"
+  );
+  const SENSITIVE_TYPE_REGEX = /^(password|email|tel)$/i;
+  const SENSITIVE_AUTOCOMPLETE_REGEX = /(password|cc-|cvv|csc|card|otp|pin|email|tel)/i;
+  const KNOWN_SECRET_VALUE_REGEX = new RegExp(
+    "(ghp_[A-Za-z0-9]{36,}|github_pat_[A-Za-z0-9_]{40,}|sk-[A-Za-z0-9]{20,}|AKIA[0-9A-Z]{16}" +
+    "|ey[A-Za-z0-9-_]{20,}\\.[A-Za-z0-9-_]{20,}\\.[A-Za-z0-9-_]{20,})"
+  );
+
+  const isSensitiveElement = (element, text) => {
+    if (!element) {
+      return KNOWN_SECRET_VALUE_REGEX.test(text || '');
+    }
+    const type = (element.type || '').toLowerCase();
+    if (SENSITIVE_TYPE_REGEX.test(type)) {
+      return true;
+    }
+    const getAttr = typeof element.getAttribute === 'function'
+      ? (a) => element.getAttribute(a) || ''
+      : () => '';
+    const autocomplete = getAttr('autocomplete');
+    if (autocomplete && SENSITIVE_AUTOCOMPLETE_REGEX.test(autocomplete)) {
+      return true;
+    }
+    const id = typeof element.id === 'string' ? element.id : '';
+    const name = typeof element.name === 'string' ? element.name : '';
+    const aria = getAttr('aria-label');
+    const placeholder = getAttr('placeholder');
+    if (
+      SENSITIVE_ATTR_REGEX.test(id) ||
+      SENSITIVE_ATTR_REGEX.test(name) ||
+      SENSITIVE_ATTR_REGEX.test(aria) ||
+      SENSITIVE_ATTR_REGEX.test(placeholder)
+    ) {
+      return true;
+    }
+    if (
+      typeof element.closest === 'function' &&
+      (element.closest('.krama-mask-text') || element.closest('.krama-block'))
+    ) {
+      return true;
+    }
+    if (KNOWN_SECRET_VALUE_REGEX.test(text || '')) {
+      return true;
+    }
+    return false;
+  };
+
+  const maskInputFn = (text, element) => {
+    const val = text || '';
+    if (isSensitiveElement(element, val)) {
+      return '*'.repeat(val.length);
+    }
+    return val;
+  };
+
   const getRecordFn = () => {
     if (typeof rrwebRecord !== 'undefined' && typeof rrwebRecord.record === 'function') {
       return rrwebRecord.record;
@@ -61,6 +152,7 @@ DEFAULT_BOOTSTRAP_TEMPLATE = r"""
       recordFn({
         emit: emit,
         maskAllInputs: true,
+        maskInputFn: maskInputFn,
         maskInputOptions: { password: true },
         maskTextClass: "krama-mask-text",
         blockClass: "krama-block",
