@@ -1,6 +1,7 @@
 import { generateCursorTrajectory, round1 } from "./bezier.js";
 import { computeCameraKeyframe } from "./camera.js";
 import { generateHeuristicWordTimings } from "./caption.js";
+import { estimateSpeechDurationMs } from "./timing/speech.js";
 import type {
   Action1,
   CompilerOptions,
@@ -111,11 +112,38 @@ export function compileWorkflow(
     if (options?.stepDurations?.[step_seq] !== undefined) {
       duration_ms = options.stepDurations[step_seq];
     } else {
-      const baseDuration = options?.baseDurationMs ?? 1650;
-      if (step.action.type === "fill") {
-        duration_ms = baseDuration + (options?.fillExtraDurationMs ?? 400);
-      } else {
-        duration_ms = baseDuration;
+      let instructionText = step.instruction_text ?? "";
+      if (!instructionText) {
+        const fallbackStep = step as unknown as Record<string, unknown>;
+        if (typeof fallbackStep.instruction === "string") {
+          instructionText = fallbackStep.instruction;
+        } else if (
+          typeof fallbackStep.caption === "object" &&
+          fallbackStep.caption !== null &&
+          "text" in fallbackStep.caption &&
+          typeof (fallbackStep.caption as { text: unknown }).text === "string"
+        ) {
+          instructionText = (fallbackStep.caption as { text: string }).text;
+        } else if (typeof fallbackStep.caption === "string") {
+          instructionText = fallbackStep.caption;
+        }
+      }
+
+      const speechEstimateMs = estimateSpeechDurationMs(instructionText, {
+        msPerWord: options?.msPerWord,
+        sentenceEndBufferMs: options?.sentenceEndBufferMs,
+        minStepDurationMs: options?.minStepDurationMs ?? options?.baseDurationMs,
+        maxStepDurationMs: options?.maxStepDurationMs,
+      });
+
+      const actionDurationMs =
+        (step.timing?.end_ms ?? step.end_ms ?? 0) -
+        (step.timing?.start_ms ?? step.start_ms ?? 0);
+
+      // Sized so progress bar matches narration pacing
+      duration_ms = Math.max(actionDurationMs, speechEstimateMs);
+      if (options?.fillExtraDurationMs && step.action.type === "fill") {
+        duration_ms += options.fillExtraDurationMs;
       }
     }
 

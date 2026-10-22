@@ -16,6 +16,14 @@ export {
   type CaptionTimingOptions,
 } from "./caption.js";
 export {
+  estimateSpeechDurationMs,
+  MS_PER_WORD,
+  SENTENCE_END_BUFFER_MS,
+  MIN_STEP_DURATION_MS,
+  MAX_STEP_DURATION_MS,
+  type SpeechDurationOptions,
+} from "./timing/speech.js";
+export {
   validateTutorialSpec,
   assertValidTutorialSpec,
   type ValidationResult,
