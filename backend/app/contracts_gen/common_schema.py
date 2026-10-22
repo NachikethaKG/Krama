@@ -101,6 +101,8 @@ type ErrorCode = Annotated[
         "run_not_active",
         "rate_limited",
         "llm_unavailable",
+        "unauthorized",
+        "forbidden",
         "internal",
     ],
     Field(title="ErrorCode"),
