@@ -92,6 +92,11 @@ Every boundary is an interface with a mock that ships *before* the real implemen
 | Ownership by module, cross-owner calls only via `ports/` | Both people work on the backend without sharing files | [0001](adr/0001-ownership-by-module.md) |
 | Thin Playwright layer over browser-use/Stagehand | Deterministic execution, fits free-tier quota (1 planning call), strict plan-approve-execute control | [0002](adr/0002-own-playwright-layer.md) |
 | No local model; instruction text written by code | Template = Gemini = Llama 3.1 on real steps; the reference laptop can't run Ollama | [0003](adr/0003-no-local-model-for-text-jobs.md) |
+| CSRF defense via `X-Krama: 1` + HTTP-only cookies | Blocks cross-origin mutating requests without complex signed double-submit tokens; RSC calls direct over internal HTTP | [Phase 3 Alignment](research/phase-3-decisions-alignment.md) |
+| Share tokens without TTL for MVP | `secrets.token_urlsafe(32)` stored as SHA-256 hash with `never` expiry; avoids background worker cron overhead | [Phase 3 Alignment](research/phase-3-decisions-alignment.md) |
+| Seeded user accounts only for MVP | Prevents quota exhaustion and bot-flagging against shared GitHub machine account; gated via `just seed-users` | [Phase 3 Alignment](research/phase-3-decisions-alignment.md) |
+| Destructive-only `/branches` policy scope | Narrows `/branches` danger checks to delete controls; branch viewing and creation remain `RiskLevel.LOW` | [Phase 3 Alignment](research/phase-3-decisions-alignment.md) |
+| Backend metrics API (`/api/v1/metrics/summary`) | Serves `BenchmarkReportData` directly from collector for zero-JS React Server Component SVG charts | [Phase 3 Alignment](research/phase-3-decisions-alignment.md) |
 
 ## 6. Hardware rules
 
