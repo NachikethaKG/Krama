@@ -45,7 +45,13 @@ GitHub provides granular credential access pages that present substantial securi
 Branch operations outside PR merges carry risk of losing unmerged work [verified locally]:
 
 - **Branch Overview (`/<owner>/<repo>/branches` and `/branches/all`):**
-  - Delete Control: Trash icon button `button[aria-label="Delete branch"]`, `button[title="Delete branch"]`, or `form[action*="/branches/"] button[type="submit"]` [verified locally].
+  - **Scope Restriction (Consensus Alignment 2026-10-22):** The `/branches` route itself is **NOT** a danger zone.
+    Viewing branches, listing active/stale/PR branches, and standard branch creation ("New branch" button and modal)
+    are classified as `RiskLevel.LOW` to allow benchmark tasks like `github-create-branch` to execute without
+    false-positive pauses [verified: architectural decision; see `phase-3-decisions-alignment.md`].
+  - **Delete Controls (Strictly `RiskLevel.HIGH`):** Trash icon button `button[aria-label="Delete branch"]`,
+    `button[title="Delete branch"]`, deletion confirmation dialogs, or `form[action*="/branches/"] button[type="submit"]`
+    trigger mandatory human confirmation [verified locally].
   - Default Branch Protection: GitHub prevents direct deletion of the repository default branch (`main` / `master`) from this list, but feature and release branches can be deleted with a single click [verified locally].
 - **Branch Protection Rules (`/<owner>/<repo>/settings/branches`):**
   - Actions: Buttons `"Delete"` or `"Edit"` on branch protection rules (`form[action*="/branch_protection/"]`) [verified locally].
@@ -63,11 +69,13 @@ Extend Krama's policy layer in `backend/app/policy/denylist.py` and `risk.py`:
 
 1. **Add GitHub Danger-Zone Route & Selector Rules to `denylist.py`:**
    ```python
+   # Settings routes that contain exclusively sensitive/destructive configuration
    GITHUB_DANGER_ROUTES: Final[tuple[re.Pattern[str], ...]] = (
        re.compile(r"^/[^/]+/[^/]+/settings/(danger-zone|keys|secrets|access|branches)", re.IGNORECASE),
-       re.compile(r"^/[^/]+/[^/]+/(branches|releases)", re.IGNORECASE),
    )
 
+   # Destructive controls that elevate to RiskLevel.HIGH regardless of route
+   # (includes branch deletion on /branches without flagging the entire page)
    GITHUB_DESTRUCTIVE_CONTROLS: Final[re.Pattern[str]] = re.compile(
        r"\b(delete this repository|change visibility|transfer ownership|archive this repository"
        r"|delete branch|remove collaborator|delete secret|add deploy key|delete release)\b",
@@ -75,12 +83,13 @@ Extend Krama's policy layer in `backend/app/policy/denylist.py` and `risk.py`:
    )
    ```
 2. **Elevate to `RiskLevel.HIGH` in `risk.py`:**
-   - Any proposed browser action targeting controls in the GitHub Danger Zone or matching `GITHUB_DESTRUCTIVE_CONTROLS` is automatically evaluated as `RiskLevel.HIGH`.
+   - Any proposed browser action targeting controls in the GitHub Danger Zone (`GITHUB_DANGER_ROUTES`) or matching `GITHUB_DESTRUCTIVE_CONTROLS` is automatically evaluated as `RiskLevel.HIGH`.
+   - Branch listing, viewing, and branch creation ("New branch") on `/<owner>/<repo>/branches` remain `RiskLevel.LOW`.
    - Halts the execution pipeline and emits `run.paused` with structured risk details (`risk_level: "high"`, `reason: "github_danger_zone"`).
 3. **Frontend Confirmation Modal:**
    - The user must explicitly inspect and confirm the high-risk action in `PolicyConfirmationModal` (`frontend/components/safety/`) before the agent is permitted to click or submit.
 4. **Unit and Integration Tests:**
-   - Add test fixtures in `backend/tests/policy/test_github_danger_zones.py` covering all danger zone selectors, modals, and route patterns.
+   - Add test fixtures in `backend/tests/policy/test_github_danger_zones.py` covering all danger zone selectors, modals, and route patterns. Ensure tests verify that creating a branch is `LOW` while deleting a branch is `HIGH`.
 
 [No ADR required: directly implements AGENTS.md §4 mandatory destructive action policy].
 
