@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from types import TracebackType
-from typing import Self
+from typing import Any, Self
 
 from playwright.async_api import Browser, BrowserContext, Page, Playwright, async_playwright
 
@@ -22,6 +22,8 @@ class SessionConfig:
     # Playwright's default is 30 s, far too long to notice that one agent step failed.
     action_timeout_ms: int = 5_000
     navigation_timeout_ms: int = 15_000
+    storage_state: dict[str, Any] | None = None
+    """A stored signed-in session (cookies + localStorage, #87) to open the context with. A secret."""
 
 
 class PlaywrightSession:
@@ -57,6 +59,7 @@ class PlaywrightSession:
                 base_url=self.config.base_url,
                 viewport={"width": self.config.viewport_width, "height": self.config.viewport_height},
                 device_scale_factor=self.config.device_scale_factor,
+                storage_state=self.config.storage_state,  # type: ignore[arg-type]
             )
             self._context.set_default_timeout(self.config.action_timeout_ms)
             self._context.set_default_navigation_timeout(self.config.navigation_timeout_ms)
