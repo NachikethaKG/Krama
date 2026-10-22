@@ -78,9 +78,11 @@ SITE_HINTS: dict[str, str] = {
             'After the commit the URL is /<owner>/<repo>/src/branch/<branch>/<path>. Typing a "/" in that',
             "textbox moves the folder into the path in front of it, so after filling docs/a.md the textbox",
             'holds only "a.md": expect the part after the last "/".',
+            # Plans have no selectors. Among same-named buttons the executor picks the one in the form of the
+            # field filled just before (#266), so the click must come right after the fill (#273).
             'Repository settings: /<owner>/<repo>/settings has textbox "Description". The page has THREE',
-            'buttons "Update Settings"; the one that saves the description has selector',
-            "form:has(textarea#description) button.primary. After saving, the page stays on settings.",
+            'buttons "Update Settings": fill "Description", then click "Update Settings" in the very next',
+            "step, and the button of that form is used. After saving, the page stays on settings.",
         ]
     ),
 }
