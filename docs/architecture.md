@@ -96,7 +96,7 @@ Every boundary is an interface with a mock that ships *before* the real implemen
 | Share tokens without TTL for MVP | `secrets.token_urlsafe(32)` stored as SHA-256 hash with `never` expiry; avoids background worker cron overhead | [Phase 3 Alignment](research/phase-3-decisions-alignment.md) |
 | Seeded user accounts only for MVP | Prevents quota exhaustion and bot-flagging against shared GitHub machine account; gated via `just seed-users` | [Phase 3 Alignment](research/phase-3-decisions-alignment.md) |
 | Destructive-only `/branches` policy scope | Narrows `/branches` danger checks to delete controls; branch viewing and creation remain `RiskLevel.LOW` | [Phase 3 Alignment](research/phase-3-decisions-alignment.md) |
-| Backend metrics API (`/api/v1/metrics/summary`) | Serves `BenchmarkReportData` directly from collector for zero-JS React Server Component SVG charts | [Phase 3 Alignment](research/phase-3-decisions-alignment.md) |
+| Backend metrics API (`/api/v1/metrics/summary`) | Serves the benchmark's `summary.json` (shape in `contracts/`) for zero-JS React Server Component SVG charts; the backend never imports `benchmarks` | [Phase 3 Alignment](research/phase-3-decisions-alignment.md) |
 
 ## 6. Hardware rules
 
