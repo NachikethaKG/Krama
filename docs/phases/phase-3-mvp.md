@@ -4,9 +4,11 @@
 
 **Release tag:** `v1.0-mvp`
 
+**Consensus and architecture alignment:** see [`docs/research/phase-3-decisions-alignment.md`](../research/phase-3-decisions-alignment.md).
+
 **Who builds what**
-- **Vishwas:** GitHub sessions, accounts and auth API, job queue, sharing endpoints.
-- **Nachiketha:** real-site safety (`policy/`: bot challenges, rate limits, GitHub-specific danger zones), metrics, all MVP screens, usability testing.
+- **Vishwas:** GitHub sessions, accounts and auth API, job queue, sharing endpoints, metrics backend summary endpoint.
+- **Nachiketha:** real-site safety (`policy/`: bot challenges, rate limits, GitHub-specific danger zones), metrics harness & dashboard, all MVP screens, usability testing.
 
 ---
 
@@ -30,7 +32,7 @@
 
 **Together**
 - Create the GitHub test account and a test organization. Write down the rules: no real data, low volume, cleanup after runs.
-- Choose the ≥ 10 benchmark workflows across Gitea and GitHub.
+- Choose the 12 benchmark workflows across Gitea and GitHub (6 Gitea + 6 GitHub).
 
 ---
 
@@ -39,25 +41,51 @@
 | Vishwas | Nachiketha |
 |---|---|
 | `agent/`: logged-in sessions: log in once in a headed browser, save encrypted `storage_state` (never raw passwords), detect expiry | `policy/`: GitHub bot-challenge, rate-limit and sign-in-wall detection → pause/stop |
-| GitHub cleanup script for test repos | `policy/`: GitHub danger-zone rules + tests |
-| GitHub tasks in `benchmarks/tasks/` (create repo, create branch, add collaborator in the test org) | Frontend: target picker (Gitea / GitHub / custom URL), "log in manually once" flow, tutorial library page |
+| GitHub cleanup script for test repos (`DELETE /repos/krama-bench/bench-*`) | `policy/`: GitHub danger-zone rules + tests (settings danger zone, keys, secrets, visibility, and branch deletion controls; viewing `/branches` and creating branches remain `RiskLevel.LOW`) |
+| GitHub tasks in `benchmarks/tasks/` (`github-create-repo`, `github-create-branch`, `github-create-label` with custom hex color and description in `krama-bench` org) | Frontend: target picker (Gitea / GitHub / custom URL), "log in manually once" flow, tutorial library page |
 
 ## Sprint 3.2: accounts, jobs and sharing
 
 | Vishwas | Nachiketha |
 |---|---|
-| `api/` + `db/`: user accounts, sessions, tutorial ownership | Frontend: sign-up / log-in pages, route protection, dashboard |
-| `runs/`: Redis + arq job queue, worker process, per-run timeout, `MAX_CONCURRENT_RUNS` | Frontend: shareable read-only tutorial page |
-| `api/`: share tokens (create / revoke) | Frontend: polished live agent view (step checklist + live screenshot stream) |
+| `api/` + `db/`: user accounts, sessions, tutorial ownership (seeded accounts via `just seed-users`; no open public sign-up for MVP to prevent quota exhaustion and bot-flagging) | Frontend: log-in page (gated with seeded accounts for testing & 5 usability participants: `demo@krama.dev`), route protection, dashboard |
+| `runs/`: Redis + arq job queue, worker process, per-run timeout, `MAX_CONCURRENT_RUNS` | Frontend: shareable read-only tutorial page (`/share/[token]`, unguessable token, no-index headers) |
+| `api/`: share tokens (create / revoke; `never` expiry only for MVP, TTL expirations deferred to Phase 4) | Frontend: polished live agent view (step checklist + live screenshot stream) |
 
 ## Sprint 3.3: hardening and polish
 
 | Vishwas | Nachiketha |
 |---|---|
-| Fix the top agent and verifier failures found by the benchmark | `benchmarks/`: ≥ 10 workflows across Gitea and GitHub; metrics dashboard |
-| Performance: planning < 15 s, total run 30–60 s where possible | Run the usability test with 3–5 people outside the team; turn findings into issues |
+| Fix the top agent and verifier failures found by the benchmark | `benchmarks/`: 12 benchmark workflows across Gitea and GitHub; metrics dashboard (Server Component rendering pure-SVG charts) |
+| Performance: planning < 15 s, total run 30–60 s where possible | Run the usability test with 3–5 people outside the team using seeded participant accounts (`demo@krama.dev`); turn findings into issues |
+| Backend metrics API: `GET /api/v1/metrics/summary` serving `BenchmarkReportData` JSON via `benchmarks.reporter.collector.collect_benchmark_metrics("benchmarks/results")` | |
+
+---
+
+## Benchmark Task Catalog (12 Workflows)
+
+All tasks reset initial state via REST API, execute through the product API (`--via api`), and are graded by the target site's own API across 5 trials:
+
+| # | Task ID | Target | Summary / Goal | Grading API & Method |
+|---|---|---|---|---|
+| 1 | `gitea-create-repo` | Gitea | Create repo `bench-new` | `GET /api/v1/repos/{user}/bench-new` returns 200 |
+| 2 | `gitea-create-issue` | Gitea | Open an issue titled `Bug: fix login` | Issue list API contains title |
+| 3 | `gitea-add-file` | Gitea | Add `notes.md` with specified text to `main` | Contents API returns 200 and matches file content |
+| 4 | `gitea-create-branch` | Gitea | Branch `feature-docs` from `main` | Branches API returns 200 for branch |
+| 5 | `gitea-repo-settings` | Gitea | Set repository description | Repo JSON metadata contains updated description |
+| 6 | `gitea-comment-issue` | Gitea | Comment on issue #1 (markdown entry and preview verification) | Issue comments API contains submitted comment text |
+| 7 | `github-create-repo` | GitHub | Create repo `bench-new` in `krama-bench` org | `GET /repos/krama-bench/bench-new` returns 200 |
+| 8 | `github-create-issue` | GitHub | Open an issue titled `Bug: fix login` in `bench-issues` | Issues API contains title |
+| 9 | `github-add-file` | GitHub | Add `notes.md` with text to `main` in `bench-files` | Contents API returns 200 and matches file content |
+| 10 | `github-create-branch` | GitHub | Branch `feature-docs` from `main` in `bench-branches` | Branches API returns 200 (policy allows `/branches` navigation) |
+| 11 | `github-repo-description` | GitHub | Set description of `bench-settings` | Repo JSON metadata contains updated description |
+| 12 | `github-create-label` | GitHub | Create custom label `needs-docs` with color `#d73a4a` and description in `bench-labels` | Labels API returns 200 with matching name, color, and description |
+
+*Note on Task 12:* Swapped `github-create-label` in place of `github-add-collaborator` to avoid external invitation delivery dependencies, email throttling, and account pollution against secondary accounts.
+
+---
 
 ## Exit criteria
 - The PRD §41 experience works end to end on Nachiketha's laptop, on real GitHub.
-- ≥ 10 benchmark workflows, with success rate and verifier accuracy reported.
+- 12 benchmark workflows (6 Gitea + 6 GitHub), with success rate and verifier accuracy reported.
 - No stored artifact contains a password, token or session cookie.
