@@ -1,0 +1,17 @@
+name: github-add-file
+prompt: "Add a file notes.md containing 'First note' to the main branch of the repository krama-bench/bench-files."
+target: "https://github.com"
+site: github
+api_base: "https://api.github.com"
+setup:
+  api_calls:
+    - { method: DELETE, url: "/repos/{org}/bench-files", ok_status: [204, 404] }
+    - { method: POST, url: "/orgs/{org}/repos", body: { name: bench-files, private: true, auto_init: true }, ok_status: [201] }
+success_check:
+  type: api
+  assertion:
+    method: GET
+    url: "/repos/{org}/bench-files/contents/notes.md?ref=main"
+    accept: "application/vnd.github.raw+json"
+    expected_status: 200
+    body_contains: "First note"

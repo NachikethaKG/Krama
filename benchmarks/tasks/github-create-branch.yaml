@@ -1,0 +1,15 @@
+name: github-create-branch
+prompt: "Create a branch named feature-docs from main in the repository krama-bench/bench-branches."
+target: "https://github.com"
+site: github
+api_base: "https://api.github.com"
+setup:
+  api_calls:
+    - { method: DELETE, url: "/repos/{org}/bench-branches", ok_status: [204, 404] }
+    - { method: POST, url: "/orgs/{org}/repos", body: { name: bench-branches, private: true, auto_init: true }, ok_status: [201] }
+success_check:
+  type: api
+  assertion:
+    method: GET
+    url: "/repos/{org}/bench-branches/branches/feature-docs"
+    expected_status: 200

@@ -1,0 +1,14 @@
+name: github-create-repo
+prompt: "Create a private repository named bench-new in the krama-bench organization."
+target: "https://github.com"
+site: github
+api_base: "https://api.github.com"
+setup:
+  api_calls:
+    - { method: DELETE, url: "/repos/{org}/bench-new", ok_status: [204, 404] }
+success_check:
+  type: api
+  assertion:
+    method: GET
+    url: "/repos/{org}/bench-new"
+    expected_status: 200

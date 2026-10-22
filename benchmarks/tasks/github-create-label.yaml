@@ -1,0 +1,16 @@
+name: github-create-label
+prompt: "In the repository krama-bench/bench-labels, create a label named needs-docs with color #d73a4a and the description 'Docs are missing'."
+target: "https://github.com"
+site: github
+api_base: "https://api.github.com"
+setup:
+  api_calls:
+    - { method: DELETE, url: "/repos/{org}/bench-labels", ok_status: [204, 404] }
+    - { method: POST, url: "/orgs/{org}/repos", body: { name: bench-labels, private: true, auto_init: true }, ok_status: [201] }
+success_check:
+  type: api
+  assertion:
+    method: GET
+    url: "/repos/{org}/bench-labels/labels/needs-docs"
+    expected_status: 200
+    body_contains: ["d73a4a", "Docs are missing"]
