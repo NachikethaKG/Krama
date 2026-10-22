@@ -48,7 +48,7 @@ Branch operations outside PR merges carry risk of losing unmerged work [verified
   - **Scope Restriction (Consensus Alignment 2026-10-22):** The `/branches` route itself is **NOT** a danger zone.
     Viewing branches, listing active/stale/PR branches, and standard branch creation ("New branch" button and modal)
     are classified as `RiskLevel.LOW` to allow benchmark tasks like `github-create-branch` to execute without
-    false-positive pauses [verified: architectural decision; see `phase-3-decisions-alignment.md`].
+    false-positive pauses.
   - **Delete Controls (Strictly `RiskLevel.HIGH`):** Trash icon button `button[aria-label="Delete branch"]`,
     `button[title="Delete branch"]`, deletion confirmation dialogs, or `form[action*="/branches/"] button[type="submit"]`
     trigger mandatory human confirmation [verified locally].

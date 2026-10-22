@@ -57,7 +57,7 @@ the likely one. [unverified: confirm when creating the token]
     because it grants access.
 - **Consensus resolution (2026-10-22):** Narrow the `/branches` rule strictly to delete controls (`Delete branch` buttons,
   deletion confirmation dialogs, force renames). Branch viewing, listing, and normal branch creation remain `RiskLevel.LOW`
-  [verified: architectural decision; see `phase-3-decisions-alignment.md`].
+ .
 
 **Gitea baseline** (Phase 2 gate, `docs/phases/README.md`, 5 trials each, graded by Gitea's API): create-repo 4/5,
 create-issue 5/5, add-file 5/5, create-branch 5/5, repo-settings 4/5 (the failure is #273).
@@ -152,7 +152,7 @@ All open questions have been resolved through consensus alignment between Nachik
   - **12 tasks confirmed:** Yes. Confirmed the 12 workflows (6 Gitea + 6 GitHub), retaining `gitea-comment-issue` and `github-repo-description`.
   - **Narrowing `/branches` danger rule:** Yes. Narrowed strictly to branch deletion controls and confirmation dialogs (#91).
 - **Second account for `github-add-collaborator`:** Resolved by swapping `github-add-collaborator` with `github-create-label` (creates custom label `needs-docs` with hex color `#d73a4a` and description). No second account needed.
-- **Metrics API:** Resolved. Vishwas will implement `GET /api/v1/metrics/summary` in FastAPI, which executes `benchmarks.reporter.collector.collect_benchmark_metrics("benchmarks/results")` and returns the validated `BenchmarkReportData` model as JSON.
+- **Metrics API:** Resolved. Vishwas implements `GET /api/v1/metrics/summary`. The shape is a contract (`metrics-summary.schema.json`); the benchmark reporter writes `benchmarks/results/summary.json` and the API serves it (see `phase-3-decisions-alignment.md` §7).
 - **CSRF & Route Protection:** Resolved. Mutating requests require `X-Krama: 1`. FastAPI issues HTTP-only `SameSite=Lax` session cookies. Server components call FastAPI directly forwarding cookies; client components route through Next.js proxy/rewrites.
 - **Share Expiry:** Resolved. Support `never` only for MVP release; defer TTL expirations to Phase 4.
 - **User Onboarding:** Resolved. Seeded accounts only (`just seed-users`, `demo@krama.dev`); no open public sign-up for MVP to protect test quotas and GitHub account.

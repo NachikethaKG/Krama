@@ -58,7 +58,7 @@
 |---|---|
 | Fix the top agent and verifier failures found by the benchmark | `benchmarks/`: 12 benchmark workflows across Gitea and GitHub; metrics dashboard (Server Component rendering pure-SVG charts) |
 | Performance: planning < 15 s, total run 30–60 s where possible | Run the usability test with 3–5 people outside the team using seeded participant accounts (`demo@krama.dev`); turn findings into issues |
-| Backend metrics API: `GET /api/v1/metrics/summary` serving `BenchmarkReportData` JSON via `benchmarks.reporter.collector.collect_benchmark_metrics("benchmarks/results")` | |
+| Backend metrics API: `GET /api/v1/metrics/summary` serving `benchmarks/results/summary.json` (shape in `contracts/metrics-summary.schema.json`) | Reporter writes `summary.json` after each benchmark run |
 
 ---
 
@@ -69,7 +69,7 @@ All tasks reset initial state via REST API, execute through the product API (`--
 | # | Task ID | Target | Summary / Goal | Grading API & Method |
 |---|---|---|---|---|
 | 1 | `gitea-create-repo` | Gitea | Create repo `bench-new` | `GET /api/v1/repos/{user}/bench-new` returns 200 |
-| 2 | `gitea-create-issue` | Gitea | Open an issue titled `Bug: fix login` | Issue list API contains title |
+| 2 | `gitea-create-issue` | Gitea | Open an issue titled `Login page shows a blank screen` | Issue list API contains title |
 | 3 | `gitea-add-file` | Gitea | Add `notes.md` with specified text to `main` | Contents API returns 200 and matches file content |
 | 4 | `gitea-create-branch` | Gitea | Branch `feature-docs` from `main` | Branches API returns 200 for branch |
 | 5 | `gitea-repo-settings` | Gitea | Set repository description | Repo JSON metadata contains updated description |

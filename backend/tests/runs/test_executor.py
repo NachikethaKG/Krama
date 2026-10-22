@@ -8,6 +8,7 @@ import json
 import os
 import urllib.request
 import uuid
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 from uuid import UUID
@@ -27,6 +28,7 @@ from app.observer import PageObserver
 from app.runs import InProcessExecutor, RunEnvironment, RunStore
 from app.runs.store import RunJob
 from app.verifier import LayeredVerifier
+from app.verifier.task_check import TaskVerdict
 from tests.runs.test_runner import GOOD_PLAN, step
 
 pytestmark = pytest.mark.anyio
@@ -415,3 +417,52 @@ async def test_a_duplicate_create_on_real_gitea_never_verifies(sessions: Session
             await s.scalar(select(func.count()).select_from(WorkflowRow).where(WorkflowRow.run_id == second))
             == 0
         )
+
+
+class ScriptedTaskCheck:
+    """Answers the task check (#274) with a fixed verdict and keeps what it was asked."""
+
+    def __init__(self, done: bool | None, missing: str = "") -> None:
+        self.verdict = TaskVerdict(done=done, missing=missing)
+        self.asked: list[tuple[str, list[str], str, str]] = []
+
+    async def check(self, task: str, steps: Sequence[str], final_path: str, final_page: str) -> TaskVerdict:
+        self.asked.append((task, list(steps), final_path, final_page))
+        return self.verdict
+
+
+async def test_a_run_whose_steps_miss_part_of_the_task_fails(
+    sessions: Sessions, site: str, tmp_path: Path
+) -> None:
+    # Every step verifies, but the task asked for more than the plan did (#274): no verified workflow.
+    task = "Create the item demo-item and add a file notes.md to it"
+    run_id = await queued_run(sessions, site, GOOD_PLAN["steps"], prompt=task)
+    check = ScriptedTaskCheck(done=False, missing="the file notes.md was not added")
+
+    await run_to_end(InProcessExecutor(RunStore(sessions), environment(tmp_path, task_check=check)), run_id)
+
+    run = await run_row(sessions, run_id)
+    assert run.status == "failed" and run.error is not None
+    assert run.error["details"] == {"reason": "task_incomplete", "missing": "the file notes.md was not added"}
+    assert "the file notes.md was not added" in run.error["message"]
+    stream = await events(sessions, run_id)
+    assert [e["type"] for e in stream][-2:] == ["step.verified", "run.failed"]
+    async with sessions() as s:
+        assert await s.scalar(select(func.count()).select_from(WorkflowRow)) == 0
+    [(asked_task, steps, path, page)] = check.asked
+    assert asked_task == task
+    assert len(steps) == len(GOOD_PLAN["steps"]) and steps[-1] == "Click “Create item”."
+    assert path == "/done" and "Item created" in page  # the page the run ended on
+
+
+async def test_an_unsure_task_check_keeps_the_run_verified(
+    sessions: Sessions, site: str, tmp_path: Path
+) -> None:
+    # No answer (or an LLM error) must never fail a run whose steps all verified.
+    run_id = await queued_run(sessions, site, GOOD_PLAN["steps"])
+    check = ScriptedTaskCheck(done=None, missing="task check unavailable")
+
+    await run_to_end(InProcessExecutor(RunStore(sessions), environment(tmp_path, task_check=check)), run_id)
+
+    assert (await run_row(sessions, run_id)).status == "verified"
+    assert len(check.asked) == 1

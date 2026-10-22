@@ -24,6 +24,7 @@ from app.runs.events import EventHub
 from app.storage import LocalFsStore
 from app.targets import TargetSetup, target_setup
 from app.verifier import LayeredVerifier
+from app.verifier.task_check import GeminiTaskChecker
 from app.verifier.vision import GeminiVisionJudge
 
 
@@ -73,6 +74,8 @@ def build_services(settings: Settings) -> Services:
         target=lambda job: target_setup(job.target_url, settings),
         run_timeout_s=settings.run_timeout_seconds,
         max_replans_per_run=settings.max_replans_per_run,
+        # One LLM call after the last step: did the steps do the whole task (#274)? Gemini only, like vision.
+        task_check=GeminiTaskChecker(llm) if gemini else None,
     )
     return Services(
         sessions=sessions,
