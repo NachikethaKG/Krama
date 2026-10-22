@@ -10,6 +10,7 @@ import pytest
 from app.contracts_gen.plan_schema import Plan
 from app.llm import FakeProvider, FakeResponse
 from app.planner import (
+    SITE_HINTS,
     SYSTEM_PROMPT,
     InvalidPlanError,
     LLMPlanner,
@@ -227,6 +228,14 @@ def test_system_prompt_forbids_changing_existing_data_unasked() -> None:
     # Live finding (#37): asked to create a repo that already existed, Gemini planned to delete it first.
     assert "Never delete, overwrite" in SYSTEM_PROMPT
     assert "already exists" in SYSTEM_PROMPT
+
+
+@pytest.mark.parametrize("site", sorted(SITE_HINTS))
+def test_site_hints_name_no_css_selector(site: str) -> None:
+    # A plan can't carry a selector, so a hint that offers one makes Gemini ask instead of plan (#273).
+    hints = SITE_HINTS[site]
+    for css in ("form:has(", "button.", "textarea#", "input#", "#description"):
+        assert css not in hints
 
 
 INJECTION = "\n".join(
