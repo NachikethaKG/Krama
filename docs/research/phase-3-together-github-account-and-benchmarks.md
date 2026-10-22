@@ -49,14 +49,15 @@ the likely one. [unverified: confirm when creating the token]
   That's part of #89.
 
 **A clash with the planned danger-zone rules** (`phase-3-nachiketha-github-danger-zones.md`, not in code yet, #91)
-- The proposed route rule matches every page under `/<owner>/<repo>/branches` and `/<owner>/<repo>/settings/access`.
-  Two problems follow:
+- The proposed route rule originally matched every page under `/<owner>/<repo>/branches` and `/<owner>/<repo>/settings/access`.
+  Two problems followed:
   - Creating a branch from the `/branches` page ("New branch") would pause every time, although creating a branch isn't
     destructive.
   - Inviting a collaborator happens on `/settings/access`, so that task always pauses. That one is arguably right,
     because it grants access.
-- Suggestion for #91: make the `/branches` rule match the delete controls (`Delete branch`), not the whole page. Then
-  the add-collaborator benchmark counts "paused for confirmation, confirmed, invite exists" as the expected path.
+- **Consensus resolution (2026-10-22):** Narrow the `/branches` rule strictly to delete controls (`Delete branch` buttons,
+  deletion confirmation dialogs, force renames). Branch viewing, listing, and normal branch creation remain `RiskLevel.LOW`
+  [verified: architectural decision; see `phase-3-decisions-alignment.md`].
 
 **Gitea baseline** (Phase 2 gate, `docs/phases/README.md`, 5 trials each, graded by Gitea's API): create-repo 4/5,
 create-issue 5/5, add-file 5/5, create-branch 5/5, repo-settings 4/5 (the failure is #273).
@@ -135,25 +136,26 @@ API grade.
 | 9 | `github-add-file` | GitHub | add `notes.md` with text to main | contents API 200 + content | **new** |
 | 10 | `github-create-branch` | GitHub | branch `feature-docs` from main | branches API 200 | **new** (#89); needs the #91 `/branches` fix |
 | 11 | `github-repo-description` | GitHub | set the description of `bench-settings` | repo JSON contains text | **new** |
-| 12 | `github-add-collaborator` | GitHub | invite `<second account>` with Write access | invitations API lists the user | **new** (#89); expected to pause for confirmation; cleanup cancels the invite |
+| 12 | `github-create-label` | GitHub | create label `needs-docs` with color `#d73a4a` and description in `bench-labels` | labels API returns 200 with matching attributes | **new** (#89); swapped in place of `github-add-collaborator` |
 
-- If we have no second account to invite, drop #12 and use `github-create-label` (create label `needs-docs`) instead.
-  That still leaves 12 tasks.
+- **Swapped Task 12:** Swapped `github-create-label` in place of `github-add-collaborator` (consensus alignment 2026-10-22).
+  Avoids external invitation delivery state, email throttling, and account pollution against secondary accounts.
 - On GitHub that's 6 tasks × 5 trials = 30 runs per full benchmark: one full benchmark a day, within the rules above.
 
 No ADR: the GitHub test account, the org and the benchmark size are all in the phase plan.
 
-## Open questions
+## Open questions & Alignment Status
+
+All open questions have been resolved through consensus alignment between Nachiketha and Vishwas on 2026-10-22 (see [`phase-3-decisions-alignment.md`](phase-3-decisions-alignment.md)):
+
 - **Nachiketha:**
-  - OK with the 12 tasks? Especially `gitea-comment-issue` and the GitHub descriptions, which aren't in the phase file.
-  - OK to narrow the `/branches` danger rule to the delete controls (#91)?
-- **Second account for `github-add-collaborator`:** Nachiketha's personal account (he'd get invite emails that cleanup
-  cancels), his own machine account, or replace the task with `github-create-label`?
-- **Metrics:** `phase-3-nachiketha-metrics-dashboard.md` expects `GET /api/v1/metrics/summary` from the backend. No
-  issue covers it. Two options:
-  - the dashboard reads the benchmark's result JSON files;
-  - a new backend issue (Vishwas) serves them.
-  Decide before #102.
+  - **12 tasks confirmed:** Yes. Confirmed the 12 workflows (6 Gitea + 6 GitHub), retaining `gitea-comment-issue` and `github-repo-description`.
+  - **Narrowing `/branches` danger rule:** Yes. Narrowed strictly to branch deletion controls and confirmation dialogs (#91).
+- **Second account for `github-add-collaborator`:** Resolved by swapping `github-add-collaborator` with `github-create-label` (creates custom label `needs-docs` with hex color `#d73a4a` and description). No second account needed.
+- **Metrics API:** Resolved. Vishwas will implement `GET /api/v1/metrics/summary` in FastAPI, which executes `benchmarks.reporter.collector.collect_benchmark_metrics("benchmarks/results")` and returns the validated `BenchmarkReportData` model as JSON.
+- **CSRF & Route Protection:** Resolved. Mutating requests require `X-Krama: 1`. FastAPI issues HTTP-only `SameSite=Lax` session cookies. Server components call FastAPI directly forwarding cookies; client components route through Next.js proxy/rewrites.
+- **Share Expiry:** Resolved. Support `never` only for MVP release; defer TTL expirations to Phase 4.
+- **User Onboarding:** Resolved. Seeded accounts only (`just seed-users`, `demo@krama.dev`); no open public sign-up for MVP to protect test quotas and GitHub account.
 - The fine-grained token permissions for delete and invitations: confirm when creating the token (step 1.4).
 
 ## Links
@@ -163,3 +165,4 @@ No ADR: the GitHub test account, the org and the benchmark size are all in the p
 - https://docs.github.com/en/rest/collaborators/invitations
 - https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api
 - `benchmarks/tasks/README.md`, `benchmarks/tasks/runner.py`
+- `docs/research/phase-3-decisions-alignment.md`
