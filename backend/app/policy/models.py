@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections.abc import Iterable
 from enum import StrEnum
 
@@ -10,6 +12,7 @@ __all__ = [
     "PlanRiskAssessment",
     "RiskAssessment",
     "RiskLevel",
+    "StepRiskAssessment",
     "max_risk_level",
 ]
 
@@ -69,6 +72,36 @@ class RiskAssessment(BaseModel):
     flagged_by: str  # "denylist", "llm_classifier", "fallback_safe", "fast_path"
     confidence: float = 1.0
     matched_rule: str | None = None
+
+
+class StepRiskAssessment(BaseModel):
+    """Structured risk assessment for a specific step or action."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    risk_level: RiskLevel
+    reason: str
+    requires_confirmation: bool = False
+
+    @property
+    def level(self) -> RiskLevel:
+        """Alias for compatibility with RiskAssessment.level."""
+        return self.risk_level
+
+    def to_risk_assessment(
+        self,
+        *,
+        flagged_by: str = "github_danger_zone",
+        confidence: float = 1.0,
+        matched_rule: str | None = None,
+    ) -> RiskAssessment:
+        return RiskAssessment(
+            level=self.risk_level,
+            reason=self.reason,
+            flagged_by=flagged_by,
+            confidence=confidence,
+            matched_rule=matched_rule or "github_danger_zone",
+        )
 
 
 class PlanRiskAssessment(RiskAssessment):
