@@ -9,6 +9,13 @@ import type {
   Workflow,
 } from "@krama/contracts-ts";
 
+export type {
+  TargetPlatform,
+  TutorialFilterOptions,
+  TutorialStatus,
+  TutorialSummary,
+} from "../types/tutorial";
+
 export type VerificationEvidenceMethod = "url_dom" | "aria" | "network" | "vision";
 
 export interface StepVerificationEvidence {

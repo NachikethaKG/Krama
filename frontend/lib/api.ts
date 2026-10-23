@@ -11,6 +11,7 @@ import type {
   Task,
   Workflow,
   WorkflowPage,
+  WorkflowStatus,
 } from "@krama/contracts-ts";
 
 import { apiBaseUrl, artifactUrl, normalizeBaseUrl } from "./artifacts";
@@ -26,6 +27,7 @@ import {
   giteaWorkflowFixture,
   mockRunDetails,
   mockRunsList,
+  mockTutorialSummaries,
   pausedWorkflowFixture,
   replanProposedPlanFixture,
   replanWorkflowFixture,
@@ -42,6 +44,9 @@ import type {
   ManualLoginResponse,
   StepEvidenceDetail,
   StepVerificationEvidence,
+  TargetPlatform,
+  TutorialStatus,
+  TutorialSummary,
   VerificationEvidenceMethod,
 } from "./types";
 
@@ -57,7 +62,10 @@ export type {
   ManualLoginResponse,
   StepEvidenceDetail,
   StepVerificationEvidence,
+  TargetPlatform,
   Task,
+  TutorialStatus,
+  TutorialSummary,
   VerificationEvidenceMethod,
   Workflow,
 };
@@ -74,6 +82,7 @@ export {
   giteaWorkflowFixture,
   mockRunDetails,
   mockRunsList,
+  mockTutorialSummaries,
   normalizeBaseUrl,
   pausedWorkflowFixture,
   replanWorkflowFixture,
@@ -176,7 +185,9 @@ export interface ApiClient {
   /** GET /workflows/{id}: the verified workflow. */
   getWorkflow(id: string): Promise<Workflow>;
   /** GET /workflows: stored workflows, newest first (the tutorial library). */
-  getWorkflows(limit?: number): Promise<WorkflowPage>;
+  getWorkflows(limit?: number, status?: WorkflowStatus | "all"): Promise<WorkflowPage>;
+  /** GET /tutorials (or stored workflows mapped to tutorial summaries). */
+  getTutorials(options?: { limit?: number; status?: "all" | TutorialStatus }): Promise<TutorialSummary[]>;
   /** Run + plan + task + workflow, shaped for the run detail / evidence page. */
   getRunDetails(runId: string): Promise<RunDetails>;
   /** POST /api/v1/sessions/manual-login?target={target} */
@@ -506,8 +517,33 @@ export class HttpApiClient implements ApiClient {
     return this.request<Workflow>(`/workflows/${encodeURIComponent(id)}`);
   }
 
-  getWorkflows(limit = 50): Promise<WorkflowPage> {
-    return this.request<WorkflowPage>(`/workflows?limit=${limit}`);
+  getWorkflows(limit = 50, status?: WorkflowStatus | "all"): Promise<WorkflowPage> {
+    const params = new URLSearchParams({ limit: String(limit) });
+    if (status && status !== "all") params.set("status", status);
+    return this.request<WorkflowPage>(`/workflows?${params.toString()}`);
+  }
+
+  async getTutorials(options?: { limit?: number; status?: "all" | TutorialStatus }): Promise<TutorialSummary[]> {
+    try {
+      const path = this.baseUrl.endsWith("/api/v1") ? "/tutorials" : "/api/v1/tutorials";
+      const res = await this.request<{ items: TutorialSummary[] } | TutorialSummary[]>(path);
+      if (Array.isArray(res)) return res;
+      if (res && Array.isArray(res.items)) return res.items;
+    } catch {
+      // Endpoint /api/v1/tutorials not implemented, fallback to /workflows
+    }
+    const workflowsPage = await this.getWorkflows(options?.limit ?? 100, options?.status ?? "all");
+    return workflowsPage.items.map((w) => ({
+      id: w.id,
+      title: w.title,
+      description: undefined,
+      taskPrompt: w.title,
+      target: (w.target_app === "github" ? "github" : w.target_app === "custom" ? "custom" : "gitea") as TargetPlatform,
+      status: (w.status === "verified" ? "verified" : "outdated") as TutorialStatus,
+      stepCount: w.step_count,
+      durationMs: w.step_count * 18000,
+      createdAt: w.created_at ?? new Date().toISOString(),
+    }));
   }
 
   /** Run → plan → task.prompt, cached per plan (the run list shows the real prompt). */
@@ -938,9 +974,15 @@ export class MockApiClient implements ApiClient {
     return fixture;
   }
 
-  async getWorkflows(limit = 50): Promise<WorkflowPage> {
-    const items = Object.values(this.workflows)
-      .filter((w) => w.status === "verified")
+  async getWorkflows(limit = 50, status?: WorkflowStatus | "all"): Promise<WorkflowPage> {
+    const seen = new Set<string>();
+    const unique = Object.values(this.workflows).filter((w) => {
+      if (seen.has(w.id)) return false;
+      seen.add(w.id);
+      return true;
+    });
+    const items = unique
+      .filter((w) => (status === "all" ? true : status ? w.status === status : w.status === "verified"))
       .slice(0, limit)
       .map((w) => ({
         id: w.id,
@@ -952,6 +994,17 @@ export class MockApiClient implements ApiClient {
         created_at: w.created_at ?? null,
       }));
     return { items, next_cursor: null };
+  }
+
+  async getTutorials(options?: { limit?: number; status?: "all" | TutorialStatus }): Promise<TutorialSummary[]> {
+    let list = [...mockTutorialSummaries];
+    if (options?.status && options.status !== "all") {
+      list = list.filter((t) => t.status === options.status);
+    }
+    if (options?.limit) {
+      list = list.slice(0, options.limit);
+    }
+    return list;
   }
 
   async *streamRunEvents(runId: string, options: StreamOptions = {}): AsyncIterable<RunEvent> {
