@@ -1,10 +1,10 @@
 import Link from "next/link";
-import { TutorialLibrary, TutorialPlayer } from "@/components/player";
-import { giteaTutorialSpecFixture } from "@/lib/fixtures";
+import { TutorialLibraryView } from "@/components/tutorials";
 
 export const metadata = {
-  title: "Tutorial Player · Krama",
-  description: "Interactive tutorial player driven by TutorialSpec",
+  title: "Tutorials Library · Krama",
+  description:
+    "Browse, search, and replay interactive tutorials recorded from verified browser workflows.",
 };
 
 export default function TutorialsPage() {
@@ -21,28 +21,29 @@ export default function TutorialsPage() {
             </Link>
             <span className="text-zinc-300 dark:text-zinc-700">/</span>
             <span className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
-              Interactive Tutorial
+              Tutorials
             </span>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <Link
               href="/runs"
-              className="rounded-md border border-zinc-200 px-2.5 py-1 text-xs font-medium text-zinc-700 hover:bg-zinc-100 dark:border-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-800"
+              className="rounded-md border border-zinc-200 px-2.5 py-1 text-xs font-medium text-zinc-700 hover:bg-zinc-100 dark:border-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-800 transition-colors"
             >
               Runs History
+            </Link>
+            <Link
+              href="/dashboard"
+              className="rounded-md border border-zinc-200 px-2.5 py-1 text-xs font-medium text-zinc-700 hover:bg-zinc-100 dark:border-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-800 transition-colors"
+            >
+              Dashboard
             </Link>
           </div>
         </div>
       </nav>
 
-      <main className="py-6">
-        {/* Real API mode: the stored workflows, each a tutorial. Mock mode: the demo tutorial. */}
-        {process.env.NEXT_PUBLIC_API_MODE === "http" ? (
-          <TutorialLibrary />
-        ) : (
-          <TutorialPlayer spec={giteaTutorialSpecFixture} />
-        )}
+      <main className="py-8">
+        <TutorialLibraryView />
       </main>
     </div>
   );
