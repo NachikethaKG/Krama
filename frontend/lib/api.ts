@@ -15,6 +15,7 @@ import type {
   WorkflowPage,
   WorkflowStatus,
 } from "@krama/contracts-ts";
+import { compileWorkflow, type TutorialSpec } from "@krama/tutorial-compiler";
 
 import { apiBaseUrl, artifactUrl, normalizeBaseUrl } from "./artifacts";
 import {
@@ -27,6 +28,7 @@ import {
   giteaPausedEventsFixture,
   giteaReplanEventsFixture,
   giteaReplanReviewEventsFixture,
+  giteaTutorialSpecFixture,
   giteaWorkflowFixture,
   mockRunDetails,
   mockRunsList,
@@ -36,6 +38,7 @@ import {
   replanWorkflowFixture,
   restrictedWorkflowFixture,
   toPlannedStep,
+  tutorialSpecFixtures,
   validWorkflowFixture,
   workflowFixtures,
 } from "./fixtures";
@@ -206,6 +209,8 @@ export interface ApiClient {
   logout(): Promise<void>;
   /** GET /auth/me (or /api/v1/auth/me) with X-Krama: 1. Throws 401 when unauthenticated. */
   getMe(): Promise<User>;
+  /** GET /api/v1/shares/{token} (or /shared/{token}). Public, read-only. Throws 404 when not found or revoked. */
+  getSharedTutorial(token: string): Promise<TutorialSpec>;
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -649,6 +654,28 @@ export class HttpApiClient implements ApiClient {
         "X-Krama": "1",
       },
     });
+  }
+
+  async getSharedTutorial(token: string): Promise<TutorialSpec> {
+    const path = this.baseUrl.endsWith("/api/v1")
+      ? `/shares/${encodeURIComponent(token)}`
+      : `/api/v1/shares/${encodeURIComponent(token)}`;
+    try {
+      const data = await this.request<TutorialSpec | Workflow>(path);
+      if ("scenes" in data && "viewport" in data) {
+        return data as TutorialSpec;
+      }
+      return compileWorkflow(data as Workflow);
+    } catch {
+      const fallback = this.baseUrl.endsWith("/api/v1")
+        ? `/shared/${encodeURIComponent(token)}`
+        : `/api/v1/shared/${encodeURIComponent(token)}`;
+      const data = await this.request<TutorialSpec | Workflow>(fallback);
+      if ("scenes" in data && "viewport" in data) {
+        return data as TutorialSpec;
+      }
+      return compileWorkflow(data as Workflow);
+    }
   }
 
   /**
@@ -1287,6 +1314,23 @@ export class MockApiClient implements ApiClient {
       throw mockError(401, "unauthorized", "Not signed in");
     }
     return this.mockCurrentUser ?? demoUserFixture;
+  }
+
+  async getSharedTutorial(token: string): Promise<TutorialSpec> {
+    if (token === "revoked-token" || token === "invalid-token" || token === "404") {
+      throw mockError(404, "not_found", "This tutorial link is invalid or has been revoked by the creator.");
+    }
+    if (tutorialSpecFixtures[token]) {
+      return tutorialSpecFixtures[token];
+    }
+    if (workflowFixtures[token]) {
+      try {
+        return compileWorkflow(workflowFixtures[token]);
+      } catch {
+        return giteaTutorialSpecFixture;
+      }
+    }
+    return giteaTutorialSpecFixture;
   }
 }
 
