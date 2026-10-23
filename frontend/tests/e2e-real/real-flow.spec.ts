@@ -49,7 +49,13 @@ test("creates a Gitea repository through the real API and shows the verified wor
   // 1. Task → planning (real LLM, 15-60 s) → plan
   await page.goto("/");
   await page.getByTestId("task-prompt-input").fill(`Create a repository called ${name}`);
-  await page.getByTestId("target-url-input").fill(GITEA_URL);
+  const customOption = page.getByTestId("target-option-custom");
+  if (await customOption.isVisible().catch(() => false)) {
+    await customOption.click();
+    await page.getByTestId("custom-target-url-input").fill(GITEA_URL);
+  } else {
+    await page.getByTestId("target-url-input").fill(GITEA_URL);
+  }
   await page.getByTestId("submit-task-btn").click();
   await expect(page.getByTestId("task-planning-status")).toBeVisible({ timeout: 30_000 });
 
