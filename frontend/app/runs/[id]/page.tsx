@@ -1,16 +1,16 @@
-import { Suspense, use } from "react";
-import { RunDetailView } from "@/components/runs";
+import { Suspense } from "react";
+import { RunDetailRouter } from "./RunDetailRouter";
 
 export interface RunDetailPageProps {
   params: Promise<{ id: string }>;
+  searchParams?: Promise<{ view?: string; speed?: string }>;
 }
 
-function RunDetailInner({ params }: RunDetailPageProps) {
-  const { id } = use(params);
-  return <RunDetailView runId={id} />;
-}
+export default async function RunDetailPage({ params, searchParams }: RunDetailPageProps) {
+  const { id } = await params;
+  const resolvedSearchParams = searchParams ? await searchParams : undefined;
+  const viewParam = resolvedSearchParams?.view;
 
-export default function RunDetailPage({ params }: RunDetailPageProps) {
   return (
     <Suspense
       fallback={
@@ -21,16 +21,13 @@ export default function RunDetailPage({ params }: RunDetailPageProps) {
           >
             <div className="size-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mb-4" />
             <h2 className="text-base font-semibold text-zinc-800 dark:text-zinc-200">
-              Loading Run Verification Evidence…
+              Loading Run…
             </h2>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
-              Fetching step screenshots and multi-layer verification scores from artifact store
-            </p>
           </div>
         </main>
       }
     >
-      <RunDetailInner params={params} />
+      <RunDetailRouter runId={id} viewParam={viewParam} />
     </Suspense>
   );
 }

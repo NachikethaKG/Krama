@@ -1219,6 +1219,17 @@ export class MockApiClient implements ApiClient {
   }
 
   async getRunDetails(runId: string): Promise<RunDetails> {
+    if (runId.includes("stream") || runId === "test-run-stream" || runId.startsWith("stream-")) {
+      const def = this.runDetailsMap["default"] ?? mockRunDetails;
+      return {
+        ...def,
+        run: {
+          ...def.run,
+          id: runId,
+          status: "running",
+        },
+      };
+    }
     const details =
       this.runDetailsMap[runId] ??
       (runId === "default" || runId === "mock" || runId === "" ? this.runDetailsMap["default"] : undefined);
