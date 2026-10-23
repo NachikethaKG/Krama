@@ -1,9 +1,16 @@
-import type { Plan, PlannedStep, RunEvent, Step, Workflow } from "@krama/contracts-ts";
+import type { Plan, PlannedStep, RunEvent, Step, User, Workflow } from "@krama/contracts-ts";
 import type { TutorialSpec } from "@krama/tutorial-compiler";
 import type { TutorialSummary } from "@/types/tutorial";
 import giteaTutorialSpecJson from "../../contracts/fixtures/tutorial-spec/gitea-create-repo.json";
 import giteaWorkflowJson from "../../contracts/fixtures/gitea-create-repo-workflow.json";
 import validWorkflowJson from "../../contracts/fixtures/valid_workflow.json";
+
+export const demoUserFixture: User = {
+  id: "e1b2c3d4-0000-4000-8000-000000000001",
+  email: "demo@krama.dev",
+  display_name: "Demo User",
+  created_at: "2026-10-01T00:00:00.000Z",
+};
 
 export const giteaWorkflowFixture = giteaWorkflowJson as unknown as Workflow;
 export const validWorkflowFixture = validWorkflowJson as unknown as Workflow;
