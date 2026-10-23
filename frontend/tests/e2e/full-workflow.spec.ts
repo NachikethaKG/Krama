@@ -12,7 +12,11 @@ test.describe("Mock-mode Workflow E2E: Prompt → Plan → Approve → Live Exec
     await expect(page.getByTestId("task-input-section")).toBeVisible();
 
     const promptInput = page.getByTestId("task-prompt-input");
-    const targetUrlInput = page.getByTestId("target-url-input");
+    const customTargetOption = page.getByTestId("target-option-custom");
+    if (await customTargetOption.isVisible().catch(() => false)) {
+      await customTargetOption.click();
+    }
+    const targetUrlInput = page.getByTestId("custom-target-url-input");
     const submitBtn = page.getByTestId("submit-task-btn");
 
     await expect(promptInput).toBeVisible();
