@@ -27,6 +27,8 @@ export const tutorialSpecFixtures: Record<string, TutorialSpec> = {
   "github-create-issue-outdated": { ...giteaTutorialSpecFixture, title: "Create an issue with template on GitHub" },
   "gitea-deploy-key-outdated": { ...giteaTutorialSpecFixture, title: "Add deploy key in Gitea repository" },
   "custom-dashboard-export": { ...giteaTutorialSpecFixture, title: "Export analytics report in Custom Portal" },
+  "valid-token": giteaTutorialSpecFixture,
+  "test-sample-token": giteaTutorialSpecFixture,
 };
 
 /** The plan-shaped part of a workflow step (what /plans/{id} returns). */

@@ -52,6 +52,24 @@ describe("Route Protection Middleware (middleware.ts)", () => {
     expect(signupRes.status).toBe(200);
   });
 
+  it("allows unauthenticated access to public share routes (/share/[token] and /s/[token])", () => {
+    const shareReq = createMockRequest("http://localhost:3000/share/sample-unguessable-token-123");
+    const shareRes = middleware(shareReq);
+    expect(shareRes.status).toBe(200);
+
+    const shortShareReq = createMockRequest("http://localhost:3000/s/short-token-456");
+    const shortShareRes = middleware(shortShareReq);
+    expect(shortShareRes.status).toBe(200);
+  });
+
+  it("allows authenticated requests to access public share routes without redirect", () => {
+    const shareReq = createMockRequest("http://localhost:3000/share/sample-token", {
+      krama_session: "demo-session-token",
+    });
+    const shareRes = middleware(shareReq);
+    expect(shareRes.status).toBe(200);
+  });
+
   it("allows authenticated requests with krama_session to access /dashboard and /runs", () => {
     const dashboardReq = createMockRequest("http://localhost:3000/dashboard", {
       krama_session: "demo-session-token",
