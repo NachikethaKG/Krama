@@ -244,3 +244,62 @@ def test_a_reverify_run_names_the_workflow_it_replays() -> None:
     assert run.kind == "reverify" and str(run.source_workflow_id) == RUN and run.workflow_id is None
     with pytest.raises(ValidationError):
         Run.model_validate(QUEUED_RUN | {"kind": "replay"})
+
+
+# --- Phase 3 API (auth, share links, metrics summary) ---
+
+
+def test_login_request_bounds_the_password() -> None:
+    from app.contracts_gen.auth_schema import LoginRequest
+
+    assert LoginRequest(email="demo@krama.dev", password="x" * 128).password
+    with pytest.raises(ValidationError):
+        LoginRequest(email="demo@krama.dev", password="x" * 129)  # argon2 work stays bounded
+    with pytest.raises(ValidationError):
+        LoginRequest.model_validate({"email": "demo@krama.dev", "password": "pw", "remember": True})
+
+
+def test_a_user_never_carries_a_password_hash() -> None:
+    from app.contracts_gen.auth_schema import User
+
+    with pytest.raises(ValidationError):
+        User.model_validate(
+            {"id": RUN, "email": "a@b.dev", "created_at": TS, "password_hash": "$argon2id$..."}
+        )
+
+
+def test_a_created_share_link_carries_its_url_once() -> None:
+    from app.contracts_gen.share_schema import ShareLink, ShareLinkCreated
+
+    link = {"id": RUN, "workflow_id": RUN, "created_at": TS}
+    created = ShareLinkCreated.model_validate({"link": link, "url": "http://localhost:3000/share/abc"})
+    assert created.link.expires_at is None and created.link.revoked_at is None
+    with pytest.raises(ValidationError):
+        ShareLink.model_validate({**link, "token": "abc"})  # the listed link never holds the token
+
+
+def test_metrics_summary_matches_the_benchmark_report() -> None:
+    from app.contracts_gen.metrics_summary_schema import MetricsSummary
+
+    task = {
+        "task_name": "gitea-create-repo",
+        "total_runs": 5,
+        "successful_runs": 4,
+        "success_rate": 0.8,
+        "verifier_accuracy": 1.0,
+        "false_alarm_rate": 0.0,
+        "avg_latency_ms": 41000.0,
+        "p90_latency_ms": 52000.0,
+    }
+    summary = MetricsSummary.model_validate(
+        {
+            "generated_at": TS,
+            "total_tasks": 1,
+            "overall_success_rate": 0.8,
+            "overall_verifier_accuracy": 1.0,
+            "tasks": [task],
+        }
+    )
+    assert summary.tasks[0].failed_runs == 0 and summary.overall_p90_latency_ms == 0
+    with pytest.raises(ValidationError):
+        MetricsSummary.model_validate({**summary.model_dump(mode="json"), "overall_success_rate": 1.2})

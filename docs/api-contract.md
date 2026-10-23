@@ -12,7 +12,13 @@
   ```json
   { "error": { "code": "plan_not_editable", "message": "Plan is already approved", "details": {} } }
   ```
-  Codes in use: `validation_error` (422), `not_found` (404), `conflict` (409), `plan_not_editable` (409), `run_not_active` (409), `rate_limited` (429), `llm_unavailable` (503), `internal` (500).
+  Codes in use: `validation_error` (422), `not_found` (404), `conflict` (409), `plan_not_editable` (409), `run_not_active` (409), `rate_limited` (429), `llm_unavailable` (503), `unauthorized` (401), `forbidden` (403), `internal` (500).
+- **Auth (Phase 3):** every endpoint except `/health`, `/auth/login` and `/shared/*` needs the `krama_session`
+  cookie (HTTP-only, `SameSite=Lax`, `Path=/`; `Secure` outside local dev), else `401 unauthorized`. Another
+  user's task, plan, run or workflow answers `404`, never `403`, so ids can't be probed.
+- **CSRF (Phase 3):** `POST`/`PUT`/`PATCH`/`DELETE` need the header `X-Krama: 1` and `Content-Type:
+  application/json` (when there is a body); a request with `Sec-Fetch-Site: cross-site` or an `Origin` outside
+  `CORS_ORIGINS` is refused. All of these answer `403 forbidden` (`docs/research/phase-3-vishwas-accounts-and-csrf.md`).
 
 ## Endpoints
 
@@ -38,7 +44,15 @@
 | 2 | POST | `/workflows/{id}/reverify` | → `202 Run` (`kind: "reverify"`) | Replays the stored workflow's steps headlessly, without the planner; the run stores no new workflow. `404` unknown workflow; `409 conflict` if a step is high risk, a step typed a secret (never stored), or the target can't be reset to the workflow's starting state (`error.details.reason`). A step that no longer works fails the run: `locator_miss`, `action_failed` or `state_mismatch` in `error.details` |
 | 2 | GET | `/workflows/{id}/guide.md` | → `text/markdown` | Text guide: the tutorial's step texts, numbered, one screenshot each (absolute image URLs) |
 | 3 | POST | `/runs/{id}/takeover` | → `Run` | The user finishes manually after a CAPTCHA/bot wall |
-| 3 | POST | `/auth/*`, `/tutorials/{id}/share` | — | Specified in Phase 3 |
+| 3 | POST | `/auth/login` | `LoginRequest` → `User` + `Set-Cookie` | Seeded accounts only, no sign-up in the MVP. `401 unauthorized` with one generic message for a wrong email or password; repeated failures are slowed down (`429`). A new session id on every login |
+| 3 | POST | `/auth/logout` | → `204` | Revokes the session on the server and clears the cookie |
+| 3 | GET | `/auth/me` | → `User` | `401` when signed out (the frontend's route guard) |
+| 3 | POST | `/workflows/{id}/shares` | → `201 ShareLinkCreated` | Owner only. `url` holds the token and is shown only here (only its SHA-256 is stored) |
+| 3 | GET | `/workflows/{id}/shares` | → `ShareLinkList` | Owner only; never the tokens |
+| 3 | DELETE | `/workflows/{id}/shares/{share_id}` | → `ShareLink` | Owner only. Revokes (sets `revoked_at`); the link stops working at once |
+| 3 | GET | `/shared/{token}` | → `Workflow` | Public, read-only. `task_id`/`run_id` are null and file URLs point under `/shared/{token}/`. Unknown, revoked and expired tokens all answer the same `404`. Sent with `Referrer-Policy: no-referrer`, `X-Robots-Tag: noindex, nofollow`, `Cache-Control: private, no-store` |
+| 3 | GET | `/shared/{token}/recording`, `/shared/{token}/artifacts/{path}` | → rrweb JSON / image | Only the shared workflow's own files |
+| 3 | GET | `/metrics/summary` | → `MetricsSummary` | The last benchmark's `benchmarks/results/summary.json`; `404` before any benchmark has run |
 | 4 | GET | `/workflows/{id}/versions` | → `WorkflowVersion[]` | Drift and self-healing |
 | 5 | POST | `/workflows/{id}/exports` | `{format: "mp4", preset}` → `202 Export` | |
 
