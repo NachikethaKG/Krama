@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Task } from "@krama/contracts-ts";
 
+import { ManualLoginGuide } from "@/components/session";
+import { TargetPicker, type TargetType, useTargetSelection } from "@/components/target-picker";
 import { type ApiClient, errorMessage, getApiClient } from "@/lib/api";
 
 export interface TaskInputProps {
@@ -14,6 +16,8 @@ export interface TaskInputProps {
   /** Give up waiting for a plan after this long (default 3 min; real planning takes 15-60 s). */
   planningTimeoutMs?: number;
   className?: string;
+  initialTarget?: TargetType;
+  initialTargetUrl?: string;
 }
 
 type Phase = "idle" | "submitting" | "planning" | "clarifying";
@@ -24,11 +28,16 @@ export function TaskInput({
   pollIntervalMs = 1000,
   planningTimeoutMs = 180_000,
   className = "",
+  initialTarget,
+  initialTargetUrl,
 }: TaskInputProps) {
   const router = useRouter();
   const [apiClient] = useState<ApiClient>(() => client ?? getApiClient());
   const [prompt, setPrompt] = useState("");
-  const [targetUrl, setTargetUrl] = useState("http://localhost:3001");
+  const targetSelection = useTargetSelection({
+    initialTarget,
+    initialCustomUrl: initialTargetUrl,
+  });
   const [phase, setPhase] = useState<Phase>("idle");
   const [task, setTask] = useState<Task | null>(null);
   const [answer, setAnswer] = useState("");
@@ -102,8 +111,8 @@ export function TaskInput({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!prompt.trim() || phase !== "idle") return;
-    void run(() => apiClient.createTask(prompt.trim(), targetUrl.trim()));
+    if (!prompt.trim() || !targetSelection.isValid || phase !== "idle") return;
+    void run(() => apiClient.createTask(prompt.trim(), targetSelection.targetUrl.trim()));
   };
 
   const handleClarify = (e: React.FormEvent) => {
@@ -142,26 +151,39 @@ export function TaskInput({
           />
         </div>
 
-        <div className="flex flex-col gap-1.5">
-          <label
-            htmlFor="target-url-input"
-            className="text-xs font-semibold uppercase tracking-wider text-zinc-600 dark:text-zinc-400"
-          >
-            Target System URL
-          </label>
-          <input
-            id="target-url-input"
-            data-testid="target-url-input"
-            type="url"
-            name="target_url"
-            value={targetUrl}
-            onChange={(e) => setTargetUrl(e.target.value)}
-            placeholder="http://localhost:3001"
-            disabled={phase !== "idle"}
-            required
-            className="w-full rounded-lg border border-zinc-300 px-3.5 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-indigo-500 focus:outline-hidden focus:ring-1 focus:ring-indigo-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+        <TargetPicker
+          value={targetSelection.targetType}
+          customUrl={targetSelection.customUrl}
+          onChange={(config) => {
+            targetSelection.selectTarget(config.type);
+            if (config.type === "custom") {
+              targetSelection.setCustomUrl(config.url);
+            }
+          }}
+          disabled={phase !== "idle"}
+        />
+
+        {targetSelection.targetType === "github" && (
+          <ManualLoginGuide
+            target="github"
+            client={apiClient}
+            pollIntervalMs={pollIntervalMs}
           />
-        </div>
+        )}
+
+        {/* Backwards-compatible input for existing tests and form submit */}
+        <input
+          type="text"
+          id="target-url-input"
+          data-testid="target-url-input"
+          name="target_url"
+          className="hidden"
+          value={targetSelection.targetUrl}
+          onChange={(e) => {
+            targetSelection.selectTarget("custom");
+            targetSelection.setCustomUrl(e.target.value);
+          }}
+        />
 
         {phase === "planning" && (
           <div
@@ -189,7 +211,7 @@ export function TaskInput({
             <button
               type="submit"
               data-testid="submit-task-btn"
-              disabled={phase !== "idle" || !prompt.trim()}
+              disabled={phase !== "idle" || !prompt.trim() || !targetSelection.isValid}
               className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-xs transition-colors hover:bg-indigo-700 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-indigo-600 dark:hover:bg-indigo-500"
             >
               {busy ? (

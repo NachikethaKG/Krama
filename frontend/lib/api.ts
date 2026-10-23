@@ -38,6 +38,8 @@ import type {
   RunDetails,
   RunListItem,
   RunsPage,
+  SessionStatus,
+  ManualLoginResponse,
   StepEvidenceDetail,
   StepVerificationEvidence,
   VerificationEvidenceMethod,
@@ -51,6 +53,8 @@ export type {
   RunEvent,
   RunListItem,
   RunsPage,
+  SessionStatus,
+  ManualLoginResponse,
   StepEvidenceDetail,
   StepVerificationEvidence,
   Task,
@@ -175,6 +179,10 @@ export interface ApiClient {
   getWorkflows(limit?: number): Promise<WorkflowPage>;
   /** Run + plan + task + workflow, shaped for the run detail / evidence page. */
   getRunDetails(runId: string): Promise<RunDetails>;
+  /** POST /api/v1/sessions/manual-login?target={target} */
+  launchManualLogin(target: string): Promise<ManualLoginResponse>;
+  /** GET /api/v1/sessions/status?target={target} */
+  getSessionStatus(target: string): Promise<SessionStatus>;
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -540,6 +548,30 @@ export class HttpApiClient implements ApiClient {
     return buildRunDetails(run, plan, task, workflow, this.resolveArtifact);
   }
 
+  launchManualLogin(target: string): Promise<ManualLoginResponse> {
+    const path = this.baseUrl.endsWith("/api/v1")
+      ? `/sessions/manual-login?target=${encodeURIComponent(target)}`
+      : `/api/v1/sessions/manual-login?target=${encodeURIComponent(target)}`;
+    return this.request<ManualLoginResponse>(path, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Krama": "1",
+      },
+    });
+  }
+
+  getSessionStatus(target: string): Promise<SessionStatus> {
+    const path = this.baseUrl.endsWith("/api/v1")
+      ? `/sessions/status?target=${encodeURIComponent(target)}`
+      : `/api/v1/sessions/status?target=${encodeURIComponent(target)}`;
+    return this.request<SessionStatus>(path, {
+      headers: {
+        "X-Krama": "1",
+      },
+    });
+  }
+
   /**
    * Streams the run's events. On an unexpected drop (the connection ends before a final event, or fails) it
    * reconnects with `Last-Event-ID: <last seq>` so nothing is lost or repeated. It never reconnects after a
@@ -711,6 +743,9 @@ export class MockApiClient implements ApiClient {
   private readonly runs = new Map<string, MockRunState>();
   private readonly runsList: RunListItem[];
   private readonly runDetailsMap: Record<string, RunDetails>;
+  private readonly sessionStatuses = new Map<string, SessionStatus>();
+  private readonly manualLoginPending = new Set<string>();
+  mockAutoActivateSession = true;
 
   constructor(
     private readonly events: RunEvent[] = giteaEventsFixture,
@@ -1076,6 +1111,53 @@ export class MockApiClient implements ApiClient {
       return buildRunDetails(run, plan, task, workflow, mockAsset);
     }
     throw mockError(404, "not_found", `Run details not found: ${runId}`);
+  }
+
+  async launchManualLogin(target: string): Promise<ManualLoginResponse> {
+    this.sessionStatuses.set(target, {
+      target,
+      active: false,
+      message: "Waiting for you to complete sign-in in the open browser...",
+    });
+    this.manualLoginPending.add(target);
+    return {
+      target,
+      status: "launched",
+      message: "Manual login browser launched",
+    };
+  }
+
+  async getSessionStatus(target: string): Promise<SessionStatus> {
+    const existing = this.sessionStatuses.get(target);
+    if (!existing) {
+      return {
+        target,
+        active: false,
+        message: "No active session",
+      };
+    }
+    if (this.manualLoginPending.has(target) && this.mockAutoActivateSession) {
+      this.manualLoginPending.delete(target);
+      const activeStatus: SessionStatus = {
+        target,
+        active: true,
+        expires_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+        message: "Session Active (Encrypted Storage State Saved)",
+      };
+      this.sessionStatuses.set(target, activeStatus);
+      return activeStatus;
+    }
+    return existing;
+  }
+
+  setMockSessionStatus(target: string, status: Partial<SessionStatus>): void {
+    this.manualLoginPending.delete(target);
+    this.sessionStatuses.set(target, {
+      target,
+      active: status.active ?? false,
+      expires_at: status.expires_at ?? null,
+      message: status.message,
+    });
   }
 }
 

@@ -79,3 +79,16 @@ export interface RunDetails {
     durationSeconds?: number | null;
   };
 }
+
+export interface SessionStatus {
+  target: string;
+  active: boolean;
+  expires_at?: string | null;
+  message?: string;
+}
+
+export interface ManualLoginResponse {
+  target: string;
+  status: "launched" | "pending" | "active" | "error";
+  message?: string;
+}
