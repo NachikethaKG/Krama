@@ -5,11 +5,38 @@ from pydantic import BaseModel, ConfigDict, Field
 
 __all__ = [
     "ActionContext",
+    "BarrierType",
+    "BarrierVerdict",
     "PlanRiskAssessment",
     "RiskAssessment",
     "RiskLevel",
     "max_risk_level",
 ]
+
+
+class BarrierType(StrEnum):
+    """Types of anti-bot, access restriction, or rate limit barriers."""
+
+    # Generic & Cloudflare (Phase 1)
+    CLOUDFLARE_CHALLENGE = "cloudflare_challenge"
+    RECAPTCHA = "recaptcha"
+    HCAPTCHA = "hcaptcha"
+    AUTH_WALL = "auth_wall"
+
+    # GitHub-specific (Phase 3)
+    GITHUB_RATE_LIMIT = "github_rate_limit"
+    GITHUB_ABUSE_PAGE = "github_abuse_page"
+    GITHUB_CHALLENGE = "github_challenge"
+
+
+class BarrierVerdict(BaseModel):
+    """Structured verdict from barrier detection."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    should_stop: bool
+    barrier_type: BarrierType | None = None
+    reason: str | None = None
 
 
 class RiskLevel(StrEnum):

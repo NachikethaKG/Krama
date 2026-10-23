@@ -29,11 +29,11 @@ never a barrier on its own.
 """
 
 import re
-from enum import StrEnum
 from typing import Any, Final
 from urllib.parse import urlparse
 
-from pydantic import BaseModel, ConfigDict
+from app.policy.barriers_github import evaluate_github_barriers
+from app.policy.models import BarrierType, BarrierVerdict
 
 __all__ = [
     "BarrierCheckResult",
@@ -41,24 +41,7 @@ __all__ = [
     "check_barrier",
 ]
 
-
-class BarrierType(StrEnum):
-    """Types of anti-bot or access restriction barriers."""
-
-    CLOUDFLARE_CHALLENGE = "cloudflare_challenge"
-    RECAPTCHA = "recaptcha"
-    HCAPTCHA = "hcaptcha"
-    AUTH_WALL = "auth_wall"
-
-
-class BarrierCheckResult(BaseModel):
-    """Structured verdict from barrier detection."""
-
-    model_config = ConfigDict(extra="forbid", frozen=True)
-
-    should_stop: bool
-    barrier_type: BarrierType | None = None
-    reason: str | None = None
+BarrierCheckResult = BarrierVerdict
 
 
 # --- Signatures and Patterns ---
@@ -334,5 +317,17 @@ def check_barrier(
             barrier_type=BarrierType.AUTH_WALL,
             reason=auth_reason,
         )
+
+    # 5. GitHub automation barriers
+    if "github.com" in current_url.lower() or status_code in (429, 403) or "whoa there!" in html.lower():
+        gh_verdict = evaluate_github_barriers(
+            current_url,
+            status_code=status_code or 200,
+            headers=None,
+            html_body=html,
+            title=current_title,
+        )
+        if gh_verdict.should_stop and not (gh_verdict.barrier_type == BarrierType.AUTH_WALL and allow_auth):
+            return gh_verdict
 
     return BarrierCheckResult(should_stop=False)
