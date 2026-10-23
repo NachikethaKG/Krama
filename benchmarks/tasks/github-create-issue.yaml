@@ -1,0 +1,16 @@
+name: github-create-issue
+prompt: "In the repository krama-bench/bench-issues, open an issue titled 'Bug: fix login'."
+target: "https://github.com"
+site: github
+api_base: "https://api.github.com"
+setup:
+  api_calls:
+    - { method: DELETE, url: "/repos/{org}/bench-issues", ok_status: [204, 404] }
+    - { method: POST, url: "/orgs/{org}/repos", body: { name: bench-issues, private: true, auto_init: true }, ok_status: [201] }
+success_check:
+  type: api
+  assertion:
+    method: GET
+    url: "/repos/{org}/bench-issues/issues/1"
+    expected_status: 200
+    body_contains: "Bug: fix login"

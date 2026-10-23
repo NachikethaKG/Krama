@@ -1,4 +1,4 @@
-"""`python -m benchmarks.tasks list | setup <task> | check <task>`: reset Gitea for a task or grade it."""
+"""`python -m benchmarks.tasks list | setup <task> | check <task>`: reset a task's site or grade it."""
 
 from __future__ import annotations
 

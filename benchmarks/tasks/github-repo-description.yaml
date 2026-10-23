@@ -1,0 +1,16 @@
+name: github-repo-description
+prompt: "Set the description of the repository krama-bench/bench-settings to 'Docs for the team'."
+target: "https://github.com"
+site: github
+api_base: "https://api.github.com"
+setup:
+  api_calls:
+    - { method: DELETE, url: "/repos/{org}/bench-settings", ok_status: [204, 404] }
+    - { method: POST, url: "/orgs/{org}/repos", body: { name: bench-settings, private: true, auto_init: true }, ok_status: [201] }
+success_check:
+  type: api
+  assertion:
+    method: GET
+    url: "/repos/{org}/bench-settings"
+    expected_status: 200
+    body_contains: "Docs for the team"

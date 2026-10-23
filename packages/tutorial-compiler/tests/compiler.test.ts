@@ -29,11 +29,14 @@ describe("compileWorkflow", () => {
   const expectedSpecFixture: TutorialSpec = JSON.parse(rawSpec);
 
   it("compiles the canonical gitea-create-repo workflow to exactly match the canonical tutorial-spec fixture", () => {
-    // Provide explicit word timings for step 1 (as established in the hand-compiled fixture)
+    // Provide explicit word timings and scene durations matching the canonical fixture snapshot
     const compiled = compileWorkflow(workflowFixture, {
       wordTimings: {
         1: expectedSpecFixture.scenes[0].caption.words ?? null,
       },
+      stepDurations: Object.fromEntries(
+        expectedSpecFixture.scenes.map((s) => [s.step_seq, s.duration_ms]),
+      ),
     });
 
     // 1. Assert exact equality with canonical snapshot fixture
