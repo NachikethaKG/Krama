@@ -33,6 +33,15 @@ describe("Route Protection Middleware (middleware.ts)", () => {
     expect(location).toBe("http://localhost:3000/login?from=%2Fruns%2Fnew");
   });
 
+  it("redirects unauthenticated requests from /settings to /login?from=/settings/profile", () => {
+    const request = createMockRequest("http://localhost:3000/settings/profile");
+    const response = middleware(request);
+
+    expect(response.status).toBe(307);
+    const location = response.headers.get("location");
+    expect(location).toBe("http://localhost:3000/login?from=%2Fsettings%2Fprofile");
+  });
+
   it("preserves query parameters in redirect 'from' param", () => {
     const request = createMockRequest("http://localhost:3000/dashboard?view=grid&sort=desc");
     const response = middleware(request);
@@ -70,7 +79,7 @@ describe("Route Protection Middleware (middleware.ts)", () => {
     expect(shareRes.status).toBe(200);
   });
 
-  it("allows authenticated requests with krama_session to access /dashboard and /runs", () => {
+  it("allows authenticated requests with krama_session to access /dashboard, /runs, and /settings", () => {
     const dashboardReq = createMockRequest("http://localhost:3000/dashboard", {
       krama_session: "demo-session-token",
     });
@@ -82,6 +91,12 @@ describe("Route Protection Middleware (middleware.ts)", () => {
     });
     const runsRes = middleware(runsReq);
     expect(runsRes.status).toBe(200);
+
+    const settingsReq = createMockRequest("http://localhost:3000/settings", {
+      krama_session: "demo-session-token",
+    });
+    const settingsRes = middleware(settingsReq);
+    expect(settingsRes.status).toBe(200);
   });
 
   it("redirects authenticated users away from /login and /signup to /dashboard", () => {
