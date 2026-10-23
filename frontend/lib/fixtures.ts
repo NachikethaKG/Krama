@@ -1,5 +1,6 @@
 import type { Plan, PlannedStep, RunEvent, Step, Workflow } from "@krama/contracts-ts";
 import type { TutorialSpec } from "@krama/tutorial-compiler";
+import type { TutorialSummary } from "@/types/tutorial";
 import giteaTutorialSpecJson from "../../contracts/fixtures/tutorial-spec/gitea-create-repo.json";
 import giteaWorkflowJson from "../../contracts/fixtures/gitea-create-repo-workflow.json";
 import validWorkflowJson from "../../contracts/fixtures/valid_workflow.json";
@@ -10,9 +11,15 @@ export const giteaTutorialSpecFixture = giteaTutorialSpecJson as unknown as Tuto
 
 export const tutorialSpecFixtures: Record<string, TutorialSpec> = {
   [giteaTutorialSpecFixture.workflow_id]: giteaTutorialSpecFixture,
+  [giteaWorkflowFixture.id]: giteaTutorialSpecFixture,
   "gitea": giteaTutorialSpecFixture,
   "default": giteaTutorialSpecFixture,
   "mock": giteaTutorialSpecFixture,
+  "gitea-create-repo": giteaTutorialSpecFixture,
+  "github-star-repo": { ...giteaTutorialSpecFixture, title: "Star a repository on GitHub" },
+  "github-create-issue-outdated": { ...giteaTutorialSpecFixture, title: "Create an issue with template on GitHub" },
+  "gitea-deploy-key-outdated": { ...giteaTutorialSpecFixture, title: "Add deploy key in Gitea repository" },
+  "custom-dashboard-export": { ...giteaTutorialSpecFixture, title: "Export analytics report in Custom Portal" },
 };
 
 /** The plan-shaped part of a workflow step (what /plans/{id} returns). */
@@ -33,7 +40,96 @@ export const workflowFixtures: Record<string, Workflow> = {
   "gitea": giteaWorkflowFixture,
   "default": giteaWorkflowFixture,
   "mock": giteaWorkflowFixture,
+  "gitea-create-repo": giteaWorkflowFixture,
+  "github-star-repo": {
+    ...giteaWorkflowFixture,
+    id: "github-star-repo",
+    title: "Star a repository on GitHub",
+    target_app: "github",
+    created_at: "2026-10-20T10:00:00.000Z",
+  },
+  "github-create-issue-outdated": {
+    ...giteaWorkflowFixture,
+    id: "github-create-issue-outdated",
+    title: "Create an issue with template on GitHub",
+    target_app: "github",
+    status: "outdated",
+    created_at: "2026-09-15T08:30:00.000Z",
+  },
+  "gitea-deploy-key-outdated": {
+    ...giteaWorkflowFixture,
+    id: "gitea-deploy-key-outdated",
+    title: "Add deploy key in Gitea repository",
+    target_app: "gitea",
+    status: "outdated",
+    created_at: "2026-08-10T14:15:00.000Z",
+  },
+  "custom-dashboard-export": {
+    ...giteaWorkflowFixture,
+    id: "custom-dashboard-export",
+    title: "Export analytics report in Custom Portal",
+    target_app: "custom",
+    created_at: "2026-10-18T16:45:00.000Z",
+  },
 };
+
+export const mockTutorialSummaries: TutorialSummary[] = [
+  {
+    id: giteaWorkflowFixture.id,
+    title: "Create a repository in local Gitea",
+    description: "Initialize and configure a new Git repository with README and license in local Gitea.",
+    taskPrompt: "Create a repository in local Gitea",
+    target: "gitea",
+    status: "verified",
+    stepCount: 5,
+    durationMs: 90000,
+    createdAt: "2026-10-06T12:00:00.000Z",
+  },
+  {
+    id: "github-star-repo",
+    title: "Star a repository on GitHub",
+    description: "Search for a repository on GitHub and add it to your starred list.",
+    taskPrompt: "Star the kubernetes repository on GitHub",
+    target: "github",
+    status: "verified",
+    stepCount: 3,
+    durationMs: 45000,
+    createdAt: "2026-10-20T10:00:00.000Z",
+  },
+  {
+    id: "github-create-issue-outdated",
+    title: "Create an issue with template on GitHub",
+    description: "Submit a structured bug report using the repository issue form template.",
+    taskPrompt: "Navigate to issues and submit a bug report with markdown template",
+    target: "github",
+    status: "outdated",
+    stepCount: 6,
+    durationMs: 120000,
+    createdAt: "2026-09-15T08:30:00.000Z",
+  },
+  {
+    id: "gitea-deploy-key-outdated",
+    title: "Add deploy key in Gitea repository",
+    description: "Configure read-only SSH deploy key in repository settings for automated deployment.",
+    taskPrompt: "Configure readonly SSH deploy key in repository settings",
+    target: "gitea",
+    status: "outdated",
+    stepCount: 4,
+    durationMs: 60000,
+    createdAt: "2026-08-10T14:15:00.000Z",
+  },
+  {
+    id: "custom-dashboard-export",
+    title: "Export analytics report in Custom Portal",
+    description: "Filter date range and export monthly usage metrics as CSV from custom admin portal.",
+    taskPrompt: "Download monthly usage report as CSV from custom portal",
+    target: "custom",
+    status: "verified",
+    stepCount: 5,
+    durationMs: 85000,
+    createdAt: "2026-10-18T16:45:00.000Z",
+  },
+];
 
 /**
  * Parses raw SSE wire format string (`event: ...\nid: ...\ndata: ...\n\n`) into typed `RunEvent` objects.
