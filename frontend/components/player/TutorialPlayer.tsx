@@ -24,6 +24,8 @@ export interface TutorialPlayerProps {
   onComplete?: () => void;
   /** The workflow's rrweb recording: the stage then shows the real page instead of the wireframe. */
   recording?: eventWithTime[] | null;
+  /** When true, edit, delete, re-run, or sharing management controls are omitted. */
+  readOnly?: boolean;
 }
 
 export function TutorialPlayer({
@@ -37,6 +39,7 @@ export function TutorialPlayer({
   className = "",
   onComplete,
   recording = null,
+  readOnly = false,
 }: TutorialPlayerProps) {
   // The narration sets this while it talks; the player holds the step's end until it's done (#83).
   const narratingRef = useRef(false);
@@ -111,9 +114,18 @@ export function TutorialPlayer({
       <header className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between border-b border-zinc-200 pb-4 dark:border-zinc-800">
         <div>
           <div className="flex items-center gap-2">
-            <span className="rounded bg-indigo-100 px-2 py-0.5 text-xs font-semibold text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
-              Interactive Tutorial
-            </span>
+            {readOnly ? (
+              <span
+                data-testid="readonly-badge"
+                className="rounded bg-zinc-100 px-2 py-0.5 text-xs font-semibold text-zinc-700 ring-1 ring-inset ring-zinc-500/20 dark:bg-zinc-800 dark:text-zinc-300 dark:ring-zinc-700"
+              >
+                Read-Only
+              </span>
+            ) : (
+              <span className="rounded bg-indigo-100 px-2 py-0.5 text-xs font-semibold text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
+                Interactive Tutorial
+              </span>
+            )}
             <span className="text-xs text-zinc-500 dark:text-zinc-400">
               v{spec.version}
             </span>
