@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "share.schema.json",
+  "title": "ShareLink",
+  "$comment": "v1.0. Read-only share links to a tutorial (Phase 3, #96; docs/research/phase-3-vishwas-share-tokens.md). Only the token's SHA-256 is stored, so the full link is returned once, on creation (ShareLinkCreated). The public read GET /shared/{token} returns a Workflow (workflow.schema.json) with task_id and run_id null and its file URLs under /shared/{token}/.",
+  "type": "object",
+  "required": ["id", "workflow_id", "created_at"],
+  "additionalProperties": false,
+  "properties": {
+    "id": { "type": "string", "format": "uuid" },
+    "workflow_id": { "type": "string", "format": "uuid" },
+    "created_at": { "type": "string", "format": "date-time" },
+    "expires_at": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "Null: never expires (the only choice in the MVP UI)."
+    },
+    "revoked_at": { "type": ["string", "null"], "format": "date-time" },
+    "last_used_at": { "type": ["string", "null"], "format": "date-time" }
+  },
+  "$defs": {
+    "ShareLinkCreated": {
+      "title": "ShareLinkCreated",
+      "type": "object",
+      "required": ["link", "url"],
+      "additionalProperties": false,
+      "description": "Response of POST /workflows/{id}/shares. `url` holds the secret token and is never shown again.",
+      "properties": {
+        "link": { "$ref": "#" },
+        "url": { "type": "string", "minLength": 1, "description": "e.g. http://localhost:3000/share/<token>" }
+      }
+    },
+    "ShareLinkList": {
+      "title": "ShareLinkList",
+      "type": "object",
+      "required": ["items"],
+      "additionalProperties": false,
+      "properties": {
+        "items": { "type": "array", "items": { "$ref": "#" } }
+      }
+    }
+  }
+}

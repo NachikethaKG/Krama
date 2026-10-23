@@ -92,7 +92,12 @@ Stored as rows (not jsonb) so steps can be queried, compared across versions and
 | start_ms / end_ms | int | offsets into the recording |
 
 ## Later phases
-- **Phase 3:** `users (id, email, password_hash, created_at)`, `tutorial_shares (id, workflow_id, token, created_by)`, `browser_profiles` (encrypted storage-state reference, never raw passwords).
+- **Phase 3:**
+  - `users (id, email unique lower-cased, password_hash argon2id, display_name, created_at)`: seeded, no sign-up.
+  - `sessions (id, user_id, token_hash unique, created_at, last_seen_at, expires_at, revoked_at)`: the cookie holds a random token, only its SHA-256 is stored; idle 7 days, absolute 30 days.
+  - `tasks.user_id` and `workflows.user_id` (owner; null for rows from before Phase 3).
+  - `tutorial_shares (id, workflow_id, created_by, token_hash unique, created_at, expires_at null, revoked_at null, last_used_at null)`.
+  - Signed-in browser sessions for real sites (#87) are Fernet-encrypted files under `data/sessions/`, not a table, while there is one test account per site.
 - **Phase 4:** `workflow_versions`, `validations (id, workflow_id, status, drift_details, ran_at)`.
 - **Phase 5:** `exports (id, workflow_id, format, preset, status, path)`.
 

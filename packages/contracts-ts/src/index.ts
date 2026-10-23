@@ -42,6 +42,8 @@ export type ErrorCode =
   | "run_not_active"
   | "rate_limited"
   | "llm_unavailable"
+  | "unauthorized"
+  | "forbidden"
   | "internal";
 export type RunEvent =
   | RunStartedEvent
@@ -72,6 +74,12 @@ export type PauseReason =
  * `user`: POST /runs/{id}/cancel. `confirmation_denied`: POST /runs/{id}/confirm with decision deny.
  */
 export type CancelReason = "user" | "confirmation_denied";
+/**
+ * This interface was referenced by `MetricsSummary`'s JSON-Schema
+ * via the `definition` "Ratio".
+ */
+export type Ratio = number;
+export type Ratio1 = number;
 /**
  * This interface was referenced by `Plan`'s JSON-Schema
  * via the `definition` "PlanStatus".
@@ -118,15 +126,37 @@ export type HighlightStyle = "pulsing_ring" | "solid_box" | "spotlight";
 export type WorkflowStatus = "draft" | "approved" | "running" | "verified" | "failed" | "outdated";
 
 export interface KramaContracts {
+  auth?: User;
   common?: Common;
   events?: RunEvent;
   health?: HealthResponse;
+  "metrics-summary"?: MetricsSummary;
   plan?: Plan;
   run?: Run;
+  share?: ShareLink;
   step?: Step;
   task?: Task;
   "tutorial-spec"?: TutorialSpec;
   workflow?: Workflow;
+}
+export interface User {
+  id: string;
+  /**
+   * Stored lower-cased.
+   */
+  email: string;
+  display_name?: string | null;
+  created_at: string;
+}
+/**
+ * POST /auth/login. A wrong email or password gets one generic 401, never which one was wrong.
+ *
+ * This interface was referenced by `User`'s JSON-Schema
+ * via the `definition` "LoginRequest".
+ */
+export interface LoginRequest {
+  email: string;
+  password: string;
 }
 export interface Common {
   [k: string]: unknown;
@@ -349,6 +379,40 @@ export interface HealthResponse {
    */
   version: string;
 }
+export interface MetricsSummary {
+  generated_at: string;
+  total_tasks: number;
+  overall_success_rate: Ratio;
+  overall_verifier_accuracy: Ratio;
+  tasks: TaskMetrics[];
+  overall_total_runs?: number;
+  overall_successful_runs?: number;
+  overall_failed_runs?: number;
+  overall_false_alarm_rate?: Ratio1;
+  overall_avg_latency_ms?: number;
+  overall_median_latency_ms?: number;
+  overall_p90_latency_ms?: number;
+  overall_total_runtime_ms?: number;
+}
+/**
+ * This interface was referenced by `MetricsSummary`'s JSON-Schema
+ * via the `definition` "TaskMetrics".
+ */
+export interface TaskMetrics {
+  task_name: string;
+  total_runs: number;
+  successful_runs: number;
+  success_rate: Ratio;
+  verifier_accuracy: Ratio;
+  false_alarm_rate: Ratio;
+  avg_latency_ms: number;
+  p90_latency_ms: number;
+  failed_runs?: number;
+  median_latency_ms?: number;
+  total_runtime_ms?: number;
+  true_positive_detections?: number;
+  false_alarms_count?: number;
+}
 export interface Plan {
   id: string;
   task_id: string;
@@ -446,6 +510,37 @@ export interface RunPage {
 export interface RunConfirmRequest {
   step_seq: number;
   decision: "allow" | "deny";
+}
+export interface ShareLink {
+  id: string;
+  workflow_id: string;
+  created_at: string;
+  /**
+   * Null: never expires (the only choice in the MVP UI).
+   */
+  expires_at?: string | null;
+  revoked_at?: string | null;
+  last_used_at?: string | null;
+}
+/**
+ * Response of POST /workflows/{id}/shares. `url` holds the secret token and is never shown again.
+ *
+ * This interface was referenced by `ShareLink`'s JSON-Schema
+ * via the `definition` "ShareLinkCreated".
+ */
+export interface ShareLinkCreated {
+  link: ShareLink;
+  /**
+   * e.g. http://localhost:3000/share/<token>
+   */
+  url: string;
+}
+/**
+ * This interface was referenced by `ShareLink`'s JSON-Schema
+ * via the `definition` "ShareLinkList".
+ */
+export interface ShareLinkList {
+  items: ShareLink[];
 }
 export interface Step {
   id: string;
