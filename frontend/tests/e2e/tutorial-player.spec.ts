@@ -8,7 +8,7 @@ test.describe("Interactive Tutorial Player", () => {
     await context.grantPermissions(["clipboard-read", "clipboard-write"]);
 
     // 1. Navigate to the tutorial player page
-    await page.goto("/tutorials");
+    await page.goto("/tutorials/default");
 
     // 2. Assert tutorial root and header elements are visible
     const root = page.getByTestId("tutorial-player-root");
@@ -120,7 +120,7 @@ test.describe("Interactive Tutorial Player", () => {
     await page.setViewportSize({ width: 375, height: 667 });
 
     // 2. Navigate to tutorial player
-    await page.goto("/tutorials");
+    await page.goto("/tutorials/default");
 
     const root = page.getByTestId("tutorial-player-root");
     await expect(root).toBeVisible();
@@ -168,7 +168,7 @@ test.describe("Interactive Tutorial Player", () => {
     page,
   }) => {
     // 1. Navigate to the tutorial player page
-    await page.goto("/tutorials");
+    await page.goto("/tutorials/default");
 
     // Click root to ensure page/window focus
     const root = page.getByTestId("tutorial-player-root");
@@ -254,7 +254,7 @@ test.describe("Interactive Tutorial Player", () => {
     await page.emulateMedia({ reducedMotion: "reduce" });
 
     // Navigate to tutorial player
-    await page.goto("/tutorials");
+    await page.goto("/tutorials/default");
 
     const root = page.getByTestId("tutorial-player-root");
     await expect(root).toBeVisible();
