@@ -10,7 +10,7 @@ import json
 import logging
 import time
 from collections.abc import Callable, Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Literal, Protocol
@@ -205,11 +205,20 @@ class InProcessExecutor:
             return
         t0 = time.perf_counter()
         env = self._env
+        target = env.target(job)
+        if target.sign_in_problem is not None:
+            await self._fail_sign_in(run_id, target.sign_in_problem)
+            return
         config = env.session_config(job)
+        if target.storage_state is not None:
+            config = replace(config, storage_state=target.storage_state)
         async with PlaywrightSession(config) as session:
             page = session.page
             executor = ActionExecutor(page, vision=env.vision)
             await page.goto("/", wait_until="domcontentloaded")
+            if target.signed_in_check is not None and not await target.signed_in_check(page):
+                await self._fail_sign_in(run_id, "The stored session no longer signs in. Log in again.")
+                return
             setup = list(env.preconditions(job))
             if setup:
                 log = await run_script(executor, setup, task="preconditions", base_url=job.target_url)
@@ -428,6 +437,10 @@ class InProcessExecutor:
         if verdict.done is not False:
             return None
         return verdict.missing or "part of the task"
+
+    async def _fail_sign_in(self, run_id: UUID, message: str) -> None:
+        """The target needs a signed-in session we don't have (#87): stop before step 1, say how to fix it."""
+        await self._store.fail(run_id, from_=RunStatus.RUNNING, message=message, reason="sign_in_required")
 
     async def _masked_snapshot(self, page: Page) -> str:
         """The page's ARIA snapshot with secrets masked by the policy (#63) before it goes to an LLM."""

@@ -8,6 +8,7 @@ is ever executed here.
 import asyncio
 import logging
 from collections.abc import Callable
+from dataclasses import replace
 from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
@@ -83,11 +84,22 @@ class PlanningService:
                 return
             prompt, target_url = task.prompt, task.target_url
         setup = self._target(target_url)
+        if setup.sign_in_problem is not None:
+            error = _error("internal", setup.sign_in_problem, "sign_in_required")
+            await self._finish(task_id, "failed", error=error)
+            return
+        config = self._session_config(target_url)
+        if setup.storage_state is not None:
+            config = replace(config, storage_state=setup.storage_state)
 
-        async with PlaywrightSession(self._session_config(target_url)) as session:
+        async with PlaywrightSession(config) as session:
             page = session.page
             executor = ActionExecutor(page)
             await page.goto("/", wait_until="domcontentloaded")
+            if setup.signed_in_check is not None and not await setup.signed_in_check(page):
+                message = "The stored session no longer signs in. Log in again."
+                await self._finish(task_id, "failed", error=_error("internal", message, "sign_in_required"))
+                return
             if setup.preconditions:
                 log = await run_script(
                     executor, setup.preconditions, task="preconditions", base_url=target_url
@@ -153,5 +165,5 @@ class PlanningService:
                     setattr(task, name, value)
 
 
-def _error(code: str, message: str) -> dict[str, Any]:
-    return {"code": code, "message": message}
+def _error(code: str, message: str, reason: str | None = None) -> dict[str, Any]:
+    return {"code": code, "message": message, **({"details": {"reason": reason}} if reason else {})}

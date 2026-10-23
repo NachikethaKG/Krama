@@ -4,7 +4,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
-from pydantic import field_validator
+from pydantic import SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -32,6 +32,14 @@ class Settings(BaseSettings):
     gitea_demo_user: str = "demo"
     gitea_demo_password: str = "demo-local-only"
 
+    # The GitHub test account (docs/research/phase-3-together-github-account-and-benchmarks.md). Runs use its
+    # stored, encrypted browser session (#87); Krama never has its password.
+    github_url: str = "https://github.com"
+    github_test_user: str = ""
+    # Fernet key(s) for stored browser sessions, newest first, comma-separated (`krama session key`).
+    krama_storage_key: SecretStr = SecretStr("")
+    sessions_dir: Path = REPO_ROOT / "data" / "sessions"
+
     artifacts_dir: Path = REPO_ROOT / "data" / "artifacts"
     max_concurrent_runs: int = 1
     # Recovery budget per run (phase-1-vishwas-agent-recovery.md). Running time only: pauses not counted.
@@ -42,7 +50,7 @@ class Settings(BaseSettings):
     def gemini_model_list(self) -> list[str]:
         return [m.strip() for m in self.gemini_models.split(",") if m.strip()]
 
-    @field_validator("artifacts_dir")
+    @field_validator("artifacts_dir", "sessions_dir")
     @classmethod
     def _relative_to_repo_root(cls, v: Path) -> Path:
         # `.env` paths like ./data/artifacts mean the repo root, not whatever folder the process started in.
