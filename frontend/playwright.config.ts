@@ -5,7 +5,24 @@ import { defineConfig, devices } from "@playwright/test";
 // First run: `pnpm exec playwright install chromium`
 export default defineConfig({
   testDir: "./tests/e2e",
-  use: { baseURL: "http://localhost:3000" },
+  use: {
+    baseURL: "http://localhost:3000",
+    storageState: {
+      cookies: [
+        {
+          name: "krama_session",
+          value: "mock-session-token",
+          domain: "localhost",
+          path: "/",
+          expires: -1,
+          httpOnly: false,
+          secure: false,
+          sameSite: "Lax",
+        },
+      ],
+      origins: [],
+    },
+  },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: {
     // CI runs `pnpm -r build` first, so serve that build: `next dev` compiles each route on its first visit

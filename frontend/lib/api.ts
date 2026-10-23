@@ -3,12 +3,14 @@
 import type {
   ApiError,
   HealthResponse,
+  LoginRequest,
   Plan,
   PlannedStep,
   Run,
   RunEvent,
   RunPage,
   Task,
+  User,
   Workflow,
   WorkflowPage,
   WorkflowStatus,
@@ -17,6 +19,7 @@ import type {
 import { apiBaseUrl, artifactUrl, normalizeBaseUrl } from "./artifacts";
 import {
   blockedWorkflowFixture,
+  demoUserFixture,
   failedWorkflowFixture,
   giteaBlockedEventsFixture,
   giteaEventsFixture,
@@ -52,6 +55,7 @@ import type {
 
 export type {
   HealthResponse,
+  LoginRequest,
   Plan,
   Run,
   RunDetails,
@@ -66,12 +70,14 @@ export type {
   Task,
   TutorialStatus,
   TutorialSummary,
+  User,
   VerificationEvidenceMethod,
   Workflow,
 };
 export {
   artifactUrl,
   blockedWorkflowFixture,
+  demoUserFixture,
   failedWorkflowFixture,
   giteaBlockedEventsFixture,
   giteaEventsFixture,
@@ -192,8 +198,14 @@ export interface ApiClient {
   getRunDetails(runId: string): Promise<RunDetails>;
   /** POST /api/v1/sessions/manual-login?target={target} */
   launchManualLogin(target: string): Promise<ManualLoginResponse>;
-  /** GET /api/v1/sessions/status?target={target} */
+  /** POST /api/v1/sessions/status?target={target} */
   getSessionStatus(target: string): Promise<SessionStatus>;
+  /** POST /auth/login (or /api/v1/auth/login) with X-Krama: 1. */
+  login(request: LoginRequest): Promise<User>;
+  /** POST /auth/logout (or /api/v1/auth/logout) with X-Krama: 1. */
+  logout(): Promise<void>;
+  /** GET /auth/me (or /api/v1/auth/me) with X-Krama: 1. Throws 401 when unauthenticated. */
+  getMe(): Promise<User>;
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -602,6 +614,37 @@ export class HttpApiClient implements ApiClient {
       ? `/sessions/status?target=${encodeURIComponent(target)}`
       : `/api/v1/sessions/status?target=${encodeURIComponent(target)}`;
     return this.request<SessionStatus>(path, {
+      headers: {
+        "X-Krama": "1",
+      },
+    });
+  }
+
+  login(request: LoginRequest): Promise<User> {
+    const path = this.baseUrl.endsWith("/api/v1") ? "/auth/login" : "/api/v1/auth/login";
+    return this.request<User>(path, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Krama": "1",
+      },
+      body: JSON.stringify(request),
+    });
+  }
+
+  logout(): Promise<void> {
+    const path = this.baseUrl.endsWith("/api/v1") ? "/auth/logout" : "/api/v1/auth/logout";
+    return this.request<void>(path, {
+      method: "POST",
+      headers: {
+        "X-Krama": "1",
+      },
+    });
+  }
+
+  getMe(): Promise<User> {
+    const path = this.baseUrl.endsWith("/api/v1") ? "/auth/me" : "/api/v1/auth/me";
+    return this.request<User>(path, {
       headers: {
         "X-Krama": "1",
       },
@@ -1211,6 +1254,39 @@ export class MockApiClient implements ApiClient {
       expires_at: status.expires_at ?? null,
       message: status.message,
     });
+  }
+
+  mockCurrentUser: User | null = demoUserFixture;
+
+  async login(request: LoginRequest): Promise<User> {
+    const email = request.email.trim().toLowerCase();
+    if (email === "demo@krama.dev" && request.password.length > 0) {
+      this.mockCurrentUser = demoUserFixture;
+      if (typeof document !== "undefined") {
+        document.cookie = "krama_session=demo-mock-token; path=/; max-age=86400; SameSite=Lax";
+      }
+      return demoUserFixture;
+    }
+    throw mockError(401, "unauthorized", "Invalid email or password");
+  }
+
+  async logout(): Promise<void> {
+    this.mockCurrentUser = null;
+    if (typeof document !== "undefined") {
+      document.cookie = "krama_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    }
+  }
+
+  async getMe(): Promise<User> {
+    if (typeof document !== "undefined") {
+      const hasCookie = document.cookie.split(";").some((c) => c.trim().startsWith("krama_session="));
+      if (!hasCookie && !this.mockCurrentUser) {
+        throw mockError(401, "unauthorized", "Not signed in");
+      }
+    } else if (!this.mockCurrentUser) {
+      throw mockError(401, "unauthorized", "Not signed in");
+    }
+    return this.mockCurrentUser ?? demoUserFixture;
   }
 }
 
