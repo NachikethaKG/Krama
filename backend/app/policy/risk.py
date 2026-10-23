@@ -32,6 +32,7 @@ from app.policy.models import (
     RiskLevel,
     max_risk_level,
 )
+from app.policy.rules_github import evaluate_github_danger_zone
 
 __all__ = ["assess_plan", "check_action"]
 
@@ -289,7 +290,22 @@ async def check_action(
     if baseline_match and baseline_match.level == RiskLevel.HIGH:
         return baseline_match
 
+    # 3b. GitHub danger-zone rules
     match_text = " ".join(p for p in (target, intent) if p)
+    if "github.com" in ctx.url.lower():
+        gh_assessment = evaluate_github_danger_zone(
+            url=ctx.url,
+            target_selector=role,
+            action_text=match_text,
+        )
+        if gh_assessment.risk_level == RiskLevel.HIGH:
+            return RiskAssessment(
+                level=RiskLevel.HIGH,
+                reason=gh_assessment.reason,
+                flagged_by="github_danger_zone",
+                confidence=1.0,
+                matched_rule="github_danger_zone",
+            )
 
     # 4. Ambiguous scope ("delete draft", "reset filter"): the LLM decides; no verdict means a safe fallback.
     if is_ambiguous(match_text):
