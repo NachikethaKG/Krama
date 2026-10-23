@@ -2,6 +2,17 @@
 
 Every change to `contracts/` is listed here. Additive change = minor version bump; breaking change = major bump + ADR.
 
+## 1.8 (Phase 3 API)
+
+Accounts, share links and the metrics summary (#94, #96, #102). Additive.
+
+- New `auth.schema.json` v1.0: `User` (no password field, ever) and `LoginRequest` (password at most 128 characters, so argon2 work stays bounded). No sign-up schema: accounts are seeded in the MVP.
+- New `share.schema.json` v1.0: `ShareLink` (never the token), `ShareLinkCreated` (`link` + `url`, the only time the token is returned) and `ShareLinkList`.
+- New `metrics-summary.schema.json` v1.0: `MetricsSummary` + `TaskMetrics`, the shape of the benchmark reporter's `summary.json` (mirrors `BenchmarkReportData` in `benchmarks/reporter/models.py`).
+- `common.schema.json` v1.2: `ErrorCode` gains `unauthorized` (401) and `forbidden` (403, CSRF).
+- `docs/api-contract.md`: auth and CSRF conventions; `/auth/login|logout|me`, `/workflows/{id}/shares`, `/shared/{token}` (returns a `Workflow` with `task_id`/`run_id` null), `/metrics/summary`.
+- `docs/database-schema.md`: `users`, `sessions`, owners on `tasks`/`workflows`, `tutorial_shares.token_hash` (migrations in #94, #96).
+
 ## 1.7 (#253)
 
 Runs that re-verify a stored workflow (#77). Additive.

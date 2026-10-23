@@ -1,7 +1,7 @@
 """What we know about a target site before planning or running on it: hints, and how to sign in.
 
-Phase 1 knows one site, the local Gitea (signed in as the demo user). Phase 3 adds GitHub and stored
-browser sessions (#87).
+The local Gitea is signed in as the demo user by a scripted login. GitHub uses the test account's stored,
+encrypted browser session (#87): Krama never has its password.
 """
 
 import asyncio
@@ -17,6 +17,15 @@ from urllib.parse import quote, urlsplit, urlunsplit
 
 from app.agent.gitea_create_repo import login_steps
 from app.agent.runlog import ScriptedStep
+from app.agent.stored_session import (
+    GITHUB,
+    SessionVault,
+    SessionVaultError,
+    SignedInCheck,
+    StorageState,
+    cookie_expiry,
+    sign_in_problem,
+)
 from app.config import Settings
 
 type StoredStep = Mapping[str, Any]
@@ -38,6 +47,12 @@ class TargetSetup:
     reset: Reset | None = None
     """Before a reverify (#77): undo what a stored workflow creates, so its replay starts where it once did.
     Returns what it did; raises ResetError. None: the target has no reset."""
+    storage_state: StorageState | None = None
+    """A stored signed-in browser session to open the browser with (#87). A secret: never log or store it."""
+    signed_in_check: SignedInCheck | None = None
+    """Run on the first page: False means the stored session no longer signs us in."""
+    sign_in_problem: str | None = None
+    """Why the target can't be used signed in (no session, expired, unreadable): stop before opening it."""
 
 
 def target_setup(target_url: str, settings: Settings) -> TargetSetup:
@@ -49,7 +64,35 @@ def target_setup(target_url: str, settings: Settings) -> TargetSetup:
             signed_in_as=user,
             reset=lambda steps: _gitea_reset(steps, settings),
         )
+    if _same_origin(target_url, settings.github_url):
+        return _github_setup(settings)
     return TargetSetup()
+
+
+def _github_setup(settings: Settings) -> TargetSetup:
+    vault = SessionVault(settings.sessions_dir, settings.krama_storage_key.get_secret_value())
+    try:
+        state = vault.load(GITHUB.site)
+    except SessionVaultError as e:
+        return TargetSetup(site="github", sign_in_problem=f"{e}. Log in again.")
+    problem = sign_in_problem(state, GITHUB)
+    return TargetSetup(
+        site="github",
+        signed_in_as=settings.github_test_user or _cookie(state, "dotcom_user"),
+        storage_state=None if problem else state,
+        signed_in_check=GITHUB.signed_in_check,
+        sign_in_problem=problem,
+    )
+
+
+def _cookie(state: StorageState | None, name: str) -> str | None:
+    return next((c.get("value") for c in (state or {}).get("cookies", []) if c.get("name") == name), None)
+
+
+def session_expires(state: StorageState | None) -> str | None:
+    """When the GitHub session cookie expires, for messages (never the cookie itself)."""
+    expires = cookie_expiry(state or {}, GITHUB.session_cookie)
+    return f"{expires:%Y-%m-%d %H:%M} UTC" if expires else None
 
 
 # A stored step that creates something, and the Gitea API path that deletes it again. Field names match by

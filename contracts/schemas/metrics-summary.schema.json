@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "metrics-summary.schema.json",
+  "title": "MetricsSummary",
+  "$comment": "v1.0. GET /metrics/summary (#102; docs/research/phase-3-decisions-alignment.md §7). The benchmark reporter writes benchmarks/results/summary.json in this shape after each benchmark run; the API serves that file. Mirrors BenchmarkReportData / TaskMetrics in benchmarks/reporter/models.py. Ratios are 0..1, times are ms.",
+  "type": "object",
+  "required": ["generated_at", "total_tasks", "overall_success_rate", "overall_verifier_accuracy", "tasks"],
+  "additionalProperties": false,
+  "properties": {
+    "generated_at": { "type": "string", "format": "date-time" },
+    "total_tasks": { "type": "integer", "minimum": 0 },
+    "overall_success_rate": { "$ref": "#/$defs/Ratio" },
+    "overall_verifier_accuracy": { "$ref": "#/$defs/Ratio" },
+    "tasks": { "type": "array", "items": { "$ref": "#/$defs/TaskMetrics" } },
+    "overall_total_runs": { "type": "integer", "minimum": 0, "default": 0 },
+    "overall_successful_runs": { "type": "integer", "minimum": 0, "default": 0 },
+    "overall_failed_runs": { "type": "integer", "minimum": 0, "default": 0 },
+    "overall_false_alarm_rate": { "$ref": "#/$defs/Ratio", "default": 0 },
+    "overall_avg_latency_ms": { "type": "number", "minimum": 0, "default": 0 },
+    "overall_median_latency_ms": { "type": "number", "minimum": 0, "default": 0 },
+    "overall_p90_latency_ms": { "type": "number", "minimum": 0, "default": 0 },
+    "overall_total_runtime_ms": { "type": "number", "minimum": 0, "default": 0 }
+  },
+  "$defs": {
+    "Ratio": { "title": "Ratio", "type": "number", "minimum": 0, "maximum": 1 },
+    "TaskMetrics": {
+      "title": "TaskMetrics",
+      "type": "object",
+      "required": [
+        "task_name", "total_runs", "successful_runs", "success_rate", "verifier_accuracy", "false_alarm_rate",
+        "avg_latency_ms", "p90_latency_ms"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "task_name": { "type": "string", "minLength": 1 },
+        "total_runs": { "type": "integer", "minimum": 0 },
+        "successful_runs": { "type": "integer", "minimum": 0 },
+        "success_rate": { "$ref": "#/$defs/Ratio" },
+        "verifier_accuracy": { "$ref": "#/$defs/Ratio" },
+        "false_alarm_rate": { "$ref": "#/$defs/Ratio" },
+        "avg_latency_ms": { "type": "number", "minimum": 0 },
+        "p90_latency_ms": { "type": "number", "minimum": 0 },
+        "failed_runs": { "type": "integer", "minimum": 0, "default": 0 },
+        "median_latency_ms": { "type": "number", "minimum": 0, "default": 0 },
+        "total_runtime_ms": { "type": "number", "minimum": 0, "default": 0 },
+        "true_positive_detections": { "type": "integer", "minimum": 0, "default": 0 },
+        "false_alarms_count": { "type": "integer", "minimum": 0, "default": 0 }
+      }
+    }
+  }
+}

@@ -14,6 +14,7 @@ from typing import Any
 from uuid import UUID
 
 import pytest
+from playwright.async_api import Page
 from pydantic import TypeAdapter
 from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
@@ -27,6 +28,7 @@ from app.db.repositories import event_payload, events_after
 from app.observer import PageObserver
 from app.runs import InProcessExecutor, RunEnvironment, RunStore
 from app.runs.store import RunJob
+from app.targets import TargetSetup
 from app.verifier import LayeredVerifier
 from app.verifier.task_check import TaskVerdict
 from tests.runs.test_runner import GOOD_PLAN, step
@@ -466,3 +468,40 @@ async def test_an_unsure_task_check_keeps_the_run_verified(
 
     assert (await run_row(sessions, run_id)).status == "verified"
     assert len(check.asked) == 1
+
+
+async def test_a_target_without_a_usable_session_fails_before_step_one(
+    sessions: Sessions, site: str, tmp_path: Path
+) -> None:
+    # #87: no stored session (or an expired one) means "log in again", not a run that fails on a login wall.
+    run_id = await queued_run(sessions, site, GOOD_PLAN["steps"])
+    no_session = TargetSetup(site="github", sign_in_problem="No stored github session. Log in once.")
+    env = environment(tmp_path, target=lambda _job: no_session)
+
+    await run_to_end(InProcessExecutor(RunStore(sessions), env), run_id)
+
+    run = await run_row(sessions, run_id)
+    assert run.status == "failed" and run.error is not None
+    assert run.error["details"] == {"reason": "sign_in_required"}
+    assert run.error["message"] == "No stored github session. Log in once."
+    assert [e["type"] for e in await events(sessions, run_id)] == ["run.started", "run.failed"]
+
+
+async def test_a_session_that_no_longer_signs_in_fails_on_the_first_page(
+    sessions: Sessions, site: str, tmp_path: Path
+) -> None:
+    async def signed_out(_page: Page) -> bool:
+        return False
+
+    run_id = await queued_run(sessions, site, GOOD_PLAN["steps"])
+    dead = TargetSetup(
+        site="github", storage_state={"cookies": [], "origins": []}, signed_in_check=signed_out
+    )
+    env = environment(tmp_path, target=lambda _job: dead)
+
+    await run_to_end(InProcessExecutor(RunStore(sessions), env), run_id)
+
+    run = await run_row(sessions, run_id)
+    assert run.status == "failed" and run.error is not None
+    assert run.error["details"] == {"reason": "sign_in_required"}
+    assert [e["type"] for e in await events(sessions, run_id)] == ["run.started", "run.failed"]

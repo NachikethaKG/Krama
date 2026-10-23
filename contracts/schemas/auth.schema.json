@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "auth.schema.json",
+  "title": "User",
+  "$comment": "v1.0. Accounts and sign-in (Phase 3, #94; docs/research/phase-3-decisions-alignment.md). Accounts are seeded (`just seed-users`), there is no public sign-up in the MVP. The session itself is an HTTP-only cookie, never in a response body.",
+  "type": "object",
+  "required": ["id", "email", "created_at"],
+  "additionalProperties": false,
+  "properties": {
+    "id": { "type": "string", "format": "uuid" },
+    "email": { "type": "string", "minLength": 3, "maxLength": 254, "description": "Stored lower-cased." },
+    "display_name": { "type": ["string", "null"], "maxLength": 100 },
+    "created_at": { "type": "string", "format": "date-time" }
+  },
+  "$defs": {
+    "LoginRequest": {
+      "title": "LoginRequest",
+      "type": "object",
+      "required": ["email", "password"],
+      "additionalProperties": false,
+      "description": "POST /auth/login. A wrong email or password gets one generic 401, never which one was wrong.",
+      "properties": {
+        "email": { "type": "string", "minLength": 3, "maxLength": 254 },
+        "password": { "type": "string", "minLength": 1, "maxLength": 128 }
+      }
+    }
+  }
+}
