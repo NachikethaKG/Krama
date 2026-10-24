@@ -17,6 +17,8 @@ class Settings(BaseSettings):
     app_version: str = "0.1.0"
     api_port: int = 8000
     cors_origins: list[str] = ["http://localhost:3000"]
+    # Where share links point (#96): the frontend's /share/<token> page.
+    frontend_url: str = "http://localhost:3000"
 
     # 127.0.0.1, not localhost: on Windows + Docker Desktop, localhost tries IPv6 first and asyncpg waits
     # ~21 s for it to time out before falling back to IPv4.
