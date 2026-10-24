@@ -5,14 +5,16 @@ import { useRunStream } from "@/hooks/useRunStream";
 class MockEventSource {
   static instances: MockEventSource[] = [];
   url: string;
+  withCredentials: boolean;
   onopen: (() => void) | null = null;
   onerror: ((err: unknown) => void) | null = null;
   onmessage: ((ev: { data: string }) => void) | null = null;
   listeners: Record<string, Array<(ev: { data: string }) => void>> = {};
   readyState = 0;
 
-  constructor(url: string) {
+  constructor(url: string, init?: EventSourceInit) {
     this.url = url;
+    this.withCredentials = init?.withCredentials ?? false;
     MockEventSource.instances.push(this);
     setTimeout(() => {
       this.readyState = 1;
@@ -59,14 +61,15 @@ describe("useRunStream Hook", () => {
     vi.restoreAllMocks();
   });
 
-  it("subscribes to /api/v1/runs/${id}/stream and sets up event listeners", async () => {
+  it("subscribes to /api/v1/runs/${id}/events and sets up event listeners", async () => {
     const { result } = renderHook(() =>
       useRunStream({ runId: "run-stream-test", autoConnect: true }),
     );
 
     expect(MockEventSource.instances.length).toBe(1);
     const es = MockEventSource.instances[0];
-    expect(es.url).toContain("/api/v1/runs/run-stream-test/stream");
+    expect(es.url).toContain("/api/v1/runs/run-stream-test/events");
+    expect(es.withCredentials).toBe(true); // the API needs the session cookie (#94)
 
     // Initially status is idle
     expect(result.current.status).toBe("idle");

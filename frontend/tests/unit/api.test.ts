@@ -68,7 +68,7 @@ describe("HttpApiClient", () => {
       );
 
       await expect(new HttpApiClient("http://api").health()).resolves.toEqual({ status: "ok", version: "0.1.0" });
-      expect(fetch).toHaveBeenCalledWith("http://api/health");
+      expect(fetch).toHaveBeenCalledWith("http://api/health", expect.objectContaining({ credentials: "include" }));
     });
 
     it("creates task via POST /tasks with 202 response", async () => {
@@ -107,7 +107,7 @@ describe("HttpApiClient", () => {
       const client = new HttpApiClient("http://api");
       const result = await client.getTask("task-123");
       expect(result).toEqual(taskResponse);
-      expect(fetch).toHaveBeenCalledWith("http://api/tasks/task-123");
+      expect(fetch).toHaveBeenCalledWith("http://api/tasks/task-123", expect.objectContaining({ credentials: "include" }));
     });
 
     it("fetches plan via GET /plans/:id", async () => {
@@ -126,7 +126,7 @@ describe("HttpApiClient", () => {
       const client = new HttpApiClient("http://api");
       const result = await client.getPlan("plan-456");
       expect(result).toEqual(planResponse);
-      expect(fetch).toHaveBeenCalledWith("http://api/plans/plan-456");
+      expect(fetch).toHaveBeenCalledWith("http://api/plans/plan-456", expect.objectContaining({ credentials: "include" }));
     });
 
 
@@ -290,12 +290,12 @@ describe("HttpApiClient", () => {
 
       const client = new HttpApiClient("http://api");
       const page1 = await client.getRuns({ limit: 5 });
-      expect(fetchMock).toHaveBeenCalledWith("http://api/runs?limit=5");
+      expect(fetchMock).toHaveBeenCalledWith("http://api/runs?limit=5", expect.objectContaining({ credentials: "include" }));
       expect(page1.items[0]).toMatchObject({ id: "run-1", prompt: "Create a repo", durationSeconds: 5 });
       expect(page1.nextCursor).toBe("opaque==");
 
       await client.getRuns({ limit: 5, cursor: page1.nextCursor });
-      expect(fetchMock).toHaveBeenCalledWith("http://api/runs?limit=5&cursor=opaque%3D%3D");
+      expect(fetchMock).toHaveBeenCalledWith("http://api/runs?limit=5&cursor=opaque%3D%3D", expect.objectContaining({ credentials: "include" }));
     });
 
     it("builds run details from run, plan, task and workflow and resolves artifact keys against the API", async () => {

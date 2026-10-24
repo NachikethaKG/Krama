@@ -14,7 +14,7 @@ test.describe("Polished Live Agent View (/runs/[id])", () => {
     page,
   }) => {
     // 1. Mock SSE stream endpoint
-    await page.route("**/api/v1/runs/test-run-stream/stream", async (route) => {
+    await page.route("**/api/v1/runs/test-run-stream/events", async (route) => {
       await route.fulfill({
         status: 200,
         headers: {
@@ -103,7 +103,7 @@ test.describe("Polished Live Agent View (/runs/[id])", () => {
       `event: failed\ndata: {"step_seq":1,"error":"Element button#submit not clickable","expected":{"state":"visible_and_enabled"},"observed":{"state":"disabled_by_form_validation"}}\n\n`,
     ].join("");
 
-    await page.route("**/api/v1/runs/failed-run-stream/stream", async (route) => {
+    await page.route("**/api/v1/runs/failed-run-stream/events", async (route) => {
       await route.fulfill({
         status: 200,
         headers: {
@@ -137,7 +137,7 @@ test.describe("Polished Live Agent View (/runs/[id])", () => {
   }) => {
     let connectionAttempts = 0;
 
-    await page.route("**/api/v1/runs/drop-run-stream/stream", async (route) => {
+    await page.route("**/api/v1/runs/drop-run-stream/events", async (route) => {
       connectionAttempts++;
       if (connectionAttempts === 1) {
         // Drop first connection by closing immediately or returning 500
