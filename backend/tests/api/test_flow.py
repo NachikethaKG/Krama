@@ -16,13 +16,14 @@ import pytest
 from pydantic import TypeAdapter
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from app.api.accounts import SessionLimits, create_user, start_session
 from app.api.services import Services
 from app.contracts_gen.events_schema import RunEvent
 from app.contracts_gen.plan_schema import Plan
 from app.contracts_gen.run_schema import Run, RunPage
 from app.contracts_gen.task_schema import Task
 from app.contracts_gen.workflow_schema import Workflow, WorkflowPage
-from app.db import PlanRow, RunRow, TaskRow
+from app.db import PlanRow, RunRow, TaskRow, UserRow
 from app.llm import FakeProvider, FakeResponse
 from app.main import create_app
 from app.observer import PageObserver
@@ -65,11 +66,18 @@ def reply(response: dict[str, Any], *, when: list[str] | None = None, name: str 
     return FakeResponse(name=name, schema_name="LLMPlan", prompt_contains=when or [], response=response)
 
 
-class Api:
-    """The app with its lifespan running, plus an httpx client that talks to it in-process."""
+async def make_user(sessions: Sessions, email: str | None = None) -> UserRow:
+    async with sessions.begin() as s:
+        return await create_user(s, email or f"user-{uuid4().hex[:8]}@krama.test", "a long test password 123")
 
-    def __init__(self, svc: Services) -> None:
+
+class Api:
+    """The app with its lifespan running, plus an httpx client that talks to it in-process, signed in as
+    `user` (a new account unless given) with the X-Krama header every change needs (#94)."""
+
+    def __init__(self, svc: Services, user: UserRow | None = None) -> None:
         self.svc = svc
+        self.user = user
         self.app = create_app(svc)
         root = svc.executor.artifacts_dir
         self.app.dependency_overrides[get_artifact_store] = lambda: LocalFsStore(root)
@@ -80,6 +88,11 @@ class Api:
     async def __aenter__(self) -> "Api":
         self._lifespan = self.app.router.lifespan_context(self.app)
         await self._lifespan.__aenter__()
+        self.user = self.user or await make_user(self.svc.sessions)
+        async with self.svc.sessions.begin() as s:
+            token = await start_session(s, self.user, SessionLimits())
+        self.client.cookies.set("krama_session", token)
+        self.client.headers["X-Krama"] = "1"
         return self
 
     async def __aexit__(self, *exc: object) -> None:
@@ -266,8 +279,9 @@ async def test_unknown_ids_and_bad_input(sessions: Sessions, tmp_path: Path) -> 
 
 
 async def test_startup_fails_runs_a_restart_interrupted(sessions: Sessions, tmp_path: Path) -> None:
+    user = await make_user(sessions)
     async with sessions.begin() as s:
-        task = TaskRow(prompt="p", target_url="http://127.0.0.1:1", status="planned")
+        task = TaskRow(user_id=user.id, prompt="p", target_url="http://127.0.0.1:1", status="planned")
         s.add(task)
         await s.flush()
         plan = PlanRow(task_id=task.id, risk="low", expected_result="r", steps=[GOOD_PLAN["steps"][0]])
@@ -276,7 +290,7 @@ async def test_startup_fails_runs_a_restart_interrupted(sessions: Sessions, tmp_
         run = RunRow(plan_id=plan.id, plan_revision=1, status="running")
         s.add(run)
 
-    async with Api(services(sessions, tmp_path)) as api:
+    async with Api(services(sessions, tmp_path), user) as api:
         after = Run.model_validate((await api.client.get(f"/runs/{run.id}")).json())
 
     assert after.status == "failed" and after.error is not None
