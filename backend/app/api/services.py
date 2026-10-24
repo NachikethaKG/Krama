@@ -20,7 +20,8 @@ from app.planner import LLMPlanner
 from app.planner.service import PlanningService
 from app.policy import LLMClassifier, PolicyService
 from app.runs import InProcessExecutor, RunEnvironment, RunStore
-from app.runs.events import EventHub
+from app.runs.events import EventHub, RedisEventRelay
+from app.runs.queue import ArqExecutor
 from app.storage import LocalFsStore
 from app.targets import TargetSetup, target_setup
 from app.verifier import LayeredVerifier
@@ -33,33 +34,38 @@ class Services:
     sessions: async_sessionmaker[AsyncSession]
     hub: EventHub
     store: RunStore
-    executor: InProcessExecutor
+    executor: "InProcessExecutor | ArqExecutor"
     planning: PlanningService
     engine: AsyncEngine | None = None
     target: Callable[[str], TargetSetup] = field(default=lambda _url: TargetSetup())
     """What we know about a target URL: hints, sign-in, and its reset for reverify (#77)."""
+    relay: "RedisEventRelay | None" = None
+    """With the arq worker: wakes the live-view streams when the worker commits an event."""
 
     async def start(self) -> None:
-        # A restart leaves queued/running runs without a browser: fail them honestly.
+        # In-process: a restart leaves queued/running runs without a browser, so they fail honestly. With the
+        # worker, the worker does this for its own runs (an API restart doesn't touch a running browser).
         await self.executor.recover()
+        if self.relay is not None:
+            await self.relay.start()
 
     async def close(self) -> None:
         await self.planning.shutdown()
         await self.executor.shutdown()
+        if self.relay is not None:
+            await self.relay.stop()
         if self.engine is not None:
             await self.engine.dispose()
 
 
-def build_services(settings: Settings) -> Services:
-    engine = create_engine(settings.database_url)
-    sessions = create_sessionmaker(engine)
-    hub = EventHub()
-    store = RunStore(sessions, on_event=hub.notify)
+def build_run_environment(settings: Settings) -> RunEnvironment:
+    """What a run needs (verifier, observer, policy, planner for replans, ...), the same in the API process
+    and in the worker (#95)."""
     llm = create_provider(settings)
     gemini = settings.llm_provider == "gemini"
     policy = PolicyService(classifier=LLMClassifier(llm))
     store_ = LocalFsStore(settings.artifacts_dir)
-    env = RunEnvironment(
+    return RunEnvironment(
         # Vision costs real Gemini quota; with the fake LLM the cheaper layers decide alone.
         verifier=LayeredVerifier(GeminiVisionJudge(llm) if gemini else None),
         # Screenshots and the rrweb recording go through the ArtifactStore port (#50), keyed by run.
@@ -77,16 +83,36 @@ def build_services(settings: Settings) -> Services:
         # One LLM call after the last step: did the steps do the whole task (#274)? Gemini only, like vision.
         task_check=GeminiTaskChecker(llm) if gemini else None,
     )
+
+
+def build_services(settings: Settings) -> Services:
+    engine = create_engine(settings.database_url)
+    sessions = create_sessionmaker(engine)
+    hub = EventHub()
+    store = RunStore(sessions, on_event=hub.notify)
+    llm = create_provider(settings)
+    policy = PolicyService(classifier=LLMClassifier(llm))
+    executor: InProcessExecutor | ArqExecutor
+    relay: RedisEventRelay | None = None
+    if settings.run_executor == "arq":
+        # Runs execute in the worker (`just backend worker`); its events come back over Redis (#95).
+        executor = ArqExecutor(store, settings.redis_url, artifacts_dir=settings.artifacts_dir)
+        relay = RedisEventRelay(settings.redis_url, hub)
+    else:
+        executor = InProcessExecutor(
+            store, build_run_environment(settings), max_concurrent=settings.max_concurrent_runs
+        )
     return Services(
         sessions=sessions,
         hub=hub,
         store=store,
-        executor=InProcessExecutor(store, env, max_concurrent=settings.max_concurrent_runs),
+        executor=executor,
         planning=PlanningService(
             sessions, LLMPlanner(llm), lambda url: target_setup(url, settings), policy=policy
         ),
         engine=engine,
         target=lambda url: target_setup(url, settings),
+        relay=relay,
     )
 
 
