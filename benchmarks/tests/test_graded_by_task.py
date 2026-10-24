@@ -78,8 +78,10 @@ class FakeApi:
 
     def __init__(self, final: str, planned: str = "planned") -> None:
         self.calls: list[str] = []
+        self.seen: list[tuple[str | None, str | None]] = []
+        """(X-Krama header, Cookie header) of every request after the sign-in (#94)."""
         state = {"final": final, "planned": planned}
-        calls = self.calls
+        calls, seen = self.calls, self.seen
 
         class Handler(BaseHTTPRequestHandler):
             def _send(self, body: dict[str, Any]) -> None:
@@ -90,6 +92,13 @@ class FakeApi:
             def do_POST(self) -> None:
                 calls.append(f"POST {self.path}")
                 self.rfile.read(int(self.headers.get("Content-Length") or 0))
+                if self.path == "/api/v1/auth/login":
+                    self.send_response(200)
+                    self.send_header("Set-Cookie", "krama_session=s3cret; Path=/; HttpOnly")
+                    self.end_headers()
+                    self.wfile.write(b'{"id": "u1", "email": "demo@krama.dev"}')
+                    return
+                seen.append((self.headers.get("X-Krama"), self.headers.get("Cookie")))
                 if self.path == "/api/v1/tasks":
                     self._send({"id": "t1", "status": "planning"})
                 elif self.path.endswith("/approve"):
@@ -99,6 +108,7 @@ class FakeApi:
 
             def do_GET(self) -> None:
                 calls.append(f"GET {self.path}")
+                seen.append((self.headers.get("X-Krama"), self.headers.get("Cookie")))
                 if self.path == "/api/v1/tasks/t1":
                     self._send({"id": "t1", "status": state["planned"], "plan_id": "p1",
                                 "clarification_question": "Which repo?"})  # fmt: skip
@@ -138,6 +148,19 @@ def test_api_runner_reports_a_verified_run(api_for: Any) -> None:
 
     assert trial.success and trial.steps_taken == 3 and trial.retries_count == 1
     assert "POST /api/v1/plans/p1/approve" in fake.calls
+
+
+def test_api_runner_signs_in_once_and_sends_the_cookie_and_csrf_header(api_for: Any) -> None:
+    # #94: the API needs a session cookie, and X-Krama: 1 on changes.
+    fake, runner = api_for("verified")
+
+    runner.run(1, "Open an issue")
+    runner.run(2, "Open an issue")
+
+    assert fake.calls[0] == "POST /api/v1/auth/login"
+    assert fake.calls.count("POST /api/v1/auth/login") == 1
+    assert fake.seen
+    assert all(header == "1" and cookie == "krama_session=s3cret" for header, cookie in fake.seen)
 
 
 def test_api_runner_cancels_a_paused_run_and_fails_the_trial(api_for: Any) -> None:

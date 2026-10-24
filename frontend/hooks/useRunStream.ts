@@ -242,14 +242,15 @@ export function useRunStream({
 
     let isMounted = true;
     const base = apiBaseUrl().replace(/\/+$/, "");
-    // Connect to /api/v1/runs/${runId}/stream
+    // The live view is GET /api/v1/runs/{id}/events (docs/api-contract.md).
     const streamUrl = base.endsWith("/api/v1")
-      ? `${base}/runs/${encodeURIComponent(runId)}/stream`
-      : `${base}/api/v1/runs/${encodeURIComponent(runId)}/stream`;
+      ? `${base}/runs/${encodeURIComponent(runId)}/events`
+      : `${base}/api/v1/runs/${encodeURIComponent(runId)}/events`;
 
     let es: EventSource | null = null;
     try {
-      es = new EventSource(streamUrl);
+      // withCredentials: the API needs the session cookie (#94).
+      es = new EventSource(streamUrl, { withCredentials: true });
       eventSourceRef.current = es;
 
       es.onopen = () => {

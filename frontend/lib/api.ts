@@ -434,7 +434,8 @@ export class HttpApiClient implements ApiClient {
     const url = `${this.baseUrl}${path.startsWith("/") ? path : `/${path}`}`;
     let response: Response;
     try {
-      response = init !== undefined ? await fetch(url, init) : await fetch(url);
+      // credentials: the session is an HTTP-only cookie set by the API on another port (#94).
+      response = await fetch(url, { credentials: "include", ...init });
     } catch (err) {
       if (isAbortError(err)) throw err;
       throw new Error(`Network request failed for ${url}: ${errorMessage(err, String(err))}`);
@@ -541,14 +542,7 @@ export class HttpApiClient implements ApiClient {
   }
 
   async getTutorials(options?: { limit?: number; status?: "all" | TutorialStatus }): Promise<TutorialSummary[]> {
-    try {
-      const path = this.baseUrl.endsWith("/api/v1") ? "/tutorials" : "/api/v1/tutorials";
-      const res = await this.request<{ items: TutorialSummary[] } | TutorialSummary[]>(path);
-      if (Array.isArray(res)) return res;
-      if (res && Array.isArray(res.items)) return res.items;
-    } catch {
-      // Endpoint /api/v1/tutorials not implemented, fallback to /workflows
-    }
+    // The API has no /tutorials endpoint (docs/api-contract.md): a tutorial is a stored workflow.
     const workflowsPage = await this.getWorkflows(options?.limit ?? 100, options?.status ?? "all");
     return workflowsPage.items.map((w) => ({
       id: w.id,
@@ -657,25 +651,15 @@ export class HttpApiClient implements ApiClient {
   }
 
   async getSharedTutorial(token: string): Promise<TutorialSpec> {
+    // GET /shared/{token} returns a Workflow (contracts/schemas/share.schema.json, docs/api-contract.md).
     const path = this.baseUrl.endsWith("/api/v1")
-      ? `/shares/${encodeURIComponent(token)}`
-      : `/api/v1/shares/${encodeURIComponent(token)}`;
-    try {
-      const data = await this.request<TutorialSpec | Workflow>(path);
-      if ("scenes" in data && "viewport" in data) {
-        return data as TutorialSpec;
-      }
-      return compileWorkflow(data as Workflow);
-    } catch {
-      const fallback = this.baseUrl.endsWith("/api/v1")
-        ? `/shared/${encodeURIComponent(token)}`
-        : `/api/v1/shared/${encodeURIComponent(token)}`;
-      const data = await this.request<TutorialSpec | Workflow>(fallback);
-      if ("scenes" in data && "viewport" in data) {
-        return data as TutorialSpec;
-      }
-      return compileWorkflow(data as Workflow);
+      ? `/shared/${encodeURIComponent(token)}`
+      : `/api/v1/shared/${encodeURIComponent(token)}`;
+    const data = await this.request<TutorialSpec | Workflow>(path);
+    if ("scenes" in data && "viewport" in data) {
+      return data as TutorialSpec;
     }
+    return compileWorkflow(data as Workflow);
   }
 
   /**
@@ -696,7 +680,7 @@ export class HttpApiClient implements ApiClient {
       try {
         const headers: Record<string, string> = { Accept: "text/event-stream" };
         if (lastSeq > 0) headers["Last-Event-ID"] = String(lastSeq);
-        const response = await fetch(url, { headers, signal, cache: "no-store" });
+        const response = await fetch(url, { headers, signal, cache: "no-store", credentials: "include" });
         if (!response.ok) {
           let detail = "";
           let apiError: Partial<ApiError> | undefined;

@@ -1,21 +1,29 @@
 """Benchmark trials through the running backend API, the product path (#83).
 
 `AgentRunner` runs the old `krama run` CLI loop, which has no Safety Policy, no recovery and no database. This
-runner does what a user does: POST /tasks, approve the plan, wait for the run. Nobody answers a pause in a
-benchmark, so a paused run is cancelled and counts as not done. Start the API first (`just backend dev`).
+runner does what a user does: sign in, POST /tasks, approve the plan, wait for the run. Nobody answers a pause
+in a benchmark, so a paused run is cancelled and counts as not done. Start the API first (`just backend dev`).
+
+Sign-in (#94): as KRAMA_BENCH_EMAIL / KRAMA_BENCH_PASSWORD, else the seeded demo@krama.dev with
+KRAMA_DEMO_PASSWORD (environment or the repo-root .env). Every call sends X-Krama: 1 (the API's CSRF check).
 """
 
 from __future__ import annotations
 
+import http.cookiejar
 import json
+import os
 import time
 import urllib.error
 import urllib.request
+from pathlib import Path
 from typing import Any
 
 from benchmarks.models import RunTrial
 
 FINAL = ("verified", "failed", "cancelled")
+ENV_FILE = Path(__file__).resolve().parents[1] / ".env"
+DEMO_EMAIL = "demo@krama.dev"
 
 
 class ApiAgentRunner:
@@ -30,6 +38,10 @@ class ApiAgentRunner:
         self.api_url = api_url.rstrip("/")
         self.timeout = timeout
         self.poll_s = poll_s
+        # Keeps the session cookie between calls, like a browser.
+        cookies = urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar())
+        self._opener = urllib.request.build_opener(cookies)
+        self._signed_in = False
 
     def run(self, run_index: int, task: str) -> RunTrial:
         t0 = time.perf_counter()
@@ -46,6 +58,7 @@ class ApiAgentRunner:
             )
 
         try:
+            self._sign_in()
             created = self._call("POST", "/tasks", {"prompt": task, "target_url": self.target_url})
             planned = self._wait(f"/tasks/{created['id']}", lambda t: t["status"] != "planning", t0)
             if planned["status"] != "planned":
@@ -71,10 +84,33 @@ class ApiAgentRunner:
                 raise TimeoutError(f"{path} not done after {self.timeout:g} s")
             time.sleep(self.poll_s)
 
+    def _sign_in(self) -> None:
+        """Once per runner. An API without accounts (before #94) answers 404 and needs none."""
+        if self._signed_in:
+            return
+        env = {**_dotenv(), **os.environ}
+        email = env.get("KRAMA_BENCH_EMAIL") or DEMO_EMAIL
+        password = env.get("KRAMA_BENCH_PASSWORD") or env.get("KRAMA_DEMO_PASSWORD") or ""
+        try:
+            self._call("POST", "/auth/login", {"email": email, "password": password})
+        except urllib.error.HTTPError as e:
+            if e.code != 404:
+                raise ValueError(f"benchmark sign-in as {email} failed: HTTP {e.code}") from None
+        self._signed_in = True
+
     def _call(self, method: str, path: str, body: dict[str, Any] | None = None) -> dict[str, Any]:
         data = json.dumps(body).encode() if body is not None else None
         request = urllib.request.Request(self.api_url + path, data=data, method=method)
         request.add_header("Content-Type", "application/json")
-        with urllib.request.urlopen(request, timeout=120) as response:
-            result: dict[str, Any] = json.loads(response.read())
+        request.add_header("X-Krama", "1")
+        with self._opener.open(request, timeout=120) as response:
+            raw = response.read()
+            result: dict[str, Any] = json.loads(raw) if raw else {}
             return result
+
+
+def _dotenv() -> dict[str, str]:
+    if not ENV_FILE.exists():
+        return {}
+    pairs = (line.split("=", 1) for line in ENV_FILE.read_text(encoding="utf-8").splitlines() if "=" in line)
+    return {k.strip(): v.strip().strip('"') for k, v in pairs if not k.lstrip().startswith("#")}
