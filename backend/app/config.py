@@ -1,5 +1,6 @@
 """Runtime settings, read from the repo-root `.env` (see `.env.example`)."""
 
+from datetime import timedelta
 from functools import lru_cache
 from pathlib import Path
 from typing import Literal
@@ -39,6 +40,15 @@ class Settings(BaseSettings):
     # Fernet key(s) for stored browser sessions, newest first, comma-separated (`krama session key`).
     krama_storage_key: SecretStr = SecretStr("")
     sessions_dir: Path = REPO_ROOT / "data" / "sessions"
+
+    # Sign-in sessions (#94): an HTTP-only cookie. Secure only behind HTTPS (browsers drop Secure cookies on
+    # plain http, except on localhost in some browsers).
+    session_cookie_name: str = "krama_session"
+    session_cookie_secure: bool = False
+    session_idle: timedelta = timedelta(days=7)
+    session_absolute: timedelta = timedelta(days=30)
+    # The seeded demo account (`krama users seed`): demo@krama.dev with this password (15+ characters).
+    krama_demo_password: SecretStr = SecretStr("")
 
     artifacts_dir: Path = REPO_ROOT / "data" / "artifacts"
     max_concurrent_runs: int = 1

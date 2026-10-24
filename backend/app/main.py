@@ -8,7 +8,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import artifacts, health, plans, runs, tasks, workflows
+from app.api import artifacts, auth, health, plans, runs, tasks, workflows
+from app.api.csrf import CsrfMiddleware
 from app.api.errors import ERROR_RESPONSES, install_error_handlers
 from app.api.services import Services, build_services
 from app.config import get_settings
@@ -34,14 +35,17 @@ def create_app(services: Services | None = None) -> FastAPI:
     app = FastAPI(
         title="Krama API", version=settings.app_version, responses=ERROR_RESPONSES, lifespan=lifespan
     )
+    # Middleware runs outside-in in reverse order of adding: CORS answers preflights before the CSRF check.
+    app.add_middleware(CsrfMiddleware, allowed_origins=settings.cors_origins)
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=settings.cors_origins,
+        allow_origins=settings.cors_origins,  # explicit origins: required with credentials (cookies)
+        allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
     )
     install_error_handlers(app)
-    for module in (health, tasks, plans, runs, workflows, artifacts):
+    for module in (health, auth, tasks, plans, runs, workflows, artifacts):
         app.include_router(module.router, prefix=API_PREFIX)
     return app
 
