@@ -23,7 +23,10 @@ class Settings(BaseSettings):
     # 127.0.0.1, not localhost: on Windows + Docker Desktop, localhost tries IPv6 first and asyncpg waits
     # ~21 s for it to time out before falling back to IPv4.
     database_url: str = "postgresql+asyncpg://krama:krama-local-only@127.0.0.1:5433/krama"
-    redis_url: str = "redis://localhost:6379/0"
+    # 127.0.0.1 too: arq's async client times out on IPv6 localhost (phase-3-vishwas-job-queue.md).
+    redis_url: str = "redis://127.0.0.1:6379/0"
+    # inprocess: runs execute inside the API (tests, no Redis). arq: in the worker (#95).
+    run_executor: Literal["inprocess", "arq"] = "inprocess"
 
     llm_provider: Literal["fake", "gemini"] = "fake"
     gemini_api_key: str = ""
