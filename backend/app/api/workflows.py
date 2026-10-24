@@ -8,14 +8,16 @@ from uuid import UUID
 
 from fastapi import APIRouter, Query, Request, Response
 
+from app.api.auth import CurrentUser
 from app.api.convert import decode_cursor, encode_cursor, run_out, workflow_out, workflow_summary
 from app.api.errors import ApiException
 from app.api.guide import guide_markdown
+from app.api.owner import owned_workflow
 from app.api.services import ServicesDep
 from app.contracts_gen.common_schema import ErrorResponse
 from app.contracts_gen.run_schema import Run
 from app.contracts_gen.workflow_schema import Workflow, WorkflowPage
-from app.db import PlanRow, RunRow, TaskRow, WorkflowRow
+from app.db import PlanRow, RunRow, TaskRow
 from app.db.repositories import list_workflows
 from app.runs.reverify import ReverifyRefusedError, check_replayable, plan_risk, plan_steps
 from app.targets import ResetError
@@ -24,11 +26,9 @@ router = APIRouter(tags=["workflows"])
 
 
 @router.get("/workflows/{workflow_id}", responses={404: {"model": ErrorResponse, "description": "Not found"}})
-async def get_workflow(workflow_id: UUID, services: ServicesDep) -> Workflow:
+async def get_workflow(workflow_id: UUID, user: CurrentUser, services: ServicesDep) -> Workflow:
     async with services.sessions() as s:
-        workflow = await s.get(WorkflowRow, workflow_id)
-        if workflow is None:
-            raise ApiException(404, "not_found", "Workflow not found")
+        workflow = await owned_workflow(s, workflow_id, user)
         task = await s.get(TaskRow, workflow.task_id)
         return workflow_out(workflow, task.prompt if task else None)
 
@@ -41,9 +41,11 @@ async def get_workflow(workflow_id: UUID, services: ServicesDep) -> Workflow:
         404: {"model": ErrorResponse, "description": "Not found"},
     },
 )
-async def get_workflow_guide(workflow_id: UUID, request: Request, services: ServicesDep) -> Response:
+async def get_workflow_guide(
+    workflow_id: UUID, request: Request, user: CurrentUser, services: ServicesDep
+) -> Response:
     """The workflow as a plain text guide: the tutorial's step texts, numbered, each with its screenshot."""
-    workflow = await get_workflow(workflow_id, services)
+    workflow = await get_workflow(workflow_id, user, services)
 
     def artifact_url(key: str) -> str:
         # Absolute, so the file still shows its images when opened outside the app.
@@ -67,13 +69,11 @@ async def get_workflow_guide(workflow_id: UUID, request: Request, services: Serv
         },
     },
 )
-async def reverify_workflow(workflow_id: UUID, services: ServicesDep) -> Run:
+async def reverify_workflow(workflow_id: UUID, user: CurrentUser, services: ServicesDep) -> Run:
     """Replay the stored workflow's steps headlessly, without the planner (#77). The run stores no new
     workflow; its events and final status say whether every step still works."""
     async with services.sessions() as s:
-        workflow = await s.get(WorkflowRow, workflow_id)
-        if workflow is None:
-            raise ApiException(404, "not_found", "Workflow not found")
+        workflow = await owned_workflow(s, workflow_id, user)
         steps = list(workflow.steps)
         task_id, target_url, title = workflow.task_id, workflow.target_url, workflow.title
     try:
@@ -114,6 +114,7 @@ async def reverify_workflow(workflow_id: UUID, services: ServicesDep) -> Run:
 
 @router.get("/workflows")
 async def get_workflows(
+    user: CurrentUser,
     services: ServicesDep,
     target_app: str | None = None,
     limit: Annotated[int, Query(ge=1, le=100)] = 20,
@@ -121,7 +122,9 @@ async def get_workflows(
 ) -> WorkflowPage:
     """Stored workflows, newest first, optionally for one app (e.g. gitea)."""
     async with services.sessions() as s:
-        rows = await list_workflows(s, limit=limit, target_app=target_app, before=decode_cursor(cursor))
+        rows = await list_workflows(
+            s, user_id=user.id, limit=limit, target_app=target_app, before=decode_cursor(cursor)
+        )
         items = [workflow_summary(r) for r in rows]
     next_cursor = encode_cursor(rows[-1].created_at, rows[-1].id) if len(rows) == limit else None
     return WorkflowPage(items=items, next_cursor=next_cursor)
