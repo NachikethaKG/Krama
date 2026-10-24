@@ -48,6 +48,10 @@ logs service="":
 seed:
     uv run --no-project --python 3.12 scripts/seed_gitea.py
 
+# Create the demo sign-in account demo@krama.dev (KRAMA_DEMO_PASSWORD) and give it rows from before accounts (#94)
+seed-users:
+    cd backend && uv run krama users seed --claim
+
 # Wipe Gitea back to a clean state (deletes all its repos), then re-seed
 reset-gitea:
     {{compose}} rm -sf gitea
