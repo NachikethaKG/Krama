@@ -183,6 +183,12 @@ class ActionExecutor:
             count = await visible.count()
             if count == 1:
                 return visible, strategy
+            if count > 1 and strategy == "role" and not several:
+                # Several elements contain the name: one named exactly so is the one meant. Decided here,
+                # before the weaker strategies: the label "Leave a comment" also contains "Comment" (#100).
+                exact = await self._pick_exact_name(target)
+                if exact is not None:
+                    return exact, "role"
             if count > 1 and strategy in ("role", "text"):
                 several.append(visible)
         if not several:
@@ -196,6 +202,15 @@ class ActionExecutor:
                 "ambiguous_target", f"several elements match {_describe(target)} and none could be picked"
             )
         return picked, "vision"
+
+    async def _pick_exact_name(self, target: Target) -> Locator | None:
+        """The one visible element whose name is exactly the target's, when the substring match found several.
+        Names match as substrings, so "Comment" also finds "Close with Comment"; both sit in the comment form,
+        and the vision fallback once clicked the sidebar instead (#100)."""
+        if not target.role or not target.name:
+            return None
+        exact = self._page.get_by_role(target.role, name=target.name, exact=True).filter(visible=True)  # type: ignore[arg-type]
+        return exact if await exact.count() == 1 else None
 
     async def _pick_in_filled_form(self, several: list[Locator]) -> Locator | None:
         """The one candidate inside the form of the field filled just before, or None. Deterministic and free,
