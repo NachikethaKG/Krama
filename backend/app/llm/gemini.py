@@ -51,11 +51,16 @@ class GeminiProvider:
 
     - per-minute 429: wait the server's `retryDelay`, retry the same model (at most `max_rate_retries` times)
     - per-day 429: move to the next model at once
-    - 500/502/503/504, or the connection dropped (e.g. a failed TLS handshake): one retry with backoff,
-      then the next model
+    - 500/502/504, or the connection dropped (e.g. a failed TLS handshake): one retry with backoff, then
+      the next model
+    - 503 (the model is overloaded): the next model at once
     - no answer within `timeout_s`: the next model (retrying a stall would cost another `timeout_s`)
     - reply that doesn't validate against the schema: the next model
     - any other error (bad key, bad request): raise at once, since another model won't fix it
+
+    A model that stalled or kept failing rests for `cooldown_s` (`quota_cooldown_s` after its daily quota ran
+    out): later calls try it last instead of first, so one overloaded model doesn't cost every call a full
+    timeout (#101: gemini-3.8-flash answered 503 or nothing for 60 s while gemini-3.5-flash took 2-3 s).
     """
 
     def __init__(
@@ -69,7 +74,10 @@ class GeminiProvider:
         max_rate_wait_s: float = 60.0,
         max_rate_retries: int = 2,
         server_retry_delay_s: float = 2.0,
-        timeout_s: float = 60.0,
+        timeout_s: float = 30.0,
+        cooldown_s: float = 300.0,
+        quota_cooldown_s: float = 3600.0,
+        clock: Clock = time.monotonic,
     ) -> None:
         if not models:
             raise ValueError("GeminiProvider needs at least one model")
@@ -82,8 +90,13 @@ class GeminiProvider:
         self._max_rate_wait_s = max_rate_wait_s
         self._max_rate_retries = max_rate_retries
         self._server_retry_delay_s = server_retry_delay_s
-        # The SDK has no timeout by default; one stalled request hung a run for over 10 minutes.
+        # The SDK has no timeout by default; one stalled request hung a run for over 10 minutes. Good answers
+        # take 2-15 s, so 30 s is generous, and a stalled model then rests (see `_resting_until`).
         self._timeout_s = timeout_s
+        self._cooldown_s = cooldown_s
+        self._quota_cooldown_s = quota_cooldown_s
+        self._clock = clock
+        self._resting_until: dict[str, float] = {}
 
     async def generate[M: BaseModel](
         self, *, system: str, prompt: str, schema: type[M], image: bytes | None = None
@@ -99,7 +112,7 @@ class GeminiProvider:
         if image is not None:
             contents = [types.Part.from_bytes(data=image, mime_type="image/png"), prompt]
         attempts: list[LLMAttempt] = []
-        for model in self._models:
+        for model in self._order():
             rate_retries = server_retries = 0
             while True:
                 await self._limiter.wait(model)
@@ -118,6 +131,7 @@ class GeminiProvider:
                             message=f"no answer within {self._timeout_s:g} s",
                         )
                     )
+                    self._rest(model, self._cooldown_s)
                     break
                 except httpx.TransportError as e:
                     # The network, not Gemini: seen as bursts of failed TLS handshakes in a benchmark (#83).
@@ -133,6 +147,7 @@ class GeminiProvider:
                         server_retries += 1
                         await self._sleep(self._server_retry_delay_s * (1 + random.random()))
                         continue
+                    self._rest(model, self._cooldown_s)
                     break
                 except errors.APIError as e:
                     ms = _ms_since(t0)
@@ -143,13 +158,17 @@ class GeminiProvider:
                         continue
                     if e.code == 429:
                         attempts.append(_attempt(model, "quota_exhausted", e, ms))
+                        self._rest(model, self._quota_cooldown_s)
                         break
                     if e.code in _SERVER_ERRORS:
                         attempts.append(_attempt(model, "unavailable", e, ms))
-                        if server_retries < 1:
+                        # 503 is Gemini saying the model is overloaded right now: retrying it cost 15 s in
+                        # #101, the next model answers in 2-3 s.
+                        if server_retries < 1 and e.code != 503:
                             server_retries += 1
                             await self._sleep(self._server_retry_delay_s * (1 + random.random()))
                             continue
+                        self._rest(model, self._cooldown_s)
                         break
                     attempts.append(_attempt(model, "error", e, ms))
                     raise LLMError(f"Gemini rejected the request: {e.code} {e.status}", attempts) from e
@@ -181,11 +200,21 @@ class GeminiProvider:
                         tokens_out=tokens_out,
                     )
                 )
+                self._resting_until.pop(model, None)  # it works again
                 return LLMResult[M](value=value, model=model, attempts=attempts)
 
         if attempts and all(a.status in ("rate_limited", "quota_exhausted") for a in attempts):
             raise LLMRateLimitedError("every Gemini model is out of quota", attempts)
         raise LLMUnavailableError("no Gemini model returned a valid reply", attempts)
+
+    def _order(self) -> list[str]:
+        """The configured order, with resting models moved to the end (still tried if all else fails)."""
+        now = self._clock()
+        ready = [m for m in self._models if self._resting_until.get(m, 0) <= now]
+        return ready + [m for m in self._models if m not in ready]
+
+    def _rest(self, model: str, seconds: float) -> None:
+        self._resting_until[model] = self._clock() + seconds
 
 
 def _ms_since(t0: float) -> int:
