@@ -148,6 +148,19 @@ class InProcessExecutor:
         resumed = {"step_seq": step_seq, "decision": "allow"}
         if not await self._store.transition(run_id, RunStatus.RUNNING, resumed, from_=RunStatus.PAUSED):
             return False
+        return self.resume(run_id)
+
+    async def stop(self, run_id: UUID) -> None:
+        """Stop a run's steps and close its browser. The caller has already recorded why in the database (the
+        API process cancels a run the worker runs, #95)."""
+        await self._stop_task(run_id)
+
+    def resume(self, run_id: UUID) -> bool:
+        """Let a paused run go on. The caller has already moved it back to running in the database. False if
+        it isn't waiting here."""
+        waiting = self._answers.get(run_id)
+        if waiting is None or waiting.done():
+            return False
         waiting.set_result(None)
         return True
 
