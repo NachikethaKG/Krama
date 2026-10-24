@@ -56,6 +56,13 @@ PAGES: dict[str, str] = {
         <form onsubmit="document.title = 'advanced saved'; return false">
           <label>Wiki URL <input></label><button>Update Settings</button></form>
     </main>""",
+    # Gitea's comment form (#100): "Comment" is a substring of "Close with Comment", both in the same form.
+    "/comment": """<title>Issue</title><main>
+        <form onsubmit="return false"><label>Leave a comment <textarea></textarea></label>
+          <button onclick="document.title = 'closed'">Close with Comment</button>
+          <button onclick="document.title = 'commented'">Comment</button></form>
+        <aside><button onclick="document.title = 'subscribed'">Comment notifications</button></aside>
+    </main>""",
     # Where elements sit, for the step text (#73): dialog, top bar, dropdown menu, form sections, tab strip.
     "/context": """<title>Settings - demo-repo</title>
         <nav id="navbar"><a href="/">Explore</a></nav>

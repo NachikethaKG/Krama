@@ -256,3 +256,28 @@ async def test_a_navigation_forgets_the_filled_field(session: PlaywrightSession)
     result = await executor.execute(CLICK, Target(role="button", name="Update Settings"))
 
     assert not result.ok and result.error is not None and result.error.code == "ambiguous_target"
+
+
+async def test_an_exact_name_wins_over_names_that_only_contain_it(session: PlaywrightSession) -> None:
+    # #100: "Comment" also matches "Close with Comment" (same form) and "Comment notifications"; the vision
+    # fallback once clicked the sidebar. The one element named exactly "Comment" is the button meant.
+    await session.page.goto("/comment")
+    vision = ScriptedVision(at="aside button")  # would pick the wrong one if it were asked
+    executor = ActionExecutor(session.page, vision=vision)
+    box = Target(role="textbox", name="Leave a comment")
+    await executor.execute(Action(type="fill", value="Reproduced."), box)
+
+    result = await executor.execute(CLICK, Target(role="button", name="Comment"))
+
+    assert result.ok and result.strategy == "role"
+    assert await session.page.title() == "commented" and vision.calls == []
+
+
+async def test_without_an_exact_name_the_form_rule_still_decides(session: PlaywrightSession) -> None:
+    await session.page.goto("/forms")
+    executor = ActionExecutor(session.page)  # both buttons are named exactly "Update Settings"
+    await executor.execute(Action(type="fill", value="Docs"), Target(role="textbox", name="Wiki URL"))
+
+    result = await executor.execute(CLICK, Target(role="button", name="Update Settings"))
+
+    assert result.ok and result.strategy == "form" and await session.page.title() == "advanced saved"
