@@ -41,8 +41,8 @@ export function LoginForm({ client, from: propFrom, onSuccess }: LoginFormProps)
 
     try {
       const user = await apiClient.login({ email, password });
-      // In mock/browser mode, ensure cookie is set for Next.js middleware
-      if (typeof document !== "undefined") {
+      // Mock mode only: the real API sets its own HTTP-only session cookie, which the middleware checks.
+      if (typeof document !== "undefined" && process.env.NEXT_PUBLIC_API_MODE !== "http") {
         document.cookie = "krama_session=demo-mock-token; path=/; max-age=86400; SameSite=Lax";
       }
 

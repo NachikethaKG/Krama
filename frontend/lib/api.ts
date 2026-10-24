@@ -542,14 +542,7 @@ export class HttpApiClient implements ApiClient {
   }
 
   async getTutorials(options?: { limit?: number; status?: "all" | TutorialStatus }): Promise<TutorialSummary[]> {
-    try {
-      const path = this.baseUrl.endsWith("/api/v1") ? "/tutorials" : "/api/v1/tutorials";
-      const res = await this.request<{ items: TutorialSummary[] } | TutorialSummary[]>(path);
-      if (Array.isArray(res)) return res;
-      if (res && Array.isArray(res.items)) return res.items;
-    } catch {
-      // Endpoint /api/v1/tutorials not implemented, fallback to /workflows
-    }
+    // The API has no /tutorials endpoint (docs/api-contract.md): a tutorial is a stored workflow.
     const workflowsPage = await this.getWorkflows(options?.limit ?? 100, options?.status ?? "all");
     return workflowsPage.items.map((w) => ({
       id: w.id,
