@@ -12,7 +12,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.contracts_gen.events_schema import RunEvent, RunStartedEvent
-from app.db import PlanRow, RunEventRow, RunRow, TaskRow, WorkflowRow, WorkflowStepRow
+from app.db import PlanRow, RunEventRow, RunRow, TaskRow, UserRow, WorkflowRow, WorkflowStepRow
 from app.db.repositories import (
     InvalidRunEventError,
     append_event,
@@ -39,9 +39,21 @@ STEP: dict[str, Any] = {
 }
 
 
-async def new_run(sessions: Sessions, *, status: str = "queued") -> RunRow:
+async def new_user(sessions: Sessions) -> UserRow:
     async with sessions.begin() as s:
-        task = TaskRow(prompt="Create a repository", target_url="http://localhost:3001", status="planned")
+        user = UserRow(email=f"{uuid4().hex[:8]}@krama.test", password_hash="x")
+        s.add(user)
+    return user
+
+
+async def new_run(sessions: Sessions, *, status: str = "queued", user: UserRow | None = None) -> RunRow:
+    async with sessions.begin() as s:
+        task = TaskRow(
+            user_id=user.id if user else None,
+            prompt="Create a repository",
+            target_url="http://localhost:3001",
+            status="planned",
+        )
         s.add(task)
         await s.flush()
         plan = PlanRow(task_id=task.id, risk="low", expected_result="A repo page", steps=[STEP])
@@ -211,9 +223,10 @@ async def test_status_check_rejects_unknown_values(sessions: Sessions) -> None:
 
 
 async def test_run_history_pages_newest_first(sessions: Sessions) -> None:
+    owner, other = await new_user(sessions), await new_user(sessions)
     ids = []
     for _ in range(5):
-        run = await new_run(sessions)
+        run = await new_run(sessions, user=owner)
         ids.append(run.id)
     async with sessions.begin() as s:  # distinct, known created_at values
         for i, run_id in enumerate(ids):
@@ -222,10 +235,11 @@ async def test_run_history_pages_newest_first(sessions: Sessions) -> None:
             row.created_at = datetime(2026, 1, 1, tzinfo=UTC) + timedelta(minutes=i)
 
     async with sessions() as s:
-        first = await list_runs(s, limit=2)
-        second = await list_runs(s, limit=2, before=(first[-1].created_at, first[-1].id))
-        rest = await list_runs(s, limit=2, before=(second[-1].created_at, second[-1].id))
+        first = await list_runs(s, user_id=owner.id, limit=2)
+        second = await list_runs(s, user_id=owner.id, limit=2, before=(first[-1].created_at, first[-1].id))
+        rest = await list_runs(s, user_id=owner.id, limit=2, before=(second[-1].created_at, second[-1].id))
         assert [r.id for r in [*first, *second, *rest]] == ids[::-1]
+        assert await list_runs(s, user_id=other.id, limit=10) == []  # only your own runs (#94)
         assert await runs_with_status(s, ("queued",)) == ids
 
 
@@ -273,14 +287,17 @@ def step_row(seq: int) -> WorkflowStepRow:
     )
 
 
-async def new_workflow(sessions: Sessions, app: str, steps: list[int]) -> WorkflowRow:
-    run = await new_run(sessions, status="verified")
+async def new_workflow(
+    sessions: Sessions, app: str, steps: list[int], user: UserRow | None = None
+) -> WorkflowRow:
+    run = await new_run(sessions, status="verified", user=user)
     async with sessions.begin() as s:
         plan = await s.get(PlanRow, run.plan_id)
         assert plan is not None
         workflow = WorkflowRow(
             task_id=plan.task_id,
             run_id=run.id,
+            user_id=user.id if user else None,
             title="Create a repository",
             target_app=app,
             target_url="http://localhost:3001",
@@ -309,10 +326,14 @@ async def test_step_seq_is_unique_per_workflow(sessions: Sessions) -> None:
 
 
 async def test_list_workflows_filters_by_app(sessions: Sessions) -> None:
-    gitea = await new_workflow(sessions, "gitea", [1])
-    await new_workflow(sessions, "github", [1])
+    owner, other = await new_user(sessions), await new_user(sessions)
+    gitea = await new_workflow(sessions, "gitea", [1], owner)
+    await new_workflow(sessions, "github", [1], owner)
 
     async with sessions() as s:
-        assert [w.id for w in await list_workflows(s, limit=10, target_app="gitea")] == [gitea.id]
-        assert len(await list_workflows(s, limit=10)) == 2
+        assert [w.id for w in await list_workflows(s, user_id=owner.id, limit=10, target_app="gitea")] == [
+            gitea.id
+        ]
+        assert len(await list_workflows(s, user_id=owner.id, limit=10)) == 2
+        assert await list_workflows(s, user_id=other.id, limit=10) == []  # only your own (#94)
         assert await s.scalar(select(func.count()).select_from(WorkflowStepRow)) == 2
