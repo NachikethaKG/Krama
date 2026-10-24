@@ -62,6 +62,11 @@ def build_parser() -> argparse.ArgumentParser:
     session.add_argument("site", nargs="?", choices=sorted(SITES), help="e.g. github")
     session.add_argument("--timeout", type=float, default=600.0, help="seconds to wait for the sign-in")
     add_users_parser(commands)
+    commands.add_parser(
+        "worker",
+        help="run queued runs (RUN_EXECUTOR=arq; needs Redis)",
+        description="The run worker (#95): executes queued runs, MAX_CONCURRENT_RUNS at a time.",
+    )
     return parser
 
 
@@ -147,6 +152,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         return session_command(args)
     if args.command == "users":
         return users_command(args)
+    if args.command == "worker":
+        from app.worker import run_worker
+
+        run_worker(get_settings())
+        return 0
     if args.login and args.site != "gitea":
         parser.error("--login needs --site gitea")
 

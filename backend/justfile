@@ -10,6 +10,10 @@ install:
 dev:
     uv run uvicorn app.main:app --reload --loop app.dev_loop:factory --port 8000
 
+# Run worker: executes queued runs (needs Redis from `just up` and RUN_EXECUTOR=arq for the API, #95)
+worker:
+    uv run krama worker
+
 # Apply all database migrations (Postgres from `just up`; DATABASE_URL in the repo-root .env)
 migrate:
     uv run alembic upgrade head
