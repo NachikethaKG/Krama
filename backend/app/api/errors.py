@@ -21,6 +21,8 @@ ERROR_RESPONSES: dict[int | str, dict[str, Any]] = {
 
 # HTTP status → contract error code, for errors raised by FastAPI/Starlette itself (e.g. unknown route).
 _STATUS_CODES: dict[int, ErrorCode] = {
+    401: "unauthorized",
+    403: "forbidden",
     404: "not_found",
     409: "conflict",
     422: "validation_error",
@@ -46,6 +48,13 @@ def _response(
 ) -> JSONResponse:
     body = ErrorResponse(error=ApiError(code=code, message=message, details=details))
     return JSONResponse(status_code=status_code, content=jsonable_encoder(body, exclude_none=True))
+
+
+def error_body(code: ErrorCode, message: str) -> bytes:
+    """A contract error as JSON bytes, for middleware that answers before any route runs."""
+    return (
+        ErrorResponse(error=ApiError(code=code, message=message)).model_dump_json(exclude_none=True).encode()
+    )
 
 
 async def _api_exception(_: Request, exc: Exception) -> JSONResponse:

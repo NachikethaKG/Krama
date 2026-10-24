@@ -14,12 +14,14 @@ from fastapi.sse import EventSourceResponse, ServerSentEvent
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.auth import CurrentUser
 from app.api.convert import decode_cursor, encode_cursor, run_out
 from app.api.errors import ApiException
+from app.api.owner import owned_run
 from app.api.services import ServicesDep
 from app.contracts_gen.common_schema import ErrorResponse
 from app.contracts_gen.run_schema import Run, RunConfirmRequest, RunPage
-from app.db import RunRow, WorkflowRow
+from app.db import RunRow, UserRow, WorkflowRow
 from app.db.repositories import event_payload, events_after, list_runs
 
 type Responses = dict[int | str, dict[str, Any]]
@@ -31,6 +33,7 @@ _404: Responses = {404: {"model": ErrorResponse, "description": "No run with thi
 
 @router.get("/runs")
 async def get_runs(
+    user: CurrentUser,
     services: ServicesDep,
     limit: Annotated[int, Query(ge=1, le=100)] = 20,
     cursor: str | None = None,
@@ -38,7 +41,7 @@ async def get_runs(
     """Run history, newest first."""
     before = decode_cursor(cursor)
     async with services.sessions() as s:
-        rows = await list_runs(s, limit=limit, before=before)
+        rows = await list_runs(s, user_id=user.id, limit=limit, before=before)
         workflows = await _workflow_ids(s, [r.id for r in rows])
     items = [run_out(r, workflows.get(r.id)) for r in rows]
     next_cursor = encode_cursor(rows[-1].created_at, rows[-1].id) if len(rows) == limit else None
@@ -46,29 +49,30 @@ async def get_runs(
 
 
 @router.get("/runs/{run_id}", responses=_404)
-async def get_run(run_id: UUID, services: ServicesDep) -> Run:
+async def get_run(run_id: UUID, user: CurrentUser, services: ServicesDep) -> Run:
     async with services.sessions() as s:
-        return await _run_out(s, run_id)
+        return await _run_out(s, run_id, user)
 
 
 @router.post(
     "/runs/{run_id}/cancel",
     responses={**_404, 409: {"model": ErrorResponse, "description": "The run already finished"}},
 )
-async def cancel_run(run_id: UUID, services: ServicesDep) -> Run:
+async def cancel_run(run_id: UUID, user: CurrentUser, services: ServicesDep) -> Run:
+    async with services.sessions() as s:
+        await owned_run(s, run_id, user)  # 404 before touching someone else's run
     if not await services.executor.cancel(run_id):
         async with services.sessions() as s:
-            run = await _run_out(s, run_id)  # 404 if it doesn't exist
+            run = await _run_out(s, run_id, user)
         raise ApiException(409, "run_not_active", f"Run already {run.status}")
     async with services.sessions() as s:
-        return await _run_out(s, run_id)
+        return await _run_out(s, run_id, user)
 
 
-async def existing_run(run_id: UUID, services: ServicesDep) -> UUID:
+async def existing_run(run_id: UUID, user: CurrentUser, services: ServicesDep) -> UUID:
     """Checked before the stream starts: once it has started, an error can't become a 404 any more."""
     async with services.sessions() as s:
-        if await s.get(RunRow, run_id) is None:
-            raise ApiException(404, "not_found", "Run not found")
+        await owned_run(s, run_id, user)
     return run_id
 
 
@@ -76,17 +80,19 @@ async def existing_run(run_id: UUID, services: ServicesDep) -> UUID:
     "/runs/{run_id}/confirm",
     responses={**_404, 409: {"model": ErrorResponse, "description": "The run isn't paused at this step"}},
 )
-async def confirm_run(run_id: UUID, body: RunConfirmRequest, services: ServicesDep) -> Run:
+async def confirm_run(run_id: UUID, body: RunConfirmRequest, user: CurrentUser, services: ServicesDep) -> Run:
     """Answers a paused run: `allow` runs the paused step, `deny` cancels the run."""
+    async with services.sessions() as s:
+        await owned_run(s, run_id, user)
     if not await services.executor.confirm(run_id, body.step_seq, body.decision):
         async with services.sessions() as s:
-            run = await _run_out(s, run_id)  # 404 if it doesn't exist
+            run = await _run_out(s, run_id, user)
         raise ApiException(
             409, "run_not_active", f"Run is {run.status}, not paused at step {body.step_seq}",
             {"status": run.status, "current_seq": run.current_seq},
         )  # fmt: skip
     async with services.sessions() as s:
-        return await _run_out(s, run_id)
+        return await _run_out(s, run_id, user)
 
 
 @router.get("/runs/{run_id}/events", response_class=EventSourceResponse, responses=_404)
@@ -114,10 +120,8 @@ async def run_events(
         await services.hub.wait(run_id, seen)
 
 
-async def _run_out(s: AsyncSession, run_id: UUID) -> Run:
-    run = await s.get(RunRow, run_id)
-    if run is None:
-        raise ApiException(404, "not_found", "Run not found")
+async def _run_out(s: AsyncSession, run_id: UUID, user: UserRow) -> Run:
+    run = await owned_run(s, run_id, user)
     return run_out(run, (await _workflow_ids(s, [run_id])).get(run_id))
 
 

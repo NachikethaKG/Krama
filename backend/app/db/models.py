@@ -1,4 +1,4 @@
-"""Phase 1 tables (docs/database-schema.md). Status values come from the generated contract types.
+"""The tables (docs/database-schema.md). Status values come from the generated contract types.
 
 Row classes are named `…Row` so they never get confused with the contract models of the same name.
 """
@@ -25,12 +25,44 @@ WORKFLOW_STATUSES = literal_values(WorkflowStatus)
 RISKS = literal_values(Risk)
 
 
+class UserRow(Timestamps, Base):
+    """A seeded account (#94; no public sign-up in the MVP). Only an argon2id hash of the password."""
+
+    __tablename__ = "users"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    email: Mapped[str] = mapped_column(Text, unique=True)
+    """Lower-cased."""
+    password_hash: Mapped[str] = mapped_column(Text)
+    display_name: Mapped[str | None] = mapped_column(Text, default=None)
+    failed_logins: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    """Failed sign-ins in a row; each one past the first few doubles the wait before the next try."""
+    last_failed_at: Mapped[datetime | None] = mapped_column(default=None)
+
+
+class SessionRow(Timestamps, Base):
+    """A signed-in browser. The cookie holds a random token; only its SHA-256 is stored, so a leaked table
+    signs nobody in (docs/research/phase-3-vishwas-accounts-and-csrf.md)."""
+
+    __tablename__ = "sessions"
+    __table_args__ = (Index(None, "user_id"),)
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    token_hash: Mapped[str] = mapped_column(Text, unique=True)
+    last_seen_at: Mapped[datetime] = mapped_column(server_default=func.now())
+    expires_at: Mapped[datetime] = mapped_column()
+    """The absolute limit; the idle limit is counted from last_seen_at."""
+    revoked_at: Mapped[datetime | None] = mapped_column(default=None)
+
+
 class TaskRow(Timestamps, Base):
     __tablename__ = "tasks"
     __table_args__ = (status_check("status", TASK_STATUSES, "status"), Index(None, "user_id"))
 
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
-    user_id: Mapped[UUID | None] = mapped_column(default=None)  # FK to users comes in Phase 3
+    user_id: Mapped[UUID | None] = mapped_column(ForeignKey("users.id"), default=None)
+    """The owner. Its plans, runs and their files belong to them too. Null only for rows from before #94."""
     prompt: Mapped[str] = mapped_column(Text)
     target_url: Mapped[str] = mapped_column(Text)
     status: Mapped[str] = mapped_column(Text)
@@ -105,11 +137,14 @@ class WorkflowRow(Timestamps, Base):
     __table_args__ = (
         status_check("status", WORKFLOW_STATUSES, "status"),
         Index(None, "target_app", "status"),
+        Index(None, "user_id", "created_at"),
     )
 
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
     task_id: Mapped[UUID] = mapped_column(ForeignKey("tasks.id"))
     run_id: Mapped[UUID] = mapped_column(ForeignKey("runs.id"), unique=True)  # one run makes one workflow
+    user_id: Mapped[UUID | None] = mapped_column(ForeignKey("users.id"), default=None)
+    """The task's owner, copied when the workflow is stored (lists and share links filter on it)."""
     title: Mapped[str] = mapped_column(Text)
     target_app: Mapped[str] = mapped_column(Text)
     target_url: Mapped[str] = mapped_column(Text)

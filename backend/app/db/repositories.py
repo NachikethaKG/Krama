@@ -15,7 +15,7 @@ from sqlalchemy import ColumnElement, and_, func, select, tuple_, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.contracts_gen.events_schema import RunEvent
-from app.db.models import PlanRow, RunEventRow, RunRow, WorkflowRow
+from app.db.models import PlanRow, RunEventRow, RunRow, TaskRow, WorkflowRow
 
 _EVENTS: TypeAdapter[RunEvent] = TypeAdapter(RunEvent)
 # Columns a transition may change besides status; anything else is a programming error.
@@ -98,10 +98,18 @@ def event_payload(row: RunEventRow) -> dict[str, Any]:
 
 
 async def list_runs(
-    session: AsyncSession, *, limit: int, before: tuple[datetime, UUID] | None = None
+    session: AsyncSession, *, user_id: UUID, limit: int, before: tuple[datetime, UUID] | None = None
 ) -> Sequence[RunRow]:
-    """Newest first. `before` is the (created_at, id) of the last run on the previous page."""
-    query = select(RunRow).order_by(RunRow.created_at.desc(), RunRow.id.desc()).limit(limit)
+    """`user_id`'s runs (through their tasks), newest first. `before` is the (created_at, id) of the last run
+    on the previous page."""
+    query = (
+        select(RunRow)
+        .join(PlanRow, PlanRow.id == RunRow.plan_id)
+        .join(TaskRow, TaskRow.id == PlanRow.task_id)
+        .where(TaskRow.user_id == user_id)
+        .order_by(RunRow.created_at.desc(), RunRow.id.desc())
+        .limit(limit)
+    )
     if before is not None:
         query = query.where(tuple_(RunRow.created_at, RunRow.id) < tuple_(*before))
     return (await session.scalars(query)).all()
@@ -190,12 +198,18 @@ async def decide_plan(session: AsyncSession, plan_id: UUID, *, revision: int, to
 async def list_workflows(
     session: AsyncSession,
     *,
+    user_id: UUID,
     limit: int,
     target_app: str | None = None,
     before: tuple[datetime, UUID] | None = None,
 ) -> Sequence[WorkflowRow]:
     """Newest first, optionally for one app. Steps are loaded too (`selectin`), for the step count."""
-    query = select(WorkflowRow).order_by(WorkflowRow.created_at.desc(), WorkflowRow.id.desc()).limit(limit)
+    query = (
+        select(WorkflowRow)
+        .where(WorkflowRow.user_id == user_id)
+        .order_by(WorkflowRow.created_at.desc(), WorkflowRow.id.desc())
+        .limit(limit)
+    )
     if target_app is not None:
         query = query.where(WorkflowRow.target_app == target_app)
     if before is not None:

@@ -177,6 +177,7 @@ class RunStore:
                 workflow = WorkflowRow(
                     task_id=job.task_id,
                     run_id=job.run_id,
+                    user_id=await s.scalar(select(TaskRow.user_id).where(TaskRow.id == job.task_id)),
                     title=job.prompt,
                     target_app=_app_of(job.target_url),
                     target_url=job.target_url,

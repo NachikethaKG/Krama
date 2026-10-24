@@ -26,7 +26,7 @@ def app_with_test_routes() -> FastAPI:
     return app
 
 
-client = TestClient(app_with_test_routes(), raise_server_exceptions=False)
+client = TestClient(app_with_test_routes(), raise_server_exceptions=False, headers={"X-Krama": "1"})
 
 
 def error_of(response: object) -> ErrorResponse:

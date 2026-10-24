@@ -4,10 +4,11 @@ from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter
-from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.auth import CurrentUser
 from app.api.convert import plan_out, run_out
 from app.api.errors import ApiException
+from app.api.owner import owned_plan
 from app.api.services import ServicesDep
 from app.contracts_gen.common_schema import ErrorResponse
 from app.contracts_gen.plan_schema import Plan, PlanApproveRequest, PlanRejectRequest, PlanUpdateRequest
@@ -27,18 +28,20 @@ _409: Responses = {
 
 
 @router.get("/plans/{plan_id}", responses=_404)
-async def get_plan(plan_id: UUID, services: ServicesDep) -> Plan:
+async def get_plan(plan_id: UUID, user: CurrentUser, services: ServicesDep) -> Plan:
     async with services.sessions() as s:
-        return plan_out(await _plan(s, plan_id))
+        return plan_out(await owned_plan(s, plan_id, user))
 
 
 @router.patch("/plans/{plan_id}", responses={**_404, **_409})
-async def update_plan(plan_id: UUID, body: PlanUpdateRequest, services: ServicesDep) -> Plan:
+async def update_plan(
+    plan_id: UUID, body: PlanUpdateRequest, user: CurrentUser, services: ServicesDep
+) -> Plan:
     """Replaces the steps (reorder / delete / edit) and bumps the revision. The same rules as for a fresh
     plan apply, and the plan's risk is recomputed from its steps."""
     steps = [step.model_copy(update={"seq": i}) for i, step in enumerate(body.steps, start=1)]
     async with services.sessions.begin() as s:
-        current = await _plan(s, plan_id)
+        current = await owned_plan(s, plan_id, user)
         problems = check_steps(LLMPlan(expected_result=current.expected_result, steps=steps))
         if problems:
             raise ApiException(422, "validation_error", "Invalid plan steps", {"problems": problems})
@@ -58,10 +61,12 @@ async def update_plan(plan_id: UUID, body: PlanUpdateRequest, services: Services
 
 
 @router.post("/plans/{plan_id}/approve", status_code=201, responses={**_404, **_409})
-async def approve_plan(plan_id: UUID, body: PlanApproveRequest, services: ServicesDep) -> Run:
+async def approve_plan(
+    plan_id: UUID, body: PlanApproveRequest, user: CurrentUser, services: ServicesDep
+) -> Run:
     """Approves exactly the revision the user saw and queues a run of it."""
     async with services.sessions.begin() as s:
-        current = await _plan(s, plan_id)
+        current = await owned_plan(s, plan_id, user)
         approved = await decide_plan(s, plan_id, revision=body.revision, to="approved")
         if approved is None:
             _raise_not_editable(current, body.revision)
@@ -74,22 +79,17 @@ async def approve_plan(plan_id: UUID, body: PlanApproveRequest, services: Servic
 
 
 @router.post("/plans/{plan_id}/reject", responses={**_404, **_409})
-async def reject_plan(plan_id: UUID, body: PlanRejectRequest, services: ServicesDep) -> Plan:
+async def reject_plan(
+    plan_id: UUID, body: PlanRejectRequest, user: CurrentUser, services: ServicesDep
+) -> Plan:
     async with services.sessions.begin() as s:
-        current = await _plan(s, plan_id)
+        current = await owned_plan(s, plan_id, user)
         rejected = await decide_plan(s, plan_id, revision=current.revision, to="rejected")
         if rejected is None:
             _raise_not_editable(current, current.revision)
         assert rejected is not None
         await s.refresh(rejected)
         return plan_out(rejected)
-
-
-async def _plan(s: AsyncSession, plan_id: UUID) -> PlanRow:
-    plan = await s.get(PlanRow, plan_id)
-    if plan is None:
-        raise ApiException(404, "not_found", "Plan not found")
-    return plan
 
 
 def _raise_not_editable(current: PlanRow, revision: int) -> None:

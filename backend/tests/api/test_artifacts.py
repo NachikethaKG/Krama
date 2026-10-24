@@ -4,9 +4,14 @@ from collections.abc import Iterator
 from pathlib import Path
 
 import pytest
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from app.agent import PlaywrightSession, SessionConfig
+from app.api import artifacts
+from app.api.auth import current_user
+from app.api.services import get_services
+from app.db import UserRow
 from app.main import create_app
 from app.storage import LocalFsStore, get_artifact_store
 
@@ -28,11 +33,24 @@ def store(tmp_path: Path) -> LocalFsStore:
     return LocalFsStore(root)
 
 
-@pytest.fixture
-def client(store: LocalFsStore) -> Iterator[TestClient]:
+def signed_in_app(store: LocalFsStore, monkeypatch: pytest.MonkeyPatch) -> FastAPI:
+    """Headers and path safety only: sign-in and ownership are stubbed here and tested end to end in
+    tests/api/test_auth.py."""
     app = create_app()
     app.dependency_overrides[get_artifact_store] = lambda: store
-    yield TestClient(app)
+    app.dependency_overrides[current_user] = lambda: UserRow(email="a@b.test", password_hash="x")
+    app.dependency_overrides[get_services] = lambda: None  # no lifespan here; _owns is stubbed below
+
+    async def owns(key: str, *_: object) -> bool:
+        return key.startswith("runs/")
+
+    monkeypatch.setattr(artifacts, "_owns", owns)
+    return app
+
+
+@pytest.fixture
+def client(store: LocalFsStore, monkeypatch: pytest.MonkeyPatch) -> Iterator[TestClient]:
+    yield TestClient(signed_in_app(store, monkeypatch))
 
 
 def test_serves_a_screenshot_with_safe_headers(client: TestClient) -> None:
@@ -76,7 +94,8 @@ def test_missing_or_unsafe_paths_are_a_plain_404(client: TestClient, path: str) 
 
 def test_artifacts_are_read_only(client: TestClient) -> None:
     for method in ("put", "post", "delete"):
-        assert client.request(method, "/api/v1/artifacts/runs/r1/1-after.png").status_code == 405
+        response = client.request(method, "/api/v1/artifacts/runs/r1/1-after.png", headers={"X-Krama": "1"})
+        assert response.status_code == 405
 
 
 GITEA = os.environ.get("GITEA_URL", "http://localhost:3001")
@@ -92,14 +111,15 @@ def _gitea_up() -> bool:
 
 @pytest.mark.anyio
 @pytest.mark.skipif(not _gitea_up(), reason=f"Gitea not reachable at {GITEA}; start it with `just up`")
-async def test_real_screenshot_round_trips_through_store_and_endpoint(tmp_path: Path) -> None:
+async def test_real_screenshot_round_trips_through_store_and_endpoint(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     store = LocalFsStore(tmp_path)
     async with PlaywrightSession(SessionConfig(base_url=GITEA)) as session:
         await session.page.goto(f"{GITEA}/explore/repos")
         shot = await session.page.screenshot()
     await store.put("runs/live/explore.png", shot, "image/png")
-    app = create_app()
-    app.dependency_overrides[get_artifact_store] = lambda: store
+    app = signed_in_app(store, monkeypatch)
 
     response = TestClient(app).get("/api/v1/artifacts/runs/live/explore.png")
 
