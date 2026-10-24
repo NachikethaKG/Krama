@@ -86,7 +86,7 @@ async def test_image_is_sent_as_a_png_part_before_the_prompt() -> None:
 
 
 async def test_server_error_retries_once_then_falls_back() -> None:
-    client = FakeGenaiClient([server_error(503), server_error(503), ok(PLAN_JSON)])
+    client = FakeGenaiClient([server_error(500), server_error(502), ok(PLAN_JSON)])
     sleep = FakeSleep()
 
     result = await provider(client, sleep).generate(system="s", prompt="p", schema=PlanOut)
@@ -95,6 +95,16 @@ async def test_server_error_retries_once_then_falls_back() -> None:
     assert [a.status for a in result.attempts] == ["unavailable", "unavailable", "ok"]
     assert result.model == "m2"
     assert len(sleep.slept) == 1
+
+
+async def test_an_overloaded_model_503_moves_on_at_once() -> None:
+    # #101: retrying an overloaded model cost 15 s while the next one answered in 2-3 s.
+    client, sleep = FakeGenaiClient([server_error(503), ok(PLAN_JSON)]), FakeSleep()
+
+    result = await provider(client, sleep).generate(system="s", prompt="p", schema=PlanOut)
+
+    assert client.models_called == ["m1", "m2"] and sleep.slept == []
+    assert result.model == "m2"
 
 
 async def test_a_dropped_connection_retries_once_then_falls_back() -> None:
@@ -169,7 +179,7 @@ async def test_all_models_out_of_quota_raises_rate_limited() -> None:
 
 
 async def test_all_models_failing_raises_unavailable() -> None:
-    client = FakeGenaiClient([server_error()] * 6)
+    client = FakeGenaiClient([server_error(500)] * 6)
 
     with pytest.raises(LLMUnavailableError) as exc:
         await generate(provider(client, FakeSleep()))
@@ -245,3 +255,63 @@ async def test_live_gemini_returns_a_valid_plan() -> None:
 
     assert result.value.steps
     assert result.attempts[-1].status == "ok"
+
+
+# --- a model that stalls or fails rests (#101) ---
+
+
+def resting_provider(client: FakeGenaiClient, sleep: FakeSleep, now: list[float]) -> GeminiProvider:
+    return GeminiProvider(
+        "unused", MODELS, client=client, sleep=sleep, limiter=RateLimiter(sleep=sleep, clock=lambda: now[0]),
+        timeout_s=0.05, cooldown_s=300, quota_cooldown_s=3600, clock=lambda: now[0],
+    )  # fmt: skip
+
+
+async def test_a_stalled_model_goes_last_until_it_has_rested() -> None:
+    now = [1000.0]
+    client = FakeGenaiClient([HANG, ok(PLAN_JSON), ok(PLAN_JSON), ok(PLAN_JSON)])
+    p = resting_provider(client, FakeSleep(), now)
+
+    await generate(p)  # m1 stalls, m2 answers
+    await generate(p)  # m1 rests: m2 first, no second timeout
+    now[0] += 301
+    await generate(p)  # rested: m1 first again
+
+    assert client.models_called == ["m1", "m2", "m2", "m1"]
+
+
+async def test_a_model_failing_with_server_errors_rests_too() -> None:
+    now = [0.0]
+    client = FakeGenaiClient([server_error(503), ok(PLAN_JSON), ok(PLAN_JSON)])
+    p = resting_provider(client, FakeSleep(), now)
+
+    await generate(p)
+    await generate(p)
+
+    assert client.models_called == ["m1", "m2", "m2"]
+
+
+async def test_a_model_out_of_daily_quota_rests_for_an_hour() -> None:
+    now = [0.0]
+    client = FakeGenaiClient([rate_limited(per_day=True), ok(PLAN_JSON), ok(PLAN_JSON), ok(PLAN_JSON)])
+    p = resting_provider(client, FakeSleep(), now)
+
+    await generate(p)
+    now[0] += 1800
+    await generate(p)  # still resting after 30 min
+    now[0] += 1801
+    await generate(p)  # an hour later it is tried first again
+
+    assert client.models_called == ["m1", "m2", "m2", "m1"]
+
+
+async def test_when_every_model_rests_they_are_still_tried_in_order() -> None:
+    now = [0.0]
+    client = FakeGenaiClient([HANG, HANG, HANG, ok(PLAN_JSON)])
+    p = resting_provider(client, FakeSleep(), now)
+
+    with pytest.raises(LLMUnavailableError):
+        await generate(p)
+    await generate(p)  # all resting: still tried, in the configured order
+
+    assert client.models_called == ["m1", "m2", "m3", "m1"]
