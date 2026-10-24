@@ -27,7 +27,9 @@ async function loadSharedTutorial(token: string): Promise<{ spec: TutorialSpec |
     return { spec: null, status: 404 };
   }
 
-  const endpoint = `http://127.0.0.1:8000/api/v1/shares/${encodeURIComponent(token)}`;
+  // Server side: the public read-only endpoint (docs/api-contract.md), no session needed.
+  const base = (process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000/api/v1").replace(/\/+$/, "");
+  const endpoint = `${base}/shared/${encodeURIComponent(token)}`;
 
   try {
     const res = await fetch(endpoint, {
