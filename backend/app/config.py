@@ -56,6 +56,8 @@ class Settings(BaseSettings):
     krama_demo_password: SecretStr = SecretStr("")
 
     artifacts_dir: Path = REPO_ROOT / "data" / "artifacts"
+    # Written by the benchmark reporter, served by GET /metrics/summary (#102).
+    metrics_summary_path: Path = REPO_ROOT / "benchmarks" / "results" / "summary.json"
     max_concurrent_runs: int = 1
     # Recovery budget per run (phase-1-vishwas-agent-recovery.md). Running time only: pauses not counted.
     run_timeout_seconds: float = 600.0
@@ -65,7 +67,7 @@ class Settings(BaseSettings):
     def gemini_model_list(self) -> list[str]:
         return [m.strip() for m in self.gemini_models.split(",") if m.strip()]
 
-    @field_validator("artifacts_dir", "sessions_dir")
+    @field_validator("artifacts_dir", "sessions_dir", "metrics_summary_path")
     @classmethod
     def _relative_to_repo_root(cls, v: Path) -> Path:
         # `.env` paths like ./data/artifacts mean the repo root, not whatever folder the process started in.

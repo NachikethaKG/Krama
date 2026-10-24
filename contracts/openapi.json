@@ -345,6 +345,145 @@
         "title": "LoginRequest",
         "type": "object"
       },
+      "MetricsSummary": {
+        "additionalProperties": false,
+        "properties": {
+          "generated_at": {
+            "format": "date-time",
+            "title": "Generated At",
+            "type": "string"
+          },
+          "overall_avg_latency_ms": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 0,
+            "title": "Overall Avg Latency Ms"
+          },
+          "overall_failed_runs": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 0,
+            "title": "Overall Failed Runs"
+          },
+          "overall_false_alarm_rate": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Ratio"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 0
+          },
+          "overall_median_latency_ms": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 0,
+            "title": "Overall Median Latency Ms"
+          },
+          "overall_p90_latency_ms": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 0,
+            "title": "Overall P90 Latency Ms"
+          },
+          "overall_success_rate": {
+            "$ref": "#/components/schemas/Ratio"
+          },
+          "overall_successful_runs": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 0,
+            "title": "Overall Successful Runs"
+          },
+          "overall_total_runs": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 0,
+            "title": "Overall Total Runs"
+          },
+          "overall_total_runtime_ms": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 0,
+            "title": "Overall Total Runtime Ms"
+          },
+          "overall_verifier_accuracy": {
+            "$ref": "#/components/schemas/Ratio"
+          },
+          "tasks": {
+            "items": {
+              "$ref": "#/components/schemas/TaskMetrics"
+            },
+            "title": "Tasks",
+            "type": "array"
+          },
+          "total_tasks": {
+            "minimum": 0.0,
+            "title": "Total Tasks",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "generated_at",
+          "total_tasks",
+          "overall_success_rate",
+          "overall_verifier_accuracy",
+          "tasks"
+        ],
+        "title": "MetricsSummary",
+        "type": "object"
+      },
       "ObservedState": {
         "additionalProperties": false,
         "properties": {
@@ -602,6 +741,12 @@
         ],
         "title": "PlannedStep",
         "type": "object"
+      },
+      "Ratio": {
+        "maximum": 1.0,
+        "minimum": 0.0,
+        "title": "Ratio",
+        "type": "number"
       },
       "Risk": {
         "enum": [
@@ -1331,6 +1476,122 @@
           "target_url"
         ],
         "title": "TaskCreateRequest",
+        "type": "object"
+      },
+      "TaskMetrics": {
+        "additionalProperties": false,
+        "properties": {
+          "avg_latency_ms": {
+            "minimum": 0.0,
+            "title": "Avg Latency Ms",
+            "type": "number"
+          },
+          "failed_runs": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 0,
+            "title": "Failed Runs"
+          },
+          "false_alarm_rate": {
+            "$ref": "#/components/schemas/Ratio"
+          },
+          "false_alarms_count": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 0,
+            "title": "False Alarms Count"
+          },
+          "median_latency_ms": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 0,
+            "title": "Median Latency Ms"
+          },
+          "p90_latency_ms": {
+            "minimum": 0.0,
+            "title": "P90 Latency Ms",
+            "type": "number"
+          },
+          "success_rate": {
+            "$ref": "#/components/schemas/Ratio"
+          },
+          "successful_runs": {
+            "minimum": 0.0,
+            "title": "Successful Runs",
+            "type": "integer"
+          },
+          "task_name": {
+            "minLength": 1,
+            "title": "Task Name",
+            "type": "string"
+          },
+          "total_runs": {
+            "minimum": 0.0,
+            "title": "Total Runs",
+            "type": "integer"
+          },
+          "total_runtime_ms": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 0,
+            "title": "Total Runtime Ms"
+          },
+          "true_positive_detections": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 0,
+            "title": "True Positive Detections"
+          },
+          "verifier_accuracy": {
+            "$ref": "#/components/schemas/Ratio"
+          }
+        },
+        "required": [
+          "task_name",
+          "total_runs",
+          "successful_runs",
+          "success_rate",
+          "verifier_accuracy",
+          "false_alarm_rate",
+          "avg_latency_ms",
+          "p90_latency_ms"
+        ],
+        "title": "TaskMetrics",
         "type": "object"
       },
       "TaskStatus": {
@@ -2105,6 +2366,57 @@
         "summary": "Health",
         "tags": [
           "health"
+        ]
+      }
+    },
+    "/api/v1/metrics/summary": {
+      "get": {
+        "operationId": "metrics_summary_api_v1_metrics_summary_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetricsSummary"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "No benchmark has written a summary yet"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal error"
+          }
+        },
+        "summary": "Metrics Summary",
+        "tags": [
+          "metrics"
         ]
       }
     },
