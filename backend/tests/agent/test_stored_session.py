@@ -223,3 +223,16 @@ def test_github_with_the_wrong_key_says_to_log_in_again(tmp_path: Path) -> None:
 
     assert setup.storage_state is None and setup.sign_in_problem is not None
     assert "Log in again" in setup.sign_in_problem
+
+
+def test_github_gives_the_browser_more_time_than_local_gitea(tmp_path: Path) -> None:
+    key = new_key()
+    SessionVault(tmp_path, key).save("github", state())
+    github = target_setup("https://github.com", settings(tmp_path, key))
+
+    config = github.browser_config(SessionConfig(base_url="https://github.com"))
+
+    assert config.storage_state is not None
+    assert config.action_timeout_ms == 10_000 and config.navigation_timeout_ms == 30_000
+    other = target_setup("http://example.test", settings(tmp_path, key))
+    assert other.browser_config(SessionConfig(base_url="x")) == SessionConfig(base_url="x")  # defaults kept
