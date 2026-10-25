@@ -114,8 +114,9 @@ SITE_HINTS: dict[str, str] = {
             'repository details" with textbox "Description" and button "Save changes". The page stays on',
             "/<owner>/<repo>.",
             'New label: /<owner>/<repo>/labels has button "New label". It opens dialog "New label" with',
-            'textbox "Name", textbox "Description" and combobox "Color: #..." holding the color: fill it',
-            'with # and six hex digits. The create button\'s name starts with "Create label": target',
+            'textbox "Name", textbox "Description" and a combobox whose name starts with "Color" and holds',
+            'a random color: target it with exactly "Color" and fill it with # and six hex digits. The',
+            'create button\'s name starts with "Create label": target',
             'exactly "Create label". The page stays on /<owner>/<repo>/labels.',
         ]
     ),
