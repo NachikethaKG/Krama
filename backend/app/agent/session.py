@@ -3,6 +3,7 @@ from types import TracebackType
 from typing import Any, Self
 
 from playwright.async_api import Browser, BrowserContext, Page, Playwright, async_playwright
+from playwright.async_api import Error as PlaywrightError
 
 
 @dataclass(frozen=True)
@@ -122,3 +123,15 @@ async def _dialogs_outside_main(page: Page) -> list[str]:
     except Exception:
         return found  # a dialog closing mid-read is not an error
     return found
+
+
+async def open_start_page(page: Page, path: str = "/") -> bool:
+    """Open the site's start page, trying twice: a real site sometimes drops one load (github.com timed out
+    once in the Phase 3 benchmark). False if it can't be reached, so the run says so instead of crashing."""
+    for _ in range(2):
+        try:
+            await page.goto(path, wait_until="domcontentloaded")
+            return True
+        except PlaywrightError:
+            continue
+    return False

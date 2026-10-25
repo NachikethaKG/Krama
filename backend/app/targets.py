@@ -11,10 +11,11 @@ import re
 import urllib.error
 import urllib.request
 from collections.abc import Awaitable, Callable, Mapping, Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Any
 from urllib.parse import quote, urlsplit, urlunsplit
 
+from app.agent import SessionConfig
 from app.agent.gitea_create_repo import login_steps
 from app.agent.runlog import ScriptedStep
 from app.agent.stored_session import (
@@ -53,6 +54,22 @@ class TargetSetup:
     """Run on the first page: False means the stored session no longer signs us in."""
     sign_in_problem: str | None = None
     """Why the target can't be used signed in (no session, expired, unreadable): stop before opening it."""
+    action_timeout_ms: int | None = None
+    navigation_timeout_ms: int | None = None
+    settle_ms: int = 0
+    """How long to let a page's scripts load after navigating, before acting on it."""
+    """A slow real site needs more than local Gitea's defaults (GitHub's editor took 4+ s to load, #89)."""
+
+    def browser_config(self, config: SessionConfig) -> SessionConfig:
+        """`config` with this target's signed-in session and timeouts (the run's and planner's browser)."""
+        changes: dict[str, Any] = {}
+        if self.storage_state is not None:
+            changes["storage_state"] = self.storage_state
+        if self.action_timeout_ms is not None:
+            changes["action_timeout_ms"] = self.action_timeout_ms
+        if self.navigation_timeout_ms is not None:
+            changes["navigation_timeout_ms"] = self.navigation_timeout_ms
+        return replace(config, **changes)
 
 
 def target_setup(target_url: str, settings: Settings) -> TargetSetup:
@@ -82,6 +99,9 @@ def _github_setup(settings: Settings) -> TargetSetup:
         storage_state=None if problem else state,
         signed_in_check=GITHUB.signed_in_check,
         sign_in_problem=problem,
+        action_timeout_ms=10_000,
+        navigation_timeout_ms=30_000,
+        settle_ms=2_500,
     )
 
 

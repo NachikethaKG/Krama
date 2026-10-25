@@ -83,6 +83,41 @@ SITE_HINTS: dict[str, str] = {
             'Repository settings: /<owner>/<repo>/settings has textbox "Description". The page has THREE',
             'buttons "Update Settings": fill "Description", then click "Update Settings" in the very next',
             "step, and the button of that form is used. After saving, the page stays on settings.",
+            # A plan once expected the comment box to disappear after commenting (#100); it stays.
+            'Comment on an issue: /<owner>/<repo>/issues/<number> has textbox "Leave a comment" and button',
+            '"Comment" (not "Close with Comment"). After commenting the page stays on the issue, the comment',
+            "box stays there (empty) and the comment shows as text.",
+        ]
+    ),
+    # Read from github.com itself, signed in as the test account (#89, 2026-10-25): the planner can't
+    # see these pages before it plans. GitHub is slower than local Gitea; the target allows for that.
+    "github": "\n".join(
+        [
+            "Repository pages are under /<owner>/<repo>; the test organization is the owner unless the",
+            "task names another.",
+            "New repository in an organization: navigate to /organizations/<org>/repositories/new. The",
+            "owner is already the organization and the visibility already Private. Fill textbox",
+            '"Repository name *", then click button "Create repository". After creation the URL is',
+            "/<org>/<repo>.",
+            'New issue: /<owner>/<repo>/issues/new has textbox "Add a title" and textbox "Markdown value"',
+            'for the body. The submit button\'s name starts with "Create": target it with exactly',
+            '"Create". After creation the URL is /<owner>/<repo>/issues/<number>.',
+            "New file: don't type into the file editor (it loads slowly). Navigate to",
+            "/<owner>/<repo>/new/<branch>?filename=<path>&value=<content> with the content URL-encoded",
+            '(a space is %20): both fields are filled in. Click button "Commit changes..." (with three',
+            'dots); it opens dialog "Commit changes" with button "Commit changes": click that. After the',
+            "commit the URL is /<owner>/<repo>/tree/<branch>.",
+            'New branch: /<owner>/<repo>/branches has button "New branch". It opens dialog "Create a',
+            'branch" with textbox "New branch name" (the source branch is already main) and button',
+            '"Create new branch".',
+            'Description: on /<owner>/<repo>, button "Edit repository metadata" opens dialog "Edit',
+            'repository details" with textbox "Description" and button "Save changes". The page stays on',
+            "/<owner>/<repo>.",
+            'New label: /<owner>/<repo>/labels has button "New label". It opens dialog "New label" with',
+            'textbox "Name", textbox "Description" and a combobox whose name starts with "Color" and holds',
+            'a random color: target it with exactly "Color" and fill it with # and six hex digits. The',
+            'create button\'s name starts with "Create label": target',
+            'exactly "Create label". The page stays on /<owner>/<repo>/labels.',
         ]
     ),
 }

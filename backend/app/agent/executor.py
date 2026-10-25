@@ -84,9 +84,12 @@ class ActionExecutor:
     policy layer before they reach `execute`.
     """
 
-    def __init__(self, page: Page, vision: VisionLocator | None = None) -> None:
+    def __init__(self, page: Page, vision: VisionLocator | None = None, *, settle_ms: int = 0) -> None:
         self._page = page
         self._vision = vision
+        self._settle_ms = settle_ms
+        """Wait after a navigate: on GitHub a button clicked before the page's scripts have loaded does
+        nothing ("New label" opened no dialog, #89)."""
         self._last_filled: Locator | None = None
         """The field the last successful fill/select typed into: several identical buttons (Gitea's three
         "Update Settings") are told apart by which one belongs to that field's form (#83)."""
@@ -269,6 +272,8 @@ class ActionExecutor:
             case "navigate":
                 assert value is not None
                 await self._page.goto(value, wait_until="domcontentloaded")
+                if self._settle_ms:
+                    await self._page.wait_for_timeout(self._settle_ms)
             case "press":
                 assert value is not None
                 if locator is not None:
