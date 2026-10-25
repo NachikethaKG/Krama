@@ -10,7 +10,7 @@ import json
 import logging
 import time
 from collections.abc import Callable, Sequence
-from dataclasses import dataclass, field, replace
+from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Literal, Protocol
@@ -19,7 +19,7 @@ from uuid import UUID
 
 from playwright.async_api import Page
 
-from app.agent import ActionExecutor, PlaywrightSession, SessionConfig, page_snapshot
+from app.agent import ActionExecutor, PlaywrightSession, SessionConfig, open_start_page, page_snapshot
 from app.agent.runlog import MASK, ScriptedStep, looks_sensitive, mask_expected, run_script
 from app.agent.vision import VisionLocator
 from app.contracts_gen.events_schema import PauseReason
@@ -222,13 +222,16 @@ class InProcessExecutor:
         if target.sign_in_problem is not None:
             await self._fail_sign_in(run_id, target.sign_in_problem)
             return
-        config = env.session_config(job)
-        if target.storage_state is not None:
-            config = replace(config, storage_state=target.storage_state)
+        config = target.browser_config(env.session_config(job))
         async with PlaywrightSession(config) as session:
             page = session.page
             executor = ActionExecutor(page, vision=env.vision)
-            await page.goto("/", wait_until="domcontentloaded")
+            if not await open_start_page(page):
+                await self._store.fail(
+                    run_id, from_=RunStatus.RUNNING, message=f"Couldn't open {job.target_url}",
+                    reason="site_unreachable",
+                )  # fmt: skip
+                return
             if target.signed_in_check is not None and not await target.signed_in_check(page):
                 await self._fail_sign_in(run_id, "The stored session no longer signs in. Log in again.")
                 return

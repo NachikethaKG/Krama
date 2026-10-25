@@ -505,3 +505,15 @@ async def test_a_session_that_no_longer_signs_in_fails_on_the_first_page(
     assert run.status == "failed" and run.error is not None
     assert run.error["details"] == {"reason": "sign_in_required"}
     assert [e["type"] for e in await events(sessions, run_id)] == ["run.started", "run.failed"]
+
+
+async def test_a_site_that_cannot_be_opened_fails_the_run_clearly(sessions: Sessions, tmp_path: Path) -> None:
+    # #89: github.com once didn't load within the timeout; that is "site unreachable", not a crash.
+    run_id = await queued_run(sessions, "http://127.0.0.1:1", GOOD_PLAN["steps"])  # nothing listens there
+
+    await run_to_end(InProcessExecutor(RunStore(sessions), environment(tmp_path)), run_id)
+
+    run = await run_row(sessions, run_id)
+    assert run.status == "failed" and run.error is not None
+    assert run.error["details"] == {"reason": "site_unreachable"}
+    assert "127.0.0.1:1" in run.error["message"]
