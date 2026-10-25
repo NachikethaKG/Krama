@@ -56,6 +56,8 @@ class TargetSetup:
     """Why the target can't be used signed in (no session, expired, unreadable): stop before opening it."""
     action_timeout_ms: int | None = None
     navigation_timeout_ms: int | None = None
+    settle_ms: int = 0
+    """How long to let a page's scripts load after navigating, before acting on it."""
     """A slow real site needs more than local Gitea's defaults (GitHub's editor took 4+ s to load, #89)."""
 
     def browser_config(self, config: SessionConfig) -> SessionConfig:
@@ -99,6 +101,7 @@ def _github_setup(settings: Settings) -> TargetSetup:
         sign_in_problem=problem,
         action_timeout_ms=10_000,
         navigation_timeout_ms=30_000,
+        settle_ms=2_500,
     )
 
 

@@ -225,7 +225,7 @@ class InProcessExecutor:
         config = target.browser_config(env.session_config(job))
         async with PlaywrightSession(config) as session:
             page = session.page
-            executor = ActionExecutor(page, vision=env.vision)
+            executor = ActionExecutor(page, vision=env.vision, settle_ms=target.settle_ms)
             if not await open_start_page(page):
                 await self._store.fail(
                     run_id, from_=RunStatus.RUNNING, message=f"Couldn't open {job.target_url}",

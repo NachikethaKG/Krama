@@ -1,3 +1,5 @@
+import time
+
 import pytest
 
 from app.agent import ActionExecutor, PlaywrightSession, SessionConfig, page_snapshot
@@ -203,3 +205,13 @@ async def test_planner_snapshot_includes_open_dialogs_outside_main(session: Play
     assert 'textbox "Branch Name *"' in snapshot and 'button "Confirm"' in snapshot
     assert snapshot.count('button "Inside main"') == 1  # a dialog inside main isn't added twice
     assert "Closed dialog" not in snapshot
+
+
+async def test_a_settle_time_waits_after_navigating(session: PlaywrightSession) -> None:
+    # #89: on GitHub, a button clicked before the page's scripts loaded did nothing.
+    executor = ActionExecutor(session.page, settle_ms=600)
+    t0 = time.perf_counter()
+
+    result = await executor.execute(Action(type="navigate", value="/form"))
+
+    assert result.ok and time.perf_counter() - t0 >= 0.6
