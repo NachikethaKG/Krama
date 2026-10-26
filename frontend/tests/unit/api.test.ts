@@ -252,6 +252,28 @@ describe("HttpApiClient", () => {
       );
     });
 
+    it("fetches metrics summary via GET /metrics/summary", async () => {
+      const summaryPayload = {
+        generated_at: "2026-10-26T12:00:00Z",
+        total_tasks: 12,
+        overall_success_rate: 0.933,
+        overall_verifier_accuracy: 0.997,
+        tasks: [],
+      };
+      vi.stubGlobal(
+        "fetch",
+        vi.fn().mockResolvedValue(new Response(JSON.stringify(summaryPayload), { status: 200 })),
+      );
+
+      const client = new HttpApiClient("http://api");
+      const result = await client.getMetricsSummary();
+      expect(result).toEqual(summaryPayload);
+      expect(fetch).toHaveBeenCalledWith(
+        "http://api/api/v1/metrics/summary",
+        expect.objectContaining({ credentials: "include" }),
+      );
+    });
+
     it("refuses to confirm without a valid step_seq (never guesses step 1)", async () => {
       const fetchMock = vi.fn();
       vi.stubGlobal("fetch", fetchMock);
@@ -569,5 +591,13 @@ describe("MockApiClient", () => {
     expect(details.steps).toHaveLength(5);
     expect(details.steps[0].evidence.screenshotUrl).toBe("/screenshots/step-1.png");
     await expect(client.getRunDetails("non-existent-run")).rejects.toThrow("Run details not found: non-existent-run");
+  });
+
+  it("returns mock metrics summary with 12 benchmark tasks", async () => {
+    const client = new MockApiClient();
+    const summary = await client.getMetricsSummary();
+    expect(summary.total_tasks).toBe(12);
+    expect(summary.tasks).toHaveLength(12);
+    expect(summary.overall_success_rate).toBeGreaterThanOrEqual(0.8);
   });
 });
