@@ -67,3 +67,23 @@ def test_a_quoted_key_is_read_too() -> None:
 
     assert nodes[0].role == "button" and nodes[0].name == "Choose visibility: Public"
     assert nodes[0].value == "Public"
+
+
+def test_a_placeholder_line_before_the_value_is_skipped() -> None:
+    # #89: the observer's snapshot of GitHub's issue form, as captured live.
+    snapshot = "\n".join(
+        [
+            '- textbox "Add a title":',
+            "  - /placeholder: Title",
+            '  - text: "Bug: fix login"',
+            '- textbox "Body":',
+            "  - /placeholder: Write here",
+            '- group "Add a description":',
+            "  - text: not the body",
+        ]
+    )
+
+    title, body = (n for n in parse_aria_snapshot(snapshot) if n.role == "textbox")
+
+    assert title.value == "Bug: fix login"
+    assert body.value == ""
