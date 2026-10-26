@@ -35,15 +35,42 @@ class AriaNode:
         return self.name or self.value
 
 
+_QUOTED_KEY = re.compile(r"^(?P<head>\s*- )'(?P<key>(?:[^']|'')*)'(?P<rest>:.*)?$")
+"""`- 'combobox "Color: #714802"': "#714802"`: a name with ": " in it makes YAML quote the whole key."""
+_FIELDS = frozenset({"textbox", "searchbox", "combobox", "spinbutton"})
+_CHILD_TEXT = re.compile(r"^(?P<indent>\s*)- text: (?P<value>.*)$")
+
+
 def parse_aria_snapshot(snapshot: str) -> list[AriaNode]:
-    """Every element line of the snapshot, in order. Property lines (`/url:`, `/placeholder:`) are skipped."""
+    """Every element line of the snapshot, in order. Property lines (`/url:`, `/placeholder:`) are skipped.
+
+    A field's value is usually inline (`- textbox "Title": abc`), but when it needs YAML quoting Playwright
+    may write it on the next, deeper line instead (`- textbox "Add a title":` + `  - text: "Bug: fix login"`,
+    seen on GitHub, #89). Both forms give the field its value, unquoted."""
     nodes: list[AriaNode] = []
-    for line in snapshot.splitlines():
+    lines = snapshot.splitlines()
+    for i, line in enumerate(lines):
+        quoted = _QUOTED_KEY.match(line)
+        if quoted is not None:
+            line = quoted["head"] + quoted["key"].replace("''", "'") + (quoted["rest"] or "")
         m = _LINE.match(line)
         if m is None:
             continue
+        role = m.group("role")
         name = (m.group("name") or "").replace('\\"', '"')
-        value = (m.group("value") or "").strip()
+        value = _unquote((m.group("value") or "").strip())
+        if role in _FIELDS and not value and i + 1 < len(lines):
+            child = _CHILD_TEXT.match(lines[i + 1])
+            if child is not None and len(child["indent"]) > len(line) - len(line.lstrip()):
+                value = _unquote(child["value"].strip())
         attrs = {k.strip(): (v or "").strip() for k, v in _ATTR.findall(m.group("attrs") or "")}
-        nodes.append(AriaNode(role=m.group("role"), name=name, value=value, attrs=attrs))
+        nodes.append(AriaNode(role=role, name=name, value=value, attrs=attrs))
     return nodes
+
+
+def _unquote(value: str) -> str:
+    """A YAML-quoted scalar ("#d73a4a", 'a: b') as its plain text."""
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in "\"'":
+        inner = value[1:-1]
+        return inner.replace('\\"', '"') if value[0] == '"' else inner.replace("''", "'")
+    return value
