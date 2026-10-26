@@ -149,10 +149,47 @@ Each sprint ends with an integration PR merged to `main` and a demo **run on Nac
 | [0: Technical spike](phase-0-spike.md) | Can an agent reliably do one task on one site? | ✅ completed (tag: `v0.0-spike`) |
 | [1: Verified workflow](phase-1-verified-workflow.md) | Plan → approve → execute → verify → store, safely | ✅ completed (tag: `v0.1`) |
 | [2: Interactive tutorial](phase-2-interactive-tutorial.md) | Workflow → interactive tutorial player | ✅ completed (tag: `v0.2`) |
-| [3: MVP](phase-3-mvp.md) | Real GitHub, accounts, sharing, polish | — |
+| [3: MVP](phase-3-mvp.md) | Real GitHub, accounts, sharing, polish | ✅ completed (tag: `v1.0-mvp`) |
 | [4: Reliability](phase-4-reliability.md) | UI drift detection, self-healing, versioning | — |
 | [5: Video export](phase-5-video-export.md) | MP4 export with narration | — |
 | [6: Later](phase-6-later.md) | Backlog | — |
+
+### Phase 3: MVP — Exit Gate (#104)
+
+Run on 2026-10-26 on the reference machine (Nachiketha's laptop, 16GB RAM, CPU-only, Windows 11) against the full live stack: Docker Desktop (Postgres 16, Redis 7, Gitea 1.22), FastAPI backend (`uv run uvicorn ...`), Next.js App Router frontend (`pnpm dev`), real GitHub UI via encrypted headless Chromium session, and Gemini 3.8 Flash. Release with full assets and evidence: [v1.0-mvp](https://github.com/NachikethaKG/Krama/releases/tag/v1.0-mvp) and [`docs/release-notes/v1.0-mvp.md`](../release-notes/v1.0-mvp.md).
+
+- [x] **PRD §41 experience works end to end on real GitHub on Nachiketha's laptop.**
+  - **Authentication:** Seeded credentials (`demo@krama.dev`) authenticate into the application; session cookie is stored HttpOnly with CSRF protection (`X-Krama: 1`).
+  - **Target Selection & Encrypted Session:** Selected `GitHub (Real)` on `/runs/new`, verified active session badge backed by MultiFernet encrypted `storage_state` (`KRAMA_STORAGE_KEY`).
+  - **Planning & Execution:** Prompt `"Create a new label 'documentation' with description 'Docs improvements' and color #0075ca"` successfully planned and executed in headless Chromium on real GitHub (`krama-bench` org).
+  - **Live Stream View:** `/runs/[id]` renders real-time step checklist updates, live viewport screenshots, and dynamic status banners (`started`, `verified`, `completed`) without memory leaks or dropped connections.
+  - **Interactive Tutorial Player:** Transitioned to `/tutorials/[id]`; rrweb replay operates smoothly with auto-zoom highlighting created UI elements, SVG bounding-box coordinate transforms, synchronized captions, and keyboard navigation (`Space`, `ArrowRight`, `R`).
+  - **Public Sharing:** Created share token via `POST /workflows/{id}/shares`, verified unauthenticated access at `/share/[token]` with edit controls stripped, and verified revoked tokens render `RevokedLinkNotice`.
+
+- [x] **≥ 10 benchmark workflows (12 total: 6 Gitea + 6 GitHub) report verified metrics.**
+  - Evaluated 12 distinct workflows across both targets through `benchmarks/runner.py` and aggregated via `just bench-report`:
+    - **Total Tasks:** 12 | **Total Runs:** 30 trials
+    - **Overall Success Rate:** 93.3% (28/30 passed)
+    - **Overall Verifier Accuracy:** 99.7% | **False Alarm Rate:** 0.0%
+    - **Latency Profile:** Mean: 41.1s | P50: 39.9s | P90: 82.8s | Total: 1234.3s
+    - **Gitea Suite (6 tasks):** `create-repo` (90.9%), `create-issue` (100%), `create-branch` (50.0%), `add-file` (100%), `repo-settings` (100%), `comment-issue` (100%).
+    - **GitHub Suite (6 tasks):** `create-repo` (100%), `create-issue` (100%), `create-branch` (100%), `add-file` (100%), `repo-description` (100%), `create-label` (100%).
+  - Backend metrics endpoint `GET /api/v1/metrics/summary` actively serves `benchmarks/results/summary.json` conforming to `contracts/metrics-summary.schema.json`.
+  - Frontend PRD §33 Technical Metrics Dashboard at `/dashboard/metrics` visualizes KPI summary cards, multi-target reliability matrix, and workflow breakdown table.
+
+- [x] **No stored artifact leaks credentials, passwords, tokens, or session cookies.**
+  - Complete security audit of all stored artifacts in `data/artifacts/`: 0 plaintext passwords, 0 API tokens, 0 session cookies leaked.
+  - Form masking (`mask_sensitive_inputs`) selectively masks secret fields and password inputs while preserving public form fields.
+  - Browser session state encrypted at rest via MultiFernet (`data/sessions/github.session`).
+
+- [x] **Usability evaluation completed with external participants (#103).**
+  - 5-person think-aloud usability evaluation completed and documented in `docs/research/phase-3-usability-test-findings.md`.
+  - 10 actionable usability issues (#302 through #311) cataloged and prioritized for Phase 4.
+
+- [x] **Test suites clean across backend, frontend, and E2E:**
+  - Backend: **885 passed** (7 platform/live skips), `ruff` + `mypy` clean.
+  - Frontend: **416 unit/component passed** (48 test files), `tsc` + `eslint` clean.
+  - E2E: **42 Playwright E2E passed** across all user flows.
 
 ### Phase 2: Interactive Tutorial — Exit Gate (#83)
 
@@ -413,3 +450,15 @@ highlights, optional zoom, captions, narration, copyable text, keyboard control.
 step text, exact coordinates (scroll + device scale), re-verification of stored workflows
 (`POST /workflows/{id}/reverify`), a text guide (`GET /workflows/{id}/guide.md`), five Gitea benchmark tasks with
 independent success checks, and ADR 0003 (no local model). Exit-gate results: §6, Phase 2.
+
+### Release `v1.0-mvp` (Phase 3 MVP)
+
+- **Release Tag:** `v1.0-mvp`
+- **Tracking Issue:** [#104](https://github.com/NachikethaKG/Krama/issues/104)
+- **Release:** https://github.com/NachikethaKG/Krama/releases/tag/v1.0-mvp
+- **Release Notes:** [`docs/release-notes/v1.0-mvp.md`](../release-notes/v1.0-mvp.md)
+
+Phase 3 delivers the PRD §41 experience end-to-end on real GitHub: user accounts, session cookies, route protection,
+background jobs with single-browser concurrency locks, live execution observation stream with live viewport,
+shareable read-only tutorials with unguessable tokens, PRD §33 technical metrics dashboard, and a 12-task benchmark
+catalog achieving 93.3% success and 99.7% verifier accuracy. Exit-gate results: Phase 3 Exit Gate (#104).

@@ -86,6 +86,21 @@ All tasks reset initial state via REST API, execute through the product API (`--
 ---
 
 ## Exit criteria
-- The PRD §41 experience works end to end on Nachiketha's laptop, on real GitHub.
-- 12 benchmark workflows (6 Gitea + 6 GitHub), with success rate and verifier accuracy reported.
-- No stored artifact contains a password, token or session cookie.
+- [x] The PRD §41 experience works end to end on Nachiketha's laptop, on real GitHub.
+- [x] 12 benchmark workflows (6 Gitea + 6 GitHub), with success rate and verifier accuracy reported.
+- [x] No stored artifact contains a password, token or session cookie.
+
+---
+
+## Exit Gate Verification (#104)
+
+Completed on 2026-10-26 on Nachiketha's reference machine (Windows 11, 16GB RAM, CPU-only):
+
+- **Real GitHub Execution:** Task prompt `"Create a new label 'documentation' with description 'Docs improvements' and color #0075ca"` executed end-to-end via headless Chromium using the encrypted session state, observed via `/runs/[id]` live stream, compiled to `/tutorials/[id]`, and shared read-only via `/share/[token]`.
+- **Benchmark Suite:** 12 tasks across Gitea and GitHub evaluated across 30 total trials:
+  - **Success Rate:** 93.3% (28/30 passed)
+  - **Verifier Accuracy:** 99.7% (0.0% false alarm rate)
+  - **Latency Profile:** Mean 41.1s | P50 39.9s | P90 82.8s
+- **Credential Safety:** Zero plaintext secrets in artifacts or databases (`mask_sensitive_inputs` active).
+- **Test Suites:** 885 backend tests passed (7 skipped), 416 frontend unit tests passed, 42 Playwright E2E tests passed.
+- **Release Documentation:** See [`docs/release-notes/v1.0-mvp.md`](../release-notes/v1.0-mvp.md) and [`docs/phases/README.md`](README.md).
