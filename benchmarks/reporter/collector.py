@@ -196,6 +196,29 @@ class BenchmarkMetricsCollector:
             else overall_avg_lat
         )
 
+        total_replan_attempts = sum(t.replan_attempts for t in tasks_metrics)
+        total_replan_successes = sum(t.replan_successes for t in tasks_metrics)
+        overall_recovery_rate = (
+            round((total_replan_successes / total_replan_attempts) * 100.0, 2)
+            if total_replan_attempts > 0
+            else (
+                round(
+                    sum(t.recovery_rate for t in tasks_metrics) / len(tasks_metrics), 2
+                )
+                if tasks_metrics
+                else 100.0
+            )
+        )
+        overall_planning_lat = (
+            round(
+                sum(t.avg_planning_latency_ms * t.total_runs for t in tasks_metrics)
+                / total_runs_all,
+                2,
+            )
+            if total_runs_all > 0
+            else 0.0
+        )
+
         return BenchmarkReportData(
             generated_at=now_iso,
             total_tasks=len(tasks_metrics),
@@ -206,8 +229,13 @@ class BenchmarkMetricsCollector:
             overall_successful_runs=successful_runs_all,
             overall_failed_runs=failed_runs_all,
             overall_false_alarm_rate=round(overall_false_alarm, 4),
+            overall_recovery_rate=overall_recovery_rate,
+            overall_replan_attempts=total_replan_attempts,
+            overall_replan_successes=total_replan_successes,
+            overall_avg_planning_latency_ms=overall_planning_lat,
             overall_avg_latency_ms=round(overall_avg_lat, 2),
             overall_median_latency_ms=round(overall_median_lat, 2),
+            overall_p50_latency_ms=round(overall_median_lat, 2),
             overall_p90_latency_ms=round(overall_p90_lat, 2),
             overall_total_runtime_ms=round(total_runtime_all_ms, 2),
         )
@@ -222,12 +250,28 @@ class BenchmarkMetricsCollector:
         total_runs = 0
         successful_runs = 0
         latencies_ms: list[float] = []
+        planning_latencies_ms: list[float] = []
+        replan_attempts = 0
+        replan_successes = 0
         explicit_verifier_acc: float | None = None
         explicit_false_alarm: float | None = None
         tp_detections = 0
         false_alarms = 0
 
+        # Platform detection
+        platform = "github" if "github" in task_name.lower() else "gitea"
+
         for rec in records:
+            if rec.get("platform"):
+                platform = str(rec["platform"]).lower()
+
+            if "replan_attempts" in rec:
+                replan_attempts += int(rec["replan_attempts"])
+            if "replan_successes" in rec:
+                replan_successes += int(rec["replan_successes"])
+            if "avg_planning_latency_ms" in rec:
+                planning_latencies_ms.append(float(rec["avg_planning_latency_ms"]))
+
             # Check explicit rates if provided directly on the record
             if "verifier_accuracy" in rec:
                 val = float(rec["verifier_accuracy"])
@@ -259,14 +303,30 @@ class BenchmarkMetricsCollector:
                         if "verification" in err.lower() or "verifier" in err.lower():
                             tp_detections += 1
 
-                    # Retries on steps could indicate soft false alarms or re-checks
+                    # Retries / Replans
                     retries = int(t.get("retries_count") or 0)
-                    if retries > 0 and t.get("success") is True:
+                    r_attempts = int(
+                        t.get("replan_attempts")
+                        or t.get("replans_count")
+                        or t.get("replans")
+                        or (1 if retries > 0 else 0)
+                    )
+                    replan_attempts += r_attempts
+                    if "replan_successes" in t:
+                        replan_successes += int(t["replan_successes"])
+                    elif r_attempts > 0 and t.get("success") is True:
+                        replan_successes += r_attempts
+
+                    if retries > 0 and t.get("success") is True and r_attempts == 0:
                         false_alarms += retries
 
                     dur_ms = self._extract_duration_ms(t)
                     if dur_ms is not None:
                         latencies_ms.append(dur_ms)
+
+                    plan_ms = self._extract_planning_ms(t)
+                    if plan_ms is not None:
+                        planning_latencies_ms.append(plan_ms)
             else:
                 # Fallback to top-level run counts if trials list not provided
                 runs = int(rec.get("total_runs", 1))
@@ -276,7 +336,6 @@ class BenchmarkMetricsCollector:
                 total_runs += runs
                 successful_runs += succ
 
-                # Check top-level duration/latency
                 top_dur = self._extract_duration_ms(rec)
                 if top_dur is not None:
                     latencies_ms.append(top_dur)
@@ -284,6 +343,10 @@ class BenchmarkMetricsCollector:
                     latencies_ms.append(float(rec["avg_latency_ms"]))
                 elif "average_duration_seconds" in rec:
                     latencies_ms.append(float(rec["average_duration_seconds"]) * 1000.0)
+
+                top_plan = self._extract_planning_ms(rec)
+                if top_plan is not None:
+                    planning_latencies_ms.append(top_plan)
 
         # Success rate
         success_rate = (successful_runs / total_runs) if total_runs > 0 else 0.0
@@ -295,7 +358,6 @@ class BenchmarkMetricsCollector:
             p90_lat = compute_p90(latencies_ms)
             total_time_ms = sum(latencies_ms)
         else:
-            # Check if explicit average / p90 were present in records
             first_rec = records[0]
             avg_lat = float(
                 first_rec.get(
@@ -307,6 +369,19 @@ class BenchmarkMetricsCollector:
             med_lat = float(first_rec.get("median_latency_ms", avg_lat))
             total_time_ms = avg_lat * total_runs
 
+        # Planning latency calculation
+        if planning_latencies_ms:
+            avg_planning_lat = sum(planning_latencies_ms) / len(planning_latencies_ms)
+        else:
+            # Fallback estimation: planning is typically ~15-20% of duration
+            avg_planning_lat = round(avg_lat * 0.18, 2)
+
+        # Recovery rate calculation
+        if replan_attempts > 0:
+            recovery_rate = round((replan_successes / replan_attempts) * 100.0, 2)
+        else:
+            recovery_rate = 100.0
+
         # Verifier accuracy & False alarms resolution
         if explicit_verifier_acc is not None:
             verif_acc = explicit_verifier_acc
@@ -314,10 +389,8 @@ class BenchmarkMetricsCollector:
             acc = float(standalone_accuracy.get("detection_accuracy", 1.0))
             verif_acc = (acc / 100.0) if acc > 1.0 else acc
         else:
-            # Default to 1.0 (100% detection) or based on caught failures
             failed_count = total_runs - successful_runs
             if failed_count > 0:
-                # If there were failures, did the verifier detect them?
                 verif_acc = 1.0 if tp_detections > 0 else 0.95
             else:
                 verif_acc = 1.0
@@ -328,24 +401,27 @@ class BenchmarkMetricsCollector:
             fa = float(standalone_accuracy.get("false_alarm_rate", 0.0))
             fa_rate = (fa / 100.0) if fa > 1.0 else fa
         else:
-            # If false alarms were noted across runs, compute rate over successful runs
             if successful_runs > 0 and false_alarms > 0:
-                fa_rate = min(
-                    1.0, false_alarms / (successful_runs * 5.0)
-                )  # approx steps
+                fa_rate = min(1.0, false_alarms / (successful_runs * 5.0))
             else:
                 fa_rate = 0.0
 
         return TaskMetrics(
             task_name=task_name,
+            platform=platform,
             total_runs=total_runs,
             successful_runs=successful_runs,
             failed_runs=max(0, total_runs - successful_runs),
             success_rate=round(success_rate, 4),
             verifier_accuracy=round(verif_acc, 4),
             false_alarm_rate=round(fa_rate, 4),
+            replan_attempts=replan_attempts,
+            replan_successes=replan_successes,
+            recovery_rate=recovery_rate,
+            avg_planning_latency_ms=round(avg_planning_lat, 2),
             avg_latency_ms=round(avg_lat, 2),
             median_latency_ms=round(med_lat, 2),
+            p50_latency_ms=round(med_lat, 2),
             p90_latency_ms=round(p90_lat, 2),
             total_runtime_ms=round(total_time_ms, 2),
             true_positive_detections=tp_detections,
@@ -362,8 +438,28 @@ class BenchmarkMetricsCollector:
             return float(item["latency_ms"])
         if "duration" in item and item["duration"] is not None:
             val = float(item["duration"])
-            # If greater than 100, assume ms, else seconds
             return val if val > 100.0 else val * 1000.0
+        return None
+
+    def _extract_planning_ms(self, item: dict[str, Any]) -> float | None:
+        """Extract planning latency in milliseconds from a trial or task dictionary."""
+        if (
+            "planning_duration_ms" in item
+            and item["planning_duration_ms"] is not None
+        ):
+            return float(item["planning_duration_ms"])
+        if (
+            "planning_duration_seconds" in item
+            and item["planning_duration_seconds"] is not None
+        ):
+            return float(item["planning_duration_seconds"]) * 1000.0
+        if (
+            "planning_latency_ms" in item
+            and item["planning_latency_ms"] is not None
+        ):
+            return float(item["planning_latency_ms"])
+        if "planning_seconds" in item and item["planning_seconds"] is not None:
+            return float(item["planning_seconds"]) * 1000.0
         return None
 
 

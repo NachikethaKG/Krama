@@ -10,6 +10,6 @@ export default defineConfig({
     // Forked workers sometimes time out while starting on Windows under load; threads start much faster
     pool: "threads",
     setupFiles: ["./tests/setup.ts"],
-    include: ["tests/unit/**/*.test.{ts,tsx}"],
+    include: ["tests/unit/**/*.test.{ts,tsx}", "tests/components/**/*.test.{ts,tsx}"],
   },
 });

@@ -335,3 +335,88 @@ def test_cli_routing(tmp_path: Path) -> None:
     )
     assert ret == 0
     assert (out_dir / "report.md").exists()
+
+
+def test_recovery_rate_and_multi_platform_metrics(tmp_path: Path) -> None:
+    gitea_task = {
+        "task_name": "gitea-create-issue",
+        "platform": "gitea",
+        "total_runs": 2,
+        "successful_runs": 2,
+        "trials": [
+            {
+                "run_index": 1,
+                "success": True,
+                "duration_seconds": 15.0,
+                "planning_duration_seconds": 3.2,
+                "replan_attempts": 1,
+                "replan_successes": 1,
+            },
+            {
+                "run_index": 2,
+                "success": True,
+                "duration_seconds": 14.0,
+                "planning_duration_seconds": 2.8,
+                "replan_attempts": 0,
+                "replan_successes": 0,
+            },
+        ],
+    }
+    github_task = {
+        "task_name": "github-create-repo",
+        "platform": "github",
+        "total_runs": 2,
+        "successful_runs": 2,
+        "trials": [
+            {
+                "run_index": 1,
+                "success": True,
+                "duration_seconds": 22.0,
+                "planning_duration_seconds": 4.5,
+                "replan_attempts": 2,
+                "replan_successes": 1,
+            },
+            {
+                "run_index": 2,
+                "success": True,
+                "duration_seconds": 20.0,
+                "planning_duration_seconds": 4.1,
+                "replan_attempts": 0,
+                "replan_successes": 0,
+            },
+        ],
+    }
+    (tmp_path / "gitea.json").write_text(json.dumps(gitea_task), encoding="utf-8")
+    (tmp_path / "github.json").write_text(json.dumps(github_task), encoding="utf-8")
+
+    data = collect_benchmark_metrics(results_dir=tmp_path)
+    assert data.total_tasks == 2
+    tasks = {t.task_name: t for t in data.tasks}
+
+    # Gitea task validation
+    gt = tasks["gitea-create-issue"]
+    assert gt.platform == "gitea"
+    assert gt.replan_attempts == 1
+    assert gt.replan_successes == 1
+    assert gt.recovery_rate == 100.0
+    assert gt.avg_planning_latency_ms == 3000.0
+
+    # GitHub task validation
+    gh = tasks["github-create-repo"]
+    assert gh.platform == "github"
+    assert gh.replan_attempts == 2
+    assert gh.replan_successes == 1
+    assert gh.recovery_rate == 50.0
+    assert gh.avg_planning_latency_ms == 4300.0
+
+    # Overall recovery rate: (1 + 1) / (1 + 2) * 100 = 66.67%
+    assert data.overall_replan_attempts == 3
+    assert data.overall_replan_successes == 2
+    assert data.overall_recovery_rate == 66.67
+    assert data.overall_avg_planning_latency_ms > 0
+    assert data.overall_p50_latency_ms > 0
+
+    # Test contract dict serialization
+    contract_dict = data.to_contract_dict()
+    assert contract_dict["total_tasks"] == 2
+    assert "platform" not in contract_dict["tasks"][0]  # contract forbid extra

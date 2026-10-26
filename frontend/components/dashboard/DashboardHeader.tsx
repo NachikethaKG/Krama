@@ -72,6 +72,14 @@ export function DashboardHeader({ user, client, onLogout }: DashboardHeaderProps
             >
               All Runs
             </Link>
+            <span className="text-zinc-300 dark:text-zinc-700">·</span>
+            <Link
+              href="/dashboard/metrics"
+              data-testid="nav-technical-metrics"
+              className="text-xs font-medium text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200"
+            >
+              Technical Metrics
+            </Link>
           </div>
         </div>
       </div>
