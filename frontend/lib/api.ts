@@ -4,12 +4,14 @@ import type {
   ApiError,
   HealthResponse,
   LoginRequest,
+  MetricsSummary,
   Plan,
   PlannedStep,
   Run,
   RunEvent,
   RunPage,
   Task,
+  TaskMetrics,
   User,
   Workflow,
   WorkflowPage,
@@ -30,6 +32,7 @@ import {
   giteaReplanReviewEventsFixture,
   giteaTutorialSpecFixture,
   giteaWorkflowFixture,
+  mockMetricsSummary,
   mockRunDetails,
   mockRunsList,
   mockTutorialSummaries,
@@ -59,6 +62,7 @@ import type {
 export type {
   HealthResponse,
   LoginRequest,
+  MetricsSummary,
   Plan,
   Run,
   RunDetails,
@@ -71,6 +75,7 @@ export type {
   StepVerificationEvidence,
   TargetPlatform,
   Task,
+  TaskMetrics,
   TutorialStatus,
   TutorialSummary,
   User,
@@ -89,6 +94,7 @@ export {
   giteaReplanEventsFixture,
   giteaReplanReviewEventsFixture,
   giteaWorkflowFixture,
+  mockMetricsSummary,
   mockRunDetails,
   mockRunsList,
   mockTutorialSummaries,
@@ -211,6 +217,8 @@ export interface ApiClient {
   getMe(): Promise<User>;
   /** GET /api/v1/shares/{token} (or /shared/{token}). Public, read-only. Throws 404 when not found or revoked. */
   getSharedTutorial(token: string): Promise<TutorialSpec>;
+  /** GET /metrics/summary (or /api/v1/metrics/summary): technical benchmark metrics summary. */
+  getMetricsSummary(): Promise<MetricsSummary>;
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -660,6 +668,11 @@ export class HttpApiClient implements ApiClient {
       return data as TutorialSpec;
     }
     return compileWorkflow(data as Workflow);
+  }
+
+  async getMetricsSummary(): Promise<MetricsSummary> {
+    const path = this.baseUrl.endsWith("/api/v1") ? "/metrics/summary" : "/api/v1/metrics/summary";
+    return this.request<MetricsSummary>(path);
   }
 
   /**
@@ -1326,6 +1339,10 @@ export class MockApiClient implements ApiClient {
       }
     }
     return giteaTutorialSpecFixture;
+  }
+
+  async getMetricsSummary(): Promise<MetricsSummary> {
+    return mockMetricsSummary;
   }
 }
 
