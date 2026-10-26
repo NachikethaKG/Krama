@@ -59,6 +59,9 @@ class TargetSetup:
     settle_ms: int = 0
     """How long to let a page's scripts load after navigating, before acting on it."""
     """A slow real site needs more than local Gitea's defaults (GitHub's editor took 4+ s to load, #89)."""
+    verify_timeout_s: float | None = None
+    """How long to keep re-checking a step's expected state (None: the run's default). GitHub's dialogs take
+    3+ s to close and list what they created (#89)."""
 
     def browser_config(self, config: SessionConfig) -> SessionConfig:
         """`config` with this target's signed-in session and timeouts (the run's and planner's browser)."""
@@ -102,6 +105,7 @@ def _github_setup(settings: Settings) -> TargetSetup:
         action_timeout_ms=10_000,
         navigation_timeout_ms=30_000,
         settle_ms=2_500,
+        verify_timeout_s=15.0,
     )
 
 
