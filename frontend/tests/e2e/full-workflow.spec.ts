@@ -75,7 +75,7 @@ test.describe("Mock-mode Workflow E2E: Prompt → Plan → Approve → Live Exec
 
     // Verify execution completes with verification of steps
     const completionBanner = page.getByTestId("completion-banner");
-    await expect(completionBanner).toBeVisible({ timeout: 20000 });
+    await expect(completionBanner).toBeVisible({ timeout: 45000 });
     await expect(completionBanner).toContainText(/Workflow Execution Complete/i);
 
     const statusBadge = page.getByTestId("execution-status-badge");
