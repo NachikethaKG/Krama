@@ -50,6 +50,7 @@ export interface UseRunStreamOptions {
   initialSteps?: StreamStep[];
   initialStatus?: "idle" | "running" | "paused" | "failed" | "completed";
   targetUrl?: string;
+  streamEndpoint?: string;
 }
 
 export interface UseRunStreamResult {
@@ -75,6 +76,7 @@ export function useRunStream({
   initialSteps = [],
   initialStatus = "idle",
   targetUrl: initialTargetUrl,
+  streamEndpoint,
 }: UseRunStreamOptions): UseRunStreamResult {
   const [status, setStatus] = useState<"idle" | "running" | "paused" | "failed" | "completed">(initialStatus);
   const [steps, setSteps] = useState<StreamStep[]>(initialSteps);
@@ -242,10 +244,15 @@ export function useRunStream({
 
     let isMounted = true;
     const base = apiBaseUrl().replace(/\/+$/, "");
-    // The live view is GET /api/v1/runs/{id}/events (docs/api-contract.md).
-    const streamUrl = base.endsWith("/api/v1")
+    // Connect to /api/v1/runs/${runId}/stream or /events (docs/api-contract.md).
+    const defaultPath = base.endsWith("/api/v1")
       ? `${base}/runs/${encodeURIComponent(runId)}/events`
       : `${base}/api/v1/runs/${encodeURIComponent(runId)}/events`;
+    const streamUrl = streamEndpoint
+      ? (streamEndpoint.startsWith("http")
+          ? streamEndpoint
+          : `${base}/${streamEndpoint.replace(/^\/+/, "")}`)
+      : defaultPath;
 
     let es: EventSource | null = null;
     try {
@@ -316,7 +323,7 @@ export function useRunStream({
         eventSourceRef.current = null;
       }
     };
-  }, [runId, autoConnect]);
+  }, [runId, autoConnect, streamEndpoint]);
 
   const resume = useCallback(async () => {
     const base = apiBaseUrl().replace(/\/+$/, "");

@@ -7,4 +7,5 @@ export { RunDetailView, type RunDetailViewProps } from "./RunDetailView";
 export { StepChecklist, type StepChecklistProps } from "./StepChecklist";
 export { LiveViewportStream, type LiveViewportStreamProps } from "./LiveViewportStream";
 export { RunStatusBanners, type RunStatusBannersProps } from "./RunStatusBanners";
+export { RunActionPanel, type RunActionPanelProps } from "./RunActionPanel";
 export { LiveAgentObserverView, type LiveAgentObserverViewProps } from "./LiveAgentObserverView";
