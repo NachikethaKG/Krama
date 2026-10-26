@@ -207,9 +207,15 @@ def _accepted(call: NetworkCall) -> bool:
 
 
 def _network_checks(calls: list[NetworkCall]) -> list[Check]:
-    """A data-changing request that the server refused (4xx/5xx) or that never got an answer is a failure."""
+    """A data-changing request that the server refused (4xx/5xx) or that never got an answer is a failure.
+
+    A request without an answer is ignored when the same request did get one: GitHub sends its "Save changes"
+    PUT twice and cancels one (#89)."""
+    answered = {(c.method, c.path) for c in calls if c.status is not None}
     checks = []
     for call in calls:
+        if call.status is None and (call.method, call.path) in answered:
+            continue
         ok = call.status is not None and call.status < 400
         detail = f"{call.status}" if call.status is not None else "no response"
         checks.append(

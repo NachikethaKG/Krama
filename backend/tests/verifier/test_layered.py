@@ -190,6 +190,19 @@ async def test_a_refused_post_fails_the_step() -> None:
     assert (await result({"url_matches": "^/demo/demo-repo$"}, ev))[0] == "failed"
 
 
+async def test_a_cancelled_copy_of_an_answered_request_is_ignored_but_a_lone_one_fails() -> None:
+    # #89: GitHub sends its "Save changes" PUT twice and cancels one of them.
+    put = NetworkCall(method="PUT", path="/o/r/settings/update_meta", status=200, resource_type="fetch")
+    cancelled = put.model_copy(update={"status": None})
+    expected = {"url_matches": "^/demo/demo-repo$"}
+
+    both = evidence(after=state("/demo/demo-repo", REPO_PAGE), network=[put, cancelled])
+    alone = evidence(after=state("/demo/demo-repo", REPO_PAGE), network=[cancelled])
+
+    assert (await result(expected, both))[0] != "failed"
+    assert (await result(expected, alone))[0] == "failed"
+
+
 async def test_the_threshold_decides_whether_network_alone_is_enough() -> None:
     post = NetworkCall(method="POST", path="/repo/create", status=200, resource_type="xhr")
     ev = evidence(after=state("/repo/create", FORM), network=[post])

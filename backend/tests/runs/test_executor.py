@@ -517,3 +517,17 @@ async def test_a_site_that_cannot_be_opened_fails_the_run_clearly(sessions: Sess
     assert run.status == "failed" and run.error is not None
     assert run.error["details"] == {"reason": "site_unreachable"}
     assert "127.0.0.1:1" in run.error["message"]
+
+
+async def test_a_slow_target_gets_longer_to_show_a_steps_effect(
+    sessions: Sessions, site: str, tmp_path: Path
+) -> None:
+    # #89: GitHub lists a new branch 3+ s after the click; the run's default re-check window ends sooner.
+    slow = step(1, {"type": "navigate", "value": "/slow"}, {}, "Open it.", {"url_matches": "^/done$"})
+    run_id = await queued_run(sessions, site, [slow])  # /slow moves on to /done after 600 ms
+    env = environment(tmp_path, verify_timeout_s=0.1, target=lambda _job: TargetSetup(verify_timeout_s=5.0))
+
+    await run_to_end(InProcessExecutor(RunStore(sessions), env), run_id)
+
+    run = await run_row(sessions, run_id)
+    assert run.status == "verified", run.error

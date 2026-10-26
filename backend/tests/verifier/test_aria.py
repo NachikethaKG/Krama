@@ -40,3 +40,50 @@ def test_parses_every_real_gitea_snapshot() -> None:
         assert nodes, f.name
         assert nodes[0].role == "main"
         assert not any(n.role.startswith("/") for n in nodes)
+
+
+def test_a_field_value_on_the_next_line_is_the_fields_value() -> None:
+    # #89: GitHub's issue title "Bug: fix login" needs YAML quoting, so Playwright writes it as a child line.
+    nodes = parse_aria_snapshot('- textbox "Add a title":\n  - text: "Bug: fix login"\n- button "Create"')
+
+    assert nodes[0].role == "textbox" and nodes[0].value == "Bug: fix login"
+    assert nodes[-1].name == "Create"
+
+
+def test_quoted_values_are_unquoted() -> None:
+    nodes = parse_aria_snapshot("- 'combobox \"Color: #714802\"': \"#714802\"\n- textbox \"Name\": 'it''s'")
+
+    assert [n.value for n in nodes] == ["#714802", "it's"]
+
+
+def test_a_text_line_under_a_non_field_is_not_taken_as_its_value() -> None:
+    nodes = parse_aria_snapshot('- dialog "Edit":\n  - text: Description')
+
+    assert nodes[0].value == "" and nodes[1].role == "text"
+
+
+def test_a_quoted_key_is_read_too() -> None:
+    nodes = parse_aria_snapshot("- 'button \"Choose visibility: Public\"': Public")
+
+    assert nodes[0].role == "button" and nodes[0].name == "Choose visibility: Public"
+    assert nodes[0].value == "Public"
+
+
+def test_a_placeholder_line_before_the_value_is_skipped() -> None:
+    # #89: the observer's snapshot of GitHub's issue form, as captured live.
+    snapshot = "\n".join(
+        [
+            '- textbox "Add a title":',
+            "  - /placeholder: Title",
+            '  - text: "Bug: fix login"',
+            '- textbox "Body":',
+            "  - /placeholder: Write here",
+            '- group "Add a description":',
+            "  - text: not the body",
+        ]
+    )
+
+    title, body = (n for n in parse_aria_snapshot(snapshot) if n.role == "textbox")
+
+    assert title.value == "Bug: fix login"
+    assert body.value == ""

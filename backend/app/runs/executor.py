@@ -249,7 +249,8 @@ class InProcessExecutor:
             observer = env.observer_for(run_id)
             await observer.start_recording(page)
             try:
-                rows = await self._steps(job, executor, observer, page)
+                verify_timeout_s = target.verify_timeout_s or env.verify_timeout_s
+                rows = await self._steps(job, executor, observer, page, verify_timeout_s)
             finally:
                 recording = await observer.stop_recording()
             missing = await self._missing_part(job, rows, page) if rows is not None else None
@@ -280,7 +281,7 @@ class InProcessExecutor:
         )
 
     async def _steps(
-        self, job: RunJob, executor: ActionExecutor, observer: Observer, page: Page
+        self, job: RunJob, executor: ActionExecutor, observer: Observer, page: Page, verify_timeout_s: float
     ) -> list[WorkflowStepRow] | None:
         """Every step in order, with recovery (docs/research/phase-1-vishwas-agent-recovery.md): retry an
         idempotent step once, else replan the rest (a human re-approves it), else pause for the human.
@@ -300,7 +301,9 @@ class InProcessExecutor:
                     message=f"The run took longer than {env.run_timeout_s:g} s (pauses not counted)",
                 )  # fmt: skip
                 return None
-            out = await self._attempt(job, step, executor, observer, page, budget.retry_count)
+            out = await self._attempt(
+                job, step, executor, observer, page, budget.retry_count, verify_timeout_s
+            )
             if out is None:
                 return None  # stopped by the policy, or cancelled
             if out.verified:
@@ -354,6 +357,7 @@ class InProcessExecutor:
         observer: Observer,
         page: Page,
         retry_count: int,
+        verify_timeout_s: float,
     ) -> StepOutcome | None:
         """One try of one step, announced on the live view. None if the run stopped (policy, cancel)."""
         store, seq = self._store, step.seq
@@ -371,7 +375,7 @@ class InProcessExecutor:
             observer,
             self._env.verifier,
             page,
-            verify_timeout_s=self._env.verify_timeout_s,
+            verify_timeout_s=verify_timeout_s,
             verify_interval_s=self._env.verify_interval_s,
             before=before,
         )
