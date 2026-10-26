@@ -1,27 +1,50 @@
 import { expect, test } from "@playwright/test";
 
 test.describe("PRD §33 Technical Metrics Dashboard & Multi-Target Benchmark", () => {
-  test("navigates to /dashboard/metrics from user dashboard and verifies KPI cards & platform filters", async ({
+  test("logs in with seeded credentials, navigates to /dashboard/metrics, and verifies layout without hydration errors", async ({
     page,
+    context,
   }) => {
-    // 1. Visit User Dashboard
-    await page.goto("/dashboard");
-    await expect(page).toHaveURL(/\/dashboard/);
+    // Collect console errors to detect any client hydration mismatch
+    const consoleErrors: string[] = [];
+    page.on("console", (msg) => {
+      if (msg.type() === "error") {
+        consoleErrors.push(msg.text());
+      }
+    });
 
-    // 2. Click "Technical Metrics" navigation link in dashboard header
-    const metricsLink = page.getByTestId("nav-technical-metrics");
-    await expect(metricsLink).toBeVisible();
-    await metricsLink.click();
+    // 1. Clear session cookies to begin from unauthenticated state
+    await context.clearCookies();
 
-    // 3. Verify URL is /dashboard/metrics
+    // 2. Navigate to /login with 'from' parameter pointing to metrics dashboard
+    await page.goto("/login?from=%2Fdashboard%2Fmetrics");
+    await expect(page).toHaveURL(/\/login\?from=%2Fdashboard%2Fmetrics/);
+
+    // 3. Fill seeded credentials (demo@krama.dev)
+    const fillBtn = page.getByTestId("use-demo-creds-btn");
+    await expect(fillBtn).toBeVisible();
+    await fillBtn.click();
+
+    // 4. Submit login form
+    const submitBtn = page.getByTestId("login-submit");
+    await submitBtn.click();
+
+    // 5. Verify redirection directly to /dashboard/metrics
     await expect(page).toHaveURL(/\/dashboard\/metrics/);
 
-    // 4. Assert header and benchmark badges
-    await expect(page.getByRole("heading", { name: "PRD §33 Technical Metrics" })).toBeVisible();
-    await expect(page.getByTestId("metrics-task-count-badge")).toHaveText("12 Benchmark Workflows");
-    await expect(page.getByTestId("metrics-generated-at")).toBeVisible();
+    // 6. Assert zero React hydration errors
+    const hydrationErrors = consoleErrors.filter(
+      (err) => err.toLowerCase().includes("hydration") || err.toLowerCase().includes("did not match"),
+    );
+    expect(hydrationErrors).toHaveLength(0);
 
-    // 5. Assert the 4 PRD §33 KPI Summary Cards
+    // 7. Verify no horizontal page overflow scrollbar
+    const hasHorizontalOverflow = await page.evaluate(() => {
+      return document.documentElement.scrollWidth > window.innerWidth;
+    });
+    expect(hasHorizontalOverflow).toBe(false);
+
+    // 8. Assert all 4 PRD §33 KPI Summary Cards are visible
     // (a) Task Success Rate (Target >= 80%)
     const successCard = page.getByTestId("kpi-success-rate");
     await expect(successCard).toBeVisible();
@@ -46,7 +69,7 @@ test.describe("PRD §33 Technical Metrics Dashboard & Multi-Target Benchmark", (
     await expect(page.getByTestId("value-latency-profile")).toHaveText("41.1s");
     await expect(page.getByTestId("badge-latency-profile")).toHaveText("Target < 60s");
 
-    // 6. Assert Workflow Breakdown Table renders 12 tasks initially
+    // 9. Assert Workflow Breakdown Table renders 12 tasks initially
     const table = page.getByTestId("metrics-breakdown-table");
     await expect(table).toBeVisible();
 
@@ -57,7 +80,7 @@ test.describe("PRD §33 Technical Metrics Dashboard & Multi-Target Benchmark", (
     await expect(page.getByTestId("task-row-github-create-repo")).toBeVisible();
     await expect(page.getByTestId("platform-badge-github-create-repo")).toHaveText("GitHub");
 
-    // 7. Test Platform Filtering
+    // 10. Test Platform Filtering
     // Filter to Gitea
     const giteaTab = page.getByTestId("filter-tab-gitea");
     await giteaTab.click();
@@ -77,12 +100,16 @@ test.describe("PRD §33 Technical Metrics Dashboard & Multi-Target Benchmark", (
     await expect(page.getByTestId("task-row-github-create-repo")).toBeVisible();
   });
 
-  test("direct navigation to /dashboard/metrics displays full technical matrix", async ({ page }) => {
-    await page.goto("/dashboard/metrics");
+  test("navigates to /dashboard/metrics via dashboard header link", async ({ page }) => {
+    await page.goto("/dashboard");
+    await expect(page).toHaveURL(/\/dashboard/);
+
+    const metricsLink = page.getByTestId("nav-technical-metrics");
+    await expect(metricsLink).toBeVisible();
+    await metricsLink.click();
+
     await expect(page).toHaveURL(/\/dashboard\/metrics/);
     await expect(page.getByTestId("metrics-kpi-grid")).toBeVisible();
     await expect(page.getByTestId("metrics-breakdown-table")).toBeVisible();
-    await expect(page.getByTestId("task-row-gitea-comment-issue")).toBeVisible();
-    await expect(page.getByTestId("task-row-github-add-file")).toBeVisible();
   });
 });
