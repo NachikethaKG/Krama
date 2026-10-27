@@ -8,6 +8,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from collections.abc import Sequence
 from pathlib import Path
@@ -69,9 +70,13 @@ def main(argv: Sequence[str] | None = None) -> int:
     output_dir.mkdir(parents=True, exist_ok=True)
     md_path = output_dir / "report.md"
     html_path = output_dir / "report.html"
+    summary_path = output_dir / "summary.json"
+    report_json_path = output_dir / "report.json"
 
     md_path.write_text(md_content, encoding="utf-8")
     html_path.write_text(html_content, encoding="utf-8")
+    summary_path.write_text(json.dumps(data.to_contract_dict(), indent=2), encoding="utf-8")
+    report_json_path.write_text(data.model_dump_json(indent=2), encoding="utf-8")
 
     if args.json:
         args.json.parent.mkdir(parents=True, exist_ok=True)
