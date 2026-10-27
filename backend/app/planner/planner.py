@@ -140,6 +140,9 @@ def check_steps(draft: LLMPlan) -> list[str]:
         if state.url_matches is not None:
             if "://" in state.url_matches or state.url_matches.lstrip("^").startswith(("http", "www.")):
                 problems.append(f"{where}: url_matches must be a path regex, not a full URL")
+            elif r"\?" in state.url_matches:
+                # #104: Gemini once expected ...new/main\?filename=... and the step could never verify.
+                problems.append(f"{where}: url_matches is matched against the URL path only; drop the query")
             try:
                 re.compile(state.url_matches)
             except re.error as e:

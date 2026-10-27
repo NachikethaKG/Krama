@@ -199,6 +199,7 @@ async def test_plan_still_invalid_after_retry_raises() -> None:
         ({"action": {"type": "fill"}}, "needs a value"),
         ({"action": {"type": "navigate", "value": "https://evil.example/"}, "target": {}}, "URL path"),
         ({"expected_state": {"url_matches": "^/repo/(create$"}}, "not a valid regex"),
+        ({"expected_state": {"url_matches": r"^/o/r/new/main\?filename=a\.md$"}}, "drop the query"),
         ({"instruction_text": "   "}, "instruction_text is empty"),
     ],
 )
