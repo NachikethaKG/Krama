@@ -1,0 +1,40 @@
+Phase 4 research checks (#105), run 2026-10-26 on Vishwas's laptop (Windows 11), local Gitea 1.22.6, Postgres 16.15,
+Playwright 1.63.0 / Chromium 153.0.8010.12, jsonpatch 1.37. Full results: results-heal.json, results-diff.json.
+
+== heal_scores.py (final weights; scores are top / second candidate) ==========================================
+create:baseline            executor=role              healenium 1.0/0.581 heal_right | aria 0.9/- heal_right
+create:renamed             executor=target_not_found  healenium 0.914/0.519 heal_right | aria 0.757/- heal_right
+create:restyled            executor=role              healenium 0.793/0.61 heal_right | aria 0.9/- heal_right
+create:moved               executor=role              healenium 1.0/0.547 heal_right | aria 0.6/- missed
+create:renamed+restyled    executor=target_not_found  healenium 0.72/0.547 heal_right | aria 0.757/- heal_right
+create:removed             executor=target_not_found  healenium 0.547/0.547 no_heal    | aria -/- no_heal
+name:relabelled            executor=target_not_found  healenium 1.0/0.76 heal_right | aria 0.862/0.558 heal_right
+settings:baseline          executor=ambiguous_target  healenium 1.0/1.0 heal_WRONG | aria 0.9/0.548 heal_right
+settings:renamed           executor=ambiguous_target  healenium 1.0/1.0 heal_WRONG | aria 0.656/0.548 missed
+settings:removed           executor=ambiguous_target  healenium 1.0/1.0 heal_WRONG | aria 0.558/0.5 no_heal
+
+Earlier weightings of the `aria` score (same run data, kept as score_no_form / score_no_attr in results-heal.json):
+- no form signal (0.45 name + 0.35 container + 0.20 position):
+    settings:renamed  top "Update Avatar" 0.761 / 0.647 -> margin 0.11, rejected (would have been WRONG without the margin)
+    settings:removed  top "Update Avatar" 0.78 / 0.657  -> margin 0.12, rejected (would have been WRONG without the margin)
+- + form, no stable attribute: name:relabelled 0.839 / 0.706 -> margin 0.13, missed (the description textbox is in the same form)
+
+== --vision (GeminiVisionLocator on create:renamed, create:removed, settings:renamed) ==========================
+All three: point=None, error "no Gemini model returned a valid reply", 3 requests each.
+Diagnostic text-only call right after (attempt statuses only):
+  gemini-3.8-flash  unavailable      503  "This model is currently experiencing high demand."
+  gemini-3.5-flash  quota_exhausted  429  "You exceeded your current quota"
+  gemini-2.5-flash  quota_exhausted  429  "You exceeded your current quota"
+(The diagnostic call ran twice by mistake: 15 failed attempts in total, 0 successful. Not retried.)
+
+== step_diff.py ==================================================================================================
+In the repository bench-issues, open an issue titled 'Login  runs= 22 distinct= 2 noise={'expected_state': 18, 'verification': 9, 'instruction_text': 5} bytes={'step_rows_per_version_avg': 3327, 'definition_json_per_version_avg': 921, 'json_patch_vs_previous_avg': 549, 'json_patch_empty_count': 7}
+Set the description of the repository bench-settings to 'Doc runs= 21 distinct= 3 noise={'instruction_text': 21, 'expected_state': 9, 'verification': 9, 'risk': 5, 'target.name': 1} bytes={'step_rows_per_version_avg': 3317, 'definition_json_per_version_avg': 1012, 'json_patch_vs_previous_avg': 480, 'json_patch_empty_count': 2}
+Create a branch named feature-docs from main in the reposito runs= 21 distinct= 4 noise={'instruction_text': 24, 'expected_state': 24, 'target.name': 15, 'verification': 11} bytes={'step_rows_per_version_avg': 4268, 'definition_json_per_version_avg': 1241, 'json_patch_vs_previous_avg': 1045, 'json_patch_empty_count': 3}
+Create a new public repository named 'test-repo' with a READ runs= 19 distinct= 2 noise={'target.bbox': 2, 'target.scroll': 2, 'expected_state': 1, 'verification': 1} bytes={'step_rows_per_version_avg': 4133, 'definition_json_per_version_avg': 1188, 'json_patch_vs_previous_avg': 84, 'json_patch_empty_count': 12}
+Add a file notes.md containing 'First note' to the main bran runs= 19 distinct= 2 noise={'expected_state': 30, 'instruction_text': 15} bytes={'step_rows_per_version_avg': 4996, 'definition_json_per_version_avg': 1354, 'json_patch_vs_previous_avg': 442, 'json_patch_empty_count': 5}
+self_heal_renamed_button [('same', []), ('same', []), ('same', []), ('changed', ['target.name', 'instruction_text'])]
+changed_flow_extra_step [('same', []), ('same', []), ('same', []), ('changed', ['expected_state']), ('added', [])]
+
+== artifacts per run ===========================================================================================
+data/artifacts: 474 MB for 183 runs; one recent run folder (rrweb_recording.json + steps/ screenshots): 2.3 MB.

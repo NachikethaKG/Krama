@@ -1,0 +1,1057 @@
+[
+  {
+    "scenario": "create:baseline",
+    "stored": {
+      "role": "button",
+      "name": "Create Repository",
+      "aria": {
+        "role": "button",
+        "name": "Create Repository",
+        "context": {
+          "container": "section",
+          "name": "New Repository"
+        },
+        "form": "/repo/create|",
+        "attrs": {
+          "id": null,
+          "name": null
+        },
+        "center": [
+          595.75,
+          1213.21875
+        ]
+      }
+    },
+    "healenium": [
+      {
+        "score": 1.0,
+        "above_cap": true,
+        "truth": true,
+        "el": "button \"Create Repository\""
+      },
+      {
+        "score": 0.581,
+        "above_cap": false,
+        "truth": false,
+        "el": "div \"Create Repository\""
+      },
+      {
+        "score": 0.519,
+        "above_cap": false,
+        "truth": false,
+        "el": "h3 \"New Repository\""
+      },
+      {
+        "score": 0.519,
+        "above_cap": false,
+        "truth": false,
+        "el": "div \"Select a license file.\""
+      },
+      {
+        "score": 0.519,
+        "above_cap": false,
+        "truth": false,
+        "el": "div \"Select an issue label set.\""
+      }
+    ],
+    "aria": [
+      {
+        "score": 0.9,
+        "score_no_attr": 1.0,
+        "score_no_form": 1.0,
+        "name": 1.0,
+        "context": 1.0,
+        "form": 1.0,
+        "attr": 0.5,
+        "position": 1.0,
+        "truth": true,
+        "el": "button \"Create Repository\"",
+        "context_seen": {
+          "container": "section",
+          "name": "New Repository"
+        }
+      }
+    ],
+    "decision": {
+      "healenium": "heal_right",
+      "aria": "heal_right"
+    },
+    "executor": {
+      "ok": true,
+      "strategy": "role",
+      "error": null
+    }
+  },
+  {
+    "scenario": "create:renamed",
+    "stored": {
+      "role": "button",
+      "name": "Create Repository",
+      "aria": {
+        "role": "button",
+        "name": "Create Repository",
+        "context": {
+          "container": "section",
+          "name": "New Repository"
+        },
+        "form": "/repo/create|",
+        "attrs": {
+          "id": null,
+          "name": null
+        },
+        "center": [
+          595.75,
+          1213.21875
+        ]
+      }
+    },
+    "healenium": [
+      {
+        "score": 0.914,
+        "above_cap": true,
+        "truth": true,
+        "el": "button \"Make repo\""
+      },
+      {
+        "score": 0.519,
+        "above_cap": false,
+        "truth": false,
+        "el": "h3 \"New Repository\""
+      },
+      {
+        "score": 0.519,
+        "above_cap": false,
+        "truth": false,
+        "el": "div \"Select a license file.\""
+      },
+      {
+        "score": 0.519,
+        "above_cap": false,
+        "truth": false,
+        "el": "div \"Select an issue label set.\""
+      },
+      {
+        "score": 0.516,
+        "above_cap": false,
+        "truth": false,
+        "el": "div \"Select .gitignore templates.\""
+      }
+    ],
+    "aria": [
+      {
+        "score": 0.757,
+        "score_no_attr": 0.832,
+        "score_no_form": 0.784,
+        "name": 0.54,
+        "context": 1.0,
+        "form": 1.0,
+        "attr": 0.5,
+        "position": 0.96,
+        "truth": true,
+        "el": "button \"Make repo\"",
+        "context_seen": {
+          "container": "section",
+          "name": "New Repository"
+        }
+      }
+    ],
+    "decision": {
+      "healenium": "heal_right",
+      "aria": "heal_right"
+    },
+    "executor": {
+      "ok": false,
+      "strategy": null,
+      "error": "target_not_found"
+    },
+    "vision": {
+      "model": null,
+      "point": null,
+      "under_point": null,
+      "error": "no Gemini model returned a valid reply",
+      "requests": 3
+    }
+  },
+  {
+    "scenario": "create:restyled",
+    "stored": {
+      "role": "button",
+      "name": "Create Repository",
+      "aria": {
+        "role": "button",
+        "name": "Create Repository",
+        "context": {
+          "container": "section",
+          "name": "New Repository"
+        },
+        "form": "/repo/create|",
+        "attrs": {
+          "id": null,
+          "name": null
+        },
+        "center": [
+          595.75,
+          1213.21875
+        ]
+      }
+    },
+    "healenium": [
+      {
+        "score": 0.793,
+        "above_cap": true,
+        "truth": true,
+        "el": "button#submit-new \"Create Repository\""
+      },
+      {
+        "score": 0.61,
+        "above_cap": true,
+        "truth": false,
+        "el": "div \"Create Repository\""
+      },
+      {
+        "score": 0.547,
+        "above_cap": false,
+        "truth": false,
+        "el": "div \"Select a license file.\""
+      },
+      {
+        "score": 0.547,
+        "above_cap": false,
+        "truth": false,
+        "el": "div \"Select an issue label set.\""
+      },
+      {
+        "score": 0.544,
+        "above_cap": false,
+        "truth": false,
+        "el": "div \"Select .gitignore templates.\""
+      }
+    ],
+    "aria": [
+      {
+        "score": 0.9,
+        "score_no_attr": 1.0,
+        "score_no_form": 1.0,
+        "name": 1.0,
+        "context": 1.0,
+        "form": 1.0,
+        "attr": 0.5,
+        "position": 1.0,
+        "truth": true,
+        "el": "button \"Create Repository\"",
+        "context_seen": {
+          "container": "section",
+          "name": "New Repository"
+        }
+      }
+    ],
+    "decision": {
+      "healenium": "heal_right",
+      "aria": "heal_right"
+    },
+    "executor": {
+      "ok": true,
+      "strategy": "role",
+      "error": null
+    }
+  },
+  {
+    "scenario": "create:moved",
+    "stored": {
+      "role": "button",
+      "name": "Create Repository",
+      "aria": {
+        "role": "button",
+        "name": "Create Repository",
+        "context": {
+          "container": "section",
+          "name": "New Repository"
+        },
+        "form": "/repo/create|",
+        "attrs": {
+          "id": null,
+          "name": null
+        },
+        "center": [
+          595.75,
+          1213.21875
+        ]
+      }
+    },
+    "healenium": [
+      {
+        "score": 1.0,
+        "above_cap": true,
+        "truth": true,
+        "el": "button \"Create Repository\""
+      },
+      {
+        "score": 0.547,
+        "above_cap": false,
+        "truth": false,
+        "el": "div \"Select a license file.\""
+      },
+      {
+        "score": 0.547,
+        "above_cap": false,
+        "truth": false,
+        "el": "div \"Select an issue label set.\""
+      },
+      {
+        "score": 0.544,
+        "above_cap": false,
+        "truth": false,
+        "el": "div \"Select .gitignore templates.\""
+      },
+      {
+        "score": 0.541,
+        "above_cap": false,
+        "truth": false,
+        "el": "h3 \"New Repository\""
+      }
+    ],
+    "aria": [
+      {
+        "score": 0.6,
+        "score_no_attr": 0.6,
+        "score_no_form": 0.45,
+        "name": 1.0,
+        "context": 0.0,
+        "form": 1.0,
+        "attr": 0.5,
+        "position": 0.0,
+        "truth": true,
+        "el": "button \"Create Repository\"",
+        "context_seen": null
+      }
+    ],
+    "decision": {
+      "healenium": "heal_right",
+      "aria": "missed"
+    },
+    "executor": {
+      "ok": true,
+      "strategy": "role",
+      "error": null
+    }
+  },
+  {
+    "scenario": "create:renamed+restyled",
+    "stored": {
+      "role": "button",
+      "name": "Create Repository",
+      "aria": {
+        "role": "button",
+        "name": "Create Repository",
+        "context": {
+          "container": "section",
+          "name": "New Repository"
+        },
+        "form": "/repo/create|",
+        "attrs": {
+          "id": null,
+          "name": null
+        },
+        "center": [
+          595.75,
+          1213.21875
+        ]
+      }
+    },
+    "healenium": [
+      {
+        "score": 0.72,
+        "above_cap": true,
+        "truth": true,
+        "el": "button#go \"Make repo\""
+      },
+      {
+        "score": 0.547,
+        "above_cap": false,
+        "truth": false,
+        "el": "div \"Select a license file.\""
+      },
+      {
+        "score": 0.547,
+        "above_cap": false,
+        "truth": false,
+        "el": "div \"Select an issue label set.\""
+      },
+      {
+        "score": 0.544,
+        "above_cap": false,
+        "truth": false,
+        "el": "div \"Select .gitignore templates.\""
+      },
+      {
+        "score": 0.541,
+        "above_cap": false,
+        "truth": false,
+        "el": "h3 \"New Repository\""
+      }
+    ],
+    "aria": [
+      {
+        "score": 0.757,
+        "score_no_attr": 0.832,
+        "score_no_form": 0.784,
+        "name": 0.54,
+        "context": 1.0,
+        "form": 1.0,
+        "attr": 0.5,
+        "position": 0.96,
+        "truth": true,
+        "el": "button \"Make repo\"",
+        "context_seen": {
+          "container": "section",
+          "name": "New Repository"
+        }
+      }
+    ],
+    "decision": {
+      "healenium": "heal_right",
+      "aria": "heal_right"
+    },
+    "executor": {
+      "ok": false,
+      "strategy": null,
+      "error": "target_not_found"
+    }
+  },
+  {
+    "scenario": "create:removed",
+    "stored": {
+      "role": "button",
+      "name": "Create Repository",
+      "aria": {
+        "role": "button",
+        "name": "Create Repository",
+        "context": {
+          "container": "section",
+          "name": "New Repository"
+        },
+        "form": "/repo/create|",
+        "attrs": {
+          "id": null,
+          "name": null
+        },
+        "center": [
+          595.75,
+          1213.21875
+        ]
+      }
+    },
+    "healenium": [
+      {
+        "score": 0.547,
+        "above_cap": false,
+        "truth": false,
+        "el": "div \"Select a license file.\""
+      },
+      {
+        "score": 0.547,
+        "above_cap": false,
+        "truth": false,
+        "el": "div \"Select an issue label set.\""
+      },
+      {
+        "score": 0.544,
+        "above_cap": false,
+        "truth": false,
+        "el": "div \"Select .gitignore templates.\""
+      },
+      {
+        "score": 0.541,
+        "above_cap": false,
+        "truth": false,
+        "el": "h3 \"New Repository\""
+      },
+      {
+        "score": 0.533,
+        "above_cap": false,
+        "truth": false,
+        "el": "span \"\""
+      }
+    ],
+    "aria": [],
+    "decision": {
+      "healenium": "no_heal",
+      "aria": "no_heal"
+    },
+    "executor": {
+      "ok": false,
+      "strategy": null,
+      "error": "target_not_found"
+    },
+    "vision": {
+      "model": null,
+      "point": null,
+      "under_point": null,
+      "error": "no Gemini model returned a valid reply",
+      "requests": 3
+    }
+  },
+  {
+    "scenario": "name:relabelled",
+    "stored": {
+      "role": "textbox",
+      "name": "Repository Name *",
+      "aria": {
+        "role": "textbox",
+        "name": "Repository Name *",
+        "context": {
+          "container": "section",
+          "name": "New Repository"
+        },
+        "form": "/repo/create|",
+        "attrs": {
+          "id": "repo_name",
+          "name": "repo_name"
+        },
+        "center": [
+          711.984375,
+          280.515625
+        ]
+      }
+    },
+    "healenium": [
+      {
+        "score": 1.0,
+        "above_cap": true,
+        "truth": true,
+        "el": "input#repo_name \"\""
+      },
+      {
+        "score": 0.76,
+        "above_cap": true,
+        "truth": false,
+        "el": "input#object_format_name \"sha1\""
+      },
+      {
+        "score": 0.758,
+        "above_cap": true,
+        "truth": false,
+        "el": "input#default_branch \"main\""
+      },
+      {
+        "score": 0.755,
+        "above_cap": true,
+        "truth": false,
+        "el": "input#uid \"2\""
+      },
+      {
+        "score": 0.748,
+        "above_cap": true,
+        "truth": false,
+        "el": "input \"Default\""
+      }
+    ],
+    "aria": [
+      {
+        "score": 0.862,
+        "score_no_attr": 0.839,
+        "score_no_form": 0.793,
+        "name": 0.54,
+        "context": 1.0,
+        "form": 1.0,
+        "attr": 1.0,
+        "position": 1.0,
+        "truth": true,
+        "el": "textbox \"Name of the repository *\"",
+        "context_seen": {
+          "container": "section",
+          "name": "New Repository"
+        }
+      },
+      {
+        "score": 0.558,
+        "score_no_attr": 0.706,
+        "score_no_form": 0.619,
+        "name": 0.31,
+        "context": 1.0,
+        "form": 1.0,
+        "attr": 0.0,
+        "position": 0.65,
+        "truth": false,
+        "el": "textbox \"Description\"",
+        "context_seen": {
+          "container": "section",
+          "name": "New Repository"
+        }
+      },
+      {
+        "score": 0.441,
+        "score_no_attr": 0.548,
+        "score_no_form": 0.412,
+        "name": 0.14,
+        "context": 1.0,
+        "form": 1.0,
+        "attr": 0.0,
+        "position": 0.0,
+        "truth": false,
+        "el": "textbox \"Default Branch\"",
+        "context_seen": {
+          "container": "section",
+          "name": "New Repository"
+        }
+      }
+    ],
+    "decision": {
+      "healenium": "heal_right",
+      "aria": "heal_right"
+    },
+    "executor": {
+      "ok": false,
+      "strategy": null,
+      "error": "target_not_found"
+    }
+  },
+  {
+    "scenario": "settings:baseline",
+    "stored": {
+      "role": "button",
+      "name": "Update Settings",
+      "aria": {
+        "role": "button",
+        "name": "Update Settings",
+        "context": {
+          "container": "section",
+          "name": "Basic Settings"
+        },
+        "form": "/demo/bench-settings/settings|update",
+        "attrs": {
+          "id": null,
+          "name": null
+        },
+        "center": [
+          373.4375,
+          588.65625
+        ]
+      }
+    },
+    "healenium": [
+      {
+        "score": 1.0,
+        "above_cap": true,
+        "truth": false,
+        "el": "button \"Update Settings\""
+      },
+      {
+        "score": 1.0,
+        "above_cap": true,
+        "truth": false,
+        "el": "button \"Update Settings\""
+      },
+      {
+        "score": 1.0,
+        "above_cap": true,
+        "truth": true,
+        "el": "button \"Update Settings\""
+      },
+      {
+        "score": 0.914,
+        "above_cap": true,
+        "truth": false,
+        "el": "button \"Add Push Mirror\""
+      },
+      {
+        "score": 0.914,
+        "above_cap": true,
+        "truth": false,
+        "el": "button \"Update Avatar\""
+      }
+    ],
+    "aria": [
+      {
+        "score": 0.9,
+        "score_no_attr": 1.0,
+        "score_no_form": 1.0,
+        "name": 1.0,
+        "context": 1.0,
+        "form": 1.0,
+        "attr": 0.5,
+        "position": 1.0,
+        "truth": true,
+        "el": "button \"Update Settings\"",
+        "context_seen": {
+          "container": "section",
+          "name": "Basic Settings"
+        }
+      },
+      {
+        "score": 0.548,
+        "score_no_attr": 0.565,
+        "score_no_form": 0.761,
+        "name": 0.57,
+        "context": 1.0,
+        "form": 0.0,
+        "attr": 0.5,
+        "position": 0.77,
+        "truth": false,
+        "el": "button \"Update Avatar\"",
+        "context_seen": {
+          "container": "section",
+          "name": "Basic Settings"
+        }
+      },
+      {
+        "score": 0.5,
+        "score_no_attr": 0.475,
+        "score_no_form": 0.625,
+        "name": 1.0,
+        "context": 0.5,
+        "form": 0.0,
+        "attr": 0.5,
+        "position": 0.0,
+        "truth": false,
+        "el": "button \"Update Settings\"",
+        "context_seen": {
+          "container": "section",
+          "name": "Advanced Settings"
+        }
+      },
+      {
+        "score": 0.5,
+        "score_no_attr": 0.475,
+        "score_no_form": 0.625,
+        "name": 1.0,
+        "context": 0.5,
+        "form": 0.0,
+        "attr": 0.5,
+        "position": 0.0,
+        "truth": false,
+        "el": "button \"Update Settings\"",
+        "context_seen": {
+          "container": "section",
+          "name": "Signing Verification Settings"
+        }
+      },
+      {
+        "score": 0.478,
+        "score_no_attr": 0.478,
+        "score_no_form": 0.647,
+        "name": 0.39,
+        "context": 1.0,
+        "form": 0.0,
+        "attr": 0.5,
+        "position": 0.61,
+        "truth": false,
+        "el": "button \"Delete Current Avatar\"",
+        "context_seen": {
+          "container": "section",
+          "name": "Basic Settings"
+        }
+      }
+    ],
+    "decision": {
+      "healenium": "heal_WRONG",
+      "aria": "heal_right"
+    },
+    "executor": {
+      "ok": false,
+      "strategy": null,
+      "error": "ambiguous_target"
+    }
+  },
+  {
+    "scenario": "settings:renamed",
+    "stored": {
+      "role": "button",
+      "name": "Update Settings",
+      "aria": {
+        "role": "button",
+        "name": "Update Settings",
+        "context": {
+          "container": "section",
+          "name": "Basic Settings"
+        },
+        "form": "/demo/bench-settings/settings|update",
+        "attrs": {
+          "id": null,
+          "name": null
+        },
+        "center": [
+          373.4375,
+          588.65625
+        ]
+      }
+    },
+    "healenium": [
+      {
+        "score": 1.0,
+        "above_cap": true,
+        "truth": false,
+        "el": "button \"Update Settings\""
+      },
+      {
+        "score": 1.0,
+        "above_cap": true,
+        "truth": false,
+        "el": "button \"Update Settings\""
+      },
+      {
+        "score": 0.914,
+        "above_cap": true,
+        "truth": false,
+        "el": "button \"Add Push Mirror\""
+      },
+      {
+        "score": 0.914,
+        "above_cap": true,
+        "truth": false,
+        "el": "button \"Update Avatar\""
+      },
+      {
+        "score": 0.914,
+        "above_cap": true,
+        "truth": true,
+        "el": "button \"Save\""
+      }
+    ],
+    "aria": [
+      {
+        "score": 0.656,
+        "score_no_attr": 0.713,
+        "score_no_form": 0.631,
+        "name": 0.21,
+        "context": 1.0,
+        "form": 1.0,
+        "attr": 0.5,
+        "position": 0.93,
+        "truth": true,
+        "el": "button \"Save\"",
+        "context_seen": {
+          "container": "section",
+          "name": "Basic Settings"
+        }
+      },
+      {
+        "score": 0.548,
+        "score_no_attr": 0.565,
+        "score_no_form": 0.761,
+        "name": 0.57,
+        "context": 1.0,
+        "form": 0.0,
+        "attr": 0.5,
+        "position": 0.77,
+        "truth": false,
+        "el": "button \"Update Avatar\"",
+        "context_seen": {
+          "container": "section",
+          "name": "Basic Settings"
+        }
+      },
+      {
+        "score": 0.5,
+        "score_no_attr": 0.475,
+        "score_no_form": 0.625,
+        "name": 1.0,
+        "context": 0.5,
+        "form": 0.0,
+        "attr": 0.5,
+        "position": 0.0,
+        "truth": false,
+        "el": "button \"Update Settings\"",
+        "context_seen": {
+          "container": "section",
+          "name": "Advanced Settings"
+        }
+      },
+      {
+        "score": 0.5,
+        "score_no_attr": 0.475,
+        "score_no_form": 0.625,
+        "name": 1.0,
+        "context": 0.5,
+        "form": 0.0,
+        "attr": 0.5,
+        "position": 0.0,
+        "truth": false,
+        "el": "button \"Update Settings\"",
+        "context_seen": {
+          "container": "section",
+          "name": "Signing Verification Settings"
+        }
+      },
+      {
+        "score": 0.478,
+        "score_no_attr": 0.478,
+        "score_no_form": 0.647,
+        "name": 0.39,
+        "context": 1.0,
+        "form": 0.0,
+        "attr": 0.5,
+        "position": 0.61,
+        "truth": false,
+        "el": "button \"Delete Current Avatar\"",
+        "context_seen": {
+          "container": "section",
+          "name": "Basic Settings"
+        }
+      }
+    ],
+    "decision": {
+      "healenium": "heal_WRONG",
+      "aria": "missed"
+    },
+    "executor": {
+      "ok": false,
+      "strategy": null,
+      "error": "ambiguous_target"
+    },
+    "vision": {
+      "model": null,
+      "point": null,
+      "under_point": null,
+      "error": "no Gemini model returned a valid reply",
+      "requests": 3
+    }
+  },
+  {
+    "scenario": "settings:removed",
+    "stored": {
+      "role": "button",
+      "name": "Update Settings",
+      "aria": {
+        "role": "button",
+        "name": "Update Settings",
+        "context": {
+          "container": "section",
+          "name": "Basic Settings"
+        },
+        "form": "/demo/bench-settings/settings|update",
+        "attrs": {
+          "id": null,
+          "name": null
+        },
+        "center": [
+          373.4375,
+          588.65625
+        ]
+      }
+    },
+    "healenium": [
+      {
+        "score": 1.0,
+        "above_cap": true,
+        "truth": false,
+        "el": "button \"Update Settings\""
+      },
+      {
+        "score": 1.0,
+        "above_cap": true,
+        "truth": false,
+        "el": "button \"Update Settings\""
+      },
+      {
+        "score": 0.914,
+        "above_cap": true,
+        "truth": false,
+        "el": "button \"Add Push Mirror\""
+      },
+      {
+        "score": 0.914,
+        "above_cap": true,
+        "truth": false,
+        "el": "button \"Update Avatar\""
+      },
+      {
+        "score": 0.765,
+        "above_cap": true,
+        "truth": false,
+        "el": "button \"Delete Current Avatar\""
+      }
+    ],
+    "aria": [
+      {
+        "score": 0.558,
+        "score_no_attr": 0.58,
+        "score_no_form": 0.78,
+        "name": 0.57,
+        "context": 1.0,
+        "form": 0.0,
+        "attr": 0.5,
+        "position": 0.87,
+        "truth": false,
+        "el": "button \"Update Avatar\"",
+        "context_seen": {
+          "container": "section",
+          "name": "Basic Settings"
+        }
+      },
+      {
+        "score": 0.5,
+        "score_no_attr": 0.475,
+        "score_no_form": 0.625,
+        "name": 1.0,
+        "context": 0.5,
+        "form": 0.0,
+        "attr": 0.5,
+        "position": 0.0,
+        "truth": false,
+        "el": "button \"Update Settings\"",
+        "context_seen": {
+          "container": "section",
+          "name": "Advanced Settings"
+        }
+      },
+      {
+        "score": 0.5,
+        "score_no_attr": 0.475,
+        "score_no_form": 0.625,
+        "name": 1.0,
+        "context": 0.5,
+        "form": 0.0,
+        "attr": 0.5,
+        "position": 0.0,
+        "truth": false,
+        "el": "button \"Update Settings\"",
+        "context_seen": {
+          "container": "section",
+          "name": "Signing Verification Settings"
+        }
+      },
+      {
+        "score": 0.483,
+        "score_no_attr": 0.485,
+        "score_no_form": 0.657,
+        "name": 0.39,
+        "context": 1.0,
+        "form": 0.0,
+        "attr": 0.5,
+        "position": 0.66,
+        "truth": false,
+        "el": "button \"Delete Current Avatar\"",
+        "context_seen": {
+          "container": "section",
+          "name": "Basic Settings"
+        }
+      },
+      {
+        "score": 0.429,
+        "score_no_attr": 0.421,
+        "score_no_form": 0.574,
+        "name": 0.23,
+        "context": 1.0,
+        "form": 0.0,
+        "attr": 0.5,
+        "position": 0.6,
+        "truth": false,
+        "el": "button \"Choose File\"",
+        "context_seen": {
+          "container": "section",
+          "name": "Basic Settings"
+        }
+      }
+    ],
+    "decision": {
+      "healenium": "heal_WRONG",
+      "aria": "no_heal"
+    },
+    "executor": {
+      "ok": false,
+      "strategy": null,
+      "error": "ambiguous_target"
+    }
+  }
+]

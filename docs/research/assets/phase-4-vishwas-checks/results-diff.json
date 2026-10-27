@@ -1,0 +1,448 @@
+{
+  "workflows": 123,
+  "tasks": [
+    {
+      "task": "In the repository bench-issues, open an issue titled 'Login page shows a blank screen'.",
+      "runs": 22,
+      "distinct_step_keys": 2,
+      "signatures": [
+        {
+          "count": 17,
+          "steps": [
+            "navigate /demo/bench-issues/issues/new",
+            "fill textbox title Login page shows a blank screen",
+            "click button create issue"
+          ]
+        },
+        {
+          "count": 5,
+          "steps": [
+            "navigate /demo/bench-issues",
+            "navigate /demo/bench-issues/issues/new",
+            "fill textbox title Login page shows a blank screen",
+            "click button create issue"
+          ]
+        }
+      ],
+      "diff_kinds_vs_first_run": [
+        {
+          "kinds": {
+            "changed": 1,
+            "same": 2
+          },
+          "runs": 9
+        },
+        {
+          "kinds": {
+            "same": 3
+          },
+          "runs": 6
+        },
+        {
+          "kinds": {
+            "added": 1,
+            "changed": 1,
+            "same": 2
+          },
+          "runs": 3
+        },
+        {
+          "kinds": {
+            "added": 1,
+            "changed": 2,
+            "same": 1
+          },
+          "runs": 2
+        },
+        {
+          "kinds": {
+            "changed": 2,
+            "same": 1
+          },
+          "runs": 1
+        }
+      ],
+      "fields_that_differ_with_no_drift": {
+        "expected_state": 18,
+        "verification": 9,
+        "instruction_text": 5
+      },
+      "bytes": {
+        "step_rows_per_version_avg": 3327,
+        "definition_json_per_version_avg": 921,
+        "json_patch_vs_previous_avg": 549,
+        "json_patch_empty_count": 7
+      }
+    },
+    {
+      "task": "Set the description of the repository bench-settings to 'Docs for the team'.",
+      "runs": 21,
+      "distinct_step_keys": 3,
+      "signatures": [
+        {
+          "count": 17,
+          "steps": [
+            "navigate /demo/bench-settings/settings",
+            "fill textbox description Docs for the team",
+            "click button update settings"
+          ]
+        },
+        {
+          "count": 3,
+          "steps": [
+            "navigate /demo/bench-settings",
+            "navigate /demo/bench-settings/settings",
+            "fill textbox description Docs for the team",
+            "click button update settings"
+          ]
+        },
+        {
+          "count": 1,
+          "steps": [
+            "navigate /demo/bench-settings/settings",
+            "fill textbox description Docs for the team",
+            "click button"
+          ]
+        }
+      ],
+      "diff_kinds_vs_first_run": [
+        {
+          "kinds": {
+            "changed": 2,
+            "same": 1
+          },
+          "runs": 10
+        },
+        {
+          "kinds": {
+            "changed": 1,
+            "same": 2
+          },
+          "runs": 7
+        },
+        {
+          "kinds": {
+            "added": 1,
+            "changed": 1,
+            "same": 2
+          },
+          "runs": 3
+        }
+      ],
+      "fields_that_differ_with_no_drift": {
+        "instruction_text": 21,
+        "expected_state": 9,
+        "verification": 9,
+        "risk": 5,
+        "target.name": 1
+      },
+      "bytes": {
+        "step_rows_per_version_avg": 3317,
+        "definition_json_per_version_avg": 1012,
+        "json_patch_vs_previous_avg": 480,
+        "json_patch_empty_count": 2
+      }
+    },
+    {
+      "task": "Create a branch named feature-docs from main in the repository bench-branches.",
+      "runs": 21,
+      "distinct_step_keys": 4,
+      "signatures": [
+        {
+          "count": 7,
+          "steps": [
+            "navigate /demo/bench-branches/branches",
+            "click button create new branch from",
+            "fill textbox branch name feature-docs",
+            "click button confirm"
+          ]
+        },
+        {
+          "count": 6,
+          "steps": [
+            "navigate /demo/bench-branches/branches",
+            "click button create new branch from main",
+            "fill textbox branch name feature-docs",
+            "click button confirm"
+          ]
+        },
+        {
+          "count": 6,
+          "steps": [
+            "navigate /demo/bench-branches",
+            "navigate /demo/bench-branches/branches",
+            "click button create new branch from main",
+            "fill textbox branch name feature-docs",
+            "click button confirm"
+          ]
+        },
+        {
+          "count": 2,
+          "steps": [
+            "navigate /demo/bench-branches/branches",
+            "click button create new branch from main"
+          ]
+        }
+      ],
+      "diff_kinds_vs_first_run": [
+        {
+          "kinds": {
+            "changed": 2,
+            "same": 2
+          },
+          "runs": 10
+        },
+        {
+          "kinds": {
+            "added": 1,
+            "changed": 2,
+            "same": 2
+          },
+          "runs": 6
+        },
+        {
+          "kinds": {
+            "changed": 1,
+            "same": 3
+          },
+          "runs": 2
+        },
+        {
+          "kinds": {
+            "changed": 1,
+            "removed": 2,
+            "same": 1
+          },
+          "runs": 1
+        },
+        {
+          "kinds": {
+            "removed": 2,
+            "same": 2
+          },
+          "runs": 1
+        }
+      ],
+      "fields_that_differ_with_no_drift": {
+        "instruction_text": 24,
+        "expected_state": 24,
+        "target.name": 15,
+        "verification": 11
+      },
+      "bytes": {
+        "step_rows_per_version_avg": 4268,
+        "definition_json_per_version_avg": 1241,
+        "json_patch_vs_previous_avg": 1045,
+        "json_patch_empty_count": 3
+      }
+    },
+    {
+      "task": "Create a new public repository named 'test-repo' with a README in local Gitea.",
+      "runs": 19,
+      "distinct_step_keys": 2,
+      "signatures": [
+        {
+          "count": 17,
+          "steps": [
+            "click link new repository",
+            "fill textbox repository name test-repo",
+            "click checkbox initialize repository adds gitignore license and readme",
+            "click button create repository"
+          ]
+        },
+        {
+          "count": 2,
+          "steps": [
+            "navigate /repo/create",
+            "fill textbox repository name test-repo",
+            "click checkbox initialize repository adds gitignore license and readme",
+            "click button create repository"
+          ]
+        }
+      ],
+      "diff_kinds_vs_first_run": [
+        {
+          "kinds": {
+            "same": 4
+          },
+          "runs": 15
+        },
+        {
+          "kinds": {
+            "added": 1,
+            "removed": 1,
+            "same": 3
+          },
+          "runs": 2
+        },
+        {
+          "kinds": {
+            "changed": 1,
+            "same": 3
+          },
+          "runs": 1
+        }
+      ],
+      "fields_that_differ_with_no_drift": {
+        "target.bbox": 2,
+        "target.scroll": 2,
+        "expected_state": 1,
+        "verification": 1
+      },
+      "bytes": {
+        "step_rows_per_version_avg": 4133,
+        "definition_json_per_version_avg": 1188,
+        "json_patch_vs_previous_avg": 84,
+        "json_patch_empty_count": 12
+      }
+    },
+    {
+      "task": "Add a file notes.md containing 'First note' to the main branch of the repository bench-files.",
+      "runs": 19,
+      "distinct_step_keys": 2,
+      "signatures": [
+        {
+          "count": 15,
+          "steps": [
+            "navigate /demo/bench-files",
+            "navigate /demo/bench-files/_new/main/",
+            "fill textbox name your file notes.md",
+            "fill textbox editor content First note",
+            "click button commit changes"
+          ]
+        },
+        {
+          "count": 4,
+          "steps": [
+            "navigate /demo/bench-files/_new/main/",
+            "fill textbox name your file notes.md",
+            "fill textbox editor content First note",
+            "click button commit changes"
+          ]
+        }
+      ],
+      "diff_kinds_vs_first_run": [
+        {
+          "kinds": {
+            "added": 1,
+            "changed": 2,
+            "same": 2
+          },
+          "runs": 15
+        },
+        {
+          "kinds": {
+            "same": 4
+          },
+          "runs": 3
+        }
+      ],
+      "fields_that_differ_with_no_drift": {
+        "expected_state": 30,
+        "instruction_text": 15
+      },
+      "bytes": {
+        "step_rows_per_version_avg": 4996,
+        "definition_json_per_version_avg": 1354,
+        "json_patch_vs_previous_avg": 442,
+        "json_patch_empty_count": 5
+      }
+    }
+  ],
+  "simulated": {
+    "workflow": "9d8acf32-60f7-4ce3-920f-d9e3e5e3f550",
+    "self_heal_renamed_button": [
+      {
+        "kind": "same",
+        "old_seq": 1,
+        "new_seq": 1,
+        "fields": []
+      },
+      {
+        "kind": "same",
+        "old_seq": 2,
+        "new_seq": 2,
+        "fields": []
+      },
+      {
+        "kind": "same",
+        "old_seq": 3,
+        "new_seq": 3,
+        "fields": []
+      },
+      {
+        "kind": "changed",
+        "old_seq": 4,
+        "new_seq": 4,
+        "similarity": 0.8,
+        "fields": [
+          {
+            "field": "target.name",
+            "from": "Create Repository",
+            "to": "Make repo"
+          },
+          {
+            "field": "instruction_text",
+            "from": "Click “Create Repository”.",
+            "to": "Click “Make repo”."
+          }
+        ]
+      }
+    ],
+    "self_heal_patch": [
+      {
+        "op": "replace",
+        "path": "/3/target/name",
+        "value": "Make repo"
+      },
+      {
+        "op": "replace",
+        "path": "/3/instruction_text",
+        "value": "Click “Make repo”."
+      }
+    ],
+    "changed_flow_extra_step": [
+      {
+        "kind": "same",
+        "old_seq": 1,
+        "new_seq": 1,
+        "fields": []
+      },
+      {
+        "kind": "same",
+        "old_seq": 2,
+        "new_seq": 2,
+        "fields": []
+      },
+      {
+        "kind": "same",
+        "old_seq": 3,
+        "new_seq": 3,
+        "fields": []
+      },
+      {
+        "kind": "changed",
+        "old_seq": 4,
+        "new_seq": 4,
+        "fields": [
+          {
+            "field": "expected_state",
+            "from": {
+              "url_matches": "^/demo/test-repo$"
+            },
+            "to": {
+              "text_visible": [
+                "Confirm"
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "kind": "added",
+        "new_seq": 5,
+        "step": "click button \"Confirm\""
+      }
+    ]
+  }
+}
