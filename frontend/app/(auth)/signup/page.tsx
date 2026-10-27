@@ -52,7 +52,7 @@ export default function SignupPage() {
           </div>
           <div className="flex justify-between">
             <span className="text-zinc-500">Password:</span>
-            <span className="font-semibold text-zinc-900 dark:text-zinc-100">krama-demo-pass</span>
+            <span className="font-semibold text-zinc-900 dark:text-zinc-100">KRAMA_DEMO_PASSWORD in .env</span>
           </div>
           <div className="flex justify-between pt-1 border-t border-zinc-100 dark:border-zinc-800">
             <span className="text-zinc-500">Recipe:</span>
