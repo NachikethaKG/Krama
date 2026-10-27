@@ -10,7 +10,7 @@ export interface TargetConfig {
 }
 
 export const GITEA_DEFAULT_URL =
-  process.env.NEXT_PUBLIC_GITEA_URL || "http://localhost:3000";
+  process.env.NEXT_PUBLIC_GITEA_URL || "http://localhost:3001"; // Gitea; :3000 is this app (#104)
 export const GITHUB_DEFAULT_URL = "https://github.com";
 
 const STORAGE_KEY = "krama:target_config";
