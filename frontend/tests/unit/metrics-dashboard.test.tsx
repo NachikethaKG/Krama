@@ -46,7 +46,7 @@ describe("MetricsKpiGrid", () => {
 
     // 3. Recovery Rate
     expect(screen.getByTestId("kpi-recovery-rate")).toBeInTheDocument();
-    expect(screen.getByTestId("value-recovery-rate")).toHaveTextContent("100.0%");
+    expect(screen.getByTestId("value-recovery-rate")).toHaveTextContent("Not measured");
     expect(screen.getByTestId("badge-recovery-rate")).toHaveTextContent("Target ≥ 50%");
 
     // 4. Latency Profile

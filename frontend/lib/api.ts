@@ -442,8 +442,11 @@ export class HttpApiClient implements ApiClient {
     const url = `${this.baseUrl}${path.startsWith("/") ? path : `/${path}`}`;
     let response: Response;
     try {
-      // credentials: the session is an HTTP-only cookie set by the API on another port (#94).
-      response = await fetch(url, { credentials: "include", ...init });
+      // credentials: the session is an HTTP-only cookie set by the API on another port (#94). X-Krama: the API's
+      // CSRF check refuses every POST/PUT/DELETE without it (#104: creating a task failed with 403).
+      const headers = new Headers(init?.headers);
+      headers.set("X-Krama", "1");
+      response = await fetch(url, { credentials: "include", ...init, headers });
     } catch (err) {
       if (isAbortError(err)) throw err;
       throw new Error(`Network request failed for ${url}: ${errorMessage(err, String(err))}`);

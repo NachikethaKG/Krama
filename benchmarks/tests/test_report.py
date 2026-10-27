@@ -126,7 +126,7 @@ def test_collector_math_and_varied_runs(tmp_path: Path) -> None:
     assert tb.successful_runs == 5
     assert tb.failed_runs == 0
     assert tb.success_rate == 1.0
-    assert tb.verifier_accuracy == 1.0
+    assert tb.verifier_accuracy == 0.0  # no trial was graded independently: not measured, not 100%
     assert tb.false_alarm_rate == 0.0
     assert tb.avg_latency_ms == 2000.0
     assert tb.p90_latency_ms == 2000.0
@@ -137,6 +137,33 @@ def test_collector_math_and_varied_runs(tmp_path: Path) -> None:
     assert tc.successful_runs == 0
     assert tc.failed_runs == 4
     assert tc.success_rate == 0.0
+
+
+def test_verifier_accuracy_and_false_alarms_come_from_the_independent_check(tmp_path: Path) -> None:
+    # #104: what the agent reported (agent_verified) against the task's success_check (success).
+    def trial(i: int, agent: bool, real: bool) -> dict[str, object]:
+        return {"run_index": i, "success": real, "agent_verified": agent, "duration_seconds": 1.0}
+
+    report = {
+        "task_name": "github-create-issue",
+        "trials": [
+            trial(1, True, True),
+            trial(2, True, True),
+            trial(3, False, True),  # false alarm: it worked, the agent said it didn't
+            trial(4, False, False),  # caught failure
+            trial(5, True, False),  # missed failure
+        ],
+    }
+    (tmp_path / "r.json").write_text(json.dumps(report), encoding="utf-8")
+
+    data = BenchmarkMetricsCollector(results_dir=tmp_path).collect()
+
+    t = data.tasks[0]
+    assert t.verifier_accuracy == 0.6  # 3 of 5 agree
+    assert t.false_alarm_rate == round(1 / 3, 4)  # 1 of 3 real successes
+    assert t.true_positive_detections == 1 and t.false_alarms_count == 1
+    assert t.recovery_rate == 0.0 and data.overall_recovery_rate == 0.0  # no replans: not measured
+    assert t.avg_planning_latency_ms == 0.0  # never estimated
 
 
 def test_markdown_and_html_generators() -> None:

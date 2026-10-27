@@ -201,13 +201,7 @@ class BenchmarkMetricsCollector:
         overall_recovery_rate = (
             round((total_replan_successes / total_replan_attempts) * 100.0, 2)
             if total_replan_attempts > 0
-            else (
-                round(
-                    sum(t.recovery_rate for t in tasks_metrics) / len(tasks_metrics), 2
-                )
-                if tasks_metrics
-                else 100.0
-            )
+            else 0.0
         )
         overall_planning_lat = (
             round(
@@ -257,6 +251,9 @@ class BenchmarkMetricsCollector:
         explicit_false_alarm: float | None = None
         tp_detections = 0
         false_alarms = 0
+        graded_trials = 0
+        graded_agreements = 0
+        graded_successes = 0
 
         # Platform detection
         platform = "github" if "github" in task_name.lower() else "gitea"
@@ -297,28 +294,25 @@ class BenchmarkMetricsCollector:
                         continue
                     if t.get("success") is True:
                         successful_runs += 1
-                    else:
-                        # Check if failure was caught by verifier
-                        err = str(t.get("error_message") or "")
-                        if "verification" in err.lower() or "verifier" in err.lower():
+                    # The verifier is right when what the agent reported matches the task's independent
+                    # success_check (`success`). Trials without `agent_verified` were never graded.
+                    if t.get("agent_verified") is not None:
+                        graded_trials += 1
+                        agreed = bool(t["agent_verified"]) == bool(t.get("success"))
+                        graded_agreements += agreed
+                        if t.get("success") is True:
+                            graded_successes += 1
+                            false_alarms += not t["agent_verified"]
+                        elif not t["agent_verified"]:
                             tp_detections += 1
 
-                    # Retries / Replans
-                    retries = int(t.get("retries_count") or 0)
-                    r_attempts = int(
-                        t.get("replan_attempts")
-                        or t.get("replans_count")
-                        or t.get("replans")
-                        or (1 if retries > 0 else 0)
-                    )
+                    # Only replans the trial recorded; a retry is not a replan.
+                    r_attempts = int(t.get("replan_attempts") or t.get("replans_count") or t.get("replans") or 0)
                     replan_attempts += r_attempts
                     if "replan_successes" in t:
                         replan_successes += int(t["replan_successes"])
                     elif r_attempts > 0 and t.get("success") is True:
                         replan_successes += r_attempts
-
-                    if retries > 0 and t.get("success") is True and r_attempts == 0:
-                        false_alarms += retries
 
                     dur_ms = self._extract_duration_ms(t)
                     if dur_ms is not None:
@@ -370,41 +364,34 @@ class BenchmarkMetricsCollector:
             total_time_ms = avg_lat * total_runs
 
         # Planning latency calculation
-        if planning_latencies_ms:
-            avg_planning_lat = sum(planning_latencies_ms) / len(planning_latencies_ms)
-        else:
-            # Fallback estimation: planning is typically ~15-20% of duration
-            avg_planning_lat = round(avg_lat * 0.18, 2)
+        # Not measured means 0: never an estimate (#104 found invented values here).
+        avg_planning_lat = (
+            sum(planning_latencies_ms) / len(planning_latencies_ms) if planning_latencies_ms else 0.0
+        )
+        recovery_rate = round((replan_successes / replan_attempts) * 100.0, 2) if replan_attempts else 0.0
 
-        # Recovery rate calculation
-        if replan_attempts > 0:
-            recovery_rate = round((replan_successes / replan_attempts) * 100.0, 2)
-        else:
-            recovery_rate = 100.0
-
-        # Verifier accuracy & False alarms resolution
-        if explicit_verifier_acc is not None:
+        # Verifier accuracy & false alarms: measured on graded trials first, else a measured value given in
+        # the files; if nothing measured them, 0 (and a warning), never a guess.
+        if graded_trials:
+            verif_acc = graded_agreements / graded_trials
+        elif explicit_verifier_acc is not None:
             verif_acc = explicit_verifier_acc
         elif standalone_accuracy:
-            acc = float(standalone_accuracy.get("detection_accuracy", 1.0))
+            acc = float(standalone_accuracy.get("detection_accuracy", 0.0))
             verif_acc = (acc / 100.0) if acc > 1.0 else acc
         else:
-            failed_count = total_runs - successful_runs
-            if failed_count > 0:
-                verif_acc = 1.0 if tp_detections > 0 else 0.95
-            else:
-                verif_acc = 1.0
+            logger.warning("%s: no graded trials, verifier accuracy not measured", task_name)
+            verif_acc = 0.0
 
-        if explicit_false_alarm is not None:
+        if graded_trials:
+            fa_rate = false_alarms / graded_successes if graded_successes else 0.0
+        elif explicit_false_alarm is not None:
             fa_rate = explicit_false_alarm
         elif standalone_accuracy:
             fa = float(standalone_accuracy.get("false_alarm_rate", 0.0))
             fa_rate = (fa / 100.0) if fa > 1.0 else fa
         else:
-            if successful_runs > 0 and false_alarms > 0:
-                fa_rate = min(1.0, false_alarms / (successful_runs * 5.0))
-            else:
-                fa_rate = 0.0
+            fa_rate = 0.0
 
         return TaskMetrics(
             task_name=task_name,

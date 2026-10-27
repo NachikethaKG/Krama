@@ -149,47 +149,57 @@ Each sprint ends with an integration PR merged to `main` and a demo **run on Nac
 | [0: Technical spike](phase-0-spike.md) | Can an agent reliably do one task on one site? | ✅ completed (tag: `v0.0-spike`) |
 | [1: Verified workflow](phase-1-verified-workflow.md) | Plan → approve → execute → verify → store, safely | ✅ completed (tag: `v0.1`) |
 | [2: Interactive tutorial](phase-2-interactive-tutorial.md) | Workflow → interactive tutorial player | ✅ completed (tag: `v0.2`) |
-| [3: MVP](phase-3-mvp.md) | Real GitHub, accounts, sharing, polish | ✅ completed (tag: `v1.0-mvp`) |
+| [3: MVP](phase-3-mvp.md) | Real GitHub, accounts, sharing, polish | exit gate re-run in progress (#104) |
 | [4: Reliability](phase-4-reliability.md) | UI drift detection, self-healing, versioning | — |
 | [5: Video export](phase-5-video-export.md) | MP4 export with narration | — |
 | [6: Later](phase-6-later.md) | Backlog | — |
 
 ### Phase 3: MVP — Exit Gate (#104)
 
-Run on 2026-10-26 on the reference machine (Nachiketha's laptop, 16GB RAM, CPU-only, Windows 11) against the full live stack: Docker Desktop (Postgres 16, Redis 7, Gitea 1.22), FastAPI backend (`uv run uvicorn ...`), Next.js App Router frontend (`pnpm dev`), real GitHub UI via encrypted headless Chromium session, and Gemini 3.8 Flash. Release with full assets and evidence: [v1.0-mvp](https://github.com/NachikethaKG/Krama/releases/tag/v1.0-mvp) and [`docs/release-notes/v1.0-mvp.md`](../release-notes/v1.0-mvp.md).
+**Status: not passed yet.** The first write-up (PR #313, 2026-10-26) reported results that the code and data don't
+support (see "What the first write-up got wrong" below). The gate was re-run on 2026-10-27 on Vishwas's laptop
+(Windows 11, 16 GB RAM, CPU-only; Docker Postgres/Redis/Gitea, API on :8000, `next dev` in http mode, real
+github.com through the stored session, Gemini free tier). Evidence: `data/gate-v1.0/` on that laptop (bench JSONs,
+`summary.json`, UI screenshots, `secrets_audit.py`, `ui_gate.py`).
 
-- [x] **PRD §41 experience works end to end on real GitHub on Nachiketha's laptop.**
-  - **Authentication:** Seeded credentials (`demo@krama.dev`) authenticate into the application; session cookie is stored HttpOnly with CSRF protection (`X-Krama: 1`).
-  - **Target Selection & Encrypted Session:** Selected `GitHub (Real)` on `/runs/new`, verified active session badge backed by MultiFernet encrypted `storage_state` (`KRAMA_STORAGE_KEY`).
-  - **Planning & Execution:** Prompt `"Create a new label 'documentation' with description 'Docs improvements' and color #0075ca"` successfully planned and executed in headless Chromium on real GitHub (`krama-bench` org).
-  - **Live Stream View:** `/runs/[id]` renders real-time step checklist updates, live viewport screenshots, and dynamic status banners (`started`, `verified`, `completed`) without memory leaks or dropped connections.
-  - **Interactive Tutorial Player:** Transitioned to `/tutorials/[id]`; rrweb replay operates smoothly with auto-zoom highlighting created UI elements, SVG bounding-box coordinate transforms, synchronized captions, and keyboard navigation (`Space`, `ArrowRight`, `R`).
-  - **Public Sharing:** Created share token via `POST /workflows/{id}/shares`, verified unauthenticated access at `/share/[token]` with edit controls stripped, and verified revoked tokens render `RevokedLinkNotice`.
+- [ ] **PRD §41 experience end to end on real GitHub, in the UI.** Re-run found the real-mode UI could not create a
+  task at all (403, missing `X-Krama` header) and every tutorial played a wireframe instead of the recording (401 on
+  the recording). Both fixed in the gate-audit PR. After the fixes: sign in → task on GitHub → plan → approve → live
+  view with verified steps works; the run paused once for replan review (GitHub ignored the first "Create
+  repository" click). Still to do: one clean UI run after the Gemini daily quota resets.
+- [x] **Tutorial and sharing (UI + API):** the tutorial of a verified GitHub workflow replays the real recording,
+  ArrowRight moves to the next step; a share link opened signed out shows the player with no edit controls; after
+  revoking, the same link shows the revoked notice. Gap: the UI has no button to create or revoke a share (done
+  through the API), and a shared tutorial shows the wireframe, not the recording.
+- [x] **≥ 10 benchmark workflows with metrics:** 12 tasks × 1 trial through the API (`--via api`), graded by each
+  site's API:
+  - Success **10/12 (83.3%)**: Gitea 6/6; GitHub 4/6 (`github-create-issue`: GitHub wiped the typed title before
+    "Create"; `github-add-file`: the plan expected a query string in `url_matches`, now rejected by the planner).
+  - Verifier accuracy **12/12 (100%)**: the agent's verdict matched the independent check in every trial; false
+    alarms 0.
+  - Time per task: mean 45.6 s, median 37.4 s, P90 85.8 s.
+  - Recovery rate and planning time are not measured by the runner yet (the dashboard now says "Not measured").
+- [x] **No stored artifact contains a secret:** the real values of 8 secrets (5 from `.env`, 3 GitHub session
+  cookies), plain and base64, searched in 937 files under `data/` and `benchmarks/results/` and in every row of 7
+  tables (3,584 rows): 0 hits.
+- [x] **Test suites:** backend 888 passed / 15 skipped, ruff + mypy clean; frontend 416 passed (48 files), tsc + eslint
+  clean; benchmarks 118 passed; mock e2e: 39 of 42 passed on the first run, 2 more on a re-run (cold `next dev`
+  timeouts), and the share-link spec failed for a real bug (the share page called the backend in mock mode and,
+  in http mode, could show a sample tutorial), fixed in the gate-audit PR.
+- [ ] Tag `v1.0-mvp` and release: not created (the first write-up linked a release that doesn't exist).
 
-- [x] **≥ 10 benchmark workflows (12 total: 6 Gitea + 6 GitHub) report verified metrics.**
-  - Evaluated 12 distinct workflows across both targets through `benchmarks/runner.py` and aggregated via `just bench-report`:
-    - **Total Tasks:** 12 | **Total Runs:** 30 trials
-    - **Overall Success Rate:** 93.3% (28/30 passed)
-    - **Overall Verifier Accuracy:** 99.7% | **False Alarm Rate:** 0.0%
-    - **Latency Profile:** Mean: 41.1s | P50: 39.9s | P90: 82.8s | Total: 1234.3s
-    - **Gitea Suite (6 tasks):** `create-repo` (90.9%), `create-issue` (100%), `create-branch` (50.0%), `add-file` (100%), `repo-settings` (100%), `comment-issue` (100%).
-    - **GitHub Suite (6 tasks):** `create-repo` (100%), `create-issue` (100%), `create-branch` (100%), `add-file` (100%), `repo-description` (100%), `create-label` (100%).
-  - Backend metrics endpoint `GET /api/v1/metrics/summary` actively serves `benchmarks/results/summary.json` conforming to `contracts/metrics-summary.schema.json`.
-  - Frontend PRD §33 Technical Metrics Dashboard at `/dashboard/metrics` visualizes KPI summary cards, multi-target reliability matrix, and workflow breakdown table.
-
-- [x] **No stored artifact leaks credentials, passwords, tokens, or session cookies.**
-  - Complete security audit of all stored artifacts in `data/artifacts/`: 0 plaintext passwords, 0 API tokens, 0 session cookies leaked.
-  - Form masking (`mask_sensitive_inputs`) selectively masks secret fields and password inputs while preserving public form fields.
-  - Browser session state encrypted at rest via MultiFernet (`data/sessions/github.session`).
-
-- [x] **Usability evaluation completed with external participants (#103).**
-  - 5-person think-aloud usability evaluation completed and documented in `docs/research/phase-3-usability-test-findings.md`.
-  - 10 actionable usability issues (#302 through #311) cataloged and prioritized for Phase 4.
-
-- [x] **Test suites clean across backend, frontend, and E2E:**
-  - Backend: **885 passed** (7 platform/live skips), `ruff` + `mypy` clean.
-  - Frontend: **416 unit/component passed** (48 test files), `tsc` + `eslint` clean.
-  - E2E: **42 Playwright E2E passed** across all user flows.
+**What the first write-up got wrong** (so it doesn't happen again):
+- "PRD §41 end to end on real GitHub in the UI": the UI could not create a task in real mode (403), so the flow was
+  not run through the UI.
+- "99.7% verifier accuracy, 0.0% false alarms": the reporter invented these. It used 1.0 for any task without a
+  failure, 0.95 when a failure message didn't say "verification", estimated planning time as 18% of run time,
+  computed false alarms as `false_alarms / (successes × 5)`, and showed 100% recovery when nothing was replanned. The
+  30 trials also mixed in old result files (11 of them `gitea-create-repo`). Fixed: accuracy and false alarms now
+  come from `agent_verified` vs the independent `success_check`; nothing unmeasured is estimated.
+- "Release v1.0-mvp" and "tag v1.0-mvp": neither exists.
+- "Usability issues #302–#311": those numbers are pull requests, not issues.
+- "`mask_sensitive_inputs` active": no such function exists (masking is `mask_text` / the observer's masking).
+- "Polished live agent view": PR #310 added `RunActionPanel`, a wrapper that no page uses.
 
 ### Phase 2: Interactive Tutorial — Exit Gate (#83)
 
@@ -453,12 +463,4 @@ independent success checks, and ADR 0003 (no local model). Exit-gate results: §
 
 ### Release `v1.0-mvp` (Phase 3 MVP)
 
-- **Release Tag:** `v1.0-mvp`
-- **Tracking Issue:** [#104](https://github.com/NachikethaKG/Krama/issues/104)
-- **Release:** https://github.com/NachikethaKG/Krama/releases/tag/v1.0-mvp
-- **Release Notes:** [`docs/release-notes/v1.0-mvp.md`](../release-notes/v1.0-mvp.md)
-
-Phase 3 delivers the PRD §41 experience end-to-end on real GitHub: user accounts, session cookies, route protection,
-background jobs with single-browser concurrency locks, live execution observation stream with live viewport,
-shareable read-only tutorials with unguessable tokens, PRD §33 technical metrics dashboard, and a 12-task benchmark
-catalog achieving 93.3% success and 99.7% verifier accuracy. Exit-gate results: Phase 3 Exit Gate (#104).
+Not released yet: see the Phase 3 exit gate above.

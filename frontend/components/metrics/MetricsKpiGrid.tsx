@@ -20,7 +20,8 @@ export function MetricsKpiGrid({ summary }: MetricsKpiGridProps) {
   const isAccuracyPassed = verifierAccuracy >= 0.9;
 
   // 3. Recovery Rate >= 50%
-  // Derived from benchmark replan attempts & successes if present, or 100% when no replans failed
+  // Only shown when the benchmark measured replans: the contract summary has no recovery or planning fields,
+  // so a missing value is "not measured", never a made-up 100% (#104).
   const extendedSummary = summary as unknown as {
     overall_recovery_rate?: number;
     overall_replan_attempts?: number;
@@ -28,20 +29,21 @@ export function MetricsKpiGrid({ summary }: MetricsKpiGridProps) {
     overall_avg_planning_latency_ms?: number;
   };
 
-  const recoveryRate =
-    extendedSummary.overall_recovery_rate != null
-      ? extendedSummary.overall_recovery_rate
-      : 1.0;
-  const recoveryRatePct = (recoveryRate * 100).toFixed(1);
-  const isRecoveryPassed = recoveryRate >= 0.5;
+  const rawRecovery = extendedSummary.overall_replan_attempts
+    ? extendedSummary.overall_recovery_rate
+    : undefined;
+  // The reporter writes a percentage (0-100).
+  const recoveryRate = rawRecovery == null ? null : rawRecovery > 1 ? rawRecovery / 100 : rawRecovery;
+  const recoveryRatePct = recoveryRate == null ? "Not measured" : `${(recoveryRate * 100).toFixed(1)}%`;
+  const isRecoveryPassed = recoveryRate != null && recoveryRate >= 0.5;
 
   // 4. Latency Profile: < 15s planning, < 60s total
   const avgLatencyMs = summary.overall_avg_latency_ms ?? 0;
   const p90LatencyMs = summary.overall_p90_latency_ms ?? avgLatencyMs;
-  const planningLatencyMs = extendedSummary.overall_avg_planning_latency_ms ?? 3250;
+  const planningLatencyMs = extendedSummary.overall_avg_planning_latency_ms || null;
 
   const isTotalLatencyPassed = avgLatencyMs <= 60000;
-  const isPlanningLatencyPassed = planningLatencyMs <= 15000;
+  const isPlanningLatencyPassed = planningLatencyMs == null || planningLatencyMs <= 15000;
   const isLatencyPassed = isTotalLatencyPassed && isPlanningLatencyPassed;
 
   return (
@@ -164,7 +166,7 @@ export function MetricsKpiGrid({ summary }: MetricsKpiGridProps) {
             data-testid="value-recovery-rate"
             className="text-3xl font-extrabold tracking-tight text-zinc-900 dark:text-zinc-50 font-mono"
           >
-            {recoveryRatePct}%
+            {recoveryRatePct}
           </span>
           <span className="text-xs text-zinc-500 dark:text-zinc-400">replan success</span>
         </div>
@@ -211,7 +213,7 @@ export function MetricsKpiGrid({ summary }: MetricsKpiGridProps) {
         </div>
 
         <div className="mt-2 flex items-center justify-between text-xs text-zinc-600 dark:text-zinc-400 font-mono">
-          <span>Plan: {formatMs(planningLatencyMs)} (&lt; 15s)</span>
+          <span>Plan: {planningLatencyMs == null ? "not measured" : formatMs(planningLatencyMs)} (&lt; 15s)</span>
           <span>P90: {formatMs(p90LatencyMs)}</span>
         </div>
       </div>
