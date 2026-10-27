@@ -97,8 +97,6 @@ class TaskMetrics(BaseModel):
             self.recovery_rate = round(
                 (self.replan_successes / self.replan_attempts) * 100.0, 2
             )
-        elif self.recovery_rate == 0.0 and self.replan_attempts == 0:
-            self.recovery_rate = 100.0
         return self
 
     @property
@@ -207,17 +205,11 @@ class BenchmarkReportData(BaseModel):
             if self.overall_replan_attempts == 0:
                 self.overall_replan_attempts = sum(t.replan_attempts for t in self.tasks)
                 self.overall_replan_successes = sum(t.replan_successes for t in self.tasks)
-            if self.overall_recovery_rate == 0.0:
-                if self.overall_replan_attempts > 0:
-                    self.overall_recovery_rate = round(
-                        (self.overall_replan_successes / self.overall_replan_attempts)
-                        * 100.0,
-                        2,
-                    )
-                else:
-                    self.overall_recovery_rate = round(
-                        sum(t.recovery_rate for t in self.tasks) / len(self.tasks), 2
-                    )
+            if self.overall_recovery_rate == 0.0 and self.overall_replan_attempts > 0:
+                self.overall_recovery_rate = round(
+                    (self.overall_replan_successes / self.overall_replan_attempts) * 100.0,
+                    2,
+                )
             if self.overall_p50_latency_ms == 0.0:
                 self.overall_p50_latency_ms = self.overall_median_latency_ms
             elif self.overall_median_latency_ms == 0.0:
