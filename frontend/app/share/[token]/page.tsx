@@ -26,6 +26,10 @@ async function loadSharedTutorial(token: string): Promise<{ spec: TutorialSpec |
   if (token === "revoked-token" || token === "invalid-token" || token === "404") {
     return { spec: null, status: 404 };
   }
+  // Mock mode never calls a backend: one running on :8000 answered 404 for the fixture tokens (#104).
+  if (process.env.NEXT_PUBLIC_API_MODE !== "http") {
+    return { spec: tutorialSpecFixtures[token] || giteaTutorialSpecFixture, status: 200 };
+  }
 
   // Server side: the public read-only endpoint (docs/api-contract.md), no session needed.
   const base = (process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000/api/v1").replace(/\/+$/, "");
@@ -51,13 +55,9 @@ async function loadSharedTutorial(token: string): Promise<{ spec: TutorialSpec |
       const compiled = compileWorkflow(data as Workflow);
       return { spec: compiled, status: 200 };
     }
-    return { spec: giteaTutorialSpecFixture, status: 200 };
+    // Never show a sample tutorial in place of the shared one (#104).
+    return { spec: null, status: 502 };
   } catch {
-    // If backend is not available (mock mode / headless tests), serve contract fixture
-    if (process.env.NEXT_PUBLIC_API_MODE !== "http") {
-      const spec = tutorialSpecFixtures[token] || giteaTutorialSpecFixture;
-      return { spec, status: 200 };
-    }
     return { spec: null, status: 503 };
   }
 }

@@ -60,7 +60,7 @@ test.describe("PRD §33 Technical Metrics Dashboard & Multi-Target Benchmark", (
     // (c) Recovery Rate (Target >= 50%)
     const recoveryCard = page.getByTestId("kpi-recovery-rate");
     await expect(recoveryCard).toBeVisible();
-    await expect(page.getByTestId("value-recovery-rate")).toHaveText("100.0%");
+    await expect(page.getByTestId("value-recovery-rate")).toHaveText("Not measured");
     await expect(page.getByTestId("badge-recovery-rate")).toHaveText("Target ≥ 50%");
 
     // (d) Latency Profile (< 15s plan, < 60s total)

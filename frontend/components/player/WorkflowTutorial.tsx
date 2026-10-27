@@ -22,7 +22,8 @@ async function loadRecording(workflow: Workflow): Promise<eventWithTime[] | null
   const url = artifactUrl(workflow.recording_path);
   if (!url || !hasStepTiming(workflow)) return null;
   try {
-    const response = await fetch(url);
+    // The artifact store needs the session cookie (#94); without it every tutorial fell back to the wireframe (#104).
+    const response = await fetch(url, { credentials: "include" });
     if (!response.ok) return null;
     const body: unknown = await response.json();
     const events = Array.isArray(body) ? body : (body as { events?: unknown }).events;

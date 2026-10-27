@@ -91,6 +91,10 @@ describe("HttpApiClient", () => {
           body: JSON.stringify({ prompt: "Create repo", target_url: "http://localhost:3001" }),
         }),
       );
+      // #104: the API's CSRF check refuses a POST without X-Krama (403), so every call sends it.
+      const headers = new Headers(vi.mocked(fetch).mock.calls[0][1]?.headers);
+      expect(headers.get("X-Krama")).toBe("1");
+      expect(headers.get("Content-Type")).toBe("application/json");
     });
 
     it("fetches task via GET /tasks/:id", async () => {
