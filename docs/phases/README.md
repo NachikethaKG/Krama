@@ -149,24 +149,30 @@ Each sprint ends with an integration PR merged to `main` and a demo **run on Nac
 | [0: Technical spike](phase-0-spike.md) | Can an agent reliably do one task on one site? | ✅ completed (tag: `v0.0-spike`) |
 | [1: Verified workflow](phase-1-verified-workflow.md) | Plan → approve → execute → verify → store, safely | ✅ completed (tag: `v0.1`) |
 | [2: Interactive tutorial](phase-2-interactive-tutorial.md) | Workflow → interactive tutorial player | ✅ completed (tag: `v0.2`) |
-| [3: MVP](phase-3-mvp.md) | Real GitHub, accounts, sharing, polish | exit gate re-run in progress (#104) |
+| [3: MVP](phase-3-mvp.md) | Real GitHub, accounts, sharing, polish | ✅ completed (tag: `v1.0-mvp`) |
 | [4: Reliability](phase-4-reliability.md) | UI drift detection, self-healing, versioning | — |
 | [5: Video export](phase-5-video-export.md) | MP4 export with narration | — |
 | [6: Later](phase-6-later.md) | Backlog | — |
 
 ### Phase 3: MVP — Exit Gate (#104)
 
-**Status: not passed yet.** The first write-up (PR #313, 2026-10-26) reported results that the code and data don't
-support (see "What the first write-up got wrong" below). The gate was re-run on 2026-10-27 on Vishwas's laptop
+**Status: passed on 2026-10-28; tag `v1.0-mvp` on `d309a2e`, release
+https://github.com/NachikethaKG/Krama/releases/tag/v1.0-mvp (demo GIF, benchmark summary).** The first write-up
+(PR #313, 2026-10-26) reported results that the code and data don't support (see "What the first write-up got
+wrong" below). The gate was re-run on 2026-10-27/28 on Vishwas's laptop
 (Windows 11, 16 GB RAM, CPU-only; Docker Postgres/Redis/Gitea, API on :8000, `next dev` in http mode, real
 github.com through the stored session, Gemini free tier). Evidence: `data/gate-v1.0/` on that laptop (bench JSONs,
 `summary.json`, UI screenshots, `secrets_audit.py`, `ui_gate.py`).
 
-- [ ] **PRD §41 experience end to end on real GitHub, in the UI.** Re-run found the real-mode UI could not create a
-  task at all (403, missing `X-Krama` header) and every tutorial played a wireframe instead of the recording (401 on
-  the recording). Both fixed in the gate-audit PR. After the fixes: sign in → task on GitHub → plan → approve → live
-  view with verified steps works; the run paused once for replan review (GitHub ignored the first "Create
-  repository" click). Still to do: one clean UI run after the Gemini daily quota resets.
+- [x] **PRD §41 experience end to end on real GitHub, in the UI.** The re-run first found the real-mode UI could
+  not create a task at all (403, missing `X-Krama` header) and every tutorial played a wireframe (401 on the
+  recording); fixed in #315. On 2026-10-28, after the product UI (#323, #324) and example values (#326, #327):
+  sign in → "Create a private repository named bench-new in the krama-bench organization." → the site question
+  (GitHub) → plan → approve → live run **verified 3/3 steps, no pauses** → "Tutorial ready" → tutorial replays the
+  recording → share link opened signed out, then revoked. The new repository was on github.com (step-3 screenshot
+  of `krama-bench/bench-new`; GitHub answered the create). The gate script deleted it before its own API check
+  ran, and the Gemini quota was spent, so that one run has no API-graded check; `github-create-repo` was
+  API-graded in the benchmark below.
 - [x] **Tutorial and sharing (UI + API):** the tutorial of a verified GitHub workflow replays the real recording,
   ArrowRight moves to the next step; a share link opened signed out shows the player with no edit controls; after
   revoking, the same link shows the revoked notice. Gap: the UI has no button to create or revoke a share (done
@@ -186,7 +192,8 @@ github.com through the stored session, Gemini free tier). Evidence: `data/gate-v
   clean; benchmarks 118 passed; mock e2e: 39 of 42 passed on the first run, 2 more on a re-run (cold `next dev`
   timeouts), and the share-link spec failed for a real bug (the share page called the backend in mock mode and,
   in http mode, could show a sample tutorial), fixed in the gate-audit PR.
-- [ ] Tag `v1.0-mvp` and release: not created (the first write-up linked a release that doesn't exist).
+- [x] Tag `v1.0-mvp` and release with the demo GIF (2026-10-28). The demo ran on Vishwas's laptop, where the
+  GitHub session lives (decision by Vishwas), not on Nachiketha's as #104 first said.
 
 **What the first write-up got wrong** (so it doesn't happen again):
 - "PRD §41 end to end on real GitHub in the UI": the UI could not create a task in real mode (403), so the flow was
@@ -463,4 +470,4 @@ independent success checks, and ADR 0003 (no local model). Exit-gate results: §
 
 ### Release `v1.0-mvp` (Phase 3 MVP)
 
-Not released yet: see the Phase 3 exit gate above.
+https://github.com/NachikethaKG/Krama/releases/tag/v1.0-mvp · notes: [`docs/release-notes/v1.0-mvp.md`](../release-notes/v1.0-mvp.md).

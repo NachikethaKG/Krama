@@ -86,10 +86,10 @@ All tasks reset initial state via REST API, execute through the product API (`--
 ---
 
 ## Exit criteria
-- [ ] The PRD §41 experience works end to end on real GitHub (re-run 2026-10-27: works after the gate-audit fixes;
-  one clean UI run still to do).
+- [x] The PRD §41 experience works end to end on real GitHub (2026-10-28: 3/3 steps verified, tutorial, share and
+  revoke).
 - [x] 12 benchmark workflows (6 Gitea + 6 GitHub), with success rate and verifier accuracy reported (10/12, verifier
   12/12).
-- [x] No stored artifact contains a password, token or session cookie (0 hits in 937 files and 3,584 rows).
+- [x] No stored artifact contains a password, token or session cookie (0 hits in 971 files and every DB row).
 
 Results and what the first write-up got wrong: [`README.md`](README.md), "Phase 3: MVP — Exit Gate (#104)".
