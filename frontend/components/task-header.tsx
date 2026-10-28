@@ -41,7 +41,7 @@ export function TaskHeader({
             )}
           </div>
           <h1 className="text-xl font-semibold tracking-tight text-zinc-900 sm:text-2xl dark:text-zinc-100">
-            {title || "Workflow Approval"}
+            {title || "Here's the plan"}
           </h1>
         </div>
       </div>
