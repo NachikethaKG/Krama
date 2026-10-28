@@ -637,6 +637,7 @@ class InProcessExecutor:
             out.result.context,
             page_title=out.before.title if out.before else None,
             sensitive=sensitive,
+            task=job.prompt,
         )
         return rewritten or step.instruction_text
 
