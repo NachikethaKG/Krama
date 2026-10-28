@@ -72,7 +72,7 @@ test.describe("Authentication, Route Protection, and User Dashboard", () => {
     await expect(heading).toBeVisible();
 
     await expect(page.getByText(/demo@krama.dev/)).toBeVisible();
-    await expect(page.getByText(/krama-demo-pass/)).toBeVisible();
+    await expect(page.getByText(/KRAMA_DEMO_PASSWORD in .env/)).toBeVisible(); // never a real password (#104)
 
     const signInLink = page.getByTestId("signup-login-link");
     await expect(signInLink).toBeVisible();
