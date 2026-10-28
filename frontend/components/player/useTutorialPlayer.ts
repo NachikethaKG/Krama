@@ -67,7 +67,14 @@ export function useTutorialPlayer({
   });
 
   const [isPlaying, setIsPlaying] = useState(autoPlay);
-  const [currentTimeMs, setCurrentTimeMs] = useState(0);
+  const [currentTimeMs, setCurrentTimeMsState] = useState(0);
+  // The frame loop reads time from a ref and changes scenes outside any state updater: React may run an updater
+  // twice (always in dev StrictMode), and advancing inside one skipped steps (#319).
+  const currentTimeRef = useRef(0);
+  const setCurrentTimeMs = useCallback((ms: number) => {
+    currentTimeRef.current = ms;
+    setCurrentTimeMsState(ms);
+  }, []);
   const [isZoomEnabled, setIsZoomEnabled] = useState(initialZoom);
   const [isCaptionsEnabled, setIsCaptionsEnabled] = useState(initialCaptions);
 
@@ -93,36 +100,23 @@ export function useTutorialPlayer({
     const curScene = scenes[curIdx];
 
     // If at the end of the last step, wrap back to the beginning
-    if (curIdx === scenes.length - 1 && curScene && currentTimeMs >= curScene.duration_ms) {
+    if (curIdx === scenes.length - 1 && curScene && currentTimeRef.current >= curScene.duration_ms) {
       setCurrentSceneIndex(0);
       currentSceneIndexRef.current = 0;
       setCurrentTimeMs(0);
       onSceneChange?.(0);
     }
     setIsPlaying(true);
-  }, [currentTimeMs, onSceneChange]);
+  }, [onSceneChange, setCurrentTimeMs]);
 
   const pause = useCallback(() => {
     setIsPlaying(false);
   }, []);
 
   const togglePlay = useCallback(() => {
-    setIsPlaying((prev) => {
-      if (prev) return false;
-
-      // When starting to play, check if we need to reset from the end
-      const scenes = scenesRef.current;
-      const curIdx = currentSceneIndexRef.current;
-      const curScene = scenes[curIdx];
-      if (curIdx === scenes.length - 1 && curScene && currentTimeMs >= curScene.duration_ms) {
-        setCurrentSceneIndex(0);
-        currentSceneIndexRef.current = 0;
-        setCurrentTimeMs(0);
-        onSceneChange?.(0);
-      }
-      return true;
-    });
-  }, [currentTimeMs, onSceneChange]);
+    if (isPlaying) pause();
+    else play();
+  }, [isPlaying, pause, play]);
 
   const goToStep = useCallback(
     (index: number) => {
@@ -134,7 +128,7 @@ export function useTutorialPlayer({
       setCurrentTimeMs(0);
       onSceneChange?.(clamped);
     },
-    [onSceneChange],
+    [onSceneChange, setCurrentTimeMs],
   );
 
   const nextStep = useCallback(() => {
@@ -147,7 +141,7 @@ export function useTutorialPlayer({
       setCurrentTimeMs(0);
       onSceneChange?.(nextIdx);
     }
-  }, [onSceneChange]);
+  }, [onSceneChange, setCurrentTimeMs]);
 
   const prevStep = useCallback(() => {
     // If we've played more than 500ms into the step, reset to start of this step
@@ -166,11 +160,11 @@ export function useTutorialPlayer({
     } else {
       setCurrentTimeMs(0);
     }
-  }, [currentTimeMs, onSceneChange]);
+  }, [currentTimeMs, onSceneChange, setCurrentTimeMs]);
 
   const replayCurrentStep = useCallback(() => {
     setCurrentTimeMs(0);
-  }, []);
+  }, [setCurrentTimeMs]);
 
   const toggleZoom = useCallback(() => {
     setIsZoomEnabled((prev) => !prev);
@@ -186,7 +180,7 @@ export function useTutorialPlayer({
     if (!curScene) return;
     const clamped = Math.max(0, Math.min(curScene.duration_ms, timeMs));
     setCurrentTimeMs(clamped);
-  }, []);
+  }, [setCurrentTimeMs]);
 
   // Animation frame loop for playback progression
   useEffect(() => {
@@ -201,38 +195,33 @@ export function useTutorialPlayer({
       const delta = (now - lastTime) * playbackSpeed;
       lastTime = now;
 
-      setCurrentTimeMs((prevTime) => {
-        const scenes = scenesRef.current;
-        const curIdx = currentSceneIndexRef.current;
-        const curScene = scenes[curIdx];
-
-        if (!curScene) return prevTime;
-
-        const nextTime = prevTime + delta;
+      const scenes = scenesRef.current;
+      const curIdx = currentSceneIndexRef.current;
+      const curScene = scenes[curIdx];
+      if (curScene) {
+        const nextTime = currentTimeRef.current + delta;
         if (nextTime < curScene.duration_ms) {
           heldMsRef.current = 0;
+          setCurrentTimeMs(nextTime);
         } else if (holdSceneEndRef?.current && heldMsRef.current < MAX_SCENE_HOLD_MS) {
           heldMsRef.current += delta;
-          return curScene.duration_ms;
-        }
-        if (nextTime >= curScene.duration_ms) {
+          setCurrentTimeMs(curScene.duration_ms);
+        } else if (curIdx < scenes.length - 1) {
           heldMsRef.current = 0;
-          // Check if there is a subsequent scene
-          if (curIdx < scenes.length - 1) {
-            const nextIdx = curIdx + 1;
-            setCurrentSceneIndex(nextIdx);
-            currentSceneIndexRef.current = nextIdx;
-            onSceneChange?.(nextIdx);
-            return 0;
-          } else {
-            // End of tutorial reached
-            setIsPlaying(false);
-            onComplete?.();
-            return curScene.duration_ms;
-          }
+          const nextIdx = curIdx + 1;
+          currentSceneIndexRef.current = nextIdx;
+          setCurrentSceneIndex(nextIdx);
+          setCurrentTimeMs(0);
+          onSceneChange?.(nextIdx);
+        } else {
+          // End of tutorial reached: stop the loop here, so onComplete runs once
+          heldMsRef.current = 0;
+          setCurrentTimeMs(curScene.duration_ms);
+          setIsPlaying(false);
+          onComplete?.();
+          return;
         }
-        return nextTime;
-      });
+      }
 
       animId = requestAnimationFrame(tick);
     };
@@ -242,7 +231,7 @@ export function useTutorialPlayer({
     return () => {
       cancelAnimationFrame(animId);
     };
-  }, [isPlaying, spec, playbackSpeed, onSceneChange, onComplete, holdSceneEndRef]);
+  }, [isPlaying, spec, playbackSpeed, onSceneChange, onComplete, holdSceneEndRef, setCurrentTimeMs]);
 
   // Derived progress values
   const sceneDuration = currentScene?.duration_ms ?? 1;
