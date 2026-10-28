@@ -116,4 +116,17 @@ describe("Route Protection Middleware (middleware.ts)", () => {
     expect(signupRes.status).toBe(307);
     expect(signupRes.headers.get("location")).toBe("http://localhost:3000/");
   });
+
+  it("shows signed-out visitors the landing page at / and signed-in users the app", () => {
+    const signedOut = middleware(createMockRequest("http://localhost:3000/"));
+    expect(signedOut.headers.get("x-middleware-rewrite")).toBe("http://localhost:3000/welcome");
+
+    const signedIn = middleware(createMockRequest("http://localhost:3000/", { krama_session: "token" }));
+    expect(signedIn.headers.get("x-middleware-rewrite")).toBeNull();
+    expect(signedIn.status).toBe(200);
+
+    const tutorials = middleware(createMockRequest("http://localhost:3000/tutorials"));
+    expect(tutorials.status).toBe(307);
+    expect(tutorials.headers.get("location")).toBe("http://localhost:3000/login?from=%2Ftutorials");
+  });
 });

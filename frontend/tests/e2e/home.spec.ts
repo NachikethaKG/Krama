@@ -26,3 +26,13 @@ test("the website comes from the prompt, or from one question", async ({ page })
   await prompt.fill("Create a repository named demo");
   await expect(page.getByTestId("site-question")).toBeVisible();
 });
+
+test("signed-out visitors get the landing page at /, with the address kept", async ({ page, context }) => {
+  await context.clearCookies();
+  await page.goto("/");
+
+  await expect(page).toHaveURL(/localhost:3000\/$/);
+  await expect(page.getByRole("heading", { level: 1, name: /Interactive Tutorials Recorded From Real UI Actions/i })).toBeVisible();
+  await page.getByTestId("landing-primary-cta").click();
+  await expect(page).toHaveURL(/\/login/);
+});
