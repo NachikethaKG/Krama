@@ -6,6 +6,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { type ApiClient, errorMessage, getApiClient, isApiError } from "@/lib/api";
 import type { User } from "@krama/contracts-ts";
 
+
+const IS_MOCK = process.env.NEXT_PUBLIC_API_MODE !== "http";
+
 export interface LoginFormProps {
   client?: ApiClient;
   from?: string;
@@ -168,7 +171,9 @@ export function LoginForm({ client, from: propFrom, onSuccess }: LoginFormProps)
         </button>
       </form>
 
-      {/* Seeded credentials helper */}
+      {/* Seeded credentials helper: mock mode only. The real password is KRAMA_DEMO_PASSWORD in .env and is never
+          shown; krama-demo-pass only works with the mock client (#104). */}
+      {IS_MOCK && (
       <div className="mt-6 rounded-lg border border-indigo-100 bg-indigo-50/70 p-3.5 dark:border-indigo-900/40 dark:bg-indigo-950/20">
         <div className="flex items-center justify-between mb-1.5">
           <span className="text-[11px] font-semibold text-indigo-900 dark:text-indigo-300 flex items-center gap-1.5">
@@ -188,6 +193,7 @@ export function LoginForm({ client, from: propFrom, onSuccess }: LoginFormProps)
           Email: <code className="font-mono text-zinc-800 dark:text-zinc-200">demo@krama.dev</code> · Password: <code className="font-mono text-zinc-800 dark:text-zinc-200">krama-demo-pass</code>
         </p>
       </div>
+      )}
 
       <div className="mt-6 border-t border-zinc-100 pt-4 text-center dark:border-zinc-800">
         <p className="text-xs text-zinc-500 dark:text-zinc-400">
