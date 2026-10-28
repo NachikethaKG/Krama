@@ -186,6 +186,35 @@ async def test_rrweb_recording_against_live_gitea(gitea_live_url: str, tmp_path:
         await browser.close()
 
 
+async def test_linked_stylesheets_stay_links_so_the_replay_loads_the_real_css(
+    browser_context: BrowserContext,
+) -> None:
+    # #320: Chrome serializes `font: var(--f); font-weight: 400` as empty longhands (`font-size: ;`).
+    # Inlining GitHub's stylesheets that way lost font sizes, the replay's layout shifted and highlights
+    # missed their elements.
+    origin = "http://styled.local"
+    css = ":root { --f: 600 14px/1.5 sans-serif; } .h { font: var(--f); font-weight: 400; }"
+    html = f'<link rel="stylesheet" href="{origin}/app.css"><h3 class="h">Choose visibility</h3>'
+
+    async def route(r: Any) -> None:
+        css_file = r.request.url.endswith(".css")
+        kind, body = ("text/css", css) if css_file else ("text/html", html)
+        await r.fulfill(status=200, content_type=kind, body=body)
+
+    await browser_context.route(f"{origin}/**", route)
+    page = await browser_context.new_page()
+    recorder = RRWebRecorder()
+    await recorder.start(page)
+    await page.goto(f"{origin}/")
+    await page.wait_for_timeout(300)
+    events = await recorder.stop()
+
+    recorded = json.dumps(events)
+    assert f"{origin}/app.css" in recorded  # kept as a link the replay loads
+    assert ": ;" not in recorded  # no emptied declarations anywhere
+    await page.close()
+
+
 async def test_rrweb_recording_on_empty_page(mock_gitea_page: Page) -> None:
     """Verify recorder handles blank and minimal empty pages gracefully without crashing."""
     recorder = RRWebRecorder()

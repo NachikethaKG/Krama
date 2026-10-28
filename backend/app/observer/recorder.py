@@ -157,7 +157,11 @@ DEFAULT_BOOTSTRAP_TEMPLATE = r"""
         maskTextClass: "krama-mask-text",
         blockClass: "krama-block",
         recordCanvas: false,
-        inlineStylesheet: true,
+        // Linked stylesheets stay links and the replay loads the real files: inlining serializes rules like
+        // `font: var(--x); font-weight: 600` as empty longhands (a Chrome quirk), so GitHub replays lost
+        // font sizes, the layout shifted and highlights missed their elements (#320). <style> tags are
+        // still captured.
+        inlineStylesheet: false,
         sampling: {
           mousemove: 50,
           scroll: 150,
