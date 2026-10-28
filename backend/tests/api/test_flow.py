@@ -32,7 +32,7 @@ from app.planner.service import PlanningService
 from app.runs import InProcessExecutor, RunEnvironment, RunStore
 from app.runs.events import EventHub
 from app.storage import LocalFsStore, get_artifact_store
-from app.targets import TargetSetup
+from app.targets import PrepareError, TargetSetup
 from app.verifier import LayeredVerifier
 from tests.runs.test_runner import GOOD_PLAN, step
 
@@ -44,7 +44,9 @@ CLARIFY = {"expected_result": "", "steps": [], "clarification_question": "Which 
 NEVER = step(2, {"type": "wait"}, {"role": "button", "name": "Never appears"}, "Wait.", {"url_matches": "/"})
 
 
-def services(sessions: Sessions, tmp_path: Path, *replies: FakeResponse) -> Services:
+def services(
+    sessions: Sessions, tmp_path: Path, *replies: FakeResponse, target: TargetSetup | None = None
+) -> Services:
     hub = EventHub()
     store = RunStore(sessions, on_event=hub.notify)
     env = RunEnvironment(
@@ -58,7 +60,7 @@ def services(sessions: Sessions, tmp_path: Path, *replies: FakeResponse) -> Serv
         hub=hub,
         store=store,
         executor=InProcessExecutor(store, env),
-        planning=PlanningService(sessions, planner, lambda _url: TargetSetup()),
+        planning=PlanningService(sessions, planner, lambda _url: target or TargetSetup()),
     )
 
 
@@ -221,6 +223,38 @@ async def test_planning_without_an_llm_answer_fails_the_task(
 
     assert task.status == "failed" and task.error is not None
     assert task.error.code == "llm_unavailable"
+
+
+async def test_a_target_that_cannot_be_prepared_fails_the_task(
+    sessions: Sessions, tmp_path: Path, site: str
+) -> None:
+    # #325: the practice repository couldn't be created; planning must not start on a missing repository.
+    async def broken() -> None:
+        raise PrepareError("POST /orgs/krama-bench/repos returned 403")
+
+    target = TargetSetup(practice_repo="krama-bench/bench-practice", prepare=broken)
+    async with Api(services(sessions, tmp_path, reply(GOOD_PLAN), target=target)) as api:
+        task = await api.planned_task(site)
+
+    assert task.status == "failed" and task.error is not None
+    assert task.error.details == {"reason": "target_unavailable"}
+
+
+async def test_the_planner_gets_the_practice_repository_and_an_example_suffix(
+    sessions: Sessions, tmp_path: Path, site: str
+) -> None:
+    prepared: list[bool] = []
+
+    async def prepare() -> None:
+        prepared.append(True)
+
+    target = TargetSetup(practice_repo="krama-bench/bench-practice", prepare=prepare)
+    plan = reply(GOOD_PLAN, when=["Practice repository", "krama-bench/bench-practice", "Example suffix"])
+    async with Api(services(sessions, tmp_path, plan, target=target)) as api:
+        task = await api.planned_task(site)
+
+    assert prepared == [True]
+    assert task.status == "planned"  # the fake LLM only answers a prompt that carries both
 
 
 async def test_plan_edits_are_checked(sessions: Sessions, tmp_path: Path, site: str) -> None:

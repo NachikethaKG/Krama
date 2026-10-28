@@ -42,6 +42,13 @@ class Settings(BaseSettings):
     # stored, encrypted browser session (#87); Krama never has its password.
     github_url: str = "https://github.com"
     github_test_user: str = ""
+    github_test_org: str = ""
+    # The test org's fine-grained token (resource owner = the org). Used only to keep the practice repository
+    # (#325) in place: tasks that need an existing repository and name none run there. A secret: never logged.
+    github_bench_token: SecretStr = SecretStr("")
+    github_api_url: str = "https://api.github.com"
+    # bench-* so the account rules allow it and scripts/github_cleanup.py clears it (recreated on demand).
+    github_practice_repo: str = "bench-practice"
     # Fernet key(s) for stored browser sessions, newest first, comma-separated (`krama session key`).
     krama_storage_key: SecretStr = SecretStr("")
     sessions_dir: Path = REPO_ROOT / "data" / "sessions"

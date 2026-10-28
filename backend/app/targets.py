@@ -38,6 +38,10 @@ class ResetError(RuntimeError):
     """The target couldn't be brought back to a workflow's starting state."""
 
 
+class PrepareError(RuntimeError):
+    """The target couldn't be made ready for planning (e.g. the practice repository is missing)."""
+
+
 @dataclass(frozen=True)
 class TargetSetup:
     site: str | None = None
@@ -56,6 +60,11 @@ class TargetSetup:
     """Why the target can't be used signed in (no session, expired, unreadable): stop before opening it."""
     action_timeout_ms: int | None = None
     navigation_timeout_ms: int | None = None
+    practice_repo: str | None = None
+    """owner/name of a repository on the test account for tasks that need an existing one and name none
+    (#325): learners see how it's done, not on their own data. None: the target has none."""
+    prepare: Callable[[], Awaitable[None]] | None = None
+    """Run before planning (e.g. create the practice repository if it's missing). Raises PrepareError."""
     settle_ms: int = 0
     """How long to let a page's scripts load after navigating, before acting on it."""
     """A slow real site needs more than local Gitea's defaults (GitHub's editor took 4+ s to load, #89)."""
@@ -96,12 +105,24 @@ def _github_setup(settings: Settings) -> TargetSetup:
     except SessionVaultError as e:
         return TargetSetup(site="github", sign_in_problem=f"{e}. Log in again.")
     problem = sign_in_problem(state, GITHUB)
+    practice = (
+        f"{settings.github_test_org}/{settings.github_practice_repo}"
+        if settings.github_test_org and settings.github_bench_token.get_secret_value()
+        else None
+    )
+
+    async def prepare() -> None:
+        assert practice is not None
+        await asyncio.to_thread(_ensure_github_repo, settings, practice)
+
     return TargetSetup(
         site="github",
         signed_in_as=settings.github_test_user or _cookie(state, "dotcom_user"),
         storage_state=None if problem else state,
         signed_in_check=GITHUB.signed_in_check,
         sign_in_problem=problem,
+        practice_repo=practice,
+        prepare=prepare if practice else None,
         action_timeout_ms=10_000,
         navigation_timeout_ms=30_000,
         settle_ms=2_500,
@@ -214,3 +235,41 @@ def _same_origin(a: str, b: str) -> bool:
         return url.rstrip("/").lower().replace("://127.0.0.1", "://localhost")
 
     return norm(a) == norm(b)
+
+
+def _ensure_github_repo(settings: Settings, full_name: str) -> None:
+    """Create the practice repository (private, with a README so it has a main branch) unless it exists."""
+    status, _ = _github_call(settings, "GET", f"/repos/{full_name}")
+    if status == 200:
+        return
+    if status != 404:
+        raise PrepareError(f"GET /repos/{full_name} returned {status}")
+    org, name = full_name.split("/", 1)
+    body = {
+        "name": name,
+        "private": True,
+        "auto_init": True,
+        "description": "Krama practice repository: tutorials run here. Safe to delete; it is recreated.",
+    }
+    status, _ = _github_call(settings, "POST", f"/orgs/{org}/repos", body)
+    if status not in (201, 422):  # 422: created meanwhile by another task
+        raise PrepareError(f"POST /orgs/{org}/repos returned {status}")
+
+
+def _github_call(
+    settings: Settings, method: str, path: str, body: dict[str, Any] | None = None
+) -> tuple[int, str]:
+    data = json.dumps(body).encode() if body is not None else None
+    request = urllib.request.Request(settings.github_api_url.rstrip("/") + path, data=data, method=method)
+    request.add_header("Authorization", f"Bearer {settings.github_bench_token.get_secret_value()}")
+    request.add_header("Accept", "application/vnd.github+json")
+    request.add_header("User-Agent", "krama")
+    if data is not None:
+        request.add_header("Content-Type", "application/json")
+    try:
+        with urllib.request.urlopen(request, timeout=20) as response:
+            return int(response.status), response.read().decode("utf-8", "replace")
+    except urllib.error.HTTPError as e:
+        return e.code, ""
+    except (urllib.error.URLError, TimeoutError) as e:
+        raise PrepareError(f"{method} {path} failed: {e}") from e

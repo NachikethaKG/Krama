@@ -427,6 +427,7 @@ class InProcessExecutor:
             page_snapshot=await self._masked_snapshot(page),
             site=setup.site,
             signed_in_as=setup.signed_in_as,
+            practice_repo=setup.practice_repo,
             done=[s.instruction_text for s in steps[:i]],
             failure=self._mask(_failure_text(failed, out)),
         )
