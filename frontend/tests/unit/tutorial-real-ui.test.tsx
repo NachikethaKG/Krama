@@ -25,13 +25,13 @@ function scene(overrides: Partial<Scene>): Scene {
   };
 }
 
-function stage(currentScene: Scene, recording: eventWithTime[] | null) {
+function stage(currentScene: Scene, recording: eventWithTime[] | null, currentTimeMs = 0) {
   const spec: TutorialSpec = { ...giteaTutorialSpecFixture, viewport: { width: 1280, height: 800 } };
   return render(
     <TutorialStage
       spec={spec}
       currentScene={currentScene}
-      currentTimeMs={0}
+      currentTimeMs={currentTimeMs}
       isZoomEnabled={false}
       isCaptionsEnabled
       recording={recording}
@@ -50,6 +50,25 @@ describe("tutorial on the real UI (#83)", () => {
     // Page y 1200 with the window scrolled to 900 is 300 px down the screen (minus the 8 px padding).
     expect(box.style.top).toBe("292px");
     expect(box.style.left).toBe("492px");
+  });
+
+  it("drops the highlight once a click's result is shown, where the clicked element may be gone", () => {
+    const click = scene({ action: { type: "click", value: null } });
+    const clickMs = click.cursor?.click_ms;
+    expect(clickMs).toEqual(expect.any(Number));
+
+    const before = stage(click, RECORDING, 0);
+    expect(screen.getByTestId("target-highlight")).toBeInTheDocument();
+    before.unmount();
+
+    stage(click, RECORDING, (clickMs as number) + 50);
+    expect(screen.queryByTestId("target-highlight")).not.toBeInTheDocument();
+  });
+
+  it("keeps the highlight on a field after typing into it", () => {
+    const fill = scene({ action: { type: "fill", value: "demo" } });
+    stage(fill, RECORDING, (fill.cursor?.click_ms ?? 0) + 50);
+    expect(screen.getByTestId("target-highlight")).toBeInTheDocument();
   });
 
   it("shows each frame settled, so elements that fade in (Gitea's dialogs) aren't frozen invisible", async () => {
