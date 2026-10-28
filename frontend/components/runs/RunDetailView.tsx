@@ -93,7 +93,7 @@ export function RunDetailView({
               data-testid="back-to-runs-button"
               className="px-4 py-2 text-xs font-semibold rounded-lg bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 hover:bg-zinc-800 transition-colors"
             >
-              Back to Run History
+              Back to runs
             </Link>
           </div>
         </div>
