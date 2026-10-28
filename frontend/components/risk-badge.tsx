@@ -17,25 +17,25 @@ const RISK_CONFIG: Record<
   }
 > = {
   low: {
-    label: "Low Risk",
+    label: "Safe",
     containerClass:
       "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800",
     dotClass: "bg-emerald-500",
   },
   medium: {
-    label: "Medium Risk",
+    label: "Creates something",
     containerClass:
       "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800",
     dotClass: "bg-amber-500",
   },
   high: {
-    label: "High Risk",
+    label: "Changes or deletes",
     containerClass:
       "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950/40 dark:text-orange-400 dark:border-orange-800",
     dotClass: "bg-orange-500",
   },
   critical: {
-    label: "Critical Risk",
+    label: "Dangerous",
     containerClass:
       "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-800",
     dotClass: "bg-rose-500",

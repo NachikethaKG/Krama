@@ -98,7 +98,7 @@ export function ExecutionHeader({
           </div>
 
           <h1 className="text-xl font-semibold tracking-tight text-zinc-900 sm:text-2xl dark:text-zinc-100">
-            {title || "Workflow Live Execution"}
+            {title || "Doing the task"}
           </h1>
           {prompt && (
             <p className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
@@ -152,7 +152,7 @@ export function ExecutionHeader({
 
         {targetUrl && (
           <div className="mt-1 flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400">
-            <span>Target:</span>
+            <span>Website:</span>
             <a
               href={targetUrl}
               target="_blank"

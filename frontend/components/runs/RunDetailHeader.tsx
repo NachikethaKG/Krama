@@ -23,10 +23,10 @@ export function RunDetailHeader({ runDetails, className = "" }: RunDetailHeaderP
           <svg className="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
-          Run History
+          Runs
         </Link>
-        <span>/</span>
-        <span data-testid="run-detail-id" className="font-mono text-zinc-700 dark:text-zinc-300">
+        {/* The id stays available to tests and screen readers, not as visible jargon (#318) */}
+        <span data-testid="run-detail-id" className="sr-only">
           {run.id}
         </span>
       </div>
@@ -46,9 +46,9 @@ export function RunDetailHeader({ runDetails, className = "" }: RunDetailHeaderP
           {targetUrl && (
             <p
               data-testid="stat-target-url"
-              className="text-xs text-zinc-500 dark:text-zinc-400 font-mono truncate"
+              className="text-xs text-zinc-500 dark:text-zinc-400 truncate"
             >
-              Target: <span className="text-zinc-700 dark:text-zinc-300">{targetUrl}</span>
+              Website: <span className="text-zinc-700 dark:text-zinc-300">{targetUrl.replace(/^https?:\/\//, "").replace(/\/$/, "")}</span>
             </p>
           )}
         </div>

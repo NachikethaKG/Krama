@@ -1,5 +1,4 @@
 import { Suspense, use } from "react";
-import Link from "next/link";
 import { compileWorkflow, type TutorialSpec } from "@krama/tutorial-compiler";
 import { TutorialPlayer, WorkflowTutorial } from "@/components/player";
 import {
@@ -41,40 +40,7 @@ function TutorialDetailInner({ params }: TutorialDetailPageProps) {
   const stored = isStoredWorkflow(id);
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900/50">
-      <nav className="border-b border-zinc-200 bg-white px-4 py-3 dark:border-zinc-800 dark:bg-zinc-950 overflow-x-hidden">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-2">
-          <div className="flex items-center gap-2 min-w-0">
-            <Link
-              href="/"
-              className="text-sm font-semibold tracking-tight text-zinc-900 dark:text-zinc-100 hover:text-indigo-600 dark:hover:text-indigo-400 shrink-0"
-            >
-              ← Krama Home
-            </Link>
-            <span className="text-zinc-300 dark:text-zinc-700 shrink-0">/</span>
-            <Link
-              href="/tutorials"
-              className="text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 shrink-0"
-            >
-              Tutorials
-            </Link>
-            <span className="text-zinc-300 dark:text-zinc-700 shrink-0 hidden sm:inline">/</span>
-            <span className="text-sm font-medium text-zinc-800 dark:text-zinc-200 truncate hidden sm:inline max-w-xs">
-              {stored ? "Tutorial" : spec.title}
-            </span>
-          </div>
-
-          <div className="flex items-center gap-2 shrink-0">
-            <Link
-              href="/runs"
-              className="rounded-md border border-zinc-200 px-2.5 py-1 text-xs font-medium text-zinc-700 hover:bg-zinc-100 dark:border-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-800"
-            >
-              Runs History
-            </Link>
-          </div>
-        </div>
-      </nav>
-
+    <div>
       <main className="py-6">
         {stored ? <WorkflowTutorial workflowId={id} /> : <TutorialPlayer spec={spec} />}
       </main>
@@ -90,7 +56,7 @@ export default function TutorialDetailPage({ params }: TutorialDetailPageProps) 
           <div className="flex flex-col items-center justify-center p-10 text-center">
             <div className="size-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mb-4" />
             <h2 className="text-base font-semibold text-zinc-800 dark:text-zinc-200">
-              Loading Tutorial…
+              Loading tutorial…
             </h2>
           </div>
         </main>

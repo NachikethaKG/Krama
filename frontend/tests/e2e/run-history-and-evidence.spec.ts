@@ -1,48 +1,19 @@
 import { expect, test } from "@playwright/test";
 
 test.describe("Run History & Step Verification Evidence View", () => {
-  test("navigates paginated run list with boundary controls", async ({ page }) => {
-    // 1. Navigate to Run History
+  test("lists runs 20 to a page with the task as the link", async ({ page }) => {
     await page.goto("/runs");
 
-    // 2. Validate header and table presence
-    await expect(page.getByRole("heading", { name: "Run History" })).toBeVisible();
-    const table = page.getByTestId("runs-list-table");
-    await expect(table).toBeVisible();
-
-    // 3. Inspect first page (items 1–5); GET /runs is cursor-paged and has no total
-    const paginationInfo = page.getByTestId("pagination-info");
-    await expect(paginationInfo).toContainText("Showing 1 to 5");
+    await expect(page.getByRole("heading", { name: "Runs", level: 1 })).toBeVisible();
+    await expect(page.getByTestId("runs-list-table")).toBeVisible();
+    // The 12 mock runs fit on one page, so both page buttons are disabled
+    await expect(page.getByTestId("pagination-info")).toContainText("Showing 1 to 12");
     await expect(page.getByTestId("run-row-run-1")).toBeVisible();
-    await expect(page.getByTestId("run-row-run-5")).toBeVisible();
-
-    // 4. Boundary check on Page 1: Previous is disabled, Next is enabled
-    const prevBtn = page.getByTestId("pagination-prev");
-    const nextBtn = page.getByTestId("pagination-next");
-    await expect(prevBtn).toBeDisabled();
-    await expect(nextBtn).toBeEnabled();
-
-    // 5. Navigate to Page 2
-    await nextBtn.click();
-    await expect(paginationInfo).toContainText("Showing 6 to 10");
-    await expect(page.getByTestId("run-row-run-6")).toBeVisible();
-    await expect(prevBtn).toBeEnabled();
-    await expect(nextBtn).toBeEnabled();
-
-    // 6. Navigate to Page 3 (last page)
-    await nextBtn.click();
-    await expect(paginationInfo).toContainText("Showing 11 to 12");
-    await expect(page.getByTestId("run-row-run-11")).toBeVisible();
     await expect(page.getByTestId("run-row-run-12")).toBeVisible();
-
-    // 7. Boundary check on Page 3: Next is disabled, Previous is enabled
-    await expect(nextBtn).toBeDisabled();
-    await expect(prevBtn).toBeEnabled();
-
-    // 8. Navigate back to Page 2
-    await prevBtn.click();
-    await expect(paginationInfo).toContainText("Showing 6 to 10");
-    await expect(page.getByTestId("run-row-run-6")).toBeVisible();
+    await expect(page.getByTestId("pagination-prev")).toBeDisabled();
+    await expect(page.getByTestId("pagination-next")).toBeDisabled();
+    // No raw run ids on screen: the task text is the link
+    await expect(page.getByTestId("run-row-run-1").getByTestId("run-link")).toHaveAttribute("href", "/runs/run-1");
   });
 
   test("drills down into step verification evidence with multi-layer badges and screenshots", async ({
@@ -71,7 +42,7 @@ test.describe("Run History & Step Verification Evidence View", () => {
     const step1Card = page.getByTestId("step-evidence-card-1");
     await expect(step1Card).toBeVisible();
     await expect(step1Card.getByTestId("verification-method-badge")).toHaveAttribute("data-method", "aria");
-    await expect(step1Card.getByTestId("verification-method-badge")).toContainText("ARIA Tree Layer");
+    await expect(step1Card.getByTestId("verification-method-badge")).toContainText("Page content");
     await expect(step1Card.getByTestId("confidence-score")).toContainText("100%");
     const step1Img = step1Card.getByTestId("step-screenshot");
     await expect(step1Img).toBeVisible();
@@ -81,21 +52,21 @@ test.describe("Run History & Step Verification Evidence View", () => {
     const step2Card = page.getByTestId("step-evidence-card-2");
     await expect(step2Card).toBeVisible();
     await expect(step2Card.getByTestId("verification-method-badge")).toHaveAttribute("data-method", "url_dom");
-    await expect(step2Card.getByTestId("verification-method-badge")).toContainText("URL & DOM Layer");
+    await expect(step2Card.getByTestId("verification-method-badge")).toContainText("Page address");
     await expect(step2Card.getByTestId("confidence-score")).toContainText("98%");
 
     // 6. Validate Step 4 (Network layer)
     const step4Card = page.getByTestId("step-evidence-card-4");
     await expect(step4Card).toBeVisible();
     await expect(step4Card.getByTestId("verification-method-badge")).toHaveAttribute("data-method", "network");
-    await expect(step4Card.getByTestId("verification-method-badge")).toContainText("Network Layer");
+    await expect(step4Card.getByTestId("verification-method-badge")).toContainText("Site's answer");
     await expect(step4Card.getByTestId("confidence-score")).toContainText("85%");
 
     // 7. Validate Step 5 (Vision layer)
     const step5Card = page.getByTestId("step-evidence-card-5");
     await expect(step5Card).toBeVisible();
     await expect(step5Card.getByTestId("verification-method-badge")).toHaveAttribute("data-method", "vision");
-    await expect(step5Card.getByTestId("verification-method-badge")).toContainText("Vision Layer");
+    await expect(step5Card.getByTestId("verification-method-badge")).toContainText("Screenshot");
     await expect(step5Card.getByTestId("confidence-score")).toContainText("95%");
 
     // 8. Toggle state details on Step 1

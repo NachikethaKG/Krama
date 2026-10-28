@@ -30,7 +30,7 @@ function scriptedClient(sequence: Partial<Task>[]) {
   return client;
 }
 
-function submit(prompt = "Create a repo") {
+function submit(prompt = "Create a repo on GitHub") {
   fireEvent.change(screen.getByTestId("task-prompt-input"), { target: { value: prompt } });
   fireEvent.click(screen.getByTestId("submit-task-btn"));
 }
@@ -42,7 +42,7 @@ describe("TaskInput", () => {
     expect(screen.getByTestId("task-prompt-input")).toBeInTheDocument();
     expect(screen.getByTestId("target-url-input")).toBeInTheDocument();
     expect(screen.getByTestId("submit-task-btn")).toBeInTheDocument();
-    expect(screen.getByTestId("submit-task-btn")).toHaveTextContent("Generate Plan");
+    expect(screen.getByTestId("submit-task-btn")).toHaveTextContent("Plan the steps");
   });
 
   it("has submit button disabled when prompt is empty", () => {
@@ -52,8 +52,42 @@ describe("TaskInput", () => {
     expect(submitBtn).toBeDisabled();
 
     const promptInput = screen.getByTestId("task-prompt-input");
-    fireEvent.change(promptInput, { target: { value: "Create repository" } });
+    fireEvent.change(promptInput, { target: { value: "Create a GitHub repository" } });
     expect(submitBtn).not.toBeDisabled();
+  });
+
+  // #318: users never pick a target; the site comes from the prompt or from one question.
+  it("shows the website it found in the prompt and sends that site", async () => {
+    const client = new MockApiClient();
+    const createTask = vi.spyOn(client, "createTask");
+    render(<TaskInput client={client} devTargets={false} />);
+
+    submit("Show me how to create a GitHub repository");
+
+    expect(screen.getByTestId("detected-site")).toHaveTextContent("GitHub");
+    await waitFor(() =>
+      expect(createTask).toHaveBeenCalledWith("Show me how to create a GitHub repository", "https://github.com"),
+    );
+    expect(screen.queryByTestId("dev-target-options")).not.toBeInTheDocument();
+  });
+
+  it("asks which website when the prompt names none, and waits for the answer", () => {
+    render(<TaskInput devTargets={false} />);
+    fireEvent.change(screen.getByTestId("task-prompt-input"), { target: { value: "Create a repository named demo" } });
+
+    expect(screen.getByTestId("site-question")).toHaveTextContent("Which website is this for?");
+    expect(screen.getByTestId("submit-task-btn")).toBeDisabled();
+
+    fireEvent.click(screen.getByTestId("site-option-github"));
+    expect(screen.getByTestId("submit-task-btn")).not.toBeDisabled();
+  });
+
+  it("says when a site isn't supported and doesn't submit", () => {
+    render(<TaskInput devTargets={false} />);
+    fireEvent.change(screen.getByTestId("task-prompt-input"), { target: { value: "Create a project on gitlab.com" } });
+
+    expect(screen.getByTestId("site-unsupported")).toHaveTextContent("Krama can't do tasks on gitlab.com yet");
+    expect(screen.getByTestId("submit-task-btn")).toBeDisabled();
   });
 
   it("submits task and invokes onTaskCreated callback", async () => {
@@ -151,7 +185,7 @@ describe("TaskInput", () => {
     const promptInput = screen.getByTestId("task-prompt-input");
     const submitBtn = screen.getByTestId("submit-task-btn");
 
-    fireEvent.change(promptInput, { target: { value: "Trigger failure" } });
+    fireEvent.change(promptInput, { target: { value: "Trigger failure on GitHub" } });
     fireEvent.click(submitBtn);
 
     await waitFor(() => {

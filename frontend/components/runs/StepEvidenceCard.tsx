@@ -16,26 +16,26 @@ const METHOD_CONFIG: Record<
   { label: string; description: string; className: string }
 > = {
   url_dom: {
-    label: "URL & DOM Layer",
-    description: "Verified via URL regex and DOM element existence",
+    label: "Page address",
+    description: "Krama checked the page it landed on after this step.",
     className:
       "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800",
   },
   aria: {
-    label: "ARIA Tree Layer",
-    description: "Verified via accessibility role, name, and attributes",
+    label: "Page content",
+    description: "Krama checked that the page shows the expected button, field or text.",
     className:
       "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-400 dark:border-purple-800",
   },
   network: {
-    label: "Network Layer",
-    description: "Verified via HTTP responses and network request events",
+    label: "Site's answer",
+    description: "The website confirmed the change.",
     className:
       "bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-950/40 dark:text-teal-400 dark:border-teal-800",
   },
   vision: {
-    label: "Vision Layer",
-    description: "Verified via perceptual screenshot comparison",
+    label: "Screenshot",
+    description: "A look at the screenshot confirmed the step.",
     className:
       "bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-400 dark:border-indigo-800",
   },
@@ -50,7 +50,7 @@ export function getConfidenceDetails(confidence: number): {
   if (percentage >= 90) {
     return {
       percentage,
-      label: `${percentage}% High Confidence`,
+      label: "Sure",
       badgeClass:
         "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800",
     };
@@ -58,14 +58,14 @@ export function getConfidenceDetails(confidence: number): {
   if (percentage >= 70) {
     return {
       percentage,
-      label: `${percentage}% Moderate Confidence`,
+      label: "Fairly sure",
       badgeClass:
         "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800",
     };
   }
   return {
     percentage,
-    label: `${percentage}% Low Confidence`,
+    label: "Unsure",
     badgeClass:
       "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-800",
   };
@@ -121,19 +121,7 @@ export function StepEvidenceCard({
               data-testid="step-action-target"
               className="text-xs text-zinc-500 dark:text-zinc-400 flex items-center gap-2 mt-0.5"
             >
-              <span className="font-mono bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded text-[11px]">
-                {step.actionType}
-              </span>
-              {step.targetRole && (
-                <span>
-                  role: <strong className="font-medium text-zinc-700 dark:text-zinc-300">{step.targetRole}</strong>
-                </span>
-              )}
-              {step.targetName && (
-                <span>
-                  name: &quot;<strong className="font-medium text-zinc-700 dark:text-zinc-300">{step.targetName}</strong>&quot;
-                </span>
-              )}
+              <span>{describeAction(step.actionType, step.targetRole, step.targetName)}</span>
             </div>
           </div>
         </div>
@@ -178,7 +166,7 @@ export function StepEvidenceCard({
           {/* Method badge */}
           <div className="p-3 rounded-lg border border-zinc-100 dark:border-zinc-800 bg-zinc-50/60 dark:bg-zinc-850/40">
             <span className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 block mb-1">
-              Verification Layer
+              How it was checked
             </span>
             <div className="flex items-center gap-2">
               <span
@@ -200,7 +188,7 @@ export function StepEvidenceCard({
           {/* Confidence Score */}
           <div className="p-3 rounded-lg border border-zinc-100 dark:border-zinc-800 bg-zinc-50/60 dark:bg-zinc-850/40">
             <span className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 block mb-1">
-              Confidence Score
+              How sure
             </span>
             <div className="flex items-center gap-2">
               <span
@@ -239,7 +227,7 @@ export function StepEvidenceCard({
         <div className="space-y-1.5">
           <div className="flex items-center justify-between text-xs text-zinc-600 dark:text-zinc-400">
             <span className="font-semibold text-zinc-800 dark:text-zinc-200">
-              Step Verification Screenshot
+              Screenshot after this step
             </span>
             {step.timing?.durationMs && (
               <span className="text-zinc-500 text-[11px]">
@@ -307,7 +295,7 @@ export function StepEvidenceCard({
               >
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
-              {showStateDetails ? "Hide" : "Show"} Expected vs Observed Details
+              {showStateDetails ? "Hide" : "Show"} technical details
             </button>
 
             {showStateDetails && (
@@ -367,4 +355,34 @@ export function StepEvidenceCard({
       </div>
     </div>
   );
+}
+
+const ACTION_VERBS: Record<string, string> = {
+  navigate: "Opened a page",
+  click: "Clicked",
+  fill: "Typed into",
+  select: "Chose an option in",
+  press: "Pressed a key in",
+  wait: "Waited for",
+  scroll: "Scrolled to",
+};
+
+const ROLE_NAMES: Record<string, string> = {
+  textbox: "the field",
+  searchbox: "the search field",
+  combobox: "the field",
+  button: "the button",
+  link: "the link",
+  checkbox: "the checkbox",
+  radio: "the option",
+  tab: "the tab",
+  menuitem: "the menu item",
+};
+
+/** "Clicked the button “Create label”" instead of "click · role: button · name: Create label" (#318). */
+export function describeAction(action: string, role?: string | null, name?: string | null): string {
+  const verb = ACTION_VERBS[action] ?? action;
+  if (!name) return verb;
+  const what = role ? (ROLE_NAMES[role] ?? `the ${role}`) : "";
+  return `${verb} ${what} \u201c${name}\u201d`.replace(/\s+/g, " ");
 }

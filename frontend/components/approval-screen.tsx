@@ -186,7 +186,7 @@ export function ApprovalScreen({ planId, client, initialPlan, initialTask = null
   return (
     <main data-testid="approval-screen" className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 px-4 py-8 sm:py-12">
       <TaskHeader
-        title={plan.expected_result ? `Goal: ${plan.expected_result}` : "Proposed plan"}
+        title={plan.expected_result ? `Goal: ${plan.expected_result}` : "Here's the plan"}
         prompt={task?.prompt ?? plan.expected_result}
         targetUrl={task?.target_url}
         targetApp={task?.interpretation?.app}
@@ -200,7 +200,7 @@ export function ApprovalScreen({ planId, client, initialPlan, initialTask = null
           className="flex flex-col gap-3 rounded-xl border border-amber-300 bg-amber-50 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-amber-800 dark:bg-amber-950/40"
         >
           <div>
-            <h3 className="text-sm font-semibold text-amber-900 dark:text-amber-100">Plan Revision Conflict</h3>
+            <h3 className="text-sm font-semibold text-amber-900 dark:text-amber-100">This plan changed in the meantime</h3>
             <p className="text-xs text-amber-800 dark:text-amber-300">{conflictError}</p>
           </div>
           <button
@@ -209,10 +209,13 @@ export function ApprovalScreen({ planId, client, initialPlan, initialTask = null
             onClick={handleReloadPlan}
             className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-amber-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow-xs transition-colors hover:bg-amber-500 dark:bg-amber-500 dark:hover:bg-amber-400"
           >
-            Reload Latest Plan
+            Load the latest version
           </button>
         </div>
       )}
+
+      {/* PRD §41: "I found a 6-step workflow. No destructive actions detected. [Approve & Run]" (#318) */}
+      <PlanSummary steps={steps} />
 
       <StepList
         steps={steps}
@@ -234,5 +237,26 @@ export function ApprovalScreen({ planId, client, initialPlan, initialTask = null
         onReject={handleReject}
       />
     </main>
+  );
+}
+
+/** One line before the steps: how many, and whether any of them is risky (the policy marks risk per step). */
+function PlanSummary({ steps }: { steps: { risk?: string | null }[] }) {
+  const risky = steps.filter((s) => s.risk === "high" || s.risk === "critical").length;
+  return (
+    <p
+      data-testid="plan-summary"
+      className={`rounded-lg border px-4 py-3 text-sm ${
+        risky
+          ? "border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200"
+          : "border-zinc-200 bg-white text-zinc-700 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300"
+      }`}
+    >
+      I found a {steps.length}-step plan.{" "}
+      {risky
+        ? `${risky} ${risky === 1 ? "step changes or deletes something" : "steps change or delete something"}: Krama will ask you again before ${risky === 1 ? "it" : "each one"}.`
+        : "No destructive actions detected."}{" "}
+      Check the steps, then approve to run them.
+    </p>
   );
 }

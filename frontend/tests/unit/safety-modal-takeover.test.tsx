@@ -60,7 +60,7 @@ describe("PolicyConfirmationModal Component", () => {
     // Risk badge
     const riskBadge = screen.getByTestId("risk-badge");
     expect(riskBadge).toHaveAttribute("data-risk-level", "high");
-    expect(riskBadge).toHaveTextContent("High Risk");
+    expect(riskBadge).toHaveTextContent("Changes or deletes");
 
     // Explicit rationale callout
     expect(
@@ -88,7 +88,7 @@ describe("PolicyConfirmationModal Component", () => {
 
     const riskBadge = screen.getByTestId("risk-badge");
     expect(riskBadge).toHaveAttribute("data-risk-level", "medium");
-    expect(riskBadge).toHaveTextContent("Medium Risk");
+    expect(riskBadge).toHaveTextContent("Creates something");
   });
 
   it("dispatches onAllow callback when Allow button is clicked", () => {

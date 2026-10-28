@@ -37,15 +37,11 @@ test.describe("Authentication, Route Protection, and User Dashboard", () => {
     // 6. Submit the form
     await submitBtn.click();
 
-    // 7. Verify redirect back to /dashboard
-    await expect(page).toHaveURL(/\/dashboard/);
-
-    // 8. Verify user dashboard contents are rendered
+    // 7. /dashboard is now the home screen (#318): the prompt and recent tutorials, under the app header
+    await expect(page).toHaveURL(/localhost:3000\/$/);
     await expect(page.getByTestId("user-email-display")).toHaveText("demo@krama.dev");
-    await expect(page.getByTestId("user-plan-badge")).toHaveText(/Seeded Pro MVP/i);
-    await expect(page.getByRole("heading", { name: /My Recorded Tutorials/i })).toBeVisible();
-    await expect(page.getByRole("heading", { name: /Recent Executions/i })).toBeVisible();
-    await expect(page.getByTestId("dashboard-new-run-btn")).toBeVisible();
+    await expect(page.getByLabel("What do you want to learn?")).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Recent tutorials/i })).toBeVisible();
 
     // 9. Test Logout action
     const logoutBtn = page.getByTestId("dashboard-logout-btn");
@@ -60,9 +56,9 @@ test.describe("Authentication, Route Protection, and User Dashboard", () => {
     page,
     context,
   }) => {
-    // Authenticated users are redirected away from /signup to /dashboard
+    // Authenticated users are redirected away from /signup to the home screen
     await page.goto("/signup");
-    await expect(page).toHaveURL(/\/dashboard/);
+    await expect(page).toHaveURL(/localhost:3000\/$/);
 
     // Unauthenticated visitors see the informational signup notice
     await context.clearCookies();

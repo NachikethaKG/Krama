@@ -93,7 +93,7 @@ export function RunDetailView({
               data-testid="back-to-runs-button"
               className="px-4 py-2 text-xs font-semibold rounded-lg bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 hover:bg-zinc-800 transition-colors"
             >
-              Back to Run History
+              Back to runs
             </Link>
           </div>
         </div>
@@ -129,10 +129,10 @@ export function RunDetailView({
         <div className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 pb-3">
           <div>
             <h2 className="text-base sm:text-lg font-bold text-zinc-900 dark:text-zinc-100">
-              Step Verification Evidence
+              What Krama did and checked
             </h2>
             <p className="text-xs text-zinc-500 dark:text-zinc-400">
-              Detailed breakdown of verification layer, confidence metrics, and captured state screenshots.
+              Each step, how it was checked, and a screenshot of the page right after it.
             </p>
           </div>
           <span className="text-xs font-medium px-2.5 py-1 rounded-md bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300">

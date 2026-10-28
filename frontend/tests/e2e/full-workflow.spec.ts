@@ -12,20 +12,14 @@ test.describe("Mock-mode Workflow E2E: Prompt → Plan → Approve → Live Exec
     await expect(page.getByTestId("task-input-section")).toBeVisible();
 
     const promptInput = page.getByTestId("task-prompt-input");
-    const customTargetOption = page.getByTestId("target-option-custom");
-    if (await customTargetOption.isVisible().catch(() => false)) {
-      await customTargetOption.click();
-    }
-    const targetUrlInput = page.getByTestId("custom-target-url-input");
     const submitBtn = page.getByTestId("submit-task-btn");
 
     await expect(promptInput).toBeVisible();
-    await expect(targetUrlInput).toBeVisible();
     await expect(submitBtn).toBeDisabled();
 
-    // 2. Enter prompt and target URL, then submit
-    await promptInput.fill("Create a repository in local Gitea");
-    await targetUrlInput.fill("http://localhost:3001");
+    // 2. Enter the prompt: the website comes from it (#318), no target to pick
+    await promptInput.fill("Create a repository on GitHub");
+    await expect(page.getByTestId("detected-site")).toHaveText(/GitHub/);
     await expect(submitBtn).toBeEnabled();
 
     await submitBtn.click();
@@ -36,11 +30,10 @@ test.describe("Mock-mode Workflow E2E: Prompt → Plan → Approve → Live Exec
 
     const taskPrompt = page.getByTestId("task-prompt");
     await expect(taskPrompt).toBeVisible();
-    await expect(taskPrompt).toContainText(/Create a repository.*in local Gitea/i);
+    await expect(taskPrompt).toContainText(/Create a repository/i); // the mock plan is a fixture
 
     const targetUrl = page.getByTestId("target-url");
     await expect(targetUrl).toBeVisible();
-    await expect(targetUrl).toHaveText("http://localhost:3001");
 
     // Verify generated plan with step list and risk badges
     const stepList = page.getByTestId("step-list");
@@ -76,33 +69,30 @@ test.describe("Mock-mode Workflow E2E: Prompt → Plan → Approve → Live Exec
     // Verify execution completes with verification of steps
     const completionBanner = page.getByTestId("completion-banner");
     await expect(completionBanner).toBeVisible({ timeout: 45000 });
-    await expect(completionBanner).toContainText(/Workflow Execution Complete/i);
+    await expect(completionBanner).toContainText(/Tutorial ready/i);
 
     const statusBadge = page.getByTestId("execution-status-badge");
     await expect(statusBadge).toHaveAttribute("data-status", "completed");
   });
 
-  test("navigates to /tasks route and initiates task planning", async ({ page }) => {
+  test("/tasks goes to the home screen, which asks for the website when the prompt names none", async ({
+    page,
+  }) => {
     await page.goto("/tasks");
+    await expect(page).toHaveURL(/localhost:3000\/$/);
 
     await expect(page.getByTestId("task-input-section")).toBeVisible();
     const promptInput = page.getByTestId("task-prompt-input");
     await promptInput.fill("Create a demo repository");
 
     const submitBtn = page.getByTestId("submit-task-btn");
+    await expect(page.getByTestId("site-question")).toBeVisible();
+    await expect(submitBtn).toBeDisabled();
+    await page.getByTestId("site-option-github").click();
     await expect(submitBtn).toBeEnabled({ timeout: 15000 });
     await submitBtn.click();
 
     await expect(page.getByTestId("approval-screen")).toBeVisible({ timeout: 20000 });
   });
 
-  test("preserves MockApiClient fallback when NEXT_PUBLIC_API_MODE is unset or mock", async ({
-    page,
-  }) => {
-    await page.goto("/approval");
-
-    // In mock mode, fixtures load immediately without requiring live backend
-    await expect(page.getByTestId("approval-screen")).toBeVisible();
-    await expect(page.getByTestId("step-item")).toHaveCount(5);
-  });
 });

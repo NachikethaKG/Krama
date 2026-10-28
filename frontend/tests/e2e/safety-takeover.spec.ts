@@ -20,7 +20,7 @@ test.describe("Safety Baseline: Policy Confirmation Modal & Manual Takeover Scre
     const riskBadge = modal.getByTestId("risk-badge");
     await expect(riskBadge).toBeVisible();
     await expect(riskBadge).toHaveAttribute("data-risk-level", "high");
-    await expect(riskBadge).toContainText(/High Risk/i);
+    await expect(riskBadge).toContainText(/Changes or deletes/i);
 
     // 4. Verify explicit policy rationale / safety flag
     await expect(modal.getByText(/Safety Policy Flag/i)).toBeVisible();

@@ -13,7 +13,7 @@ describe("StepEvidenceCard", () => {
 
     expect(screen.getByTestId("step-seq-badge")).toHaveTextContent("1");
     expect(screen.getByTestId("step-instruction")).toHaveTextContent(step.instructionText);
-    expect(screen.getByTestId("step-action-target")).toHaveTextContent("click");
+    expect(screen.getByTestId("step-action-target")).toHaveTextContent("Clicked");
     expect(screen.getByTestId("step-status")).toHaveTextContent("Verified");
   });
 
@@ -21,40 +21,40 @@ describe("StepEvidenceCard", () => {
     // Step 1: aria
     const { rerender } = render(<StepEvidenceCard step={sampleSteps[0]} />);
     expect(screen.getByTestId("verification-method-badge")).toHaveAttribute("data-method", "aria");
-    expect(screen.getByTestId("verification-method-badge")).toHaveTextContent("ARIA Tree Layer");
+    expect(screen.getByTestId("verification-method-badge")).toHaveTextContent("Page content");
 
     // Step 2: url_dom
     rerender(<StepEvidenceCard step={sampleSteps[1]} />);
     expect(screen.getByTestId("verification-method-badge")).toHaveAttribute("data-method", "url_dom");
-    expect(screen.getByTestId("verification-method-badge")).toHaveTextContent("URL & DOM Layer");
+    expect(screen.getByTestId("verification-method-badge")).toHaveTextContent("Page address");
 
     // Step 4: network
     rerender(<StepEvidenceCard step={sampleSteps[3]} />);
     expect(screen.getByTestId("verification-method-badge")).toHaveAttribute("data-method", "network");
-    expect(screen.getByTestId("verification-method-badge")).toHaveTextContent("Network Layer");
+    expect(screen.getByTestId("verification-method-badge")).toHaveTextContent("Site's answer");
 
     // Step 5: vision
     rerender(<StepEvidenceCard step={sampleSteps[4]} />);
     expect(screen.getByTestId("verification-method-badge")).toHaveAttribute("data-method", "vision");
-    expect(screen.getByTestId("verification-method-badge")).toHaveTextContent("Vision Layer");
+    expect(screen.getByTestId("verification-method-badge")).toHaveTextContent("Screenshot");
   });
 
   it("renders confidence scores with accurate percentage and rating", () => {
-    // 1.0 -> 100% High Confidence
+    // 1.0 -> 100%, "Sure"
     const { rerender } = render(<StepEvidenceCard step={sampleSteps[0]} />);
     expect(screen.getByTestId("confidence-score")).toHaveTextContent("100%");
-    expect(screen.getByText("100% High Confidence")).toBeInTheDocument();
+    expect(screen.getByText("Sure")).toBeInTheDocument();
 
-    // 0.85 -> 85% Moderate Confidence
+    // 0.85 -> 85%, "Fairly sure"
     rerender(<StepEvidenceCard step={sampleSteps[3]} />);
     expect(screen.getByTestId("confidence-score")).toHaveTextContent("85%");
-    expect(screen.getByText("85% Moderate Confidence")).toBeInTheDocument();
+    expect(screen.getByText("Fairly sure")).toBeInTheDocument();
 
     // Low confidence in failed step
     const failedStep = mockRunDetails["run-2"].steps[1];
     rerender(<StepEvidenceCard step={failedStep} />);
     expect(screen.getByTestId("confidence-score")).toHaveTextContent("45%");
-    expect(screen.getByText("45% Low Confidence")).toBeInTheDocument();
+    expect(screen.getByText("Unsure")).toBeInTheDocument();
   });
 
   it("renders screenshot image when available", () => {

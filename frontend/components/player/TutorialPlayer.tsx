@@ -110,46 +110,28 @@ export function TutorialPlayer({
         {announcement}
       </div>
 
-      {/* Tutorial Header */}
-      <header className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between border-b border-zinc-200 pb-4 dark:border-zinc-800">
-        <div>
-          <div className="flex items-center gap-2">
-            {readOnly ? (
-              <span
-                data-testid="readonly-badge"
-                className="rounded bg-zinc-100 px-2 py-0.5 text-xs font-semibold text-zinc-700 ring-1 ring-inset ring-zinc-500/20 dark:bg-zinc-800 dark:text-zinc-300 dark:ring-zinc-700"
-              >
-                Read-Only
-              </span>
-            ) : (
-              <span className="rounded bg-indigo-100 px-2 py-0.5 text-xs font-semibold text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
-                Interactive Tutorial
-              </span>
-            )}
-            <span className="text-xs text-zinc-500 dark:text-zinc-400">
-              v{spec.version}
+      {/* Tutorial Header: one title, then what the learner needs to know (#318) */}
+      <header className="flex flex-col gap-1 border-b border-zinc-200 pb-4 dark:border-zinc-800">
+        <div className="flex items-center gap-2">
+          {readOnly ? (
+            <span
+              data-testid="readonly-badge"
+              className="rounded bg-zinc-100 px-2 py-0.5 text-xs font-semibold text-zinc-700 ring-1 ring-inset ring-zinc-500/20 dark:bg-zinc-800 dark:text-zinc-300 dark:ring-zinc-700"
+            >
+              Read-Only
             </span>
-          </div>
-          <h1 className="mt-1 text-xl sm:text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
-            {spec.title}
-          </h1>
-          {spec.description && (
-            <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-              {spec.description}
-            </p>
-          )}
+          ) : null}
         </div>
-
-        <div className="flex shrink-0 items-center gap-3">
-          <div className="flex flex-col items-start md:items-end text-xs text-zinc-500 dark:text-zinc-400">
-            <span>
-              Viewport: {spec.viewport.width} × {spec.viewport.height}
-            </span>
-            <span>
-              Duration: {((spec.total_duration_ms || 1) / 1000).toFixed(1)}s
-            </span>
-          </div>
-        </div>
+        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
+          {spec.title}
+        </h1>
+        {spec.description && spec.description.trim() !== spec.title.trim() && (
+          <p className="text-sm text-zinc-600 dark:text-zinc-400">{spec.description}</p>
+        )}
+        <p data-testid="tutorial-summary" className="text-xs text-zinc-500 dark:text-zinc-400">
+          {spec.scenes.length} {spec.scenes.length === 1 ? "step" : "steps"}, each one checked ·{" "}
+          {Math.max(1, Math.round((spec.total_duration_ms || 1) / 1000))} s to watch
+        </p>
       </header>
 
       {/* Main Grid: Stage & Controls (Left/Center) + Step List Sidebar (Right) */}

@@ -12,11 +12,11 @@ test.describe("Workflow Plan Editing Flow", () => {
     await expect(stepItems).toHaveCount(5);
 
     const editBtn = page.getByTestId("edit-btn");
-    await expect(editBtn).toHaveText("Edit Plan");
+    await expect(editBtn).toHaveText("Edit steps");
 
     // 3. Enter edit mode
     await editBtn.click();
-    await expect(editBtn).toHaveText("Done Editing");
+    await expect(editBtn).toHaveText("Done editing");
 
     // Verify move buttons and delete buttons are visible in edit mode
     const moveDownBtn1 = page.getByTestId("move-step-down-1");
@@ -39,7 +39,7 @@ test.describe("Workflow Plan Editing Flow", () => {
 
     // 7. Click Done Editing to save the plan updates
     await editBtn.click();
-    await expect(editBtn).toHaveText("Edit Plan");
+    await expect(editBtn).toHaveText("Edit steps");
 
     // Verify updated instruction is rendered
     await expect(

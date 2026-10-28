@@ -25,7 +25,7 @@ export function LoginForm({ client, from: propFrom, onSuccess }: LoginFormProps)
   const redirectTarget =
     rawFrom && rawFrom.startsWith("/") && !rawFrom.startsWith("//")
       ? rawFrom
-      : "/dashboard";
+      : "/";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

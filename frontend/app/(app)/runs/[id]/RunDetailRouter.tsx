@@ -104,7 +104,7 @@ export function RunDetailRouter({
               data-testid="back-to-runs-button"
               className="px-4 py-2 text-xs font-semibold rounded-lg bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 hover:bg-zinc-800 transition-colors"
             >
-              Back to Run History
+              Back to runs
             </Link>
           </div>
         </div>
@@ -115,16 +115,19 @@ export function RunDetailRouter({
   if (activeTab === "evidence" && details) {
     return (
       <div>
-        <div className="mx-auto flex max-w-5xl items-center justify-end px-4 pt-4 sm:px-6">
-          <button
-            type="button"
-            data-testid="toggle-live-observer-btn"
-            onClick={() => setActiveTab("live")}
-            className="rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-medium text-indigo-700 hover:bg-indigo-100 dark:border-indigo-900/60 dark:bg-indigo-950/40 dark:text-indigo-300 dark:hover:bg-indigo-900/60"
-          >
-            ← Switch to Live Observer Stream
-          </button>
-        </div>
+        {/* A finished run has nothing live to show (#318) */}
+        {["queued", "running", "paused"].includes(details.run.status) && (
+          <div className="mx-auto flex max-w-5xl items-center justify-end px-4 pt-4 sm:px-6">
+            <button
+              type="button"
+              data-testid="toggle-live-observer-btn"
+              onClick={() => setActiveTab("live")}
+              className="rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-medium text-indigo-700 hover:bg-indigo-100 dark:border-indigo-900/60 dark:bg-indigo-950/40 dark:text-indigo-300 dark:hover:bg-indigo-900/60"
+            >
+              Watch live
+            </button>
+          </div>
+        )}
         <RunDetailView runId={runId} initialDetails={details} />
       </div>
     );
@@ -140,7 +143,7 @@ export function RunDetailRouter({
             onClick={() => setActiveTab("evidence")}
             className="rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800"
           >
-            Switch to Verification Evidence →
+            Show each step&apos;s checks →
           </button>
         </div>
       )}

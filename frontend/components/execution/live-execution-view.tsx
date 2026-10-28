@@ -138,7 +138,7 @@ export function LiveExecutionView({ runId, speed, client, className = "" }: Live
       className={`mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 px-4 py-8 sm:py-12 ${className}`}
     >
       <ExecutionHeader
-        title={plan?.expected_result ? `Goal: ${plan.expected_result}` : "Workflow Execution"}
+        title={plan?.expected_result ? `Goal: ${plan.expected_result}` : "Doing the task"}
         prompt={task?.prompt}
         targetUrl={task?.target_url}
         targetApp={task?.interpretation?.app}
@@ -201,7 +201,7 @@ export function LiveExecutionView({ runId, speed, client, className = "" }: Live
             />
             <span className="text-xs font-medium text-zinc-600 sm:text-sm dark:text-zinc-300">
               {runStatus === "paused"
-                ? "Execution awaiting human confirmation"
+                ? "Waiting for you to confirm a step"
                 : runStatus === "queued"
                   ? "Waiting for the run to start…"
                   : "Workflow is actively executing…"}
@@ -324,9 +324,9 @@ export function LiveExecutionView({ runId, speed, client, className = "" }: Live
           className="flex flex-col gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-semibold text-emerald-900 shadow-xs sm:flex-row sm:items-center sm:justify-between dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-100"
         >
           <div>
-            <div>Workflow Execution Complete!</div>
+            <div>Tutorial ready</div>
             <div className="text-xs font-normal text-emerald-800/80 dark:text-emerald-300/80">
-              All {totalSteps} steps verified against the live system.
+              {totalSteps} verified {totalSteps === 1 ? "step" : "steps"} · 0 failed actions · 0 unresolved states
             </div>
           </div>
           <div className="flex shrink-0 flex-wrap gap-2">
@@ -337,7 +337,7 @@ export function LiveExecutionView({ runId, speed, client, className = "" }: Live
                 data-testid="watch-tutorial-link"
                 className="rounded-lg bg-indigo-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-indigo-500"
               >
-                &#9654; Watch the tutorial
+                &#9654; Start tutorial
               </a>
             )}
             <a
@@ -345,7 +345,7 @@ export function LiveExecutionView({ runId, speed, client, className = "" }: Live
               data-testid="view-workflow-link"
               className="rounded-lg bg-emerald-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-emerald-500"
             >
-              View verified workflow &rarr;
+              See each step&apos;s checks &rarr;
             </a>
           </div>
         </div>
