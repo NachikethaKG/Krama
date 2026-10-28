@@ -7,7 +7,7 @@ describe("RunListTable", () => {
   it("renders loading state when isLoading is true", () => {
     render(<RunListTable runs={[]} isLoading={true} />);
     expect(screen.getByTestId("runs-loading")).toBeInTheDocument();
-    expect(screen.getByText("Loading run history…")).toBeInTheDocument();
+    expect(screen.getByText("Loading runs…")).toBeInTheDocument();
   });
 
   it("renders error alert when error is provided", () => {
@@ -19,7 +19,7 @@ describe("RunListTable", () => {
   it("renders empty state when runs list is empty", () => {
     render(<RunListTable runs={[]} />);
     expect(screen.getByTestId("runs-empty-state")).toBeInTheDocument();
-    expect(screen.getByText("No runs found")).toBeInTheDocument();
+    expect(screen.getByText("No runs yet")).toBeInTheDocument();
   });
 
   it("renders table with rows for provided runs", () => {
@@ -37,7 +37,7 @@ describe("RunListTable", () => {
     const runWithRetries = [mockRunsList[10]]; // run-11 has retryCount: 2
     render(<RunListTable runs={runWithRetries} />);
 
-    expect(screen.getByTestId("run-retries")).toHaveTextContent("2 retries");
+    expect(screen.getByTestId("run-retries")).toHaveTextContent("Retried 2 times");
   });
 
   describe("formatDateTime & formatDuration helpers", () => {

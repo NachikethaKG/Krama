@@ -64,7 +64,7 @@ describe("ApprovalScreen", () => {
     fireEvent.change(screen.getByTestId("step-input-1"), { target: { value: "New edited instruction text" } });
     fireEvent.click(editBtn);
 
-    await waitFor(() => expect(editBtn).toHaveTextContent("Edit Plan"));
+    await waitFor(() => expect(editBtn).toHaveTextContent("Edit steps"));
     expect(update).toHaveBeenCalledWith("default", 1, expect.any(Array));
     expect(screen.getByText("New edited instruction text")).toBeInTheDocument();
 

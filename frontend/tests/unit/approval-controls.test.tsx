@@ -14,9 +14,9 @@ describe("ApprovalControls", () => {
     );
 
     expect(screen.getByTestId("approval-controls")).toBeInTheDocument();
-    expect(screen.getByTestId("approve-btn")).toHaveTextContent("Approve & Execute");
-    expect(screen.getByTestId("reject-btn")).toHaveTextContent("Reject Plan");
-    expect(screen.getByTestId("edit-btn")).toHaveTextContent("Edit Plan");
+    expect(screen.getByTestId("approve-btn")).toHaveTextContent("Approve & run");
+    expect(screen.getByTestId("reject-btn")).toHaveTextContent("Cancel");
+    expect(screen.getByTestId("edit-btn")).toHaveTextContent("Edit steps");
   });
 
   it("calls onApprove when Approve button is clicked", async () => {

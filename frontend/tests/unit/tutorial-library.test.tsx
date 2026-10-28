@@ -282,7 +282,7 @@ describe("Tutorial Library Component Suite", () => {
       const emptyState = screen.getByTestId("empty-tutorials");
       expect(emptyState).toBeInTheDocument();
       expect(
-        screen.getByText("No tutorials match your search or filter"),
+        screen.getByText("No tutorials match your search"),
       ).toBeInTheDocument();
 
       const resetBtn = screen.getByTestId("reset-filters-btn");
@@ -308,9 +308,9 @@ describe("Tutorial Library Component Suite", () => {
       });
 
       expect(
-        screen.getByText("No verified tutorials recorded yet"),
+        screen.getByText("No tutorials yet"),
       ).toBeInTheDocument();
-      expect(screen.getByText("Start New Workflow")).toBeInTheDocument();
+      expect(screen.getByText("New tutorial")).toBeInTheDocument();
     });
 
     it("handles API failure gracefully with error alert banner and retry button", async () => {
@@ -326,9 +326,9 @@ describe("Tutorial Library Component Suite", () => {
         expect(screen.getByTestId("tutorials-error")).toBeInTheDocument();
       });
 
-      expect(screen.getByText("Failed to Load Tutorials")).toBeInTheDocument();
+      expect(screen.getByText("Couldn't load your tutorials")).toBeInTheDocument();
       expect(screen.getByText(/Database unreachable/i)).toBeInTheDocument();
-      expect(screen.getByText("Retry Loading")).toBeInTheDocument();
+      expect(screen.getByText("Try again")).toBeInTheDocument();
     });
   });
 });

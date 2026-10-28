@@ -18,7 +18,7 @@ describe("RunDetailHeader", () => {
     expect(screen.getByTestId("stat-verified-steps")).toHaveTextContent("5");
     expect(screen.getByTestId("stat-failed-steps")).toHaveTextContent("0");
     expect(screen.getByTestId("stat-duration")).toHaveTextContent("5s");
-    expect(screen.getByTestId("stat-target-url")).toHaveTextContent("http://localhost:3001");
+    expect(screen.getByTestId("stat-target-url")).toHaveTextContent("localhost:3001");
   });
 
   it("links a verified run to the tutorial of the workflow it stored", () => {
