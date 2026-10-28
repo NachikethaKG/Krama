@@ -100,3 +100,55 @@ async def test_a_failed_delete_or_an_unknown_repository_raises() -> None:
 
 def test_only_gitea_has_a_reset() -> None:
     assert target_setup("https://example.com", SETTINGS).reset is None
+
+
+# --- GitHub practice repository (#325) --------------------------------------------------------------------
+
+GH = Settings(github_test_org="krama-bench", github_bench_token="t0ken", github_api_url="https://api.test")
+
+
+def github(get_status: int, calls: list[str], post_status: int = 201) -> Any:
+    def urlopen(request: urllib.request.Request, timeout: float) -> Answer:
+        assert request.get_header("Authorization") == "Bearer t0ken"
+        data = f" {request.data!r}" if request.data else ""
+        calls.append(f"{request.get_method()} {request.full_url}{data}")
+        status = get_status if request.get_method() == "GET" else post_status
+        if status >= 400:
+            raise urllib.error.HTTPError(request.full_url, status, "x", {}, None)  # type: ignore[arg-type]
+        return Answer(status)
+
+    return urlopen
+
+
+def test_the_practice_repository_is_created_only_when_missing() -> None:
+    from app.targets import _ensure_github_repo
+
+    calls: list[str] = []
+    with patch("urllib.request.urlopen", side_effect=github(200, calls)):
+        _ensure_github_repo(GH, "krama-bench/bench-practice")
+    assert calls == ["GET https://api.test/repos/krama-bench/bench-practice"]
+
+    calls.clear()
+    with patch("urllib.request.urlopen", side_effect=github(404, calls)):
+        _ensure_github_repo(GH, "krama-bench/bench-practice")
+    assert calls[1].startswith("POST https://api.test/orgs/krama-bench/repos")
+    assert '"name": "bench-practice"' in calls[1] and '"auto_init": true' in calls[1]
+
+
+def test_a_github_error_while_preparing_is_reported() -> None:
+    from app.targets import PrepareError, _ensure_github_repo
+
+    with patch("urllib.request.urlopen", side_effect=github(500, [])), pytest.raises(PrepareError):
+        _ensure_github_repo(GH, "krama-bench/bench-practice")
+    refused = github(404, [], post_status=403)
+    with patch("urllib.request.urlopen", side_effect=refused), pytest.raises(PrepareError):
+        _ensure_github_repo(GH, "krama-bench/bench-practice")
+
+
+def test_github_tasks_get_the_practice_repository_when_the_org_and_token_are_set() -> None:
+    with patch("app.targets.SessionVault.load", return_value={"cookies": [], "origins": []}):
+        setup = target_setup("https://github.com", GH)
+        without = target_setup("https://github.com", Settings(github_test_org="", github_bench_token=""))
+    assert setup.practice_repo == "krama-bench/bench-practice" and setup.prepare is not None
+    assert without.practice_repo is None and without.prepare is None
+    assert target_setup("http://localhost:3001", SETTINGS).practice_repo is None

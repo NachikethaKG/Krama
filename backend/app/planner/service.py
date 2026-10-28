@@ -7,6 +7,7 @@ is ever executed here.
 
 import asyncio
 import logging
+import secrets
 from collections.abc import Callable
 from datetime import UTC, datetime
 from typing import Any
@@ -21,7 +22,7 @@ from app.llm import LLMError, LLMRateLimitedError
 from app.planner.planner import InvalidPlanError, NeedsClarificationError, Planner, PlanRequest
 from app.ports.models import ObservedState
 from app.ports.policy import Policy
-from app.targets import TargetSetup
+from app.targets import PrepareError, TargetSetup
 
 logger = logging.getLogger(__name__)
 
@@ -87,6 +88,14 @@ class PlanningService:
             error = _error("internal", setup.sign_in_problem, "sign_in_required")
             await self._finish(task_id, "failed", error=error)
             return
+        if setup.prepare is not None:
+            try:
+                await setup.prepare()
+            except PrepareError as e:
+                logger.warning("preparing %s for task %s failed: %s", target_url, task_id, e)
+                message = "Couldn't set up the practice repository on the test account"
+                await self._finish(task_id, "failed", error=_error("internal", message, "target_unavailable"))
+                return
         config = self._session_config(target_url)
         config = setup.browser_config(config)
 
@@ -116,6 +125,8 @@ class PlanningService:
                 page_snapshot=self._mask(await page_snapshot(page)),
                 site=setup.site,
                 signed_in_as=setup.signed_in_as,
+                practice_repo=setup.practice_repo,
+                example_suffix=f"{secrets.randbelow(9000) + 1000}",
             )
 
         try:

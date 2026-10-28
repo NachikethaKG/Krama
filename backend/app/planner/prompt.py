@@ -39,8 +39,16 @@ SYSTEM_PROMPT = "\n".join(
         "- risk: low for navigation and form filling; medium for creating something; high for",
         "  deleting, transferring, publishing, sending, paying or changing security settings.",
         "- Number steps from 1. Set expected_result to one sentence describing the final state.",
-        "- If the task is ambiguous or impossible on this site, return no steps and put one short",
-        "  question in clarification_question instead of guessing.",
+        "- The learner wants to SEE how a task is done, not to do it on their own data (#325). Never",
+        "  ask for names or values that are only examples (repository, branch, label, issue or file",
+        "  names, titles, descriptions): make up short, realistic ones yourself that end with the",
+        "  example suffix you are given, e.g. demo-repo-4821 or feature-docs-4821. Present them as",
+        "  examples in instruction_text: Enter a branch name such as “feature-docs-4821”. Values the",
+        "  task itself names are used exactly.",
+        "- When the task needs an existing repository and names none, use the practice repository you",
+        "  are given; never ask which one.",
+        "- Ask in clarification_question (with no steps) only when WHAT to do is unclear or impossible",
+        "  on this site, never just to get an example name.",
         "- Never delete, overwrite, rename or otherwise change existing data unless the task",
         "  explicitly asks for it. If what the task should create already exists (e.g. a repository",
         "  with that name is listed), return no steps and ask in clarification_question.",
@@ -147,6 +155,8 @@ def build_prompt(
     page_snapshot: str,
     site: str | None = None,
     signed_in_as: str | None = None,
+    practice_repo: str | None = None,
+    example_suffix: str | None = None,
     feedback: str | None = None,
     done: list[str] | None = None,
     failure: str | None = None,
@@ -159,6 +169,10 @@ def build_prompt(
     parts = [f"Task: {task}", f"Current URL path: {neutralize_tags(start_path)}"]
     if signed_in_as:
         parts.append(f"Signed in as: {signed_in_as}")
+    if practice_repo:
+        parts.append(f"Practice repository (if the task needs one and names none): {practice_repo}")
+    if example_suffix:
+        parts.append(f"Example suffix (end the example names you make up with it): {example_suffix}")
     if site and site in SITE_HINTS:
         parts.append(f"<site_hints>\n{SITE_HINTS[site]}\n</site_hints>")
     parts.append(untrusted_block("page_snapshot", redact_snapshot(page_snapshot)))
