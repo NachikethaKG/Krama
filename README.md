@@ -14,7 +14,12 @@ just setup    # checks tools, creates .env, installs git hooks + all dependencie
 just up       # Postgres :5433, Redis :6379, Gitea :3001
 just seed     # Gitea users: krama-admin, demo (local-only passwords in .env)
 ```
-`just dev` starts the API (:8000) and web app (:3000). `just check` runs what CI runs. `just` lists every command. `just reset-gitea` wipes the test site back to a clean state.
+**Run the whole app** (after the setup above): `.\start-krama.bat` from the repo root starts Docker Desktop if
+needed, Postgres/Redis/Gitea, migrations, the API (:8000) and the web app in real mode (:3000) in their own
+windows, and opens http://localhost:3000/login (sign in as `demo@krama.dev` with `KRAMA_DEMO_PASSWORD` from `.env`).
+`.\stop-krama.bat` stops it all (`-KeepDocker` leaves the containers running).
+
+`just dev` starts the API (:8000) and web app (:3000, mock mode unless `NEXT_PUBLIC_API_MODE=http`). `just check` runs what CI runs. `just` lists every command. `just reset-gitea` wipes the test site back to a clean state.
 
 ## Docs
 
