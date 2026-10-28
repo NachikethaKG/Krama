@@ -99,14 +99,14 @@ describe("Route Protection Middleware (middleware.ts)", () => {
     expect(settingsRes.status).toBe(200);
   });
 
-  it("redirects authenticated users away from /login and /signup to /dashboard", () => {
+  it("redirects authenticated users away from /login and /signup to the home screen", () => {
     const loginReq = createMockRequest("http://localhost:3000/login", {
       krama_session: "demo-session-token",
     });
     const loginRes = middleware(loginReq);
 
     expect(loginRes.status).toBe(307);
-    expect(loginRes.headers.get("location")).toBe("http://localhost:3000/dashboard");
+    expect(loginRes.headers.get("location")).toBe("http://localhost:3000/");
 
     const signupReq = createMockRequest("http://localhost:3000/signup", {
       krama_session: "demo-session-token",
@@ -114,6 +114,6 @@ describe("Route Protection Middleware (middleware.ts)", () => {
     const signupRes = middleware(signupReq);
 
     expect(signupRes.status).toBe(307);
-    expect(signupRes.headers.get("location")).toBe("http://localhost:3000/dashboard");
+    expect(signupRes.headers.get("location")).toBe("http://localhost:3000/");
   });
 });
