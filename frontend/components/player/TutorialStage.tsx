@@ -148,7 +148,15 @@ export function TutorialStage({
 
   // Highlight calculations
   const highlight = currentScene?.highlight;
-  const highlightBbox = highlight?.bbox;
+  // After a click or key press the stage shows the result, often a new page: the element the box pointed at
+  // is gone there, so the box would float over unrelated content (#320 follow-up). Typing keeps its box.
+  const resultHidesTarget =
+    showRecording &&
+    showResult &&
+    clickMs !== null &&
+    clickMs !== undefined &&
+    (currentScene?.action?.type === "click" || currentScene?.action?.type === "press");
+  const highlightBbox = resultHidesTarget ? undefined : highlight?.bbox;
   const highlightPadding = highlight?.padding ?? 8;
   const highlightColor = highlight?.color ?? "#4f46e5";
   const highlightStyle = highlight?.style ?? "pulsing_ring";
