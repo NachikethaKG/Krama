@@ -6,7 +6,7 @@ import { getApiClient } from "@/lib/api";
 import type { RunListItem } from "@/lib/types";
 import { RunListTable, RunPagination } from "@/components/runs";
 
-const PAGE_SIZE = 5;
+const PAGE_SIZE = 20;
 
 export default function RunsPage() {
   const [runs, setRuns] = useState<RunListItem[]>([]);
@@ -64,21 +64,11 @@ export default function RunsPage() {
     <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-4 py-10">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400 mb-1">
-            <Link href="/" className="hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors">
-              Home
-            </Link>
-            <span>/</span>
-            <span className="text-zinc-800 dark:text-zinc-200 font-medium">Runs</span>
-          </div>
-          <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
-            Run History
-          </h1>
+          <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">Runs</h1>
           <p className="mt-1 text-xs sm:text-sm text-zinc-600 dark:text-zinc-400">
-            Inspect past workflow runs and review verification evidence layers for each executed step.
+            Every time Krama did a task for you, with what it checked at each step.
           </p>
         </div>
-
         <div className="flex items-center gap-2">
           <button
             type="button"
@@ -98,10 +88,11 @@ export default function RunsPage() {
             Refresh
           </button>
           <Link
-            href="/"
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white transition-colors"
+            href="/dashboard/metrics"
+            data-testid="nav-technical-metrics"
+            className="px-3 py-1.5 text-xs font-medium text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
           >
-            New Workflow
+            Benchmark metrics
           </Link>
         </div>
       </div>

@@ -51,10 +51,10 @@ export function MetricsDashboardClient({ initialData }: MetricsDashboardClientPr
           {/* Breadcrumb nav */}
           <div className="flex items-center gap-2 text-xs text-zinc-500">
             <Link
-              href="/dashboard"
+              href="/runs"
               className="font-medium text-zinc-700 hover:text-indigo-600 dark:text-zinc-300 dark:hover:text-indigo-400 transition-colors"
             >
-              ← User Dashboard
+              ← Runs
             </Link>
             <span className="text-zinc-300 dark:text-zinc-700">/</span>
             <span className="font-semibold text-zinc-900 dark:text-zinc-100">Technical Metrics</span>
@@ -103,10 +103,10 @@ export function MetricsDashboardClient({ initialData }: MetricsDashboardClientPr
             </Link>
             <span className="text-zinc-300 dark:text-zinc-700">/</span>
             <Link
-              href="/dashboard"
+              href="/runs"
               className="font-medium text-zinc-700 hover:text-indigo-600 dark:text-zinc-300 dark:hover:text-indigo-400 transition-colors"
             >
-              User Dashboard
+              Runs
             </Link>
             <span className="text-zinc-300 dark:text-zinc-700">/</span>
             <span className="font-semibold text-zinc-900 dark:text-zinc-100">Technical Metrics</span>

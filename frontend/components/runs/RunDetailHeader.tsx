@@ -46,9 +46,9 @@ export function RunDetailHeader({ runDetails, className = "" }: RunDetailHeaderP
           {targetUrl && (
             <p
               data-testid="stat-target-url"
-              className="text-xs text-zinc-500 dark:text-zinc-400 font-mono truncate"
+              className="text-xs text-zinc-500 dark:text-zinc-400 truncate"
             >
-              Target: <span className="text-zinc-700 dark:text-zinc-300">{targetUrl}</span>
+              Website: <span className="text-zinc-700 dark:text-zinc-300">{targetUrl.replace(/^https?:\/\//, "").replace(/\/$/, "")}</span>
             </p>
           )}
         </div>
