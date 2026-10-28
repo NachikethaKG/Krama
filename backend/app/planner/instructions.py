@@ -15,6 +15,8 @@ from app.contracts_gen.common_schema import Action, Target
 
 _MAX_WORDS = 8
 _REQUIRED_MARK = re.compile(r"\s*\*$")
+_LEADING_VERB = re.compile(r"^(?:add|enter|choose|type)\s+(?:an?\s+|the\s+)?", re.IGNORECASE)
+_NOUNS = ("name", "title", "description")
 _TOGGLES = frozenset({"checkbox", "switch"})
 
 
@@ -25,10 +27,12 @@ def tutorial_text(
     *,
     page_title: str | None,
     sensitive: bool,
+    task: str | None = None,
 ) -> str | None:
     """One imperative sentence for the step, or None when the facts aren't enough (keep the planner's text).
 
-    `page_title` is the title of the page the step started on.
+    `page_title` is the title of the page the step started on. `task` is what the user asked for: a typed
+    value it doesn't contain was made up by the planner (#325), so the step offers it as an example.
     """
     label = _clean(target.name) if target is not None else None
     match action.type:
@@ -52,6 +56,8 @@ def tutorial_text(
             sentence = f"fill in {_q(label)}"
         case "fill" if "\n" in value or len(value.split()) > _MAX_WORDS:
             sentence = f"enter the text in {_q(label)}"
+        case "fill" if task is not None and value.casefold() not in task.casefold():
+            sentence = _example(label, value)
         case "fill":
             sentence = f"enter {_q(value)} in {_q(label)}"
         case "select":
@@ -61,6 +67,21 @@ def tutorial_text(
         case _:
             return None
     return _capitalize(_where(context, label, page_title) + sentence) + "."
+
+
+def _example(label: str, value: str) -> str:
+    """A made-up value as an example (#325): learners type their own, the tutorial shows one that worked.
+
+    "Enter your new branch name, for example “feature-docs-4821”" (a label that names the thing), "Enter a
+    title in “Add a title”, for example …" (a one-word label), else "Enter your own text in “Color”, …".
+    """
+    noun = _LEADING_VERB.sub("", label).strip().lower()
+    example = f"for example {_q(value)}"
+    if len(noun.split()) == 1 and noun:
+        return f"enter a {noun} in {_q(label)}, {example}"
+    if noun.endswith(_NOUNS):
+        return f"enter your {noun}, {example}"
+    return f"enter your own text in {_q(label)}, {example}"
 
 
 def _where(context: ElementContext | None, label: str, page_title: str | None) -> str:
