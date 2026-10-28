@@ -100,9 +100,8 @@ test.describe("PRD §33 Technical Metrics Dashboard & Multi-Target Benchmark", (
     await expect(page.getByTestId("task-row-github-create-repo")).toBeVisible();
   });
 
-  test("navigates to /dashboard/metrics via dashboard header link", async ({ page }) => {
-    await page.goto("/dashboard");
-    await expect(page).toHaveURL(/\/dashboard/);
+  test("navigates to /dashboard/metrics from the Runs page", async ({ page }) => {
+    await page.goto("/runs");
 
     const metricsLink = page.getByTestId("nav-technical-metrics");
     await expect(metricsLink).toBeVisible();

@@ -90,7 +90,7 @@ test.describe("Polished Live Agent View (/runs/[id])", () => {
     await resumeBtn.click();
 
     // Verify header X-Krama: 1
-    expect(resumeHeaders["x-krama"]).toBe("1");
+    await expect.poll(() => resumeHeaders["x-krama"]).toBe("1"); // the request is async
 
     // Paused banner disappears on resume
     await expect(pausedBanner).not.toBeVisible();

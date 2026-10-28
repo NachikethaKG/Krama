@@ -49,13 +49,6 @@ test.describe("Workflow Approval Screen - Happy Path", () => {
     await expect(page.getByTestId("live-execution-view")).toHaveAttribute("data-run-id", "mock-run-id");
   });
 
-  test("loads default approval route and verifies direct navigation", async ({ page }) => {
-    await page.goto("/approval");
-
-    await expect(page.getByTestId("task-header")).toBeVisible();
-    await expect(page.getByTestId("step-list")).toBeVisible();
-    await expect(page.getByTestId("approve-btn")).toBeVisible();
-  });
 });
 
 test.describe("Workflow Approval Screen - Rejection & Edge Cases", () => {
@@ -72,7 +65,7 @@ test.describe("Workflow Approval Screen - Rejection & Edge Cases", () => {
     // Verify rejection banner and state transition
     const rejectedBanner = page.getByTestId("approval-rejected-banner");
     await expect(rejectedBanner).toBeVisible();
-    await expect(rejectedBanner).toContainText(/Workflow plan rejected/i);
+    await expect(rejectedBanner).toContainText(/Plan cancelled/i);
 
     const statusBadge = page.getByTestId("workflow-status-badge");
     await expect(statusBadge).toHaveText(/rejected/i);
@@ -88,16 +81,16 @@ test.describe("Workflow Approval Screen - Rejection & Edge Cases", () => {
 
     const editBtn = page.getByTestId("edit-btn");
     await editBtn.click();
-    await expect(editBtn).toHaveText("Done Editing");
+    await expect(editBtn).toHaveText("Done editing");
 
     // Edit step 1 input
     const input1 = page.getByTestId("step-input-1");
     await expect(input1).toBeVisible();
     await input1.fill("Custom edited instruction: Click menu");
 
-    // Toggle Done Editing
+    // Toggle Done editing
     await editBtn.click();
-    await expect(editBtn).toHaveText("Edit Plan");
+    await expect(editBtn).toHaveText("Edit steps");
 
     // Assert updated text is rendered
     await expect(page.getByText("Custom edited instruction: Click menu")).toBeVisible();

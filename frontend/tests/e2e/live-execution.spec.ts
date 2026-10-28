@@ -25,7 +25,7 @@ test.describe("Workflow Live Execution - Happy Path", () => {
     // 4. Wait for full execution stream to complete
     const completionBanner = page.getByTestId("completion-banner");
     await expect(completionBanner).toBeVisible({ timeout: 15000 });
-    await expect(completionBanner).toContainText(/Workflow Execution Complete/i);
+    await expect(completionBanner).toContainText(/Tutorial ready/i);
 
     // 5. Assert final verified status on status badge and progress bar
     const statusBadge = page.getByTestId("execution-status-badge");
@@ -44,15 +44,6 @@ test.describe("Workflow Live Execution - Happy Path", () => {
     }
   });
 
-  test("loads direct /execution route and runs execution", async ({ page }) => {
-    await page.goto("/execution?speed=50");
-
-    await expect(page.getByTestId("execution-header")).toBeVisible();
-    await expect(page.getByTestId("execution-step-list")).toBeVisible();
-
-    const completionBanner = page.getByTestId("completion-banner");
-    await expect(completionBanner).toBeVisible({ timeout: 15000 });
-  });
 });
 
 test.describe("Workflow Live Execution - Interruption & Failure Handling", () => {

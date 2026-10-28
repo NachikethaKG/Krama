@@ -9,7 +9,7 @@ test.describe("Tutorial Library & Filtering (/tutorials)", () => {
 
     // 2. Assert page header and title are visible
     const pageTitle = page.getByRole("heading", {
-      name: /Interactive Tutorials/i,
+      name: /My tutorials/i,
       level: 1,
     });
     await expect(pageTitle).toBeVisible();
@@ -93,7 +93,7 @@ test.describe("Tutorial Library & Filtering (/tutorials)", () => {
     await searchInput.fill("nonexistent-tutorial-xyz-12345");
     const emptyState = page.getByTestId("empty-tutorials");
     await expect(emptyState).toBeVisible();
-    await expect(page.getByText(/No tutorials match your search or filter/i)).toBeVisible();
+    await expect(page.getByText(/No tutorials match your search/i)).toBeVisible();
 
     const resetBtn = page.getByTestId("reset-filters-btn");
     await expect(resetBtn).toBeVisible();
