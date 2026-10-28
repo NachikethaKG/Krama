@@ -5,7 +5,7 @@ import type { NextRequest } from "next/server";
 // Every app page needs a session (#318: home, tutorials and plan approval used to load signed out and then
 // fail on API 401s). "/" is matched exactly below; everything else by prefix.
 const PROTECTED_PREFIXES = ["/dashboard", "/runs", "/settings", "/tutorials", "/workflows", "/tasks"];
-const PUBLIC_PREFIXES = ["/share", "/s", "/login", "/signup"];
+const PUBLIC_PREFIXES = ["/share", "/s", "/login", "/signup", "/welcome"];
 const AUTH_COOKIE_NAME = "krama_session";
 
 function matchesRoutePrefix(pathname: string, prefixes: string[]): boolean {
@@ -30,6 +30,11 @@ export function middleware(request: NextRequest) {
   const isProtected = pathname === "/" || matchesRoutePrefix(pathname, PROTECTED_PREFIXES);
   const hasSession = request.cookies.has(AUTH_COOKIE_NAME);
 
+  // Signed-out visitors at "/" get the public landing page, with "/" kept in the address bar
+  if (pathname === "/" && !hasSession) {
+    return NextResponse.rewrite(new URL("/welcome", request.url));
+  }
+
   if (isProtected && !hasSession) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("from", `${pathname}${search}`);
@@ -52,5 +57,6 @@ export const config = {
     "/signup",
     "/share/:path*",
     "/s/:path*",
+    "/welcome",
   ],
 };
