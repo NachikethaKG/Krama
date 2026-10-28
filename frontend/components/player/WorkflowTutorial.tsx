@@ -80,7 +80,7 @@ export function WorkflowTutorial({ workflowId }: { workflowId: string }) {
     <div data-testid="workflow-tutorial" data-real-ui={loaded.recording ? "true" : "false"}>
       <div className="mx-auto mb-3 flex max-w-7xl items-center justify-end px-4">
         <a href={guideUrl} className="text-xs font-medium text-indigo-600 hover:underline dark:text-indigo-400">
-          Text guide (Markdown)
+          Read as text
         </a>
       </div>
       <TutorialPlayer spec={loaded.spec} recording={loaded.recording} />

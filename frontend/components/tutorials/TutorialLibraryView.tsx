@@ -7,6 +7,9 @@ import type { TargetPlatform, TutorialStatus, TutorialSummary } from "@/types/tu
 import { TutorialCard } from "./TutorialCard";
 import { TutorialSearchFilter } from "./TutorialSearchFilter";
 
+/** Cards shown at first and added by each "Show more" (#318: the list used to render all of them at once). */
+export const PAGE_SIZE = 12;
+
 export interface TutorialLibraryViewProps {
   client?: ApiClient;
   initialTutorials?: TutorialSummary[];
@@ -26,6 +29,7 @@ export function TutorialLibraryView({
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<"all" | TutorialStatus>("all");
   const [reloadKey, setReloadKey] = useState<number>(0);
+  const [visible, setVisible] = useState<number>(PAGE_SIZE);
 
   useEffect(() => {
     if (initialTutorials) return;
@@ -110,6 +114,7 @@ export function TutorialLibraryView({
   const handleResetFilters = () => {
     setSearchQuery("");
     setStatusFilter("all");
+    setVisible(PAGE_SIZE);
   };
 
   return (
@@ -118,20 +123,19 @@ export function TutorialLibraryView({
       <div className="flex flex-col gap-4 border-b border-zinc-200 pb-6 dark:border-zinc-800 md:flex-row md:items-end md:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 sm:text-3xl">
-            Interactive Tutorials
+            My tutorials
           </h1>
           <p className="mt-1.5 text-sm text-zinc-600 dark:text-zinc-400 max-w-2xl">
-            Step-by-step interactive walk-throughs recorded directly from real browser execution.
-            Replay verified flows, study target mechanics, or review outdated actions.
+            Every task Krama did for you and checked step by step. Open one to watch it again.
           </p>
         </div>
 
         <div className="flex items-center gap-3">
           <Link
-            href="/runs/new"
+            href="/"
             className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3.5 py-2 text-xs font-semibold text-white shadow-xs hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 transition-colors"
           >
-            <span>+ Create Workflow</span>
+            <span>+ New tutorial</span>
           </Link>
         </div>
       </div>
@@ -140,9 +144,15 @@ export function TutorialLibraryView({
       <div className="mt-6">
         <TutorialSearchFilter
           searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
+          onSearchChange={(q) => {
+            setSearchQuery(q);
+            setVisible(PAGE_SIZE);
+          }}
           statusFilter={statusFilter}
-          onStatusFilterChange={setStatusFilter}
+          onStatusFilterChange={(f) => {
+            setStatusFilter(f);
+            setVisible(PAGE_SIZE);
+          }}
           counts={counts}
         />
       </div>
@@ -171,7 +181,7 @@ export function TutorialLibraryView({
             </svg>
           </div>
           <h2 className="mt-3 text-sm font-semibold text-rose-900 dark:text-rose-200">
-            Failed to Load Tutorials
+            Couldn&apos;t load your tutorials
           </h2>
           <p className="mt-1 text-xs text-rose-700 dark:text-rose-400">{error}</p>
           <button
@@ -179,7 +189,7 @@ export function TutorialLibraryView({
             onClick={handleRetry}
             className="mt-4 inline-flex items-center gap-1.5 rounded-md border border-rose-300 bg-white px-3 py-1.5 text-xs font-medium text-rose-700 hover:bg-rose-100 dark:border-rose-800 dark:bg-zinc-900 dark:text-rose-300 dark:hover:bg-zinc-800 transition-colors"
           >
-            Retry Loading
+            Try again
           </button>
         </div>
       ) : null}
@@ -236,10 +246,10 @@ export function TutorialLibraryView({
           {hasActiveFilters ? (
             <>
               <h2 className="mt-4 text-base font-semibold text-zinc-900 dark:text-zinc-100">
-                No tutorials match your search or filter
+                No tutorials match your search
               </h2>
               <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-                Try searching with different terms or reset your status filter to see all recorded tutorials.
+                Try other words, or clear the search to see all your tutorials.
               </p>
               <button
                 type="button"
@@ -253,16 +263,16 @@ export function TutorialLibraryView({
           ) : (
             <>
               <h2 className="mt-4 text-base font-semibold text-zinc-900 dark:text-zinc-100">
-                No verified tutorials recorded yet
+                No tutorials yet
               </h2>
               <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-                Execute a task workflow against Gitea or GitHub to record your first interactive tutorial.
+                Ask Krama for one, e.g. &ldquo;Show me how to create a GitHub repository&rdquo;.
               </p>
               <Link
-                href="/runs/new"
+                href="/"
                 className="mt-4 inline-flex items-center gap-1.5 rounded-md bg-indigo-600 px-3.5 py-2 text-xs font-semibold text-white hover:bg-indigo-500 transition-colors"
               >
-                Start New Workflow
+                New tutorial
               </Link>
             </>
           )}
@@ -274,7 +284,8 @@ export function TutorialLibraryView({
         <div className="mt-8">
           <div className="mb-4 flex items-center justify-between text-xs text-zinc-500 dark:text-zinc-400">
             <span>
-              Showing {filteredTutorials.length} of {tutorials?.length ?? 0} {tutorials?.length === 1 ? "tutorial" : "tutorials"}
+              Showing {Math.min(visible, filteredTutorials.length)} of {filteredTutorials.length}{" "}
+              {filteredTutorials.length === 1 ? "tutorial" : "tutorials"}
             </span>
           </div>
 
@@ -282,10 +293,22 @@ export function TutorialLibraryView({
             data-testid="tutorial-grid"
             className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3"
           >
-            {filteredTutorials.map((tutorial) => (
+            {filteredTutorials.slice(0, visible).map((tutorial) => (
               <TutorialCard key={tutorial.id} tutorial={tutorial} />
             ))}
           </div>
+          {visible < filteredTutorials.length && (
+            <div className="mt-6 flex justify-center">
+              <button
+                type="button"
+                data-testid="tutorials-show-more"
+                onClick={() => setVisible((v) => v + PAGE_SIZE)}
+                className="rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300"
+              >
+                Show more
+              </button>
+            </div>
+          )}
         </div>
       ) : null}
     </div>
