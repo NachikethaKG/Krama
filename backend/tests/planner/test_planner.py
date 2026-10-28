@@ -231,6 +231,22 @@ def test_system_prompt_forbids_changing_existing_data_unasked() -> None:
     assert "already exists" in SYSTEM_PROMPT
 
 
+def test_system_prompt_makes_up_example_names_instead_of_asking() -> None:
+    # #325: "Create a new branch on GitHub" asked the learner which repository and what branch name.
+    prompt = " ".join(SYSTEM_PROMPT.split())  # unwrap the lines
+    assert "Never ask for names or values that are only examples" in prompt
+    assert "use the practice repository" in prompt
+    assert "never just to get an example name" in prompt
+
+
+async def test_the_practice_repository_and_example_suffix_reach_the_llm() -> None:
+    practice = "krama-bench/bench-practice"
+    req = request().model_copy(update={"practice_repo": practice, "example_suffix": "4821"})
+    provider = fake(recorded(), contains=["Practice repository", practice, "Example suffix", "4821"])
+
+    await LLMPlanner(provider).plan(req)  # FakeProvider matches only a prompt that contains all of them
+
+
 @pytest.mark.parametrize("site", sorted(SITE_HINTS))
 def test_site_hints_name_no_css_selector(site: str) -> None:
     # A plan can't carry a selector, so a hint that offers one makes Gemini ask instead of plan (#273).

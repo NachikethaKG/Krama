@@ -35,6 +35,10 @@ class PlanRequest(BaseModel):
     """ARIA snapshot of the start page. Untrusted; redacted again before it reaches the LLM."""
     site: str | None = None
     signed_in_as: str | None = None
+    practice_repo: str | None = None
+    """owner/name to use when the task needs an existing repository and names none (#325)."""
+    example_suffix: str | None = None
+    """Ends the example names the planner makes up, so they don't clash with earlier runs (#325)."""
     done: list[str] = []
     """Replan only: instruction texts of the steps that already worked."""
     failure: str | None = None
@@ -94,6 +98,8 @@ class LLMPlanner:
                 page_snapshot=request.page_snapshot,
                 site=request.site,
                 signed_in_as=request.signed_in_as,
+                practice_repo=request.practice_repo,
+                example_suffix=request.example_suffix,
                 feedback=feedback,
                 done=request.done,
                 failure=request.failure,
