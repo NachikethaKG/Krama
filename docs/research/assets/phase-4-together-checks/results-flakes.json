@@ -1,0 +1,182 @@
+{
+  "replays_per_workflow": 4,
+  "no_drift": [
+    {
+      "workflow": "8a8f49f0-8a1b-442b-8ee2-a456a44a94a7",
+      "title": "Add a file notes.md containing 'First note' to the main branch of the repository bench-files.",
+      "steps": 5,
+      "runs": [
+        {
+          "outcome": "passed",
+          "reset": 1,
+          "seconds": 5.4
+        },
+        {
+          "outcome": "passed",
+          "reset": 1,
+          "seconds": 6.1
+        },
+        {
+          "outcome": "passed",
+          "reset": 1,
+          "seconds": 6.0
+        },
+        {
+          "outcome": "passed",
+          "reset": 1,
+          "seconds": 7.8
+        }
+      ]
+    },
+    {
+      "workflow": "028d7830-00c3-4809-8b59-40a869df4a7b",
+      "title": "Create a branch named feature-docs from main in the repository bench-branches.",
+      "steps": 4,
+      "runs": [
+        {
+          "outcome": "passed",
+          "reset": 1,
+          "seconds": 4.6
+        },
+        {
+          "outcome": "passed",
+          "reset": 1,
+          "seconds": 4.3
+        },
+        {
+          "outcome": "passed",
+          "reset": 1,
+          "seconds": 3.1
+        },
+        {
+          "outcome": "passed",
+          "reset": 1,
+          "seconds": 3.8
+        }
+      ]
+    },
+    {
+      "workflow": "99005f28-2a85-4ea9-986e-0785b9b0178f",
+      "title": "Create a new public repository named 'test-repo' with a README in local Gitea.",
+      "steps": 4,
+      "runs": [
+        {
+          "outcome": "passed",
+          "reset": 1,
+          "seconds": 3.3
+        },
+        {
+          "outcome": "passed",
+          "reset": 1,
+          "seconds": 3.7
+        },
+        {
+          "outcome": "passed",
+          "reset": 1,
+          "seconds": 4.6
+        },
+        {
+          "outcome": "passed",
+          "reset": 1,
+          "seconds": 4.2
+        }
+      ]
+    },
+    {
+      "workflow": "af3e260a-b50a-44fb-825b-aceb5f73aa05",
+      "title": "In the repository bench-issues, open an issue titled 'Login page shows a blank screen'.",
+      "steps": 3,
+      "runs": [
+        {
+          "outcome": "passed",
+          "reset": 0,
+          "seconds": 4.5
+        },
+        {
+          "outcome": "passed",
+          "reset": 0,
+          "seconds": 3.0
+        },
+        {
+          "outcome": "passed",
+          "reset": 0,
+          "seconds": 2.6
+        },
+        {
+          "outcome": "passed",
+          "reset": 0,
+          "seconds": 2.7
+        }
+      ]
+    },
+    {
+      "workflow": "7269a16b-10f5-41b4-b015-16b55a152e06",
+      "title": "Set the description of the repository bench-settings to 'Docs for the team'.",
+      "steps": 3,
+      "runs": [
+        {
+          "outcome": "passed",
+          "reset": 0,
+          "seconds": 3.1
+        },
+        {
+          "outcome": "passed",
+          "reset": 0,
+          "seconds": 2.7
+        },
+        {
+          "outcome": "passed",
+          "reset": 0,
+          "seconds": 3.8
+        },
+        {
+          "outcome": "passed",
+          "reset": 0,
+          "seconds": 3.6
+        }
+      ]
+    }
+  ],
+  "drift_control": {
+    "workflow": "99005f28-2a85-4ea9-986e-0785b9b0178f",
+    "drift": "Create Repository -> Make repo",
+    "runs": [
+      {
+        "outcome": "failed",
+        "reset": 1,
+        "step": 4,
+        "reason": "locator_miss",
+        "error": "target_not_found",
+        "url": "/repo/create",
+        "seconds": 8.5
+      },
+      {
+        "outcome": "failed",
+        "reset": 1,
+        "step": 4,
+        "reason": "locator_miss",
+        "error": "target_not_found",
+        "url": "/repo/create",
+        "seconds": 6.6
+      },
+      {
+        "outcome": "failed",
+        "reset": 1,
+        "step": 4,
+        "reason": "locator_miss",
+        "error": "target_not_found",
+        "url": "/repo/create",
+        "seconds": 6.7
+      },
+      {
+        "outcome": "failed",
+        "reset": 1,
+        "step": 4,
+        "reason": "locator_miss",
+        "error": "target_not_found",
+        "url": "/repo/create",
+        "seconds": 6.5
+      }
+    ]
+  }
+}
