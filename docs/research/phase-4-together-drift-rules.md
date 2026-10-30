@@ -2,7 +2,8 @@
 
 - **Phase:** 4
 - **Researched by:** Vishwas, alone (Nachiketha was busy; written by Claude Code on Vishwas's laptop, 2026-10-29).
-  The points marked **Nachiketha** need Nachiketha's OK in the PR review.
+  Vishwas decided every proposal below on 2026-10-30, including the ones marked **Nachiketha** (Nachiketha was
+  fully busy). The decisions are recorded in `phase-4-decisions-alignment.md`.
 - **Question(s):** Agree on the rules: what triggers auto-heal vs OUTDATED vs human review, and who gets notified.
 
 Builds on `phase-4-vishwas-self-healing-locators.md`, `phase-4-vishwas-workflow-versioning.md`,
@@ -44,7 +45,7 @@ observer and verifier, no LLM, run defaults (5 s action / 5 s verify timeouts):
   and there's no element to re-locate. Gemini can be unavailable for a whole day (15/15 attempts failed on
   2026-10-26).
 
-## Recommendation (proposed rules)
+## Recommendation (rules; decided 2026-10-30, see `phase-4-decisions-alignment.md`)
 
 **1. Confirm before deciding.** A failed validation is re-run once right away (same target, fresh reset). Only a
 failure at the **same step with the same reason** counts as drift. A different result the second time is a flake:
