@@ -124,6 +124,39 @@ export type HighlightStyle = "pulsing_ring" | "solid_box" | "spotlight";
  * via the `definition` "WorkflowStatus".
  */
 export type WorkflowStatus = "draft" | "approved" | "running" | "verified" | "failed" | "outdated";
+/**
+ * What made the version: the first verified run, a self-heal, a regenerated plan, or a human edit.
+ *
+ * This interface was referenced by `Workflow`'s JSON-Schema
+ * via the `definition` "WorkflowVersionSource".
+ */
+export type WorkflowVersionSource = "initial" | "heal" | "regenerate" | "edit";
+/**
+ * current: the one shown. pending_review: waits for the owner to accept it. superseded: an older current one. rejected: the owner turned it down.
+ *
+ * This interface was referenced by `Workflow`'s JSON-Schema
+ * via the `definition` "WorkflowVersionStatus".
+ */
+export type WorkflowVersionStatus = "current" | "pending_review" | "superseded" | "rejected";
+/**
+ * This interface was referenced by `Workflow`'s JSON-Schema
+ * via the `definition` "StepChangeKind".
+ */
+export type StepChangeKind = "same" | "changed" | "added" | "removed";
+/**
+ * behaviour: what the step does or acts on. check: its expected state. wording: only its instruction text (the UI may collapse these). risk: its risk level.
+ *
+ * This interface was referenced by `Workflow`'s JSON-Schema
+ * via the `definition` "StepChangeCategory".
+ */
+export type StepChangeCategory = "behaviour" | "check" | "wording" | "risk";
+/**
+ * Result of one validation of a stored workflow (docs/research/phase-4-decisions-alignment.md): passed, healed (a new current version), heal_pending (a new version waits for review), outdated, blocked (the environment stopped it; the workflow's status is unchanged), skipped (not replayable).
+ *
+ * This interface was referenced by `Workflow`'s JSON-Schema
+ * via the `definition` "ValidationStatus".
+ */
+export type ValidationStatus = "passed" | "healed" | "heal_pending" | "outdated" | "blocked" | "skipped";
 
 export interface KramaContracts {
   auth?: User;
@@ -863,6 +896,10 @@ export interface Workflow {
    * Workflow format version (e.g. 1.0).
    */
   version?: string;
+  /**
+   * Number of the workflow version whose steps and recording this is (1 = as first recorded). Not the format `version` above.
+   */
+  revision?: number | null;
   task_id?: string | null;
   run_id?: string | null;
   /**
@@ -949,4 +986,98 @@ export interface WorkflowSummary {
 export interface WorkflowPage {
   items: WorkflowSummary[];
   next_cursor?: string | null;
+}
+/**
+ * This interface was referenced by `Workflow`'s JSON-Schema
+ * via the `definition` "WorkflowVersion".
+ */
+export interface WorkflowVersion {
+  id: string;
+  workflow_id: string;
+  revision: number;
+  source: WorkflowVersionSource;
+  status: WorkflowVersionStatus;
+  /**
+   * The version this one was made from; null for the first.
+   */
+  parent_version_id?: string | null;
+  /**
+   * The run that recorded this version.
+   */
+  run_id?: string | null;
+  confidence?: number | null;
+  step_count: number;
+  /**
+   * How the steps differ from the parent version; null for the first.
+   */
+  change_summary?: StepDiff | null;
+  created_at: string;
+}
+/**
+ * This interface was referenced by `Workflow`'s JSON-Schema
+ * via the `definition` "StepDiff".
+ */
+export interface StepDiff {
+  from_revision: number;
+  to_revision: number;
+  /**
+   * Every step of both versions, aligned by meaning, in the new version's order.
+   */
+  steps: StepChange[];
+}
+/**
+ * This interface was referenced by `Workflow`'s JSON-Schema
+ * via the `definition` "StepChange".
+ */
+export interface StepChange {
+  kind: StepChangeKind;
+  /**
+   * Null for an added step.
+   */
+  old_seq?: number | null;
+  /**
+   * Null for a removed step.
+   */
+  new_seq?: number | null;
+  /**
+   * The most important category among the changes; null for a same step.
+   */
+  category?: StepChangeCategory | null;
+  fields?: FieldChange[];
+  /**
+   * Short text for an added or removed step, e.g. 'click button “Confirm”'.
+   */
+  summary?: string | null;
+}
+/**
+ * This interface was referenced by `Workflow`'s JSON-Schema
+ * via the `definition` "FieldChange".
+ */
+export interface FieldChange {
+  /**
+   * Dotted path in the step, e.g. target.name, action.value, expected_state.
+   */
+  field: string;
+  /**
+   * The old value (any JSON); absent or null if there was none.
+   */
+  from?: {
+    [k: string]: unknown;
+  };
+  /**
+   * The new value (any JSON); absent or null if there is none.
+   */
+  to?: {
+    [k: string]: unknown;
+  };
+}
+/**
+ * This interface was referenced by `Workflow`'s JSON-Schema
+ * via the `definition` "WorkflowVersionList".
+ */
+export interface WorkflowVersionList {
+  /**
+   * Newest first.
+   */
+  items: WorkflowVersion[];
 }

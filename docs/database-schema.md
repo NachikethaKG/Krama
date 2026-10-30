@@ -63,26 +63,49 @@ The persisted SSE stream, so the live view can resume and old runs can be replay
 |---|---|---|
 | id | uuid pk | |
 | task_id | uuid fk → tasks | |
-| run_id | uuid fk → runs | the run that produced it |
+| run_id | uuid fk → runs | the run that produced its first version |
 | title | text | |
 | target_app | text | `gitea`, `github`, … |
 | target_url | text | |
 | status | text | `verified\|failed\|outdated` |
-| version | int | Phase 4 versioning |
-| confidence | real | |
+| revision | int | the current version's number (Phase 4; was `version`) |
+| current_version_id | uuid fk → workflow_versions | the version shown (status `current`); set in the same transaction as the insert |
+| confidence | real | the current version's |
 | preconditions | jsonb | e.g. `{logged_in_as: "demo"}` |
-| recording_path | text null | rrweb JSON in the artifact store |
-| viewport | jsonb | `{width, height, device_scale_factor}` |
+| recording_path | text null | rrweb JSON in the artifact store (the current version's) |
+| viewport | jsonb | `{width, height, device_scale_factor}` (the current version's) |
+
+`run_id` aside, `confidence`, `recording_path` and `viewport` are copies of the current version's values, made when a
+version becomes current, so every reader of a workflow keeps reading one row.
+
+### `workflow_versions`
+Every version of a workflow, immutable once written except for `status` (Phase 4,
+`docs/research/phase-4-decisions-alignment.md` D1, D5). Each version has its own step rows and recording.
+| column | type | notes |
+|---|---|---|
+| id | uuid pk | |
+| workflow_id | uuid fk → workflows | on delete cascade; unique with `revision` |
+| revision | int | 1, 2, … per workflow |
+| source | text | `initial\|heal\|regenerate\|edit` |
+| status | text | `current\|pending_review\|superseded\|rejected`; at most one `current` per workflow (partial unique index) |
+| parent_version_id | uuid fk → workflow_versions, null | the version it was made from; null for the first |
+| run_id | uuid fk → runs, null | the run that recorded it |
+| created_by | uuid fk → users, null | who asked for it (regenerate, edit); null for the first and for heals |
+| confidence | real null | |
+| recording_path | text null | |
+| viewport | jsonb null | |
+| change_summary | jsonb null | `StepDiff` vs the parent version (contract); null for the first |
 
 ### `workflow_steps`
 Stored as rows (not jsonb) so steps can be queried, compared across versions and re-verified.
 | column | type | notes |
 |---|---|---|
 | id | uuid pk | |
-| workflow_id | uuid fk → workflows | unique with `seq` |
+| workflow_id | uuid fk → workflows | |
+| version_id | uuid fk → workflow_versions | on delete cascade; unique with `seq`. A new version copies all its steps |
 | seq | int | |
 | action | jsonb | `{type, value}` (value masked if sensitive) |
-| target | jsonb | `{role, name, selector, bbox, scroll}`; `scroll` = `{x, y}` window scroll when the action ran |
+| target | jsonb | `{role, name, selector, bbox, scroll}`; `scroll` = `{x, y}` window scroll when the action ran. Phase 4 adds an internal `fingerprint` key (D2) |
 | instruction_text | text | |
 | before_state / expected_state / observed_state | jsonb | |
 | verification | jsonb | `{result, method[], confidence}` |
@@ -91,6 +114,18 @@ Stored as rows (not jsonb) so steps can be queried, compared across versions and
 | screenshot_path | text null | |
 | start_ms / end_ms | int | offsets into the recording |
 
+### `validations`
+One row per validation of a stored workflow (Phase 4, #110 writes them).
+| column | type | notes |
+|---|---|---|
+| id | uuid pk | |
+| workflow_id | uuid fk → workflows | on delete cascade |
+| version_id | uuid fk → workflow_versions, null | the version that was validated |
+| run_id | uuid fk → runs, null | the reverify run (the last one, after a confirm re-run) |
+| status | text | `passed\|healed\|heal_pending\|outdated\|blocked\|skipped` (`ValidationStatus`) |
+| drift_details | jsonb null | failing step, reason, healing candidates (#109, #111) |
+| ran_at | timestamptz | |
+
 ## Later phases
 - **Phase 3:**
   - `users (id, email unique lower-cased, password_hash argon2id, display_name, created_at)`: seeded, no sign-up.
@@ -98,8 +133,10 @@ Stored as rows (not jsonb) so steps can be queried, compared across versions and
   - `tasks.user_id` and `workflows.user_id` (owner; null for rows from before Phase 3).
   - `tutorial_shares (id, workflow_id, created_by, token_hash unique, created_at, expires_at null, revoked_at null, last_used_at null)`.
   - Signed-in browser sessions for real sites (#87) are Fernet-encrypted files under `data/sessions/`, not a table, while there is one test account per site.
-- **Phase 4:** `workflow_versions`, `validations (id, workflow_id, status, drift_details, ran_at)`.
+- **Phase 4:** `workflow_versions`, `validations`, `workflow_steps.version_id`, `workflows.revision` +
+  `current_version_id`: see the tables above.
 - **Phase 5:** `exports (id, workflow_id, format, preset, status, path)`.
 
 ## Indexes
-`runs(plan_id)`, `runs(status)`, `workflows(target_app, status)`, `workflow_steps(workflow_id, seq)` unique, `tasks(user_id)`.
+`runs(plan_id)`, `runs(status)`, `workflows(target_app, status)`, `workflow_steps(version_id, seq)` unique, `workflow_steps(workflow_id)`, `workflow_versions(workflow_id, revision)`
+unique, `workflow_versions(workflow_id) where status = 'current'` unique, `validations(workflow_id, ran_at)`, `tasks(user_id)`.

@@ -53,7 +53,7 @@
 | 3 | GET | `/shared/{token}` | → `Workflow` | Public, read-only. `task_id`/`run_id` are null and file URLs point under `/shared/{token}/`. Unknown, revoked and expired tokens all answer the same `404`. Sent with `Referrer-Policy: no-referrer`, `X-Robots-Tag: noindex, nofollow`, `Cache-Control: private, no-store` |
 | 3 | GET | `/shared/{token}/recording`, `/shared/{token}/artifacts/{path}` | → rrweb JSON / image | Only the shared workflow's own files |
 | 3 | GET | `/metrics/summary` | → `MetricsSummary` | The last benchmark's `benchmarks/results/summary.json`; `404` before any benchmark has run |
-| 4 | GET | `/workflows/{id}/versions` | → `WorkflowVersion[]` | Drift and self-healing |
+| 4 | GET | `/workflows/{id}/versions` | → `WorkflowVersionList` | Every version of the workflow, newest first, each with its `change_summary` (step diff vs its parent; null for the first). Owner only, like `GET /workflows/{id}`; `404` otherwise. `GET /workflows/{id}` returns the `current` version's steps and recording, and its `revision` |
 | 5 | POST | `/workflows/{id}/exports` | `{format: "mp4", preset}` → `202 Export` | |
 
 The tutorial itself has **no endpoint**: the frontend compiles `Workflow → TutorialSpec` with `packages/tutorial-compiler`. The spec's shape is `contracts/schemas/tutorial-spec.schema.json`.

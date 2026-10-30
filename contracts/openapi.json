@@ -1734,6 +1734,19 @@
             "description": "Relative artifact path to rrweb recording.",
             "title": "Recording Path"
           },
+          "revision": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Number of the workflow version whose steps and recording this is (1 = as first recorded). Not the format `version` above.",
+            "title": "Revision"
+          },
           "run_id": {
             "anyOf": [
               {
