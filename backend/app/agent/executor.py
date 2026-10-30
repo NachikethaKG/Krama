@@ -58,6 +58,9 @@ class ActionResult(BaseModel):
     """LLM requests made by the vision fallback (for the run log and the benchmark)."""
     candidates: list[Candidate] = []
     """After `target_not_found` / `ambiguous_target`: the visible elements with the planned role (#109)."""
+    refilled: list[str] = []
+    """Fields typed into earlier on this page that had lost their value and were typed again before this click
+    (#330), described by role and name, never by value."""
     error: ActionError | None = None
 
 
@@ -94,6 +97,9 @@ class ActionExecutor:
         """Wait after a navigate: on GitHub a button clicked before the page's scripts have loaded does
         nothing ("New label" opened no dialog, #89)."""
         self._last_filled: Locator | None = None
+        self._filled: list[tuple[Locator, str, str]] = []
+        """(field, value, description) of every fill since the last navigate, for the check before a click.
+        Values stay in memory only: they can be secrets."""
         """The field the last successful fill/select typed into: several identical buttons (Gitea's three
         "Update Settings") are told apart by which one belongs to that field's form (#83)."""
 
@@ -110,6 +116,7 @@ class ActionExecutor:
         context: ElementContext | None = None
         attempts: list[LLMAttempt] = []
         candidates: list[Candidate] = []
+        refilled: list[str] = []
         error: ActionError | None = None
         try:
             _validate(action, target)
@@ -117,10 +124,20 @@ class ActionExecutor:
                 locator, strategy = await self._resolve(target, instruction, attempts)
                 context = await element_context(locator)
                 bbox, scroll = await self._page_bbox(locator)
+            if action.type == "click" and target is not None and target.role == "button":
+                refilled = await self._refill_lost_values()
             await self._perform(action, locator)
             self._last_filled = locator if action.type in ("fill", "select") else self._last_filled
+            if (
+                action.type == "fill"
+                and locator is not None
+                and target is not None
+                and action.value is not None
+            ):
+                self._filled.append((locator, action.value, _describe(target)))
             if action.type == "navigate":
                 self._last_filled = None
+                self._filled = []
             if locator is None:
                 scroll = await self._scroll()
         except _InvalidActionError as e:
@@ -147,8 +164,26 @@ class ActionExecutor:
             context=context,
             llm_attempts=attempts,
             candidates=candidates,
+            refilled=refilled,
             error=error,
         )
+
+    async def _refill_lost_values(self) -> list[str]:
+        """Before a button click: type again into any field filled on this page that lost its value.
+
+        GitHub's new-issue form once wiped a typed title before "Create" while its scripts were still
+        starting, although the fill had verified (#330). Fields that are gone, or can't report a value (rich
+        editors), are skipped: the step's verification still decides whether the click worked."""
+        refilled = []
+        for field, value, what in self._filled:
+            try:
+                if await field.count() != 1 or await field.input_value(timeout=1_000) == value:
+                    continue
+                await field.fill(value)
+                refilled.append(what)
+            except PlaywrightError:
+                continue
+        return refilled
 
     def current_path(self) -> str:
         """The page's URL path (no scheme or host)."""

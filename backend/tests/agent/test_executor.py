@@ -225,3 +225,29 @@ async def test_a_settle_time_waits_after_navigating(session: PlaywrightSession) 
     result = await executor.execute(Action(type="navigate", value="/form"))
 
     assert result.ok and time.perf_counter() - t0 >= 0.6
+
+
+async def test_a_wiped_field_is_typed_again_before_the_submit_click(
+    executor: ActionExecutor, session: PlaywrightSession
+) -> None:
+    """#330: the page cleared a field after it was filled; the button click puts the value back first."""
+    await executor.execute(Action(type="navigate", value="/wipe"))
+    fill = await executor.execute(
+        Action(type="fill", value="Login is blank"), Target(role="textbox", name="Title")
+    )
+    assert fill.ok
+    await session.page.wait_for_timeout(400)  # the page wipes the title 200 ms after the input
+
+    click = await executor.execute(Action(type="click"), Target(role="button", name="Create"))
+
+    assert click.ok and click.refilled == ["role=textbox name='Title'"]
+    assert await session.page.locator("#out").text_content() == "saved: Login is blank"
+
+
+async def test_nothing_is_refilled_when_the_fields_kept_their_values(executor: ActionExecutor) -> None:
+    await executor.execute(Action(type="navigate", value="/form"))
+    await executor.execute(Action(type="fill", value="demo"), Target(role="textbox", name="Repository Name"))
+
+    click = await executor.execute(Action(type="click"), Target(role="button", name="Create Repository"))
+
+    assert click.ok and click.refilled == []
