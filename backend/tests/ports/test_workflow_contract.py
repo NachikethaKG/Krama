@@ -11,7 +11,8 @@ from pydantic import TypeAdapter, ValidationError
 
 from app.contracts_gen.events_schema import RunEvent
 from app.contracts_gen.step_schema import Step, StepVerification
-from app.contracts_gen.workflow_schema import Workflow
+from app.contracts_gen.workflow_schema import ValidationStatus, Workflow, WorkflowVersionList
+from app.db.base import literal_values
 
 ROOT = Path(__file__).resolve().parents[3]
 SCHEMAS_DIR = ROOT / "contracts" / "schemas"
@@ -260,3 +261,32 @@ def test_gitea_create_repo_sse_events_fixture_validates() -> None:
     assert parsed_events[-1].type == "run.completed"
     assert parsed_events[-1].verified_steps == 5
     assert parsed_events[-1].failed_actions == 0
+
+
+def test_workflow_versions_fixture_parses() -> None:
+    """The versions fixture (for the frontend's mock API) matches `WorkflowVersionList`, and its newest
+    version's diff points at a changed target name: the self-heal case from #105."""
+    path = FIXTURES_DIR / "workflow-versions" / "gitea-create-repo-versions.json"
+    raw = json.loads(path.read_text("utf-8"))
+    versions = WorkflowVersionList.model_validate(raw).items
+    assert [v.revision for v in versions] == [2, 1]
+    assert versions[0].status == "current"
+    assert versions[0].parent_version_id == versions[1].id
+    assert versions[1].change_summary is None
+    diff = versions[0].change_summary
+    assert diff is not None and diff.from_revision == 1 and diff.to_revision == 2
+    changed = [s for s in diff.steps if s.kind == "changed"]
+    fields = changed[0].fields or []
+    assert [f.field for f in fields] == ["target.name", "instruction_text"]
+    assert fields[0].from_ == "Create Repository"
+
+
+def test_validation_status_values() -> None:
+    assert literal_values(ValidationStatus) == (
+        "passed",
+        "healed",
+        "heal_pending",
+        "outdated",
+        "blocked",
+        "skipped",
+    )
