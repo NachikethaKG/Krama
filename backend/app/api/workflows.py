@@ -1,5 +1,5 @@
-"""GET /workflows/{id} (the Verified Workflow, the main output), its text guide, and GET /workflows
-(docs/api-contract.md)."""
+"""GET /workflows/{id} (the Verified Workflow, the main output), its text guide and versions, and
+GET /workflows (docs/api-contract.md)."""
 
 from datetime import UTC, datetime
 from typing import Annotated
@@ -9,16 +9,16 @@ from uuid import UUID
 from fastapi import APIRouter, Query, Request, Response
 
 from app.api.auth import CurrentUser
-from app.api.convert import decode_cursor, encode_cursor, run_out, workflow_out, workflow_summary
+from app.api.convert import decode_cursor, encode_cursor, run_out, version_out, workflow_out, workflow_summary
 from app.api.errors import ApiException
 from app.api.guide import guide_markdown
 from app.api.owner import owned_workflow
 from app.api.services import ServicesDep
 from app.contracts_gen.common_schema import ErrorResponse
 from app.contracts_gen.run_schema import Run
-from app.contracts_gen.workflow_schema import Workflow, WorkflowPage
+from app.contracts_gen.workflow_schema import Workflow, WorkflowPage, WorkflowVersionList
 from app.db import PlanRow, RunRow, TaskRow
-from app.db.repositories import list_workflows
+from app.db.repositories import list_versions, list_workflows
 from app.runs.reverify import ReverifyRefusedError, check_replayable, plan_risk, plan_steps
 from app.targets import ResetError
 
@@ -56,6 +56,18 @@ async def get_workflow_guide(
         media_type="text/markdown; charset=utf-8",
         headers={"Content-Disposition": f'inline; filename="workflow-{workflow_id}.md"'},
     )
+
+
+@router.get(
+    "/workflows/{workflow_id}/versions", responses={404: {"model": ErrorResponse, "description": "Not found"}}
+)
+async def get_workflow_versions(
+    workflow_id: UUID, user: CurrentUser, services: ServicesDep
+) -> WorkflowVersionList:
+    """Every version of the workflow, newest first, each with its step diff against its parent (Phase 4)."""
+    async with services.sessions() as s:
+        await owned_workflow(s, workflow_id, user)
+        return WorkflowVersionList(items=[version_out(v, n) for v, n in await list_versions(s, workflow_id)])
 
 
 @router.post(

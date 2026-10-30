@@ -11,8 +11,8 @@ from app.contracts_gen.plan_schema import Plan
 from app.contracts_gen.run_schema import Run
 from app.contracts_gen.step_schema import Step
 from app.contracts_gen.task_schema import Task
-from app.contracts_gen.workflow_schema import Workflow, WorkflowSummary
-from app.db import PlanRow, RunRow, TaskRow, WorkflowRow
+from app.contracts_gen.workflow_schema import Workflow, WorkflowSummary, WorkflowVersion
+from app.db import PlanRow, RunRow, TaskRow, WorkflowRow, WorkflowVersionRow
 
 
 def task_out(row: TaskRow, plan_id: UUID | None) -> Task:
@@ -93,7 +93,7 @@ def workflow_out(row: WorkflowRow, task_prompt: str | None) -> Workflow:
     return Workflow.model_validate(
         {
             "id": row.id,
-            # `version` in the contract is the format version; workflows.version is the Phase 4 revision.
+            "revision": row.revision,  # the contract's `version` is the format version
             "task_id": row.task_id,
             "run_id": row.run_id,
             "title": row.title,
@@ -122,6 +122,24 @@ def workflow_summary(row: WorkflowRow) -> WorkflowSummary:
             "target_app": row.target_app,
             "step_count": len(row.steps),
             "confidence": row.confidence,
+            "created_at": row.created_at,
+        }
+    )
+
+
+def version_out(row: WorkflowVersionRow, step_count: int) -> WorkflowVersion:
+    return WorkflowVersion.model_validate(
+        {
+            "id": row.id,
+            "workflow_id": row.workflow_id,
+            "revision": row.revision,
+            "source": row.source,
+            "status": row.status,
+            "parent_version_id": row.parent_version_id,
+            "run_id": row.run_id,
+            "confidence": row.confidence,
+            "step_count": step_count,
+            "change_summary": row.change_summary,
             "created_at": row.created_at,
         }
     )
