@@ -9,7 +9,9 @@ from collections.abc import Sequence
 from typing import Any
 
 from app.agent.runlog import MASK
+from app.contracts_gen.plan_schema import PlannedStep
 from app.db import WorkflowStepRow
+from app.runs.steps import StepOutcome
 
 _RISK_ORDER = {"low": 0, "medium": 1, "high": 2}
 
@@ -61,3 +63,21 @@ def plan_steps(steps: Sequence[WorkflowStepRow]) -> list[dict[str, Any]]:
 
 def plan_risk(steps: Sequence[WorkflowStepRow]) -> str:
     return max((s.risk for s in steps), key=_RISK_ORDER.__getitem__, default="low")
+
+
+def failure_details(step: PlannedStep, out: StepOutcome) -> dict[str, Any]:
+    """Evidence for validation (#109): what the step looked for, and what the page offered (a locator miss) or
+    which expected-state checks failed (a state mismatch). Page text in it is untrusted data."""
+    details: dict[str, Any] = {
+        "target": step.target.model_dump(exclude_none=True),
+        "url": out.result.url_after,
+    }
+    if out.result.error is not None:
+        details["error_code"] = out.result.error.code
+    if out.result.candidates:
+        details["candidates"] = [c.model_dump(mode="json", exclude_none=True) for c in out.result.candidates]
+    if out.verification is not None and out.result.ok:
+        details["failed_checks"] = [
+            {"kind": c.kind, "expected": c.expected, "detail": c.detail} for c in out.verification.failures()
+        ]
+    return details

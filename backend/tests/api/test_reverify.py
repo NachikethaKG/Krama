@@ -89,7 +89,17 @@ async def test_a_step_whose_element_is_gone_fails_as_a_locator_miss(
         run, stream = await reverify(api, workflow_id)
 
         assert run.status == "failed" and run.error is not None
-        assert run.error.details == {"reason": "locator_miss", "step_seq": 1}
+        details = run.error.details or {}
+        assert (details["reason"], details["step_seq"], details["error_code"]) == (
+            "locator_miss",
+            1,
+            "target_not_found",
+        )
+        assert details["target"] == {"role": "link", "name": "Add an item"}
+        # The evidence for validation (#109): the links the page did offer, the real one among them.
+        assert "New item" in {c["name"] for c in details["candidates"]}
+        assert all(c["role"] == "link" and len(c["bbox"]) == 4 for c in details["candidates"])
+        assert "failed_checks" not in details
         assert "no longer works" in run.error.message
         # No replan, no pause, and the later steps (which depend on step 1) never ran.
         types = [e["type"] for e in stream]
@@ -107,7 +117,12 @@ async def test_a_step_that_runs_but_no_longer_reaches_its_state_is_a_state_misma
         run, _ = await reverify(api, workflow_id)
 
         assert run.status == "failed" and run.error is not None
-        assert run.error.details == {"reason": "state_mismatch", "step_seq": 4}
+        details = run.error.details or {}
+        assert (details["reason"], details["step_seq"]) == ("state_mismatch", 4)
+        assert "candidates" not in details and "error_code" not in details
+        [check] = details["failed_checks"]
+        assert (check["kind"], check["expected"]) == ("url_matches", "^/somewhere-else$")
+        assert check["detail"]  # what the page showed instead, e.g. "path is '/done'"
 
 
 @pytest.mark.parametrize(
