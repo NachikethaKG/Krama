@@ -16,7 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.contracts_gen.plan_schema import PlannedStep
 from app.db import PlanRow, RunRow, TaskRow, WorkflowRow, WorkflowStepRow
-from app.db.repositories import append_event, decide_plan, runs_with_status, transition_run
+from app.db.repositories import add_workflow, append_event, decide_plan, runs_with_status, transition_run
 from app.runs.states import ACTIVE, RunStatus, event_type, sources
 
 
@@ -185,9 +185,8 @@ class RunStore:
                     confidence=confidence,
                     recording_path=recording_path,
                     viewport=viewport,
-                    steps=list(steps),
                 )
-                workflow_id = await self._complete(s, job, workflow, **changes)
+                workflow_id = await self._complete(s, job, workflow, steps, **changes)
         except _NotRunningError:
             return None  # the transaction rolled back, workflow included
         await self._committed(job.run_id, True)
@@ -218,10 +217,10 @@ class RunStore:
         s: AsyncSession,
         job: RunJob,
         workflow: WorkflowRow,
+        steps: Sequence[WorkflowStepRow],
         **changes: Any,
     ) -> UUID:
-        s.add(workflow)
-        await s.flush()
+        await add_workflow(s, workflow, steps)
         row = await transition_run(
             s,
             job.run_id,
@@ -230,7 +229,7 @@ class RunStore:
             event_type="run.completed",
             event_data={
                 "workflow_id": str(workflow.id),
-                "verified_steps": len(workflow.steps),
+                "verified_steps": len(steps),
                 "failed_actions": 0,
             },
             finished_at=datetime.now(UTC),

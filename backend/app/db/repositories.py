@@ -15,7 +15,15 @@ from sqlalchemy import ColumnElement, and_, func, select, tuple_, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.contracts_gen.events_schema import RunEvent
-from app.db.models import PlanRow, RunEventRow, RunRow, TaskRow, WorkflowRow
+from app.db.models import (
+    PlanRow,
+    RunEventRow,
+    RunRow,
+    TaskRow,
+    WorkflowRow,
+    WorkflowStepRow,
+    WorkflowVersionRow,
+)
 
 _EVENTS: TypeAdapter[RunEvent] = TypeAdapter(RunEvent)
 # Columns a transition may change besides status; anything else is a programming error.
@@ -215,3 +223,51 @@ async def list_workflows(
     if before is not None:
         query = query.where(tuple_(WorkflowRow.created_at, WorkflowRow.id) < tuple_(*before))
     return (await session.scalars(query)).all()
+
+
+async def add_workflow(
+    session: AsyncSession, workflow: WorkflowRow, steps: Sequence[WorkflowStepRow]
+) -> WorkflowVersionRow:
+    """Insert a new workflow with its first version (`initial`, current) and that version's steps.
+
+    The workflow's `run_id`, `confidence`, `recording_path` and `viewport` are the version's too. Flushes in
+    order (workflow, version + steps, then the workflow's pointer to the version): the tables point at each
+    other."""
+    session.add(workflow)
+    await session.flush()
+    for step in steps:
+        step.workflow_id = workflow.id
+    version = WorkflowVersionRow(
+        workflow_id=workflow.id,
+        revision=1,
+        source="initial",
+        status="current",
+        run_id=workflow.run_id,
+        confidence=workflow.confidence,
+        recording_path=workflow.recording_path,
+        viewport=workflow.viewport,
+        steps=list(steps),
+    )
+    session.add(version)
+    await session.flush()
+    workflow.current_version_id = version.id
+    workflow.revision = version.revision
+    await session.flush()
+    return version
+
+
+async def list_versions(session: AsyncSession, workflow_id: UUID) -> list[tuple[WorkflowVersionRow, int]]:
+    """Every version of the workflow with its step count, newest first. Steps aren't loaded."""
+    counts = (
+        select(WorkflowStepRow.version_id, func.count().label("n"))
+        .where(WorkflowStepRow.workflow_id == workflow_id)
+        .group_by(WorkflowStepRow.version_id)
+        .subquery()
+    )
+    rows = await session.execute(
+        select(WorkflowVersionRow, func.coalesce(counts.c.n, 0))
+        .outerjoin(counts, counts.c.version_id == WorkflowVersionRow.id)
+        .where(WorkflowVersionRow.workflow_id == workflow_id)
+        .order_by(WorkflowVersionRow.revision.desc())
+    )
+    return [(version, int(n)) for version, n in rows.all()]
