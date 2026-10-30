@@ -9,6 +9,7 @@ from playwright.async_api import FloatRect, Locator, Page
 from playwright.async_api import TimeoutError as PlaywrightTimeoutError
 from pydantic import BaseModel, ConfigDict
 
+from app.agent.candidates import Candidate, role_candidates
 from app.agent.context import ElementContext, element_context
 from app.agent.vision import VisionLocator
 from app.contracts_gen.common_schema import Action, ActionType, BoundingBox, ScrollOffset, Target
@@ -55,6 +56,8 @@ class ActionResult(BaseModel):
     """The dialog, menu, top bar or form section the target sits in, read before acting (for step text)."""
     llm_attempts: list[LLMAttempt] = []
     """LLM requests made by the vision fallback (for the run log and the benchmark)."""
+    candidates: list[Candidate] = []
+    """After `target_not_found` / `ambiguous_target`: the visible elements with the planned role (#109)."""
     error: ActionError | None = None
 
 
@@ -106,6 +109,7 @@ class ActionExecutor:
         strategy: LocatorStrategy | None = None
         context: ElementContext | None = None
         attempts: list[LLMAttempt] = []
+        candidates: list[Candidate] = []
         error: ActionError | None = None
         try:
             _validate(action, target)
@@ -123,6 +127,8 @@ class ActionExecutor:
             error = ActionError(code="invalid_action", message=str(e))
         except _UnresolvedTargetError as e:
             error = ActionError(code=e.code, message=str(e))
+            if e.code in ("target_not_found", "ambiguous_target") and target is not None and target.role:
+                candidates = await role_candidates(self._page, target.role)
         except PlaywrightTimeoutError as e:
             error = ActionError(code="timeout", message=_first_line(e))
         except PlaywrightError as e:
@@ -140,6 +146,7 @@ class ActionExecutor:
             strategy=strategy,
             context=context,
             llm_attempts=attempts,
+            candidates=candidates,
             error=error,
         )
 

@@ -38,6 +38,7 @@ from app.ports.models import (
 )
 from app.ports.observer import Observer
 from app.ports.policy import Policy
+from app.runs.reverify import failure_details
 from app.runs.states import RunStatus
 from app.runs.steps import StepOutcome, act_and_verify, step_ref
 from app.runs.store import RunJob, RunNotFoundError, RunStore
@@ -512,7 +513,7 @@ class InProcessExecutor:
             reason, what = "state_mismatch", "it ran, but the expected state didn't hold"
         await self._store.fail(
             job.run_id, from_=RunStatus.RUNNING, message=f"Step {step.seq} no longer works: {what}",
-            reason=reason, step_seq=step.seq,
+            reason=reason, step_seq=step.seq, **failure_details(step, out),
         )  # fmt: skip
 
     async def _pause(

@@ -145,6 +145,15 @@ async def test_missing_target_fails_with_target_not_found(fast_fail_executor: Ac
     assert result.error.code == "target_not_found"
     assert 900 <= result.duration_ms < 5_000  # the 1 s test timeout, not Playwright's 30 s default
     assert result.bbox is None and result.scroll is None
+    # What the page offered instead (#109): its visible buttons, by accessible name, with page boxes.
+    assert result.candidates and all(c.role == "button" and c.bbox is not None for c in result.candidates)
+    assert "Does not exist" not in {c.name for c in result.candidates}
+
+
+async def test_a_found_target_reads_no_candidates(executor: ActionExecutor) -> None:
+    result = await executor.execute(Action(type="click"), Target(role="link", name="Home"))
+
+    assert result.ok and result.candidates == []
 
 
 async def test_ambiguous_target_is_reported_not_guessed(executor: ActionExecutor) -> None:
@@ -153,6 +162,7 @@ async def test_ambiguous_target_is_reported_not_guessed(executor: ActionExecutor
     assert not result.ok
     assert result.error is not None
     assert result.error.code == "ambiguous_target"
+    assert [c.name for c in result.candidates].count("Save") >= 2  # every look-alike, for a human to compare
 
 
 async def test_hidden_element_times_out(fast_fail_executor: ActionExecutor) -> None:
