@@ -226,6 +226,42 @@
         "title": "ExpectedState",
         "type": "object"
       },
+      "FieldChange": {
+        "additionalProperties": false,
+        "properties": {
+          "field": {
+            "description": "Dotted path in the step, e.g. target.name, action.value, expected_state.",
+            "minLength": 1,
+            "title": "Field",
+            "type": "string"
+          },
+          "from": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The old value (any JSON); absent or null if there was none.",
+            "title": "From"
+          },
+          "to": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The new value (any JSON); absent or null if there is none.",
+            "title": "To"
+          }
+        },
+        "required": [
+          "field"
+        ],
+        "title": "FieldChange",
+        "type": "object"
+      },
       "FieldValue": {
         "additionalProperties": false,
         "properties": {
@@ -1209,6 +1245,134 @@
         "title": "Step",
         "type": "object"
       },
+      "StepChange": {
+        "additionalProperties": false,
+        "properties": {
+          "category": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StepChangeCategory"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The most important category among the changes; null for a same step."
+          },
+          "fields": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/FieldChange"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": [],
+            "title": "Fields"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/StepChangeKind"
+          },
+          "new_seq": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Null for a removed step.",
+            "title": "New Seq"
+          },
+          "old_seq": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Null for an added step.",
+            "title": "Old Seq"
+          },
+          "summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Short text for an added or removed step, e.g. 'click button “Confirm”'.",
+            "title": "Summary"
+          }
+        },
+        "required": [
+          "kind"
+        ],
+        "title": "StepChange",
+        "type": "object"
+      },
+      "StepChangeCategory": {
+        "description": "behaviour: what the step does or acts on. check: its expected state. wording: only its instruction text (the UI may collapse these). risk: its risk level.",
+        "enum": [
+          "behaviour",
+          "check",
+          "wording",
+          "risk"
+        ],
+        "title": "StepChangeCategory",
+        "type": "string"
+      },
+      "StepChangeKind": {
+        "enum": [
+          "same",
+          "changed",
+          "added",
+          "removed"
+        ],
+        "title": "StepChangeKind",
+        "type": "string"
+      },
+      "StepDiff": {
+        "additionalProperties": false,
+        "properties": {
+          "from_revision": {
+            "minimum": 1.0,
+            "title": "From Revision",
+            "type": "integer"
+          },
+          "steps": {
+            "description": "Every step of both versions, aligned by meaning, in the new version's order.",
+            "items": {
+              "$ref": "#/components/schemas/StepChange"
+            },
+            "title": "Steps",
+            "type": "array"
+          },
+          "to_revision": {
+            "minimum": 1.0,
+            "title": "To Revision",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "from_revision",
+          "to_revision",
+          "steps"
+        ],
+        "title": "StepDiff",
+        "type": "object"
+      },
       "StepTarget": {
         "additionalProperties": false,
         "properties": {
@@ -2079,6 +2243,143 @@
         ],
         "title": "WorkflowTarget",
         "type": "object"
+      },
+      "WorkflowVersion": {
+        "additionalProperties": false,
+        "properties": {
+          "change_summary": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StepDiff"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "How the steps differ from the parent version; null for the first."
+          },
+          "confidence": {
+            "anyOf": [
+              {
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confidence"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "parent_version_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The version this one was made from; null for the first.",
+            "title": "Parent Version Id"
+          },
+          "revision": {
+            "minimum": 1.0,
+            "title": "Revision",
+            "type": "integer"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The run that recorded this version.",
+            "title": "Run Id"
+          },
+          "source": {
+            "$ref": "#/components/schemas/WorkflowVersionSource"
+          },
+          "status": {
+            "$ref": "#/components/schemas/WorkflowVersionStatus"
+          },
+          "step_count": {
+            "minimum": 0.0,
+            "title": "Step Count",
+            "type": "integer"
+          },
+          "workflow_id": {
+            "format": "uuid",
+            "title": "Workflow Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "workflow_id",
+          "revision",
+          "source",
+          "status",
+          "step_count",
+          "created_at"
+        ],
+        "title": "WorkflowVersion",
+        "type": "object"
+      },
+      "WorkflowVersionList": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "description": "Newest first.",
+            "items": {
+              "$ref": "#/components/schemas/WorkflowVersion"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "WorkflowVersionList",
+        "type": "object"
+      },
+      "WorkflowVersionSource": {
+        "description": "What made the version: the first verified run, a self-heal, a regenerated plan, or a human edit.",
+        "enum": [
+          "initial",
+          "heal",
+          "regenerate",
+          "edit"
+        ],
+        "title": "WorkflowVersionSource",
+        "type": "string"
+      },
+      "WorkflowVersionStatus": {
+        "description": "current: the one shown. pending_review: waits for the owner to accept it. superseded: an older current one. rejected: the owner turned it down.",
+        "enum": [
+          "current",
+          "pending_review",
+          "superseded",
+          "rejected"
+        ],
+        "title": "WorkflowVersionStatus",
+        "type": "string"
       },
       "WorkflowViewport": {
         "additionalProperties": false,
@@ -3942,6 +4243,70 @@
         "summary": "Revoke Share",
         "tags": [
           "shares"
+        ]
+      }
+    },
+    "/api/v1/workflows/{workflow_id}/versions": {
+      "get": {
+        "description": "Every version of the workflow, newest first, each with its step diff against its parent (Phase 4).",
+        "operationId": "get_workflow_versions_api_v1_workflows__workflow_id__versions_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workflow_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workflow Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowVersionList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal error"
+          }
+        },
+        "summary": "Get Workflow Versions",
+        "tags": [
+          "workflows"
         ]
       }
     }
