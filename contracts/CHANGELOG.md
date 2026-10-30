@@ -2,6 +2,28 @@
 
 Every change to `contracts/` is listed here. Additive change = minor version bump; breaking change = major bump + ADR.
 
+## 1.9 (#335)
+
+Workflow versions, the step diff and validation results (Phase 4, #108; decisions D1, D5, D6 in
+`docs/research/phase-4-decisions-alignment.md`). Additive.
+
+- `workflow.schema.json` v1.1:
+  - `Workflow.revision`: the number of the version whose steps and recording are returned (the format field
+    `version` stays as is).
+  - `WorkflowVersion` (`revision`, `source`: `initial|heal|regenerate|edit`, `status`:
+    `current|pending_review|superseded|rejected`, `parent_version_id`, `run_id`, `confidence`, `step_count`,
+    `change_summary`) and `WorkflowVersionList` (newest first), the response of `GET /workflows/{id}/versions`.
+  - `StepDiff` / `StepChange` (`same|changed|added|removed`, `category`: `behaviour|check|wording|risk`) /
+    `FieldChange` (`field`, `from`, `to`): how a version's steps differ from its parent
+    (`docs/research/phase-4-vishwas-semantic-step-diff.md`).
+  - `ValidationStatus`: `passed|healed|heal_pending|outdated|blocked|skipped`, the result of one validation of a stored
+    workflow (used by the `validations` table now, by the validation API later).
+- New fixture `fixtures/workflow-versions/gitea-create-repo-versions.json` (a self-heal: v2 renamed "Create Repository"
+  to "Make repo"), for the frontend's mock API.
+- `docs/api-contract.md`: `GET /workflows/{id}/versions` → `WorkflowVersionList`.
+- `docs/database-schema.md`: `workflow_versions`, `validations`, `workflow_steps.version_id`, `workflows.revision` +
+  `current_version_id` (migration in #108).
+
 ## 1.8 (Phase 3 API)
 
 Accounts, share links and the metrics summary (#94, #96, #102). Additive.

@@ -64,12 +64,78 @@ class WorkflowPage(BaseModel):
     next_cursor: str | None = None
 
 
+type WorkflowVersionSource = Annotated[
+    Literal["initial", "heal", "regenerate", "edit"],
+    Field(
+        description="What made the version: the first verified run, a self-heal, a regenerated plan, or a human edit.",
+        title="WorkflowVersionSource",
+    ),
+]
+
+
+type WorkflowVersionStatus = Annotated[
+    Literal["current", "pending_review", "superseded", "rejected"],
+    Field(
+        description="current: the one shown. pending_review: waits for the owner to accept it. superseded: an older current one. rejected: the owner turned it down.",
+        title="WorkflowVersionStatus",
+    ),
+]
+
+
+type StepChangeKind = Annotated[Literal["same", "changed", "added", "removed"], Field(title="StepChangeKind")]
+
+
+type StepChangeCategory = Annotated[
+    Literal["behaviour", "check", "wording", "risk"],
+    Field(
+        description="behaviour: what the step does or acts on. check: its expected state. wording: only its instruction text (the UI may collapse these). risk: its risk level.",
+        title="StepChangeCategory",
+    ),
+]
+
+
+class FieldChange(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+    field: Annotated[
+        str,
+        Field(
+            description="Dotted path in the step, e.g. target.name, action.value, expected_state.",
+            min_length=1,
+        ),
+    ]
+    from_: Annotated[
+        Any | None,
+        Field(alias="from", description="The old value (any JSON); absent or null if there was none."),
+    ] = None
+    to: Annotated[
+        Any | None, Field(description="The new value (any JSON); absent or null if there is none.")
+    ] = None
+
+
+type ValidationStatus = Annotated[
+    Literal["passed", "healed", "heal_pending", "outdated", "blocked", "skipped"],
+    Field(
+        description="Result of one validation of a stored workflow (docs/research/phase-4-decisions-alignment.md): passed, healed (a new current version), heal_pending (a new version waits for review), outdated, blocked (the environment stopped it; the workflow's status is unchanged), skipped (not replayable).",
+        title="ValidationStatus",
+    ),
+]
+
+
 class Workflow(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
     )
     id: UUID
     version: Annotated[str | None, Field(description="Workflow format version (e.g. 1.0).")] = "1.0"
+    revision: Annotated[
+        int | None,
+        Field(
+            description="Number of the workflow version whose steps and recording this is (1 = as first recorded). Not the format `version` above.",
+            ge=1,
+        ),
+    ] = None
     task_id: UUID | None = None
     run_id: UUID | None = None
     title: Annotated[str, Field(description="Human-readable title describing the workflow.", min_length=1)]
@@ -93,3 +159,62 @@ class Workflow(BaseModel):
     steps: Annotated[list[step_schema.Step], Field(description="The ordered sequence of verified steps.")]
     created_at: AwareDatetime | None = None
     updated_at: AwareDatetime | None = None
+
+
+class StepChange(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+    kind: StepChangeKind
+    old_seq: Annotated[int | None, Field(description="Null for an added step.", ge=1)] = None
+    new_seq: Annotated[int | None, Field(description="Null for a removed step.", ge=1)] = None
+    category: Annotated[
+        StepChangeCategory | None,
+        Field(description="The most important category among the changes; null for a same step."),
+    ] = None
+    fields: Annotated[list[FieldChange] | None, Field(validate_default=True)] = []
+    summary: Annotated[
+        str | None,
+        Field(description="Short text for an added or removed step, e.g. 'click button “Confirm”'."),
+    ] = None
+
+
+class StepDiff(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+    from_revision: Annotated[int, Field(ge=1)]
+    to_revision: Annotated[int, Field(ge=1)]
+    steps: Annotated[
+        list[StepChange],
+        Field(description="Every step of both versions, aligned by meaning, in the new version's order."),
+    ]
+
+
+class WorkflowVersion(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+    id: UUID
+    workflow_id: UUID
+    revision: Annotated[int, Field(ge=1)]
+    source: WorkflowVersionSource
+    status: WorkflowVersionStatus
+    parent_version_id: Annotated[
+        UUID | None, Field(description="The version this one was made from; null for the first.")
+    ] = None
+    run_id: Annotated[UUID | None, Field(description="The run that recorded this version.")] = None
+    confidence: Annotated[float | None, Field(ge=0.0, le=1.0)] = None
+    step_count: Annotated[int, Field(ge=0)]
+    change_summary: Annotated[
+        StepDiff | None,
+        Field(description="How the steps differ from the parent version; null for the first."),
+    ] = None
+    created_at: AwareDatetime
+
+
+class WorkflowVersionList(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+    items: Annotated[list[WorkflowVersion], Field(description="Newest first.")]
