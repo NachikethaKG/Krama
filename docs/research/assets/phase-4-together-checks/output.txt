@@ -1,0 +1,15 @@
+Phase 4 together check (#107), run 2026-10-29 on Vishwas's laptop (Windows 11), local Gitea 1.22.6, Postgres 16.15,
+Playwright 1.63.0 / Chromium 153. No LLM calls. Full results: results-flakes.json.
+
+== validation_flakes.py 4 ===================================================================================
+Add a file notes.md containing 'First note' to the main bran ['passed', 'passed', 'passed', 'passed']
+Create a branch named feature-docs from main in the reposito ['passed', 'passed', 'passed', 'passed']
+Create a new public repository named 'test-repo' with a READ ['passed', 'passed', 'passed', 'passed']
+In the repository bench-issues, open an issue titled 'Login  ['passed', 'passed', 'passed', 'passed']
+Set the description of the repository bench-settings to 'Doc ['passed', 'passed', 'passed', 'passed']
+drift control: ['failed:locator_miss@4', 'failed:locator_miss@4', 'failed:locator_miss@4', 'failed:locator_miss@4']
+
+No drift: 20 replays, 2.6-7.8 s each, mean 4.1 s. Drift control: 6.5-8.5 s each.
+
+== stored reverify runs (runs table, kind = reverify) ==========================================================
+7 verified, 2 failed (2026-10-18: state_mismatch on the add-file workflow, locator_miss on the issue workflow).
