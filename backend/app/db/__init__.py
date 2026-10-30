@@ -9,8 +9,10 @@ from app.db.models import (
     TaskRow,
     TutorialShareRow,
     UserRow,
+    ValidationRow,
     WorkflowRow,
     WorkflowStepRow,
+    WorkflowVersionRow,
 )
 from app.db.session import create_engine, create_sessionmaker
 
@@ -23,8 +25,10 @@ __all__ = [
     "TaskRow",
     "TutorialShareRow",
     "UserRow",
+    "ValidationRow",
     "WorkflowRow",
     "WorkflowStepRow",
+    "WorkflowVersionRow",
     "create_engine",
     "create_sessionmaker",
 ]

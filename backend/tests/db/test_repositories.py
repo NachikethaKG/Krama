@@ -7,19 +7,30 @@ from uuid import UUID, uuid4
 
 import pytest
 from pydantic import TypeAdapter
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.contracts_gen.events_schema import RunEvent, RunStartedEvent
-from app.db import PlanRow, RunEventRow, RunRow, TaskRow, UserRow, WorkflowRow, WorkflowStepRow
+from app.db import (
+    PlanRow,
+    RunEventRow,
+    RunRow,
+    TaskRow,
+    UserRow,
+    WorkflowRow,
+    WorkflowStepRow,
+    WorkflowVersionRow,
+)
 from app.db.repositories import (
     InvalidRunEventError,
+    add_workflow,
     append_event,
     decide_plan,
     event_payload,
     events_after,
     list_runs,
+    list_versions,
     list_workflows,
     runs_with_status,
     transition_run,
@@ -303,9 +314,8 @@ async def new_workflow(
             target_url="http://localhost:3001",
             status="verified",
             confidence=1.0,
-            steps=[step_row(n) for n in steps],
         )
-        s.add(workflow)
+        await add_workflow(s, workflow, [step_row(n) for n in steps])
     return workflow
 
 
@@ -316,12 +326,12 @@ async def test_workflow_and_its_steps_round_trip(sessions: Sessions) -> None:
         loaded = await s.get(WorkflowRow, workflow.id)
         assert loaded is not None
         assert [st.seq for st in loaded.steps] == [1, 2]  # ordered by seq
-        assert loaded.preconditions == {} and loaded.version == 1
+        assert loaded.preconditions == {} and loaded.revision == 1
         assert loaded.steps[0].verification["method"] == ["url"]
 
 
-async def test_step_seq_is_unique_per_workflow(sessions: Sessions) -> None:
-    with pytest.raises(IntegrityError, match="uq_workflow_steps_workflow_id_seq"):
+async def test_step_seq_is_unique_per_version(sessions: Sessions) -> None:
+    with pytest.raises(IntegrityError, match="uq_workflow_steps_version_id_seq"):
         await new_workflow(sessions, "gitea", [1, 1])
 
 
@@ -337,3 +347,70 @@ async def test_list_workflows_filters_by_app(sessions: Sessions) -> None:
         assert len(await list_workflows(s, user_id=owner.id, limit=10)) == 2
         assert await list_workflows(s, user_id=other.id, limit=10) == []  # only your own (#94)
         assert await s.scalar(select(func.count()).select_from(WorkflowStepRow)) == 2
+
+
+async def add_version(sessions: Sessions, workflow: WorkflowRow, steps: list[int]) -> WorkflowVersionRow:
+    """A healed version 2 that becomes current: what #112 will do."""
+    async with sessions.begin() as s:
+        first = await s.get(WorkflowVersionRow, workflow.current_version_id)
+        assert first is not None
+        first.status = "superseded"
+        await s.flush()
+        version = WorkflowVersionRow(
+            workflow_id=workflow.id,
+            revision=2,
+            source="heal",
+            status="current",
+            parent_version_id=first.id,
+            steps=[step_row(n) for n in steps],
+        )
+        for step in version.steps:
+            step.workflow_id = workflow.id
+        s.add(version)
+        await s.flush()
+        row = await s.get(WorkflowRow, workflow.id)
+        assert row is not None
+        row.current_version_id, row.revision = version.id, 2
+    return version
+
+
+async def test_a_new_workflow_is_its_own_version_1(sessions: Sessions) -> None:
+    workflow = await new_workflow(sessions, "gitea", [1, 2])
+
+    async with sessions() as s:
+        [(version, step_count)] = await list_versions(s, workflow.id)
+        assert (version.revision, version.source, version.status, step_count) == (1, "initial", "current", 2)
+        assert version.id == workflow.current_version_id and version.run_id == workflow.run_id
+        assert version.confidence == 1.0 and version.parent_version_id is None
+
+
+async def test_a_workflow_shows_only_its_current_versions_steps(sessions: Sessions) -> None:
+    workflow = await new_workflow(sessions, "gitea", [1, 2, 3])
+    healed = await add_version(sessions, workflow, [1, 2])
+
+    async with sessions() as s:
+        loaded = await s.get(WorkflowRow, workflow.id)
+        assert loaded is not None
+        assert loaded.revision == 2 and [st.seq for st in loaded.steps] == [1, 2]
+        assert {st.version_id for st in loaded.steps} == {healed.id}
+        versions = await list_versions(s, workflow.id)
+        assert [(v.revision, v.status, n) for v, n in versions] == [(2, "current", 2), (1, "superseded", 3)]
+
+
+async def test_a_workflow_has_at_most_one_current_version(sessions: Sessions) -> None:
+    workflow = await new_workflow(sessions, "gitea", [1])
+
+    with pytest.raises(IntegrityError, match="ix_workflow_versions_one_current"):
+        async with sessions.begin() as s:
+            s.add(WorkflowVersionRow(workflow_id=workflow.id, revision=2, source="heal", status="current"))
+
+
+async def test_deleting_a_workflow_deletes_its_versions_and_steps(sessions: Sessions) -> None:
+    workflow = await new_workflow(sessions, "gitea", [1, 2])
+    await add_version(sessions, workflow, [1])
+
+    async with sessions.begin() as s:
+        await s.execute(delete(WorkflowRow).where(WorkflowRow.id == workflow.id))
+    async with sessions() as s:
+        assert await s.scalar(select(func.count()).select_from(WorkflowVersionRow)) == 0
+        assert await s.scalar(select(func.count()).select_from(WorkflowStepRow)) == 0

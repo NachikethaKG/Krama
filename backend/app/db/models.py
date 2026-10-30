@@ -7,14 +7,19 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID, uuid4
 
-from sqlalchemy import REAL, Boolean, ForeignKey, Index, Integer, Text, UniqueConstraint, func
+from sqlalchemy import REAL, Boolean, ForeignKey, Index, Integer, Text, UniqueConstraint, func, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.contracts_gen.common_schema import Risk
 from app.contracts_gen.plan_schema import PlanStatus
 from app.contracts_gen.run_schema import RunKind, RunStatus
 from app.contracts_gen.task_schema import TaskStatus
-from app.contracts_gen.workflow_schema import WorkflowStatus
+from app.contracts_gen.workflow_schema import (
+    ValidationStatus,
+    WorkflowStatus,
+    WorkflowVersionSource,
+    WorkflowVersionStatus,
+)
 from app.db.base import Base, Timestamps, literal_values, status_check
 
 TASK_STATUSES = literal_values(TaskStatus)
@@ -22,6 +27,9 @@ PLAN_STATUSES = literal_values(PlanStatus)
 RUN_STATUSES = literal_values(RunStatus)
 RUN_KINDS = literal_values(RunKind)
 WORKFLOW_STATUSES = literal_values(WorkflowStatus)
+WORKFLOW_VERSION_SOURCES = literal_values(WorkflowVersionSource)
+WORKFLOW_VERSION_STATUSES = literal_values(WorkflowVersionStatus)
+VALIDATION_STATUSES = literal_values(ValidationStatus)
 RISKS = literal_values(Risk)
 
 
@@ -133,6 +141,10 @@ class RunEventRow(Timestamps, Base):
 
 
 class WorkflowRow(Timestamps, Base):
+    """A stored workflow: its identity (share links, tutorial URLs and reverify point here) plus copies of its
+    current version's confidence, recording and viewport, so readers need one row. Its versions are
+    `WorkflowVersionRow`s (docs/research/phase-4-decisions-alignment.md D1)."""
+
     __tablename__ = "workflows"
     __table_args__ = (
         status_check("status", WORKFLOW_STATUSES, "status"),
@@ -142,22 +154,96 @@ class WorkflowRow(Timestamps, Base):
 
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
     task_id: Mapped[UUID] = mapped_column(ForeignKey("tasks.id"))
-    run_id: Mapped[UUID] = mapped_column(ForeignKey("runs.id"), unique=True)  # one run makes one workflow
+    run_id: Mapped[UUID] = mapped_column(ForeignKey("runs.id"), unique=True)
+    """The run that recorded its first version (one run makes one workflow)."""
     user_id: Mapped[UUID | None] = mapped_column(ForeignKey("users.id"), default=None)
     """The task's owner, copied when the workflow is stored (lists and share links filter on it)."""
     title: Mapped[str] = mapped_column(Text)
     target_app: Mapped[str] = mapped_column(Text)
     target_url: Mapped[str] = mapped_column(Text)
     status: Mapped[str] = mapped_column(Text)
-    version: Mapped[int] = mapped_column(Integer, default=1, server_default="1")  # Phase 4 versioning
+    revision: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
+    """The current version's number."""
+    current_version_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("workflow_versions.id", ondelete="SET NULL", use_alter=True), default=None
+    )
+    """The version shown. Null only between inserting the workflow and its first version."""
     confidence: Mapped[float | None] = mapped_column(REAL, default=None)
     preconditions: Mapped[dict[str, Any]] = mapped_column(default=dict, server_default="{}")
     recording_path: Mapped[str | None] = mapped_column(Text, default=None)
     viewport: Mapped[dict[str, Any] | None] = mapped_column(default=None)
 
     steps: Mapped[list["WorkflowStepRow"]] = relationship(
-        order_by="WorkflowStepRow.seq", lazy="selectin", cascade="all, delete-orphan"
+        primaryjoin="WorkflowRow.current_version_id == foreign(WorkflowStepRow.version_id)",
+        order_by="WorkflowStepRow.seq",
+        lazy="selectin",
+        viewonly=True,
     )
+    """The current version's steps. Read-only: steps are written through `WorkflowVersionRow.steps`."""
+
+
+class WorkflowVersionRow(Timestamps, Base):
+    """One version of a workflow, with its own step rows and recording. Immutable once written except for
+    `status` (docs/database-schema.md)."""
+
+    __tablename__ = "workflow_versions"
+    __table_args__ = (
+        UniqueConstraint("workflow_id", "revision"),
+        status_check("source", WORKFLOW_VERSION_SOURCES, "source"),
+        status_check("status", WORKFLOW_VERSION_STATUSES, "status"),
+        # At most one current version per workflow.
+        Index(
+            "ix_workflow_versions_one_current",
+            "workflow_id",
+            unique=True,
+            postgresql_where=text("status = 'current'"),
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    workflow_id: Mapped[UUID] = mapped_column(ForeignKey("workflows.id", ondelete="CASCADE"))
+    revision: Mapped[int] = mapped_column(Integer)
+    source: Mapped[str] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(Text)
+    parent_version_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("workflow_versions.id", ondelete="SET NULL"), default=None
+    )
+    run_id: Mapped[UUID | None] = mapped_column(ForeignKey("runs.id", ondelete="SET NULL"), default=None)
+    """The run that recorded this version."""
+    created_by: Mapped[UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), default=None)
+    """Who asked for it (regenerate, edit). Null for the first version and for heals."""
+    confidence: Mapped[float | None] = mapped_column(REAL, default=None)
+    recording_path: Mapped[str | None] = mapped_column(Text, default=None)
+    viewport: Mapped[dict[str, Any] | None] = mapped_column(default=None)
+    change_summary: Mapped[dict[str, Any] | None] = mapped_column(default=None)
+    """A contract `StepDiff` against the parent version; null for the first."""
+
+    steps: Mapped[list["WorkflowStepRow"]] = relationship(
+        order_by="WorkflowStepRow.seq", lazy="raise_on_sql", cascade="all, delete-orphan"
+    )
+    """Not loaded with the version (a list of versions needs only counts): load it explicitly."""
+
+
+class ValidationRow(Timestamps, Base):
+    """One validation of a stored workflow (Phase 4; written by `validation/`, #110)."""
+
+    __tablename__ = "validations"
+    __table_args__ = (
+        status_check("status", VALIDATION_STATUSES, "status"),
+        Index(None, "workflow_id", "ran_at"),
+    )
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    workflow_id: Mapped[UUID] = mapped_column(ForeignKey("workflows.id", ondelete="CASCADE"))
+    version_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("workflow_versions.id", ondelete="SET NULL"), default=None
+    )
+    """The version that was validated."""
+    run_id: Mapped[UUID | None] = mapped_column(ForeignKey("runs.id", ondelete="SET NULL"), default=None)
+    """The reverify run (the last one, after a confirm re-run)."""
+    status: Mapped[str] = mapped_column(Text)
+    drift_details: Mapped[dict[str, Any] | None] = mapped_column(default=None)
+    ran_at: Mapped[datetime] = mapped_column(server_default=func.now())
 
 
 class TutorialShareRow(Timestamps, Base):
@@ -180,12 +266,15 @@ class TutorialShareRow(Timestamps, Base):
 class WorkflowStepRow(Timestamps, Base):
     __tablename__ = "workflow_steps"
     __table_args__ = (
-        UniqueConstraint("workflow_id", "seq"),
+        UniqueConstraint("version_id", "seq"),
+        Index(None, "workflow_id"),
         status_check("risk", RISKS, "risk"),
     )
 
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
     workflow_id: Mapped[UUID] = mapped_column(ForeignKey("workflows.id", ondelete="CASCADE"))
+    version_id: Mapped[UUID] = mapped_column(ForeignKey("workflow_versions.id", ondelete="CASCADE"))
+    """The version this step belongs to: every version has its own copy of every step."""
     seq: Mapped[int] = mapped_column(Integer)
     action: Mapped[dict[str, Any]] = mapped_column()  # value masked if sensitive
     target: Mapped[dict[str, Any]] = mapped_column()
