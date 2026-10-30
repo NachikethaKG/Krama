@@ -97,6 +97,10 @@ Every boundary is an interface with a mock that ships *before* the real implemen
 | Seeded user accounts only for MVP | Prevents quota exhaustion and bot-flagging against shared GitHub machine account; gated via `just seed-users` | [Phase 3 Alignment](research/phase-3-decisions-alignment.md) |
 | Destructive-only `/branches` policy scope | Narrows `/branches` danger checks to delete controls; branch viewing and creation remain `RiskLevel.LOW` | [Phase 3 Alignment](research/phase-3-decisions-alignment.md) |
 | Backend metrics API (`/api/v1/metrics/summary`) | Serves the benchmark's `summary.json` (shape in `contracts/`) for zero-JS React Server Component SVG charts; the backend never imports `benchmarks` | [Phase 3 Alignment](research/phase-3-decisions-alignment.md) |
+| Copy-on-write workflow versions | Each version keeps its own step rows and recording (old tutorials stay playable and diffable); `workflows.id` stays stable for share links and URLs. A JSON diff would save ~3 KB per version against ~2.3 MB of recording | [Phase 4 Alignment](research/phase-4-decisions-alignment.md) |
+| Only deterministic heals go live without a human | Structural scorers like Healenium heal onto look-alike controls at full confidence; a code heal must win by a margin and the whole workflow must re-verify. Gemini-chosen heals wait for the owner's review | [Phase 4 Alignment](research/phase-4-decisions-alignment.md) |
+| The environment never makes a tutorial OUTDATED | CAPTCHA, auth walls, rate limits, failed resets and site outages say nothing about the tutorial, so they give `blocked`; a failure counts as drift only if a confirm re-run fails at the same step for the same reason | [Phase 4 Alignment](research/phase-4-decisions-alignment.md) |
+| In-app review queue, owner only | No mail infrastructure and free tiers only; outdated, heal-pending, unstable and can't-check items go to the workflow's owner | [Phase 4 Alignment](research/phase-4-decisions-alignment.md) |
 
 ## 6. Hardware rules
 
