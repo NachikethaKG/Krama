@@ -30,6 +30,16 @@ PAGES: dict[str, str] = {
         </form>
     </main>""",
     "/done": "<title>Done</title><main><h1>Done</h1></main>",
+    # Wipes the typed title once, 200 ms after the first input, like GitHub's new-issue form while its scripts
+    # start (#330). "Create" writes what the field holds into #out instead of submitting.
+    "/wipe": """<title>New issue</title><main>
+        <label>Title <input id="title"></label>
+        <button type="button" onclick="document.getElementById('out').textContent = 'saved: ' +
+          document.getElementById('title').value">Create</button>
+        <p id="out"></p>
+        <script>document.getElementById("title").addEventListener("input", e => setTimeout(() => {
+          e.target.value = "" }, 200), {once: true})</script>
+    </main>""",
     # Elements that drifted away from what a plan says (#54): the locator chain must still find them.
     "/locate": """<title>Locate</title><main>
         <button aria-label="Add a repo" onclick="document.title = 'renamed'">
