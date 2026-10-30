@@ -60,7 +60,7 @@ workflow_versions    id, workflow_id, version int (unique per workflow), source 
                      parent_version_id null, run_id (the run that recorded it), status (current|pending_review|superseded|rejected),
                      recording_path, viewport, confidence, change_summary jsonb (the step diff), created_by null, created_at
 workflow_steps       + version_id fk → workflow_versions (unique with seq); a new version copies all its step rows
-validations          id, workflow_id, version_id, run_id, status (passed|drifted|healed|failed|error), drift_details jsonb, ran_at
+validations          id, workflow_id, version_id, run_id, status (passed|healed|heal_pending|outdated|blocked|skipped), drift_details jsonb, ran_at
 ```
 
 - Every version is immutable: its own step rows, its own recording. Old tutorials stay playable and diffable with
