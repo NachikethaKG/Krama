@@ -24,10 +24,17 @@ from app.runs import InProcessExecutor, RunEnvironment, RunStore
 from app.storage import LocalFsStore
 from app.verifier import LayeredVerifier
 from tests.conftest import BAIT_HITS
-from tests.runs.test_executor import ALL_EXECUTOR_ROWS, events, queued_run, run_row, until_paused
+from tests.runs.test_executor import (
+    ALL_EXECUTOR_ROWS,
+    events,
+    finished,
+    queued_run,
+    run_row,
+    until_paused,
+)
 from tests.runs.test_runner import GOOD_PLAN, step
 
-pytestmark = pytest.mark.anyio
+pytestmark = [pytest.mark.anyio, pytest.mark.usefixtures("stop_runs")]
 
 Sessions = async_sessionmaker[AsyncSession]
 SECRET = "s3cret-Leak-7Hq"
@@ -157,7 +164,7 @@ async def test_a_planner_that_obeys_the_injection_still_cannot_click_the_bait(
         paused = (await events(sessions, run_id))[-1]
         assert (paused["reason"], paused["step_seq"]) == ("destructive_action", 2)
         assert await executor.confirm(run_id, 2, "deny")
-        await asyncio.wait_for(executor.wait(run_id), timeout=10)
+        await finished(executor, run_id)
     finally:
         await executor.shutdown()
 

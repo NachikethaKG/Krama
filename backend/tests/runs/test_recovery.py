@@ -22,10 +22,20 @@ from app.db import PlanRow, WorkflowRow
 from app.llm import FakeProvider, FakeResponse
 from app.planner import LLMPlanner
 from app.runs import InProcessExecutor, RunStore
-from tests.runs.test_executor import GITEA, _gitea_up, environment, events, queued_run, run_row, until_paused
+from tests.runs.test_executor import (
+    GITEA,
+    _gitea_up,
+    environment,
+    events,
+    finished,
+    queued_run,
+    run_row,
+    until,
+    until_paused,
+)
 from tests.runs.test_runner import GOOD_PLAN, step
 
-pytestmark = pytest.mark.anyio
+pytestmark = [pytest.mark.anyio, pytest.mark.usefixtures("stop_runs")]
 
 Sessions = async_sessionmaker[AsyncSession]
 OPEN_FORM = GOOD_PLAN["steps"][0]  # click "New item" → /form
@@ -59,6 +69,15 @@ async def last(sessions: Sessions, run_id: UUID) -> dict[str, Any]:
     return (await events(sessions, run_id))[-1]
 
 
+async def exhausted(sessions: Sessions, run_id: UUID) -> bool:
+    event = await last(sessions, run_id)
+    return bool(event["type"] == "run.paused" and event["reason"] == "recovery_exhausted")
+
+
+async def paused_twice(sessions: Sessions, run_id: UUID) -> bool:
+    return (await types(sessions, run_id)).count("run.paused") == 2
+
+
 async def test_an_idempotent_step_is_retried_once(sessions: Sessions, site: str, tmp_path: Path) -> None:
     wait = step(2, {"type": "wait"}, {"role": "button", "name": "Ready"}, "Wait for Ready.",
                 {"visible": [{"role": "button", "name": "Ready"}]})  # fmt: skip
@@ -74,7 +93,7 @@ async def test_an_idempotent_step_is_retried_once(sessions: Sessions, site: str,
     executor = InProcessExecutor(RunStore(sessions), env)
 
     await executor.submit(run_id)
-    await asyncio.wait_for(executor.wait(run_id), timeout=60)
+    await finished(executor, run_id)
 
     run = await run_row(sessions, run_id)
     assert run.status == "verified" and run.retry_count == 1
@@ -113,7 +132,7 @@ async def test_a_failed_click_is_replanned_and_the_human_approves_the_new_steps(
     assert "target_not_found" in prompt and "Current URL path: /form" in prompt
 
     assert await executor.confirm(run_id, 2, "allow")
-    await asyncio.wait_for(executor.wait(run_id), timeout=60)
+    await finished(executor, run_id)
 
     run = await run_row(sessions, run_id)
     assert run.status == "verified" and run.retry_count == 1
@@ -137,7 +156,7 @@ async def test_denying_a_replan_cancels_the_run(sessions: Sessions, site: str, t
     proposal = UUID((await last(sessions, run_id))["plan_id"])
 
     assert await executor.confirm(run_id, 2, "deny")
-    await asyncio.wait_for(executor.wait(run_id), timeout=10)
+    await finished(executor, run_id)
 
     assert (await run_row(sessions, run_id)).status == "cancelled"
     async with sessions() as s:
@@ -158,15 +177,11 @@ async def test_two_failed_steps_in_a_row_pause_instead_of_replanning_again(
     await until_paused(sessions, run_id)
     assert await executor.confirm(run_id, 2, "allow")  # approve the (bad) replan
 
-    for _ in range(400):
-        stream = await events(sessions, run_id)
-        if stream[-1]["type"] == "run.paused" and stream[-1]["reason"] == "recovery_exhausted":
-            break
-        await asyncio.sleep(0.05)
-    assert "two steps failed in a row" in stream[-1]["message"]
+    await until(lambda: exhausted(sessions, run_id), "the recovery_exhausted pause")
+    assert "two steps failed in a row" in (await last(sessions, run_id))["message"]
     assert len(llm.calls) == 1  # no second replan
     assert await executor.confirm(run_id, 2, "deny")
-    await asyncio.wait_for(executor.wait(run_id), timeout=10)
+    await finished(executor, run_id)
 
 
 async def test_the_replan_budget_comes_from_settings(sessions: Sessions, site: str, tmp_path: Path) -> None:
@@ -183,14 +198,11 @@ async def test_the_replan_budget_comes_from_settings(sessions: Sessions, site: s
 
     # "Allow" tries the step once more; it fails again and pauses again: never a loop without a human.
     assert await executor.confirm(run_id, 2, "allow")
-    for _ in range(400):
-        if (await types(sessions, run_id)).count("run.paused") == 2:
-            break
-        await asyncio.sleep(0.05)
+    await until(lambda: paused_twice(sessions, run_id), "a second pause")
     assert (await last(sessions, run_id))["reason"] == "recovery_exhausted"
     assert (await run_row(sessions, run_id)).retry_count == 1
     assert await executor.confirm(run_id, 2, "deny")
-    await asyncio.wait_for(executor.wait(run_id), timeout=10)
+    await finished(executor, run_id)
 
 
 async def test_a_failed_high_risk_step_is_never_replanned(
@@ -206,14 +218,10 @@ async def test_a_failed_high_risk_step_is_never_replanned(
     assert (await last(sessions, run_id))["reason"] == "destructive_action"  # #59: confirm first
     assert await executor.confirm(run_id, 2, "allow")
 
-    for _ in range(400):
-        stream = await events(sessions, run_id)
-        if stream[-1]["type"] == "run.paused" and stream[-1]["reason"] == "recovery_exhausted":
-            break
-        await asyncio.sleep(0.05)
-    assert "high-risk" in stream[-1]["message"] and llm.calls == []
+    await until(lambda: exhausted(sessions, run_id), "the recovery_exhausted pause")
+    assert "high-risk" in (await last(sessions, run_id))["message"] and llm.calls == []
     assert await executor.confirm(run_id, 2, "deny")
-    await asyncio.wait_for(executor.wait(run_id), timeout=10)
+    await finished(executor, run_id)
 
 
 async def test_an_unclear_step_pauses_and_a_human_can_accept_it(
@@ -233,7 +241,7 @@ async def test_an_unclear_step_pauses_and_a_human_can_accept_it(
     assert (await last(sessions, run_id))["reason"] == "verification_unclear"
 
     assert await executor.confirm(run_id, 1, "allow")
-    await asyncio.wait_for(executor.wait(run_id), timeout=30)
+    await finished(executor, run_id)
 
     run = await run_row(sessions, run_id)
     assert run.status == "verified"
@@ -248,7 +256,7 @@ async def test_the_run_timeout_ends_a_run(sessions: Sessions, site: str, tmp_pat
     executor = InProcessExecutor(RunStore(sessions), environment(tmp_path, run_timeout_s=0.0))
 
     await executor.submit(run_id)
-    await asyncio.wait_for(executor.wait(run_id), timeout=60)
+    await finished(executor, run_id)
 
     run = await run_row(sessions, run_id)
     assert run.status == "failed" and run.error is not None
@@ -294,7 +302,7 @@ async def test_live_gemini_replans_a_wrong_button_on_real_gitea(sessions: Sessio
             "REPLAN", [(st["seq"], st["action"], st["target"], st["expected_state"]) for st in proposal.steps]
         )
         assert await executor.confirm(run_id, 3, "allow")
-        await asyncio.wait_for(executor.wait(run_id), timeout=120)
+        await finished(executor, run_id)
     finally:
         await executor.shutdown()  # never leave a paused browser behind, even when an assert fails
 

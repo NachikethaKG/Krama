@@ -188,8 +188,14 @@ async def test_a_queued_run_redis_lost_is_picked_up_when_the_worker_starts(
     await queue["start_worker"]()
 
     assert await until(sessions, run_id, "verified", "failed") == "verified"
+    # The run is verified inside the job; arq deletes the job's key only when the job returns, a moment later
+    # (a race this test lost on a busy laptop, #339). Done means nothing is left queued.
     async with Redis.from_url(REDIS_URL) as r:
-        assert not await r.exists(f"arq:job:{job_id(run_id)}")  # done: nothing left queued
+        for _ in range(300):
+            if not await r.exists(f"arq:job:{job_id(run_id)}"):
+                break
+            await asyncio.sleep(0.1)
+        assert not await r.exists(f"arq:job:{job_id(run_id)}")
 
 
 def test_the_job_id_is_one_per_run() -> None:

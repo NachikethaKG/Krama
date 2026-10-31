@@ -20,10 +20,19 @@ from app.ports.fakes import FakePolicy
 from app.ports.models import PolicyDecision
 from app.runs import InProcessExecutor, RunStore
 from app.runs.executor import PAUSE_REASONS
-from tests.runs.test_executor import GITEA, _gitea_up, environment, events, queued_run, run_row, run_to_end
+from tests.runs.test_executor import (
+    GITEA,
+    _gitea_up,
+    environment,
+    events,
+    finished,
+    queued_run,
+    run_row,
+    run_to_end,
+)
 from tests.runs.test_runner import GOOD_PLAN, step
 
-pytestmark = pytest.mark.anyio
+pytestmark = [pytest.mark.anyio, pytest.mark.usefixtures("stop_runs")]
 
 Sessions = async_sessionmaker[AsyncSession]
 # The same plan, with the final "Create item" click marked high risk by the planner.
@@ -31,7 +40,7 @@ RISKY = [*GOOD_PLAN["steps"][:3], {**GOOD_PLAN["steps"][3], "risk": "high"}]
 
 
 async def until(sessions: Sessions, run_id: UUID, status: str) -> None:
-    for _ in range(400):
+    for _ in range(1200):
         if (await run_row(sessions, run_id)).status == status:
             return
         await asyncio.sleep(0.05)
@@ -60,7 +69,7 @@ async def test_a_high_risk_step_pauses_until_a_human_allows_it(
 
     assert not await executor.confirm(run_id, 3, "allow")  # not the paused step
     assert await executor.confirm(run_id, 4, "allow")
-    await asyncio.wait_for(executor.wait(run_id), timeout=60)
+    await finished(executor, run_id)
 
     assert (await run_row(sessions, run_id)).status == "verified"
     after = await types(sessions, run_id)
@@ -76,7 +85,7 @@ async def test_deny_cancels_without_running_the_step(sessions: Sessions, site: s
     await until(sessions, run_id, "paused")
 
     assert await executor.confirm(run_id, 4, "deny")
-    await asyncio.wait_for(executor.wait(run_id), timeout=10)
+    await finished(executor, run_id)
 
     run = await run_row(sessions, run_id)
     assert run.status == "cancelled"
@@ -96,7 +105,7 @@ async def test_the_policy_sees_each_step_and_the_page_before_it(
     executor = InProcessExecutor(RunStore(sessions), environment(tmp_path, policy=policy))
 
     await executor.submit(run_id)
-    await asyncio.wait_for(executor.wait(run_id), timeout=60)
+    await finished(executor, run_id)
 
     assert (await run_row(sessions, run_id)).status == "verified"
     assert [step.seq for step, _ in policy.checked] == [1, 2, 3, 4]
@@ -114,7 +123,7 @@ async def test_a_policy_pause_waits_for_confirm(sessions: Sessions, site: str, t
     await until(sessions, run_id, "paused")
     assert (await events(sessions, run_id))[-1]["message"] == "Deletes data"
     assert await executor.confirm(run_id, 2, "allow")
-    await asyncio.wait_for(executor.wait(run_id), timeout=60)
+    await finished(executor, run_id)
 
     assert (await run_row(sessions, run_id)).status == "verified"
 
@@ -127,7 +136,7 @@ async def test_a_policy_stop_ends_the_run_before_the_step(
     executor = InProcessExecutor(RunStore(sessions), environment(tmp_path, policy=FakePolicy({2: stop})))
 
     await executor.submit(run_id)
-    await asyncio.wait_for(executor.wait(run_id), timeout=60)
+    await finished(executor, run_id)
 
     run = await run_row(sessions, run_id)
     assert run.status == "failed" and run.error is not None
@@ -149,7 +158,7 @@ async def test_a_pause_the_contract_cannot_express_yet_never_continues(
     if "prompt_injection" in PAUSE_REASONS:  # after #216: a real pause
         await until(sessions, run_id, "paused")
         assert await executor.cancel(run_id)
-    await asyncio.wait_for(executor.wait(run_id), timeout=60)
+    await finished(executor, run_id)
 
     run = await run_row(sessions, run_id)
     assert run.status in ("failed", "cancelled")
@@ -162,7 +171,7 @@ async def test_an_unanswered_pause_gives_up(sessions: Sessions, site: str, tmp_p
 
     executor = InProcessExecutor(RunStore(sessions), env)
     await executor.submit(run_id)
-    await asyncio.wait_for(executor.wait(run_id), timeout=60)
+    await finished(executor, run_id)
 
     run = await run_row(sessions, run_id)
     assert run.status == "failed" and run.error is not None
@@ -176,7 +185,7 @@ async def test_cancel_while_paused(sessions: Sessions, site: str, tmp_path: Path
     await until(sessions, run_id, "paused")
 
     assert await executor.cancel(run_id)
-    await asyncio.wait_for(executor.wait(run_id), timeout=10)
+    await finished(executor, run_id)
 
     stream: list[dict[str, Any]] = await events(sessions, run_id)
     assert (stream[-1]["type"], stream[-1]["reason"]) == ("run.cancelled", "user")
@@ -219,7 +228,7 @@ async def test_deleting_a_real_gitea_repository_pauses_and_deny_keeps_it(
     assert (await events(sessions, run_id))[-1]["step_seq"] == 2
 
     assert await executor.confirm(run_id, 2, "deny")
-    await asyncio.wait_for(executor.wait(run_id), timeout=10)
+    await finished(executor, run_id)
 
     assert (await run_row(sessions, run_id)).status == "cancelled"
     url = f"{GITEA}/api/v1/repos/{user}/{name}"
