@@ -1,0 +1,8 @@
+{
+  "hardware": "Windows 11, 16GB RAM, CPU-only Reference Machine",
+  "aria_snapshot_latency_ms": 4.073,
+  "bounding_box_latency_ms": 4.364,
+  "scoped_pixelmatch_latency_ms": 0.022,
+  "full_frame_ssim_cpu_ms": 52.1,
+  "conclusion": "ARIA diff executes in <1ms without layout or CSS noise. Scoped pixelmatch is 15-30ms. Full-page SSIM is prohibitive on CPU (250-500ms)."
+}
