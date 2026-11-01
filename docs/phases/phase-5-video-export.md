@@ -28,23 +28,31 @@
 **Together**
 - Decide the presets (resolution, aspect ratios, intro/outro) and whether exports include the cursor and zoom effects exactly as in the player.
 
+**Decided (2026-11-01):** research and the together decisions are in
+[`phase-5-decisions-alignment.md`](../research/phase-5-decisions-alignment.md) (D1–D20): voice and Piper worker
+([ADR 0004](../adr/0004-piper-voice-and-license.md)), narration clips + manifest, scene timing, presets
+`landscape` 1920×1080 / `portrait` 1080×1920, export statuses and ports, retention, and storage
+([ADR 0005](../adr/0005-object-storage-seaweedfs.md): MinIO is archived, SeaweedFS later).
+
 ---
 
 ## Sprint 5.1: render
 
 | Vishwas | Nachiketha |
 |---|---|
-| `tts/`: Piper narration per step + timings | `packages/video-exporter`: Remotion composition from TutorialSpec (cursor, highlights, zoom, captions) |
-| ADR: Piper voice choice and license | Spike: rrweb-in-Remotion vs screenshot-based frames (ADR) |
+| `ports/`: `Narrator` port (contract PR), then `tts/` + `tts-worker/`: Piper narration per step + timings | `packages/video-exporter`: Remotion composition from TutorialSpec (cursor, highlights, zoom, captions) |
+| ADR: Piper voice choice and license ([0004](../adr/0004-piper-voice-and-license.md)) | Spike: rrweb-in-Remotion vs screenshot-based frames (ADR) |
 
 ## Sprint 5.2: export pipeline
 
 | Vishwas | Nachiketha |
 |---|---|
-| `api/`: `POST /workflows/{id}/exports`, export status, download | `export/`: export job (arq) that calls the renderer, with progress events |
-| `storage/`: video artifacts, cleanup of old exports | Frontend: Export MP4 dialog (preset, aspect ratio), progress, download; chapter markers in the file |
+| Contract PR (`Export`, `exports`, `ExportQueue`/`ExportStore` ports), then `api/`: `POST /workflows/{id}/exports`, export status, download, captions | `export/`: export job (arq) that calls the renderer, with progress events |
+| `storage/`: video artifacts, cleanup (30 days, `EXPORTS_MAX_GB`) | Frontend: Export MP4 dialog (preset, aspect ratio), progress, download; chapter markers in the file |
 
 ## Exit criteria
 - Export an MP4 of a 6-step tutorial with narration and chapters on Nachiketha's laptop.
 - 16:9 and 9:16 both keep the highlighted element in frame.
 - Rendering time is documented for both laptops.
+- The narration uses the public-domain voice from ADR 0004.
+- Exports past the retention rule are cleaned up (#125).
