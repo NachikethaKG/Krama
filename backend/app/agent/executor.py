@@ -9,7 +9,7 @@ from playwright.async_api import FloatRect, Locator, Page
 from playwright.async_api import TimeoutError as PlaywrightTimeoutError
 from pydantic import BaseModel, ConfigDict
 
-from app.agent.candidates import Candidate, role_candidates
+from app.agent.candidates import Candidate, describe_element, role_candidates
 from app.agent.context import ElementContext, element_context
 from app.agent.vision import VisionLocator
 from app.contracts_gen.common_schema import Action, ActionType, BoundingBox, ScrollOffset, Target
@@ -54,6 +54,9 @@ class ActionResult(BaseModel):
     """Which locator strategy found the target. None without target, or if nothing was found."""
     context: ElementContext | None = None
     """The dialog, menu, top bar or form section the target sits in, read before acting (for step text)."""
+    element: Candidate | None = None
+    """The resolved target as a healer sees it, read before acting: stored with the step as its fingerprint
+    (#112). None without target, or if the page changed while reading it."""
     llm_attempts: list[LLMAttempt] = []
     """LLM requests made by the vision fallback (for the run log and the benchmark)."""
     candidates: list[Candidate] = []
@@ -114,6 +117,7 @@ class ActionExecutor:
         locator: Locator | None = None
         strategy: LocatorStrategy | None = None
         context: ElementContext | None = None
+        element: Candidate | None = None
         attempts: list[LLMAttempt] = []
         candidates: list[Candidate] = []
         refilled: list[str] = []
@@ -124,6 +128,7 @@ class ActionExecutor:
                 locator, strategy = await self._resolve(target, instruction, attempts)
                 context = await element_context(locator)
                 bbox, scroll = await self._page_bbox(locator)
+                element = await self._describe(locator, target)
             if action.type == "click" and target is not None and target.role == "button":
                 refilled = await self._refill_lost_values()
             await self._perform(action, locator)
@@ -162,11 +167,19 @@ class ActionExecutor:
             url_after=self.current_path(),
             strategy=strategy,
             context=context,
+            element=element,
             llm_attempts=attempts,
             candidates=candidates,
             refilled=refilled,
             error=error,
         )
+
+    @staticmethod
+    async def _describe(locator: Locator, target: Target) -> Candidate | None:
+        try:
+            return await describe_element(locator, target.role or "")
+        except PlaywrightError:
+            return None  # gone meanwhile: the action below reports it; the step just has no fingerprint
 
     async def _refill_lost_values(self) -> list[str]:
         """Before a button click: type again into any field filled on this page that lost its value.
