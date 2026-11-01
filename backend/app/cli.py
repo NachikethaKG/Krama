@@ -23,6 +23,8 @@ from app.agent.stored_session import (
     sign_in_problem,
 )
 from app.config import get_settings
+from app.exports_cli import add_parser as add_exports_parser
+from app.exports_cli import exports_command
 from app.llm import create_provider
 from app.observer import PageObserver
 from app.planner import LLMPlanner
@@ -62,6 +64,7 @@ def build_parser() -> argparse.ArgumentParser:
     session.add_argument("site", nargs="?", choices=sorted(SITES), help="e.g. github")
     session.add_argument("--timeout", type=float, default=600.0, help="seconds to wait for the sign-in")
     add_users_parser(commands)
+    add_exports_parser(commands)
     commands.add_parser(
         "worker",
         help="run queued runs (RUN_EXECUTOR=arq; needs Redis)",
@@ -152,6 +155,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         return session_command(args)
     if args.command == "users":
         return users_command(args)
+    if args.command == "exports":
+        return exports_command(args)
     if args.command == "worker":
         from app.worker import run_worker
 

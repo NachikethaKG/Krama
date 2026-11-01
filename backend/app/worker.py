@@ -17,6 +17,7 @@ from uuid import UUID
 
 from arq import func
 from arq.connections import ArqRedis
+from arq.cron import cron
 from arq.logs import default_log_config
 from arq.worker import Worker
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
@@ -28,6 +29,8 @@ from app.runs import InProcessExecutor, RunEnvironment, RunStore
 from app.runs.events import EVENTS
 from app.runs.queue import CONTROL, JOB, job_id, redis_settings
 from app.runs.states import RunStatus
+from app.storage import LocalFsStore
+from app.storage.cleanup import cleanup_with_settings
 
 logger = logging.getLogger(__name__)
 
@@ -56,6 +59,12 @@ async def run_job(ctx: Ctx, run_id: str) -> str:
         await executor.stop(rid)
         raise
     return (await store.status(rid)).value
+
+
+async def export_cleanup_job(ctx: Ctx) -> str:
+    """Daily at 03:30 (#125): expire old exports, keep exports/ under EXPORTS_MAX_GB, drop unused clips."""
+    report = await cleanup_with_settings(ctx["settings"], ctx["sessions"], ctx["files"])
+    return report.summary()
 
 
 async def _listen_for_control(redis_url: str, executor: InProcessExecutor) -> None:
@@ -119,7 +128,13 @@ def worker_settings(
         store = RunStore(own_sessions, on_event=published)
         env = environment() if environment is not None else build_run_environment(settings)
         executor = InProcessExecutor(store, env, max_concurrent=settings.max_concurrent_runs)
-        ctx.update(store=store, executor=executor)
+        ctx.update(
+            store=store,
+            executor=executor,
+            sessions=own_sessions,
+            settings=settings,
+            files=LocalFsStore(settings.artifacts_dir),
+        )
         state["engine"] = engine
         state["listener"] = asyncio.create_task(_listen_for_control(settings.redis_url, executor))
         await _recover(store, redis)
@@ -141,6 +156,8 @@ def worker_settings(
     timeout = settings.run_timeout_seconds + 1800 + 120
     return {
         "functions": [func(run_job, name=JOB, timeout=timeout, max_tries=1)],
+        # Local time. `unique`: with two workers, only one of them cleans up.
+        "cron_jobs": [cron(export_cleanup_job, hour=3, minute=30, timeout=600, unique=True)],
         "redis_settings": redis_settings(settings.redis_url),
         "on_startup": startup,
         "on_shutdown": shutdown,
