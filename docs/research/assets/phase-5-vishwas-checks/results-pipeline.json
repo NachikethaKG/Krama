@@ -1,0 +1,163 @@
+{
+ "voice": "en_US-ljspeech-medium",
+ "fps": 30,
+ "lead_in_ms": 300,
+ "tail_ms": 400,
+ "runs": [
+  {
+   "scenes": 6,
+   "synth_s_for_distinct_clips": 13.18,
+   "video_ms": 27733,
+   "track_a_wav_ms": 27733,
+   "track_a_aac_ms": 27771,
+   "track_b_aac_ms": 27771,
+   "encode_s": {
+    "A_python_place_then_aac": 0.45,
+    "B_ffmpeg_adelay_amix": 0.68
+   },
+   "onset_error_ms": {
+    "A_wav": {
+     "max_abs": 0.7,
+     "last": -0.7
+    },
+    "A_aac": {
+     "max_abs": 0.7,
+     "last": -0.7,
+     "first6": [
+      -0.7,
+      -0.7,
+      -0.7,
+      -0.7,
+      -0.7,
+      -0.7
+     ]
+    },
+    "B_aac": {
+     "max_abs": 0.7,
+     "last": -0.7,
+     "first6": [
+      -0.7,
+      -0.7,
+      -0.7,
+      -0.7,
+      -0.7,
+      -0.7
+     ]
+    }
+   },
+   "unsnapped_audio_minus_video_start_ms": {
+    "last_scene": -85.3,
+    "max_abs": 85.3
+   },
+   "scene_table": [
+    {
+     "action": "navigate",
+     "action_ms": 5956,
+     "speech_ms": 1718,
+     "compiler_estimate_ms": 5956,
+     "scene_ms": 5967,
+     "start_frame": 0,
+     "frames": 179,
+     "start_ms_unsnapped": 0
+    },
+    {
+     "action": "click",
+     "action_ms": 486,
+     "speech_ms": 1057,
+     "compiler_estimate_ms": 1525,
+     "scene_ms": 1767,
+     "start_frame": 179,
+     "frames": 53,
+     "start_ms_unsnapped": 5956
+    },
+    {
+     "action": "fill",
+     "action_ms": 298,
+     "speech_ms": 3553,
+     "compiler_estimate_ms": 3775,
+     "scene_ms": 4267,
+     "start_frame": 232,
+     "frames": 128,
+     "start_ms_unsnapped": 7713
+    },
+    {
+     "action": "fill",
+     "action_ms": 239,
+     "speech_ms": 4075,
+     "compiler_estimate_ms": 4525,
+     "scene_ms": 4800,
+     "start_frame": 360,
+     "frames": 144,
+     "start_ms_unsnapped": 11965
+    },
+    {
+     "action": "fill",
+     "action_ms": 287,
+     "speech_ms": 5608,
+     "compiler_estimate_ms": 3775,
+     "scene_ms": 6333,
+     "start_frame": 504,
+     "frames": 190,
+     "start_ms_unsnapped": 16740
+    },
+    {
+     "action": "click",
+     "action_ms": 352,
+     "speech_ms": 3878,
+     "compiler_estimate_ms": 3400,
+     "scene_ms": 4600,
+     "start_frame": 694,
+     "frames": 138,
+     "start_ms_unsnapped": 23048
+    }
+   ]
+  },
+  {
+   "scenes": 60,
+   "synth_s_for_distinct_clips": 12.51,
+   "video_ms": 279667,
+   "track_a_wav_ms": 279667,
+   "track_a_aac_ms": 279708,
+   "track_b_aac_ms": 279708,
+   "encode_s": {
+    "A_python_place_then_aac": 2.4,
+    "B_ffmpeg_adelay_amix": 2.64
+   },
+   "onset_error_ms": {
+    "A_wav": {
+     "max_abs": 0.7,
+     "last": -0.7
+    },
+    "A_aac": {
+     "max_abs": 0.7,
+     "last": -0.7,
+     "first6": [
+      -0.7,
+      -0.7,
+      -0.7,
+      -0.7,
+      -0.7,
+      -0.7
+     ]
+    },
+    "B_aac": {
+     "max_abs": 4.3,
+     "last": -0.7,
+     "first6": [
+      -0.7,
+      4.3,
+      -0.7,
+      -0.7,
+      -0.7,
+      -0.7
+     ]
+    }
+   },
+   "unsnapped_audio_minus_video_start_ms": {
+    "last_scene": -1067.0,
+    "max_abs": 1067.0
+   },
+   "scene_table": null
+  }
+ ]
+}

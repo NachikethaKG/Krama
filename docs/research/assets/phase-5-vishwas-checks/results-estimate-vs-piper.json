@@ -1,0 +1,51 @@
+[
+ {
+  "voice": "en_GB-cori-high",
+  "wpm": 149,
+  "estimate_too_short": "57/104",
+  "worst_cut_ms": 2726,
+  "longest_clip_ms": 7976
+ },
+ {
+  "voice": "en_US-john-medium",
+  "wpm": 132,
+  "estimate_too_short": "78/104",
+  "worst_cut_ms": 2808,
+  "longest_clip_ms": 7407
+ },
+ {
+  "voice": "en_US-kristin-medium",
+  "wpm": 143,
+  "estimate_too_short": "65/104",
+  "worst_cut_ms": 3261,
+  "longest_clip_ms": 7930
+ },
+ {
+  "voice": "en_US-lessac-medium",
+  "wpm": 152,
+  "estimate_too_short": "56/104",
+  "worst_cut_ms": 2367,
+  "longest_clip_ms": 7047
+ },
+ {
+  "voice": "en_US-ljspeech-high",
+  "wpm": 136,
+  "estimate_too_short": "71/104",
+  "worst_cut_ms": 4341,
+  "longest_clip_ms": 7802
+ },
+ {
+  "voice": "en_US-ljspeech-medium",
+  "wpm": 133,
+  "estimate_too_short": "75/104",
+  "worst_cut_ms": 3981,
+  "longest_clip_ms": 8406
+ },
+ {
+  "voice": "en_US-norman-medium",
+  "wpm": 150,
+  "estimate_too_short": "56/104",
+  "worst_cut_ms": 3935,
+  "longest_clip_ms": 6920
+ }
+]
