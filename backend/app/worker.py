@@ -79,7 +79,8 @@ async def validation_job(ctx: Ctx) -> str:
         return "skipped: a run is queued or running"
     settings: Settings = ctx["settings"]
     backend = RunValidationBackend(ctx["sessions"], ctx["executor"], lambda url: target_setup(url, settings))
-    done = await ScheduledValidator(backend, RedisSiteLimits(settings.redis_url)).run_due()
+    validator = ScheduledValidator(backend, RedisSiteLimits(settings.redis_url), artifacts=ctx["files"])
+    done = await validator.run_due()
     return f"validated {done} workflow(s)"
 
 
