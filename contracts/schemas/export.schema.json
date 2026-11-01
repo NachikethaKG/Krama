@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "export.schema.json",
+  "title": "Export",
+  "$comment": "v1.0. An MP4 export of a workflow's tutorial (Phase 5; decisions D6 and D13-D20 in docs/research/phase-5-decisions-alignment.md).",
+  "description": "One MP4 render of one workflow version with one preset. Created by POST /workflows/{id}/exports, rendered by the export job, polled with GET /exports/{id}.",
+  "type": "object",
+  "required": ["id", "workflow_id", "revision", "preset", "voice", "status", "progress", "created_at"],
+  "additionalProperties": false,
+  "properties": {
+    "id": { "type": "string", "format": "uuid" },
+    "workflow_id": { "type": "string", "format": "uuid" },
+    "revision": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "The workflow version that was exported (Workflow.revision at the time of the request)."
+    },
+    "title": { "type": ["string", "null"], "description": "The workflow's title, for the dialog and the file name." },
+    "preset": { "$ref": "#/$defs/ExportPreset" },
+    "voice": { "type": "string", "minLength": 1, "description": "Narration voice used (ADR 0004), e.g. en_US-ljspeech-medium." },
+    "status": { "$ref": "#/$defs/ExportStatus" },
+    "progress": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Render progress in percent. 0 while queued, 100 when ready."
+    },
+    "size_bytes": { "type": ["integer", "null"], "minimum": 0, "description": "MP4 size; set when ready." },
+    "duration_ms": { "type": ["integer", "null"], "minimum": 0, "description": "Video length; set when ready." },
+    "download_url": {
+      "type": ["string", "null"],
+      "description": "API path of the MP4 (GET /exports/{id}/download) when ready, else null."
+    },
+    "captions_url": {
+      "type": ["string", "null"],
+      "description": "API path of the WebVTT captions (GET /exports/{id}/captions.vtt) when ready and captions exist, else null."
+    },
+    "error": {
+      "description": "Why the export failed. Null unless status is failed.",
+      "oneOf": [{ "$ref": "#/$defs/ExportError" }, { "type": "null" }]
+    },
+    "created_at": { "type": "string", "format": "date-time" },
+    "started_at": { "type": ["string", "null"], "format": "date-time", "description": "When rendering started." },
+    "finished_at": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "When the export became ready or failed."
+    }
+  },
+  "$defs": {
+    "ExportPreset": {
+      "title": "ExportPreset",
+      "description": "landscape = 1920x1080 (16:9), portrait = 1080x1920 (9:16, follows the highlight). Both 30 fps, H.264 + AAC.",
+      "enum": ["landscape", "portrait"]
+    },
+    "ExportStatus": {
+      "title": "ExportStatus",
+      "description": "queued -> rendering -> ready | failed; ready -> expired when cleanup deletes the file (the row stays).",
+      "enum": ["queued", "rendering", "ready", "failed", "expired"]
+    },
+    "ExportErrorCode": {
+      "title": "ExportErrorCode",
+      "enum": ["narration_failed", "render_failed", "storage_failed", "interrupted", "timeout", "internal"]
+    },
+    "ExportError": {
+      "title": "ExportError",
+      "type": "object",
+      "required": ["code", "message"],
+      "additionalProperties": false,
+      "properties": {
+        "code": { "$ref": "#/$defs/ExportErrorCode" },
+        "message": { "type": "string", "description": "Short, safe to show to the user. Never contains secrets." }
+      }
+    },
+    "CreateExportRequest": {
+      "title": "CreateExportRequest",
+      "type": "object",
+      "required": ["preset"],
+      "additionalProperties": false,
+      "properties": {
+        "preset": { "$ref": "#/$defs/ExportPreset" }
+      }
+    }
+  }
+}
