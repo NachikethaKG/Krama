@@ -2,6 +2,20 @@
 
 Every change to `contracts/` is listed here. Additive change = minor version bump; breaking change = major bump + ADR.
 
+## 1.11 (#354)
+
+MP4 export (Phase 5, #124; decisions D6, D13–D20 in `docs/research/phase-5-decisions-alignment.md`). Additive.
+
+- New `export.schema.json` v1.0: `Export` (`revision`, `preset`, `voice`, `status`, `progress`, sizes, `download_url` /
+  `captions_url` when ready, `error` when failed), `CreateExportRequest` (`preset` only), `ExportPreset`
+  (`landscape|portrait`), `ExportStatus` (`queued|rendering|ready|failed|expired`), `ExportErrorCode`
+  (`narration_failed|render_failed|storage_failed|interrupted|timeout|internal`), `ExportError`.
+- New fixtures `fixtures/exports/`: one `Export` per status, and `tiny.mp4` (1 s, 3.5 KB) for the mock export queue.
+- `docs/api-contract.md`: `POST /workflows/{id}/exports`, `GET /exports/{id}`, `/download`, `/captions.vtt`.
+- `docs/database-schema.md`: the `exports` table (migration in #124).
+- Python ports (`backend/app/ports/`): `ExportQueue`, `ExportStore` (+ `ExportJobInput`), `ArtifactFiles`
+  (`put_file`, `local_path`, `delete`, `list`) with fakes.
+
 ## 1.10 (#345)
 
 Regenerating a workflow that can't heal (#113; D3 in `docs/research/phase-4-decisions-alignment.md`). Additive.

@@ -127,6 +127,26 @@ One row per validation of a stored workflow (Phase 4, #110 writes them).
 | drift_details | jsonb null | failing step, reason, healing candidates (#109, #111) |
 | ran_at | timestamptz | |
 
+### exports (Phase 5, #124)
+One MP4 render of one workflow version with one preset (`contracts/schemas/export.schema.json`).
+
+| Column | Type | Notes |
+|---|---|---|
+| id | uuid pk | |
+| workflow_id | uuid fk → workflows, cascade | |
+| version_id | uuid fk → workflow_versions, cascade | the version rendered (`Export.revision` is its number) |
+| user_id | uuid fk → users, null | who asked |
+| preset | text | `landscape\|portrait` |
+| voice | text | narration voice (ADR 0004) |
+| status | text | `queued\|rendering\|ready\|failed\|expired` |
+| progress | int | 0–100 |
+| video_key, captions_key | text null | artifact keys `exports/<id>.mp4` / `.vtt` when ready |
+| size_bytes, duration_ms | int null | when ready |
+| error_code, error_message | text null | when failed (`ExportErrorCode`) |
+| created_at, started_at, finished_at | timestamptz | `started_at`/`finished_at` null until then |
+
+Index `exports(workflow_id, version_id, preset, voice)` for re-use (D16); cleanup (#125) reads `status`, `finished_at`.
+
 ## Later phases
 - **Phase 3:**
   - `users (id, email unique lower-cased, password_hash argon2id, display_name, created_at)`: seeded, no sign-up.
@@ -136,7 +156,7 @@ One row per validation of a stored workflow (Phase 4, #110 writes them).
   - Signed-in browser sessions for real sites (#87) are Fernet-encrypted files under `data/sessions/`, not a table, while there is one test account per site.
 - **Phase 4:** `workflow_versions`, `validations`, `workflow_steps.version_id`, `workflows.revision` +
   `current_version_id`: see the tables above.
-- **Phase 5** (planned; #124's contract PR fixes it): `exports (id, workflow_id, version_id, user_id, preset landscape|portrait, voice, status queued|rendering|ready|failed|expired, progress, video_key, captions_key, size_bytes, duration_ms, error_code, created_at, finished_at, expires_at)`. Narration clips are artifacts, not rows: `narration/<voice>/<sha256 of the text>.wav` + `.json` (duration and word timings).
+- **Phase 5:** `exports`: see the table below. Narration clips are artifacts, not rows: `narration/<voice>/<sha256 of the text>.wav` + `.json` (duration and word timings).
 
 ## Indexes
 `runs(plan_id)`, `runs(status)`, `workflows(target_app, status)`, `workflow_steps(version_id, seq)` unique, `workflow_steps(workflow_id)`, `workflow_versions(workflow_id, revision)`

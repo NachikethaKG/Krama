@@ -75,6 +75,26 @@ export type PauseReason =
  */
 export type CancelReason = "user" | "confirmation_denied";
 /**
+ * landscape = 1920x1080 (16:9), portrait = 1080x1920 (9:16, follows the highlight). Both 30 fps, H.264 + AAC.
+ *
+ * This interface was referenced by `Export`'s JSON-Schema
+ * via the `definition` "ExportPreset".
+ */
+export type ExportPreset = "landscape" | "portrait";
+/**
+ * queued -> rendering -> ready | failed; ready -> expired when cleanup deletes the file (the row stays).
+ *
+ * This interface was referenced by `Export`'s JSON-Schema
+ * via the `definition` "ExportStatus".
+ */
+export type ExportStatus = "queued" | "rendering" | "ready" | "failed" | "expired";
+/**
+ * This interface was referenced by `Export`'s JSON-Schema
+ * via the `definition` "ExportErrorCode".
+ */
+export type ExportErrorCode =
+  "narration_failed" | "render_failed" | "storage_failed" | "interrupted" | "timeout" | "internal";
+/**
  * This interface was referenced by `MetricsSummary`'s JSON-Schema
  * via the `definition` "Ratio".
  */
@@ -162,6 +182,7 @@ export interface KramaContracts {
   auth?: User;
   common?: Common;
   events?: RunEvent;
+  export?: Export;
   health?: HealthResponse;
   "metrics-summary"?: MetricsSummary;
   plan?: Plan;
@@ -404,6 +425,78 @@ export interface RunResumedEvent {
   ts: string;
   step_seq: number;
   decision: "allow";
+}
+/**
+ * One MP4 render of one workflow version with one preset. Created by POST /workflows/{id}/exports, rendered by the export job, polled with GET /exports/{id}.
+ */
+export interface Export {
+  id: string;
+  workflow_id: string;
+  /**
+   * The workflow version that was exported (Workflow.revision at the time of the request).
+   */
+  revision: number;
+  /**
+   * The workflow's title, for the dialog and the file name.
+   */
+  title?: string | null;
+  preset: ExportPreset;
+  /**
+   * Narration voice used (ADR 0004), e.g. en_US-ljspeech-medium.
+   */
+  voice: string;
+  status: ExportStatus;
+  /**
+   * Render progress in percent. 0 while queued, 100 when ready.
+   */
+  progress: number;
+  /**
+   * MP4 size; set when ready.
+   */
+  size_bytes?: number | null;
+  /**
+   * Video length; set when ready.
+   */
+  duration_ms?: number | null;
+  /**
+   * API path of the MP4 (GET /exports/{id}/download) when ready, else null.
+   */
+  download_url?: string | null;
+  /**
+   * API path of the WebVTT captions (GET /exports/{id}/captions.vtt) when ready and captions exist, else null.
+   */
+  captions_url?: string | null;
+  /**
+   * Why the export failed. Null unless status is failed.
+   */
+  error?: ExportError | null;
+  created_at: string;
+  /**
+   * When rendering started.
+   */
+  started_at?: string | null;
+  /**
+   * When the export became ready or failed.
+   */
+  finished_at?: string | null;
+}
+/**
+ * This interface was referenced by `Export`'s JSON-Schema
+ * via the `definition` "ExportError".
+ */
+export interface ExportError {
+  code: ExportErrorCode;
+  /**
+   * Short, safe to show to the user. Never contains secrets.
+   */
+  message: string;
+}
+/**
+ * This interface was referenced by `Export`'s JSON-Schema
+ * via the `definition` "CreateExportRequest".
+ */
+export interface CreateExportRequest {
+  preset: ExportPreset;
 }
 export interface HealthResponse {
   status: "ok";

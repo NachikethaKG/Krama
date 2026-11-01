@@ -23,6 +23,7 @@ __all__ = [
     "Action",
     "ActionType",
     "ArtifactContentType",
+    "ArtifactInfo",
     "ArtifactKey",
     "ArtifactNotFoundError",
     "ArtifactRef",
@@ -41,6 +42,7 @@ __all__ = [
     "Target",
     "Verdict",
     "validate_artifact_key",
+    "validate_artifact_prefix",
 ]
 
 Verdict = Literal["allow", "pause", "stop"]
@@ -174,3 +176,19 @@ class StoredArtifact(_Model):
 
     ref: ArtifactRef
     data: bytes
+
+
+class ArtifactInfo(_Model):
+    """One entry of `ArtifactFiles.list`: enough for cleanup (#125) without reading the file."""
+
+    key: ArtifactKey
+    size_bytes: int = Field(ge=0)
+    modified_at: datetime
+
+
+def validate_artifact_prefix(prefix: str) -> str:
+    """Return `prefix` if it is a safe folder prefix like `exports/` or `narration/v/`, else raise."""
+    if not prefix.endswith("/"):
+        raise InvalidArtifactKeyError(f"artifact prefix must end with '/': {prefix!r}")
+    validate_artifact_key(prefix[:-1])
+    return prefix

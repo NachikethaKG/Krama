@@ -1,15 +1,29 @@
 """Scripted fakes for every port, so each side can test without the other's real implementation."""
 
+import asyncio
 import hashlib
+import tempfile
 from collections import deque
 from collections.abc import Iterable, Sequence
 from datetime import UTC, datetime
+from pathlib import Path
+from uuid import UUID
 
 from playwright.async_api import Page
 
-from app.ports.artifacts import ArtifactStore
+from app.contracts_gen.export_schema import Export, ExportError, ExportErrorCode
+from app.contracts_gen.workflow_schema import Workflow
+from app.ports.artifacts import ArtifactFiles, ArtifactStore
+from app.ports.exports import (
+    ExportJobInput,
+    ExportNotFoundError,
+    ExportQueue,
+    ExportStateError,
+    ExportStore,
+)
 from app.ports.models import (
     ArtifactContentType,
+    ArtifactInfo,
     ArtifactNotFoundError,
     ArtifactRef,
     ObservedState,
@@ -23,6 +37,7 @@ from app.ports.models import (
     StepRisk,
     StoredArtifact,
     validate_artifact_key,
+    validate_artifact_prefix,
 )
 from app.ports.narration import (
     NarrationClip,
@@ -96,15 +111,46 @@ class FakePolicy:
 
 
 class FakeArtifactStore:
-    """Keeps artifacts in memory. Checks keys exactly like a real store, so unsafe keys fail in tests too."""
+    """Keeps artifacts in memory. Checks keys exactly like a real store, so unsafe keys fail in tests too.
+
+    Implements `ArtifactStore` and `ArtifactFiles`; `local_path` writes the bytes to a temporary folder.
+    """
 
     def __init__(self) -> None:
         self.artifacts: dict[str, StoredArtifact] = {}
+        self.modified: dict[str, datetime] = {}
+        self._files: Path | None = None
 
     async def put(self, key: str, data: bytes, content_type: ArtifactContentType) -> ArtifactRef:
         ref = ArtifactRef(key=validate_artifact_key(key), content_type=content_type, size_bytes=len(data))
         self.artifacts[key] = StoredArtifact(ref=ref, data=data)
+        self.modified[key] = datetime.now(UTC)
         return ref
+
+    async def put_file(self, key: str, path: Path, content_type: ArtifactContentType) -> ArtifactRef:
+        validate_artifact_key(key)
+        return await self.put(key, await asyncio.to_thread(path.read_bytes), content_type)
+
+    async def local_path(self, key: str) -> Path:
+        data = (await self.get(key)).data
+        if self._files is None:
+            self._files = Path(tempfile.mkdtemp(prefix="krama-fake-artifacts-"))
+        path = self._files / key
+        await asyncio.to_thread(path.parent.mkdir, parents=True, exist_ok=True)
+        await asyncio.to_thread(path.write_bytes, data)
+        return path
+
+    async def delete(self, key: str) -> bool:
+        self.modified.pop(validate_artifact_key(key), None)
+        return self.artifacts.pop(key, None) is not None
+
+    async def list(self, prefix: str) -> list[ArtifactInfo]:
+        validate_artifact_prefix(prefix)
+        return [
+            ArtifactInfo(key=k, size_bytes=a.ref.size_bytes, modified_at=self.modified[k])
+            for k, a in sorted(self.artifacts.items())
+            if k.startswith(prefix)
+        ]
 
     async def get(self, key: str) -> StoredArtifact:
         try:
@@ -159,8 +205,109 @@ class FakeNarrator:
         )
 
 
+class FakeExportStore:
+    """The `exports` table in memory, with the same status rules as the real store."""
+
+    def __init__(self) -> None:
+        self.exports: dict[UUID, Export] = {}
+        self.workflows: dict[UUID, Workflow] = {}
+        self.videos: dict[UUID, ArtifactRef] = {}
+        self.captions: dict[UUID, ArtifactRef] = {}
+
+    def add(self, export: Export, workflow: Workflow) -> None:
+        self.exports[export.id] = export
+        self.workflows[export.id] = workflow
+
+    async def load(self, export_id: UUID) -> ExportJobInput:
+        return ExportJobInput(export=self._get(export_id), workflow=self.workflows[export_id])
+
+    async def mark_rendering(self, export_id: UUID, progress: int) -> None:
+        e = self._get(export_id)
+        if e.status not in ("queued", "rendering"):
+            raise ExportStateError(f"export {export_id} is {e.status}")
+        update: dict[str, object] = {"status": "rendering", "progress": max(e.progress, min(progress, 99))}
+        if e.started_at is None:
+            update["started_at"] = datetime.now(UTC)
+        self.exports[export_id] = e.model_copy(update=update)
+
+    async def mark_ready(
+        self, export_id: UUID, *, video: ArtifactRef, captions: ArtifactRef | None, duration_ms: int
+    ) -> None:
+        e = self._get(export_id)
+        if e.status != "rendering":
+            raise ExportStateError(f"export {export_id} is {e.status}, not rendering")
+        self.videos[export_id] = video
+        if captions is not None:
+            self.captions[export_id] = captions
+        base = f"/api/v1/exports/{export_id}"
+        self.exports[export_id] = e.model_copy(
+            update={
+                "status": "ready",
+                "progress": 100,
+                "size_bytes": video.size_bytes,
+                "duration_ms": duration_ms,
+                "download_url": f"{base}/download",
+                "captions_url": f"{base}/captions.vtt" if captions is not None else None,
+                "finished_at": datetime.now(UTC),
+            }
+        )
+
+    async def mark_failed(self, export_id: UUID, code: ExportErrorCode, message: str) -> None:
+        e = self._get(export_id)
+        if e.status not in ("queued", "rendering"):
+            raise ExportStateError(f"export {export_id} is {e.status}")
+        self.exports[export_id] = e.model_copy(
+            update={
+                "status": "failed",
+                "error": ExportError(code=code, message=message),
+                "finished_at": datetime.now(UTC),
+            }
+        )
+
+    def _get(self, export_id: UUID) -> Export:
+        try:
+            return self.exports[export_id]
+        except KeyError:
+            raise ExportNotFoundError(str(export_id)) from None
+
+
+TINY_MP4 = Path(__file__).resolve().parents[3] / "contracts" / "fixtures" / "exports" / "tiny.mp4"
+"""A real 1 s, 192x108 H.264 + AAC MP4 (3.5 KB), for tests and the mock export queue."""
+
+
+class FakeExportQueue:
+    """Records what was enqueued. Given a store and files, it "renders" at once instead: marks the export
+    rendering, stores `video` (default: the tiny fixture MP4) at `exports/<id>.mp4`, and marks it ready, or
+    failed with `fail`. That lets the export API and dialog work before the real export job exists (D14)."""
+
+    def __init__(
+        self,
+        store: ExportStore | None = None,
+        files: ArtifactFiles | None = None,
+        *,
+        video: Path = TINY_MP4,
+        fail: ExportErrorCode | None = None,
+    ) -> None:
+        self.store, self.files, self.video, self.fail = store, files, video, fail
+        self.enqueued: list[UUID] = []
+
+    async def enqueue(self, export_id: UUID) -> None:
+        self.enqueued.append(export_id)
+        if self.store is None or self.files is None:
+            return
+        await self.store.mark_rendering(export_id, 0)
+        if self.fail is not None:
+            await self.store.mark_failed(export_id, self.fail, f"fake export queue told to fail: {self.fail}")
+            return
+        ref = await self.files.put_file(f"exports/{export_id}.mp4", self.video, "video/mp4")
+        await self.store.mark_ready(export_id, video=ref, captions=None, duration_ms=1000)
+
+
 # Typed conformance: strict mypy fails here if a fake drifts from its port.
 _observer: Observer = FakeObserver()
 _policy: Policy = FakePolicy()
 _artifacts: ArtifactStore = FakeArtifactStore()
 _narrator: Narrator = FakeNarrator()
+_artifact_files: ArtifactFiles = FakeArtifactStore()
+_export_store: ExportStore = FakeExportStore()
+_export_queue: ExportQueue = FakeExportQueue()
