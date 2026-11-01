@@ -467,3 +467,21 @@ async def test_a_heal_for_review_leaves_the_current_version_and_marks_the_workfl
             (2, "pending_review"),
             (1, "current"),
         ]
+
+
+async def test_a_newer_current_version_supersedes_one_waiting_for_review(sessions: Sessions) -> None:
+    """Decided 2026-11-01 (#113): a regenerate (or published heal) replaces a heal waiting for review."""
+    workflow = await new_workflow(sessions, "gitea", [1])
+    for status in ("pending_review", "current"):
+        async with sessions.begin() as s:
+            row = await s.get(WorkflowRow, workflow.id)
+            assert row is not None
+            await add_workflow_version(
+                s, row, [step_row(1)], source="heal" if status == "pending_review" else "regenerate",
+                status=status, run_id=None, confidence=1.0, recording_path=None, viewport=None,
+                change_summary=None,
+            )  # fmt: skip
+
+    async with sessions() as s:
+        statuses = [(v.revision, v.source, v.status) for v, _ in await list_versions(s, workflow.id)]
+    assert statuses == [(3, "regenerate", "current"), (2, "heal", "superseded"), (1, "initial", "superseded")]

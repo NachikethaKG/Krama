@@ -291,8 +291,9 @@ async def add_workflow_version(
 
     The recording, viewport and confidence are the new run's: the version's steps (and their boxes) belong to
     that recording. `current` supersedes the old current version and the workflow's copies follow it, status
-    `verified` (D8: a heal that publishes itself). `pending_review` leaves the current version in place and
-    the workflow `outdated` until a human accepts the new one."""
+    `verified` (D8: a heal that publishes itself), and an older version still waiting for review is superseded
+    too: a newer one replaced it. `pending_review` leaves the current version in place and the workflow
+    `outdated` until a human accepts the new one."""
     if status not in ("current", "pending_review"):
         raise ValueError(f"a new version is current or pending_review, not {status}")
     latest = await session.scalar(
@@ -318,7 +319,10 @@ async def add_workflow_version(
         # Before the insert: at most one current version per workflow (a partial unique index).
         await session.execute(
             update(WorkflowVersionRow)
-            .where(WorkflowVersionRow.workflow_id == workflow.id, WorkflowVersionRow.status == "current")
+            .where(
+                WorkflowVersionRow.workflow_id == workflow.id,
+                WorkflowVersionRow.status.in_(("current", "pending_review")),
+            )
             .values(status="superseded")
         )
     session.add(version)

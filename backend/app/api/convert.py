@@ -25,6 +25,7 @@ def task_out(row: TaskRow, plan_id: UUID | None) -> Task:
             "interpretation": row.interpretation,
             "clarification_question": row.clarification_question,
             "plan_id": plan_id,
+            "regenerates_workflow_id": row.regenerates_workflow_id,
             "error": row.error,
             "created_at": row.created_at,
         }
