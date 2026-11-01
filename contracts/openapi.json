@@ -89,6 +89,19 @@
         "title": "BoundingBox",
         "type": "array"
       },
+      "CreateExportRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "preset": {
+            "$ref": "#/components/schemas/ExportPreset"
+          }
+        },
+        "required": [
+          "preset"
+        ],
+        "title": "CreateExportRequest",
+        "type": "object"
+      },
       "ElementRef": {
         "additionalProperties": false,
         "properties": {
@@ -225,6 +238,214 @@
         },
         "title": "ExpectedState",
         "type": "object"
+      },
+      "Export": {
+        "additionalProperties": false,
+        "properties": {
+          "captions_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "API path of the WebVTT captions (GET /exports/{id}/captions.vtt) when ready and captions exist, else null.",
+            "title": "Captions Url"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "download_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "API path of the MP4 (GET /exports/{id}/download) when ready, else null.",
+            "title": "Download Url"
+          },
+          "duration_ms": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Video length; set when ready.",
+            "title": "Duration Ms"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ExportError"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Why the export failed. Null unless status is failed."
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "When the export became ready or failed.",
+            "title": "Finished At"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "preset": {
+            "$ref": "#/components/schemas/ExportPreset"
+          },
+          "progress": {
+            "description": "Render progress in percent. 0 while queued, 100 when ready.",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Progress",
+            "type": "integer"
+          },
+          "revision": {
+            "description": "The workflow version that was exported (Workflow.revision at the time of the request).",
+            "minimum": 1.0,
+            "title": "Revision",
+            "type": "integer"
+          },
+          "size_bytes": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "MP4 size; set when ready.",
+            "title": "Size Bytes"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "When rendering started.",
+            "title": "Started At"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ExportStatus"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The workflow's title, for the dialog and the file name.",
+            "title": "Title"
+          },
+          "voice": {
+            "description": "Narration voice used (ADR 0004), e.g. en_US-ljspeech-medium.",
+            "minLength": 1,
+            "title": "Voice",
+            "type": "string"
+          },
+          "workflow_id": {
+            "format": "uuid",
+            "title": "Workflow Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "workflow_id",
+          "revision",
+          "preset",
+          "voice",
+          "status",
+          "progress",
+          "created_at"
+        ],
+        "title": "Export",
+        "type": "object"
+      },
+      "ExportError": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "$ref": "#/components/schemas/ExportErrorCode"
+          },
+          "message": {
+            "description": "Short, safe to show to the user. Never contains secrets.",
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "ExportError",
+        "type": "object"
+      },
+      "ExportErrorCode": {
+        "enum": [
+          "narration_failed",
+          "render_failed",
+          "storage_failed",
+          "interrupted",
+          "timeout",
+          "internal"
+        ],
+        "title": "ExportErrorCode",
+        "type": "string"
+      },
+      "ExportPreset": {
+        "description": "landscape = 1920x1080 (16:9), portrait = 1080x1920 (9:16, follows the highlight). Both 30 fps, H.264 + AAC.",
+        "enum": [
+          "landscape",
+          "portrait"
+        ],
+        "title": "ExportPreset",
+        "type": "string"
+      },
+      "ExportStatus": {
+        "description": "queued -> rendering -> ready | failed; ready -> expired when cleanup deletes the file (the row stays).",
+        "enum": [
+          "queued",
+          "rendering",
+          "ready",
+          "failed",
+          "expired"
+        ],
+        "title": "ExportStatus",
+        "type": "string"
       },
       "FieldChange": {
         "additionalProperties": false,
@@ -2655,6 +2876,197 @@
         ]
       }
     },
+    "/api/v1/exports/{export_id}": {
+      "get": {
+        "operationId": "get_export_api_v1_exports__export_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "export_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Export Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Export"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal error"
+          }
+        },
+        "summary": "Get Export",
+        "tags": [
+          "exports"
+        ]
+      }
+    },
+    "/api/v1/exports/{export_id}/captions.vtt": {
+      "get": {
+        "operationId": "export_captions_api_v1_exports__export_id__captions_vtt_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "export_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Export Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "text/vtt": {}
+            },
+            "description": "WebVTT captions"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal error"
+          }
+        },
+        "summary": "Export Captions",
+        "tags": [
+          "exports"
+        ]
+      }
+    },
+    "/api/v1/exports/{export_id}/download": {
+      "get": {
+        "operationId": "download_export_api_v1_exports__export_id__download_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "export_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Export Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "video/mp4": {}
+            },
+            "description": "The MP4 (supports Range requests)"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The export isn't ready"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal error"
+          }
+        },
+        "summary": "Download Export",
+        "tags": [
+          "exports"
+        ]
+      }
+    },
     "/api/v1/health": {
       "get": {
         "operationId": "health_api_v1_health_get",
@@ -3923,6 +4335,100 @@
         "summary": "Get Workflow",
         "tags": [
           "workflows"
+        ]
+      }
+    },
+    "/api/v1/workflows/{workflow_id}/exports": {
+      "post": {
+        "description": "Export the workflow's current version as an MP4 (D13-D17): re-use a queued, rendering or ready export\nof the same version, preset and voice; otherwise queue a new one.",
+        "operationId": "create_export_api_v1_workflows__workflow_id__exports_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workflow_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workflow Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateExportRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Export"
+                }
+              }
+            },
+            "description": "The same version, preset and voice is already exported or on its way"
+          },
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Export"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The workflow isn't verified (outdated or a heal is pending)"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal error"
+          }
+        },
+        "summary": "Create Export",
+        "tags": [
+          "exports"
         ]
       }
     },
