@@ -1,8 +1,7 @@
 """GET /workflows/{id} (the Verified Workflow, the main output), its text guide and versions, and
 GET /workflows (docs/api-contract.md)."""
 
-from datetime import UTC, datetime
-from typing import Annotated
+from typing import Annotated, Any
 from urllib.parse import quote
 from uuid import UUID
 
@@ -26,10 +25,9 @@ from app.contracts_gen.common_schema import ErrorResponse
 from app.contracts_gen.run_schema import Run
 from app.contracts_gen.task_schema import Task
 from app.contracts_gen.workflow_schema import Workflow, WorkflowPage, WorkflowVersionList
-from app.db import PlanRow, RunRow, TaskRow
+from app.db import RunRow, TaskRow
 from app.db.repositories import list_versions, list_workflows
-from app.runs.reverify import ReverifyRefusedError, check_replayable, plan_risk, plan_steps
-from app.targets import ResetError
+from app.runs.reverify import ReverifyRefusedError, create_reverify_run
 
 router = APIRouter(tags=["workflows"])
 
@@ -121,41 +119,19 @@ async def reverify_workflow(workflow_id: UUID, user: CurrentUser, services: Serv
     workflow; its events and final status say whether every step still works."""
     async with services.sessions() as s:
         workflow = await owned_workflow(s, workflow_id, user)
-        steps = list(workflow.steps)
-        task_id, target_url, title = workflow.task_id, workflow.target_url, workflow.title
+        target_url = workflow.target_url
     try:
-        check_replayable(steps)
+        run_id = await create_reverify_run(services.sessions, workflow_id, services.target(target_url).reset)
     except ReverifyRefusedError as e:
-        raise ApiException(409, "conflict", str(e), {"reason": e.reason, "step_seq": e.step_seq}) from None
-    reset = services.target(target_url).reset
-    if reset is not None:
-        # Undo what the workflow creates, so the replay starts where the recorded run did.
-        stored = [{"seq": st.seq, "action": st.action, "target": st.target, "before_state": st.before_state}
-                  for st in steps]  # fmt: skip
-        try:
-            await reset(stored)
-        except ResetError as e:
-            raise ApiException(
-                409, "conflict", f"The target couldn't be reset: {e}", {"reason": "reset_failed"}
-            ) from None
-    async with services.sessions.begin() as s:
-        plan = PlanRow(
-            task_id=task_id,
-            status="approved",
-            risk=plan_risk(steps),
-            expected_result=title,
-            steps=plan_steps(steps),
-            approved_at=datetime.now(UTC),
-        )
-        s.add(plan)
-        await s.flush()
-        run = RunRow(
-            plan_id=plan.id, plan_revision=1, status="queued", kind="reverify", source_workflow_id=workflow_id
-        )
-        s.add(run)
-        await s.flush()
+        details: dict[str, Any] = {"reason": e.reason}
+        if e.step_seq is not None:
+            details["step_seq"] = e.step_seq
+        raise ApiException(409, "conflict", str(e), details) from None
+    async with services.sessions() as s:
+        run = await s.get(RunRow, run_id)
+        assert run is not None
         out = run_out(run, None)
-    await services.executor.submit(run.id)
+    await services.executor.submit(run_id)
     return out
 
 
