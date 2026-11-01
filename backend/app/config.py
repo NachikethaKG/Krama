@@ -71,6 +71,12 @@ class Settings(BaseSettings):
     tts_worker_dir: Path = REPO_ROOT / "backend" / "tts-worker"
     # onnxruntime threads in the worker. The default (one per core) stalls while Chromium or Remotion run.
     tts_threads: int = Field(default=2, ge=1, le=16)
+
+    # Export cleanup (#125, D18): a daily cron in `just backend worker`, or `krama exports cleanup`.
+    # Exports and unused narration clips older than this go; the newest export per version and preset stays.
+    exports_retention_days: int = Field(default=30, ge=1)
+    # Disk cap for exports/ (GB). Above it, the oldest exports go first, protected ones only as a last resort.
+    exports_max_gb: float = Field(default=5.0, gt=0)
     # Written by the benchmark reporter, served by GET /metrics/summary (#102).
     metrics_summary_path: Path = REPO_ROOT / "benchmarks" / "results" / "summary.json"
     max_concurrent_runs: int = 1
