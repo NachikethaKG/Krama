@@ -2,17 +2,19 @@
 
 import base64
 import json
+from collections.abc import Sequence
 from datetime import datetime
 from typing import Any
 from uuid import UUID
 
 from app.api.errors import ApiException
+from app.contracts_gen.export_schema import Export
 from app.contracts_gen.plan_schema import Plan
 from app.contracts_gen.run_schema import Run
 from app.contracts_gen.step_schema import Step
 from app.contracts_gen.task_schema import Task
 from app.contracts_gen.workflow_schema import Workflow, WorkflowSummary, WorkflowVersion
-from app.db import PlanRow, RunRow, TaskRow, WorkflowRow, WorkflowVersionRow
+from app.db import ExportRow, PlanRow, RunRow, TaskRow, WorkflowRow, WorkflowStepRow, WorkflowVersionRow
 
 
 def task_out(row: TaskRow, plan_id: UUID | None) -> Task:
@@ -73,11 +75,31 @@ _INTERNAL_TARGET_KEYS = frozenset({"fingerprint"})
 
 
 def workflow_out(row: WorkflowRow, task_prompt: str | None) -> Workflow:
-    steps = [
+    return _workflow(row, task_prompt, _steps_out(row.id, row.steps))
+
+
+def workflow_version_out(
+    row: WorkflowRow, version: WorkflowVersionRow, steps: Sequence[WorkflowStepRow], task_prompt: str | None
+) -> Workflow:
+    """The workflow as it was at `version`: its steps, recording, viewport, confidence and revision.
+    An export renders the version it was asked for, even if a newer one became current since."""
+    return _workflow(
+        row,
+        task_prompt,
+        _steps_out(row.id, steps),
+        revision=version.revision,
+        confidence=version.confidence,
+        recording_path=version.recording_path,
+        viewport=version.viewport,
+    )
+
+
+def _steps_out(workflow_id: UUID, rows: Sequence[WorkflowStepRow]) -> list[Step]:
+    return [
         Step.model_validate(
             {
                 "id": st.id,
-                "workflow_id": row.id,
+                "workflow_id": workflow_id,
                 "seq": st.seq,
                 "action": st.action,
                 "target": {k: v for k, v in (st.target or {}).items() if k not in _INTERNAL_TARGET_KEYS},
@@ -93,8 +115,12 @@ def workflow_out(row: WorkflowRow, task_prompt: str | None) -> Workflow:
                 "end_ms": st.end_ms,
             }
         )
-        for st in row.steps
+        for st in rows
     ]
+
+
+def _workflow(row: WorkflowRow, task_prompt: str | None, steps: list[Step], **version: Any) -> Workflow:
+    """`version`: revision, confidence, recording_path, viewport of a version other than the current one."""
     return Workflow.model_validate(
         {
             "id": row.id,
@@ -114,6 +140,7 @@ def workflow_out(row: WorkflowRow, task_prompt: str | None) -> Workflow:
             "steps": steps,
             "created_at": row.created_at,
             "updated_at": row.updated_at,
+            **version,
         }
     )
 
@@ -146,6 +173,37 @@ def version_out(row: WorkflowVersionRow, step_count: int) -> WorkflowVersion:
             "step_count": step_count,
             "change_summary": row.change_summary,
             "created_at": row.created_at,
+        }
+    )
+
+
+def export_out(row: ExportRow, *, title: str | None, revision: int) -> Export:
+    """`title` and `revision` come from the workflow and the exported version."""
+    ready = row.status == "ready"
+    base = f"/api/v1/exports/{row.id}"
+    error = (
+        {"code": row.error_code, "message": row.error_message or ""}
+        if row.status == "failed" and row.error_code
+        else None
+    )
+    return Export.model_validate(
+        {
+            "id": row.id,
+            "workflow_id": row.workflow_id,
+            "revision": revision,
+            "title": title,
+            "preset": row.preset,
+            "voice": row.voice,
+            "status": row.status,
+            "progress": row.progress,
+            "size_bytes": row.size_bytes,
+            "duration_ms": row.duration_ms,
+            "download_url": f"{base}/download" if ready else None,
+            "captions_url": f"{base}/captions.vtt" if ready and row.captions_key else None,
+            "error": error,
+            "created_at": row.created_at,
+            "started_at": row.started_at,
+            "finished_at": row.finished_at,
         }
     )
 
