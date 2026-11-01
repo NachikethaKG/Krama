@@ -86,3 +86,61 @@ async def test_a_symlink_cannot_lead_out_of_the_store(tmp_path: Path) -> None:
 )  # fmt: skip
 def test_content_type_comes_from_the_bytes(data: bytes, content_type: str) -> None:
     assert sniff_content_type(data) == content_type
+
+
+# --- ArtifactFiles (Phase 5): put_file, local_path, delete, list ---
+
+
+async def test_put_file_copies_and_local_path_serves_it(tmp_path: Path) -> None:
+    store = LocalFsStore(tmp_path / "store")
+    source = tmp_path / "render.mp4"
+    source.write_bytes(b"\x00\x00\x00\x20ftypisom" + b"x" * 1000)
+
+    ref = await store.put_file("exports/e1.mp4", source, "video/mp4")
+    path = await store.local_path("exports/e1.mp4")
+
+    assert ref.size_bytes == source.stat().st_size
+    assert path.read_bytes() == source.read_bytes() and source.exists()  # the caller still owns its file
+    assert path.is_relative_to((tmp_path / "store").resolve())
+    assert not [p for p in path.parent.iterdir() if p.name.endswith(".tmp")]
+
+
+async def test_put_file_of_a_missing_source_leaves_nothing(tmp_path: Path) -> None:
+    store = LocalFsStore(tmp_path)
+    with pytest.raises(FileNotFoundError):
+        await store.put_file("exports/e1.mp4", tmp_path / "nope.mp4", "video/mp4")
+    assert not await store.exists("exports/e1.mp4")
+    assert not list((tmp_path / "exports").iterdir())
+
+
+async def test_local_path_of_missing_or_folder_is_not_found(tmp_path: Path) -> None:
+    store = LocalFsStore(tmp_path)
+    await store.put("exports/sub/a.mp4", b"1", "video/mp4")
+    for key in ("exports/none.mp4", "exports/sub"):
+        with pytest.raises(ArtifactNotFoundError):
+            await store.local_path(key)
+
+
+async def test_delete(tmp_path: Path) -> None:
+    store = LocalFsStore(tmp_path)
+    await store.put("exports/sub/a.mp4", b"1", "video/mp4")
+    assert await store.delete("exports/sub/a.mp4") is True
+    assert await store.delete("exports/sub/a.mp4") is False
+    assert await store.delete("exports/sub") is False  # a folder is never an artifact
+    with pytest.raises(InvalidArtifactKeyError):
+        await store.delete("../outside.txt")
+
+
+async def test_list_a_folder(tmp_path: Path) -> None:
+    store = LocalFsStore(tmp_path)
+    for key in ("exports/b.mp4", "exports/a/x.vtt", "exportsX/c.mp4", "narration/v/1.wav"):
+        await store.put(key, b"1234", "video/mp4")
+    (tmp_path / "exports" / ".b.mp4.123.tmp").write_bytes(b"half")  # a write in progress
+
+    listed = await store.list("exports/")
+
+    assert [i.key for i in listed] == ["exports/a/x.vtt", "exports/b.mp4"]
+    assert all(i.size_bytes == 4 and i.modified_at.tzinfo is not None for i in listed)
+    assert await store.list("nothing/") == []
+    with pytest.raises(InvalidArtifactKeyError):
+        await store.list("exports")
