@@ -45,14 +45,20 @@ NEVER = step(2, {"type": "wait"}, {"role": "button", "name": "Never appears"}, "
 
 
 def services(
-    sessions: Sessions, tmp_path: Path, *replies: FakeResponse, target: TargetSetup | None = None
+    sessions: Sessions,
+    tmp_path: Path,
+    *replies: FakeResponse,
+    target: TargetSetup | None = None,
+    **env_changes: Any,
 ) -> Services:
+    """`env_changes`: more RunEnvironment fields (e.g. a fake heal chooser)."""
     hub = EventHub()
     store = RunStore(sessions, on_event=hub.notify)
     env = RunEnvironment(
         verifier=LayeredVerifier(),
         observer_for=lambda run_id: PageObserver(artifacts_dir=tmp_path / "runs" / str(run_id)),
         artifacts_dir=tmp_path,
+        **env_changes,
     )
     planner = LLMPlanner(FakeProvider(list(replies)), max_attempts=1)
     return Services(

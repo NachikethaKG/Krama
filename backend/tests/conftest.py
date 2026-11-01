@@ -81,7 +81,7 @@ async def sessions(test_db_url: str) -> AsyncIterator[async_sessionmaker[AsyncSe
 # A tiny real website for end-to-end runs without Gitea: real HTTP, real navigations.
 PAGES: dict[str, str] = {
     "/": """<!doctype html><title>Home</title><main><h1>Home</h1>
-        <a href="/form">New item</a>
+        <a id="new-item" href="/form">New item</a>
         <a href="/slow">Slow page</a></main>""",
     "/form": """<!doctype html><title>New item</title><main><h1>New item</h1>
         <form action="/done" method="post">

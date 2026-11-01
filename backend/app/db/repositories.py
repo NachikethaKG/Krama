@@ -275,70 +275,62 @@ async def list_versions(session: AsyncSession, workflow_id: UUID) -> list[tuple[
 
 async def add_workflow_version(
     session: AsyncSession,
-    workflow_id: UUID,
-    *,
-    source: str = "heal",
-    status: str = "current",
+    workflow: WorkflowRow,
     steps: Sequence[WorkflowStepRow],
-    change_summary: dict[str, Any] | None = None,
-    parent_version_id: UUID | None = None,
-    run_id: UUID | None = None,
-    confidence: float | None = None,
-    recording_path: str | None = None,
-    viewport: dict[str, Any] | None = None,
+    *,
+    source: str,
+    status: str,
+    run_id: UUID | None,
+    confidence: float | None,
+    recording_path: str | None,
+    viewport: dict[str, Any] | None,
+    change_summary: dict[str, Any] | None,
     created_by: UUID | None = None,
 ) -> WorkflowVersionRow:
-    """Inserts a new version of an existing workflow (e.g. from self-healing or regeneration).
+    """Add the next version of an existing workflow (a heal, a regenerate), made from the current one.
 
-    If status is 'current', supersedes any existing current version and updates the parent workflow's
-    pointer. If status is 'pending_review', the parent workflow status is set to 'outdated' (D8).
-    """
-    workflow = await session.get(WorkflowRow, workflow_id)
-    if workflow is None:
-        raise ValueError(f"Workflow {workflow_id} not found")
-
-    max_rev = await session.scalar(
-        select(func.max(WorkflowVersionRow.revision)).where(WorkflowVersionRow.workflow_id == workflow_id)
+    The recording, viewport and confidence are the new run's: the version's steps (and their boxes) belong to
+    that recording. `current` supersedes the old current version and the workflow's copies follow it, status
+    `verified` (D8: a heal that publishes itself). `pending_review` leaves the current version in place and
+    the workflow `outdated` until a human accepts the new one."""
+    if status not in ("current", "pending_review"):
+        raise ValueError(f"a new version is current or pending_review, not {status}")
+    latest = await session.scalar(
+        select(func.max(WorkflowVersionRow.revision)).where(WorkflowVersionRow.workflow_id == workflow.id)
     )
-    next_rev = (max_rev or 0) + 1
-
-    actual_parent_id = parent_version_id or workflow.current_version_id
-
-    if status == "current":
-        await session.execute(
-            update(WorkflowVersionRow)
-            .where(WorkflowVersionRow.workflow_id == workflow_id, WorkflowVersionRow.status == "current")
-            .values(status="superseded")
-        )
-
     version = WorkflowVersionRow(
-        workflow_id=workflow_id,
-        revision=next_rev,
+        workflow_id=workflow.id,
+        revision=(latest or 0) + 1,
         source=source,
         status=status,
-        parent_version_id=actual_parent_id,
+        parent_version_id=workflow.current_version_id,
         run_id=run_id,
         created_by=created_by,
-        confidence=confidence if confidence is not None else workflow.confidence,
-        recording_path=recording_path or workflow.recording_path,
-        viewport=viewport or workflow.viewport,
+        confidence=confidence,
+        recording_path=recording_path,
+        viewport=viewport,
         change_summary=change_summary,
         steps=list(steps),
     )
-    for step in version.steps:
-        step.workflow_id = workflow_id
-
+    for step in steps:
+        step.workflow_id = workflow.id
+    if status == "current":
+        # Before the insert: at most one current version per workflow (a partial unique index).
+        await session.execute(
+            update(WorkflowVersionRow)
+            .where(WorkflowVersionRow.workflow_id == workflow.id, WorkflowVersionRow.status == "current")
+            .values(status="superseded")
+        )
     session.add(version)
     await session.flush()
-
     if status == "current":
         workflow.current_version_id = version.id
         workflow.revision = version.revision
         workflow.status = "verified"
-        if confidence is not None:
-            workflow.confidence = confidence
-    elif status == "pending_review":
+        workflow.confidence = confidence
+        workflow.recording_path = recording_path
+        workflow.viewport = viewport
+    else:
         workflow.status = "outdated"
-
     await session.flush()
     return version

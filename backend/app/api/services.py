@@ -11,6 +11,8 @@ from typing import Annotated
 from fastapi import Depends, Request
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
+from app.agent.healer import GeminiHealChooser
+from app.agent.quota import RedisHealBudget
 from app.agent.vision import GeminiVisionLocator
 from app.config import Settings
 from app.db import create_engine, create_sessionmaker
@@ -82,6 +84,10 @@ def build_run_environment(settings: Settings) -> RunEnvironment:
         max_replans_per_run=settings.max_replans_per_run,
         # One LLM call after the last step: did the steps do the whole task (#274)? Gemini only, like vision.
         task_check=GeminiTaskChecker(llm) if gemini else None,
+        # Self-healing (#112): Gemini chooses among the candidates only when scoring can't decide, within a
+        # daily budget shared through Redis (D12).
+        heal_chooser=GeminiHealChooser(llm) if gemini else None,
+        heal_budget=RedisHealBudget(settings.redis_url),
     )
 
 

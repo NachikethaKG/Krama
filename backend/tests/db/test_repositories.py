@@ -25,6 +25,7 @@ from app.db import (
 from app.db.repositories import (
     InvalidRunEventError,
     add_workflow,
+    add_workflow_version,
     append_event,
     decide_plan,
     event_payload,
@@ -414,3 +415,55 @@ async def test_deleting_a_workflow_deletes_its_versions_and_steps(sessions: Sess
     async with sessions() as s:
         assert await s.scalar(select(func.count()).select_from(WorkflowVersionRow)) == 0
         assert await s.scalar(select(func.count()).select_from(WorkflowStepRow)) == 0
+
+
+async def test_a_published_heal_becomes_the_current_version(sessions: Sessions) -> None:
+    workflow = await new_workflow(sessions, "gitea", [1, 2])
+    async with sessions.begin() as s:
+        row = await s.get(WorkflowRow, workflow.id)
+        assert row is not None
+        version = await add_workflow_version(
+            s, row, [step_row(1), step_row(2)], source="heal", status="current", run_id=None, confidence=0.9,
+            recording_path="runs/x/rrweb.json", viewport={"width": 1280, "height": 800}, change_summary=None,
+        )  # fmt: skip
+
+    async with sessions() as s:
+        loaded = await s.get(WorkflowRow, workflow.id)
+        assert loaded is not None
+        assert (loaded.revision, loaded.current_version_id, loaded.status) == (2, version.id, "verified")
+        assert loaded.recording_path == "runs/x/rrweb.json" and loaded.confidence == pytest.approx(0.9)
+        assert {st.version_id for st in loaded.steps} == {version.id}
+        versions = [
+            (v.revision, v.status, v.parent_version_id) for v, _ in await list_versions(s, workflow.id)
+        ]
+        assert versions == [(2, "current", workflow.current_version_id), (1, "superseded", None)]
+
+
+async def test_a_heal_for_review_leaves_the_current_version_and_marks_the_workflow_outdated(
+    sessions: Sessions,
+) -> None:
+    workflow = await new_workflow(sessions, "gitea", [1, 2])
+    async with sessions.begin() as s:
+        row = await s.get(WorkflowRow, workflow.id)
+        assert row is not None
+        await add_workflow_version(
+            s, row, [step_row(1)], source="heal", status="pending_review", run_id=None, confidence=0.9,
+            recording_path="runs/y/rrweb.json", viewport=None, change_summary=None,
+        )  # fmt: skip
+
+    async with sessions() as s:
+        loaded = await s.get(WorkflowRow, workflow.id)
+        assert loaded is not None
+        assert (loaded.revision, loaded.current_version_id, loaded.status) == (
+            1,
+            workflow.current_version_id,
+            "outdated",
+        )
+        assert [st.seq for st in loaded.steps] == [
+            1,
+            2,
+        ] and loaded.recording_path is None  # still version 1's
+        assert [(v.revision, v.status) for v, _ in await list_versions(s, workflow.id)] == [
+            (2, "pending_review"),
+            (1, "current"),
+        ]
