@@ -9,13 +9,22 @@ from uuid import UUID
 from fastapi import APIRouter, Query, Request, Response
 
 from app.api.auth import CurrentUser
-from app.api.convert import decode_cursor, encode_cursor, run_out, version_out, workflow_out, workflow_summary
+from app.api.convert import (
+    decode_cursor,
+    encode_cursor,
+    run_out,
+    task_out,
+    version_out,
+    workflow_out,
+    workflow_summary,
+)
 from app.api.errors import ApiException
 from app.api.guide import guide_markdown
 from app.api.owner import owned_workflow
 from app.api.services import ServicesDep
 from app.contracts_gen.common_schema import ErrorResponse
 from app.contracts_gen.run_schema import Run
+from app.contracts_gen.task_schema import Task
 from app.contracts_gen.workflow_schema import Workflow, WorkflowPage, WorkflowVersionList
 from app.db import PlanRow, RunRow, TaskRow
 from app.db.repositories import list_versions, list_workflows
@@ -68,6 +77,32 @@ async def get_workflow_versions(
     async with services.sessions() as s:
         await owned_workflow(s, workflow_id, user)
         return WorkflowVersionList(items=[version_out(v, n) for v, n in await list_versions(s, workflow_id)])
+
+
+@router.post(
+    "/workflows/{workflow_id}/regenerate",
+    status_code=202,
+    responses={404: {"model": ErrorResponse, "description": "Not found"}},
+)
+async def regenerate_workflow(workflow_id: UUID, user: CurrentUser, services: ServicesDep) -> Task:
+    """Re-plan a workflow that can't heal (#113), from its original prompt and URL. Like POST /tasks: poll the
+    task, then review and approve its plan. When that run verifies, its steps become this workflow's next
+    version (D3); no new workflow."""
+    async with services.sessions.begin() as s:
+        workflow = await owned_workflow(s, workflow_id, user)
+        original = await s.get(TaskRow, workflow.task_id)
+        task = TaskRow(
+            user_id=user.id,
+            prompt=original.prompt if original else workflow.title,
+            target_url=workflow.target_url,
+            status="planning",
+            regenerates_workflow_id=workflow.id,
+        )
+        s.add(task)
+        await s.flush()
+        out = task_out(task, None)
+    services.planning.submit(task.id)
+    return out
 
 
 @router.post(
