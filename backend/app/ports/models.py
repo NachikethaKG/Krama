@@ -127,7 +127,10 @@ class PolicyDecision(_Model):
 
 
 # Only types the browser renders as data. Never text/html or image/svg+xml: a stored file must not run script.
-ArtifactContentType = Literal["image/png", "image/jpeg", "application/json"]
+# Phase 5 adds narration clips (audio/wav), exported videos (video/mp4) and their captions (text/vtt).
+ArtifactContentType = Literal[
+    "image/png", "image/jpeg", "application/json", "audio/wav", "video/mp4", "text/vtt"
+]
 
 _KEY_SEGMENT = re.compile(r"[A-Za-z0-9._-]+")
 _MAX_KEY_LENGTH = 512
