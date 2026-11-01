@@ -6,13 +6,18 @@ workflow (docs/research/phase-2-vishwas-reverify.md).
 """
 
 from collections.abc import Sequence
+from datetime import UTC, datetime
 from typing import Any
+from uuid import UUID
+
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.agent.healer import HealOutcome
 from app.agent.runlog import MASK
 from app.contracts_gen.plan_schema import PlannedStep
-from app.db import WorkflowStepRow
+from app.db import PlanRow, RunRow, WorkflowRow, WorkflowStepRow
 from app.runs.steps import StepOutcome
+from app.targets import Reset, ResetError
 
 _RISK_ORDER = {"low": 0, "medium": 1, "high": 2}
 
@@ -64,6 +69,48 @@ def plan_steps(steps: Sequence[WorkflowStepRow]) -> list[dict[str, Any]]:
 
 def plan_risk(steps: Sequence[WorkflowStepRow]) -> str:
     return max((s.risk for s in steps), key=_RISK_ORDER.__getitem__, default="low")
+
+
+async def create_reverify_run(
+    sessions: async_sessionmaker[AsyncSession], workflow_id: UUID, reset: Reset | None
+) -> UUID:
+    """Queue a reverify run of the workflow's current steps (#77): check they can be replayed, undo what the
+    workflow creates (`reset`) so the replay starts where the recorded run did, then store the approved plan
+    and the queued run. Used by POST /workflows/{id}/reverify and by scheduled validation (#110).
+
+    Raises LookupError for an unknown workflow and ReverifyRefusedError (`high_risk_step`,
+    `secret_not_stored`, `reset_failed`) for one that can't be replayed."""
+    async with sessions() as s:
+        workflow = await s.get(WorkflowRow, workflow_id)
+        if workflow is None:
+            raise LookupError(str(workflow_id))
+        steps = list(workflow.steps)
+        task_id, title = workflow.task_id, workflow.title
+    check_replayable(steps)
+    if reset is not None:
+        stored = [{"seq": st.seq, "action": st.action, "target": st.target, "before_state": st.before_state}
+                  for st in steps]  # fmt: skip
+        try:
+            await reset(stored)
+        except ResetError as e:
+            raise ReverifyRefusedError("reset_failed", f"The target couldn't be reset: {e}") from None
+    async with sessions.begin() as s:
+        plan = PlanRow(
+            task_id=task_id,
+            status="approved",
+            risk=plan_risk(steps),
+            expected_result=title,
+            steps=plan_steps(steps),
+            approved_at=datetime.now(UTC),
+        )
+        s.add(plan)
+        await s.flush()
+        run = RunRow(
+            plan_id=plan.id, plan_revision=1, status="queued", kind="reverify", source_workflow_id=workflow_id
+        )
+        s.add(run)
+        await s.flush()
+        return run.id
 
 
 def failure_details(step: PlannedStep, out: StepOutcome, heal: HealOutcome | None = None) -> dict[str, Any]:
