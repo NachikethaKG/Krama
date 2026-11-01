@@ -78,7 +78,11 @@ async def test_a_symlink_cannot_lead_out_of_the_store(tmp_path: Path) -> None:
 @pytest.mark.parametrize(
     ("data", "content_type"),
     [(PNG, "image/png"), (b"\xff\xd8\xff\xe0rest", "image/jpeg"), (b"[]", "application/json"),
-     (b"<html><script>alert(1)</script>", "application/json")],
+     (b"<html><script>alert(1)</script>", "application/json"),
+     (b"RIFF\x24\x00\x00\x00WAVEfmt ", "audio/wav"), (b"RIFF\x24\x00\x00\x00AVI LIST", "application/json"),
+     (b"\x00\x00\x00\x20ftypisom\x00\x00", "video/mp4"),
+     (b"WEBVTT\n\n00:00.000 --> 00:01.000\nHi", "text/vtt"), (b"\xef\xbb\xbfWEBVTT\r\n", "text/vtt"),
+     (b"WEBVTTX", "application/json")],
 )  # fmt: skip
 def test_content_type_comes_from_the_bytes(data: bytes, content_type: str) -> None:
     assert sniff_content_type(data) == content_type

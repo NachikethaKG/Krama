@@ -1,0 +1,12 @@
+# Krama's Piper narration worker (ADR 0004). A separate program with its own venv: Piper is GPL-3.0-or-later,
+# so it never becomes a dependency of the backend. app/tts/ starts it and talks JSON lines over stdin/stdout.
+[project]
+name = "krama-tts-worker"
+version = "0.1.0"
+description = "Piper TTS worker for Krama video export"
+requires-python = ">=3.12"
+license = "GPL-3.0-or-later"
+dependencies = ["piper-tts[alignment]==1.8.0"]
+
+[tool.uv]
+package = false
