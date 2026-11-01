@@ -32,6 +32,8 @@ from app.runs import RunOptions, RunParts, RunReport, run_task
 from app.runs.approval import console_approver
 from app.users_cli import add_parser as add_users_parser
 from app.users_cli import users_command
+from app.validation_cli import add_parser as add_validate_parser
+from app.validation_cli import validate_command
 from app.verifier import LayeredVerifier
 from app.verifier.vision import GeminiVisionJudge
 
@@ -65,6 +67,7 @@ def build_parser() -> argparse.ArgumentParser:
     session.add_argument("--timeout", type=float, default=600.0, help="seconds to wait for the sign-in")
     add_users_parser(commands)
     add_exports_parser(commands)
+    add_validate_parser(commands)
     commands.add_parser(
         "worker",
         help="run queued runs (RUN_EXECUTOR=arq; needs Redis)",
@@ -157,6 +160,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         return users_command(args)
     if args.command == "exports":
         return exports_command(args)
+    if args.command == "validate":
+        return validate_command(args)
     if args.command == "worker":
         from app.worker import run_worker
 

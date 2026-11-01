@@ -29,8 +29,11 @@ from app.runs import InProcessExecutor, RunEnvironment, RunStore
 from app.runs.events import EVENTS
 from app.runs.queue import CONTROL, JOB, job_id, redis_settings
 from app.runs.states import RunStatus
+from app.runs.validation_backend import RunValidationBackend
 from app.storage import LocalFsStore
 from app.storage.cleanup import cleanup_with_settings
+from app.targets import target_setup
+from app.validation import RedisSiteLimits, ScheduledValidator
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +41,7 @@ type Ctx = dict[str, Any]
 STALE = (RunStatus.RUNNING, RunStatus.PAUSED)
 """Statuses a run can't be in when its job starts, unless a worker died under it."""
 INTERRUPTED = "Interrupted by a worker restart"
+VALIDATION_TIMEOUT_S = 2 * 3600
 
 
 async def run_job(ctx: Ctx, run_id: str) -> str:
@@ -65,6 +69,18 @@ async def export_cleanup_job(ctx: Ctx) -> str:
     """Daily at 03:30 (#125): expire old exports, keep exports/ under EXPORTS_MAX_GB, drop unused clips."""
     report = await cleanup_with_settings(ctx["settings"], ctx["sessions"], ctx["files"])
     return report.summary()
+
+
+async def validation_job(ctx: Ctx) -> str:
+    """Every 30 min when VALIDATION_ENABLED (#110): re-check the stored workflows that are due. Skipped
+    while a user's run waits or runs: validation goes behind them (one browser at a time)."""
+    store: RunStore = ctx["store"]
+    if await store.unfinished():
+        return "skipped: a run is queued or running"
+    settings: Settings = ctx["settings"]
+    backend = RunValidationBackend(ctx["sessions"], ctx["executor"], lambda url: target_setup(url, settings))
+    done = await ScheduledValidator(backend, RedisSiteLimits(settings.redis_url)).run_due()
+    return f"validated {done} workflow(s)"
 
 
 async def _listen_for_control(redis_url: str, executor: InProcessExecutor) -> None:
@@ -157,7 +173,15 @@ def worker_settings(
     return {
         "functions": [func(run_job, name=JOB, timeout=timeout, max_tries=1)],
         # Local time. `unique`: with two workers, only one of them cleans up.
-        "cron_jobs": [cron(export_cleanup_job, hour=3, minute=30, timeout=600, unique=True)],
+        "cron_jobs": [
+            cron(export_cleanup_job, hour=3, minute=30, timeout=600, unique=True),
+            # A pass replays up to 3 workflows, each maybe twice (the confirm replay, D7).
+            *(
+                [cron(validation_job, minute={0, 30}, timeout=VALIDATION_TIMEOUT_S, unique=True)]
+                if settings.validation_enabled
+                else []
+            ),
+        ],
         "redis_settings": redis_settings(settings.redis_url),
         "on_startup": startup,
         "on_shutdown": shutdown,

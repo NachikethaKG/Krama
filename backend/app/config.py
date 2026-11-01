@@ -80,6 +80,9 @@ class Settings(BaseSettings):
     # Written by the benchmark reporter, served by GET /metrics/summary (#102).
     metrics_summary_path: Path = REPO_ROOT / "benchmarks" / "results" / "summary.json"
     max_concurrent_runs: int = 1
+    # Scheduled validation (#110): the worker re-checks stored workflows every 30 min. Off unless set: a
+    # replay first resets what the workflow creates on its site (Gitea, the GitHub test org).
+    validation_enabled: bool = False
     # Recovery budget per run (phase-1-vishwas-agent-recovery.md). Running time only: pauses not counted.
     run_timeout_seconds: float = 600.0
     max_replans_per_run: int = 3
