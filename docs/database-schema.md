@@ -136,7 +136,7 @@ One row per validation of a stored workflow (Phase 4, #110 writes them).
   - Signed-in browser sessions for real sites (#87) are Fernet-encrypted files under `data/sessions/`, not a table, while there is one test account per site.
 - **Phase 4:** `workflow_versions`, `validations`, `workflow_steps.version_id`, `workflows.revision` +
   `current_version_id`: see the tables above.
-- **Phase 5:** `exports (id, workflow_id, format, preset, status, path)`.
+- **Phase 5** (planned; #124's contract PR fixes it): `exports (id, workflow_id, version_id, user_id, preset landscape|portrait, voice, status queued|rendering|ready|failed|expired, progress, video_key, captions_key, size_bytes, duration_ms, error_code, created_at, finished_at, expires_at)`. Narration clips are artifacts, not rows: `narration/<voice>/<sha256 of the text>.wav` + `.json` (duration and word timings).
 
 ## Indexes
 `runs(plan_id)`, `runs(status)`, `workflows(target_app, status)`, `workflow_steps(version_id, seq)` unique, `workflow_steps(workflow_id)`, `workflow_versions(workflow_id, revision)`

@@ -32,7 +32,7 @@ Verified Workflow JSON ──► tutorial-compiler (TS, pure function) ──►
 | Jobs | In-process asyncio (Phases 0–2) → Redis + arq (Phase 3) | Redis 7 |
 | Frontend | Next.js (App Router), TypeScript, Tailwind, pnpm | `.nvmrc` (Node 22), `packageManager` field |
 | Replay | rrweb recording + SVG overlay layer | `pnpm-lock.yaml` |
-| TTS | Web Speech API → Piper (CPU) later | — |
+| TTS | Web Speech API in the player; Piper `en_US-ljspeech-medium` on the CPU for exports, in a separate GPL worker ([ADR 0004](adr/0004-piper-voice-and-license.md)) | `backend/tts-worker/uv.lock` |
 | Video | Remotion + FFmpeg (Phase 5) | — |
 | DB | PostgreSQL 16 (Docker) | `infra/docker-compose.yml` |
 | Test target | Gitea (Docker), then real GitHub (Phase 3) | `infra/docker-compose.yml` |
@@ -44,7 +44,7 @@ Ownership is by module ([ADR 0001](adr/0001-ownership-by-module.md)). Modules ow
 
 | Module | Owner | Responsibility |
 |---|---|---|
-| `ports/` | both (contract) | Python `Protocol` interfaces between modules owned by different people (`Observer`, `Policy`, `Validator`, `Exporter`, …) |
+| `ports/` | both (contract) | Python `Protocol` interfaces between modules owned by different people (`Observer`, `Policy`, `ArtifactStore`, `Validator`, `Narrator`, `ExportQueue`, `ExportStore`, …) |
 | `api/` | Vishwas | FastAPI routers. Thin: validate the request, call a service, return a contract model |
 | `runs/` | Vishwas | Run state machine `draft → approved → running → verified/failed/paused/cancelled`, executor |
 | `planner/` | Vishwas | Task interpretation + plan generation (`instruction_text`, `expected_state` per step) |
@@ -52,8 +52,8 @@ Ownership is by module ([ADR 0001](adr/0001-ownership-by-module.md)). Modules ow
 | `verifier/` | Vishwas | Compares expected vs observed state, returns result + method + confidence |
 | `llm/` | Vishwas | `LLMProvider` + Gemini / Fake implementations, prompt templates |
 | `db/` | Vishwas | SQLAlchemy models, repositories, Alembic migrations (schema: [`database-schema.md`](database-schema.md)) |
-| `storage/` | Vishwas | `ArtifactStore` (local FS → S3 later) |
-| `tts/` | Vishwas | Piper narration audio (Phase 5) |
+| `storage/` | Vishwas | `ArtifactStore` (local FS; SeaweedFS later, [ADR 0005](adr/0005-object-storage-seaweedfs.md)) |
+| `tts/` | Vishwas | Piper narration (Phase 5): one WAV per step + word timings + manifest, behind the `Narrator` port. Talks to `backend/tts-worker/` (GPL, own venv) over stdin/stdout |
 | `observer/` | Nachiketha | Captures page state after each action (URL, ARIA, screenshot, network) and the rrweb recording + timing alignment |
 | `policy/` | Nachiketha | Risk classification, destructive-action pause rules, CAPTCHA/auth-wall detection, sensitive-data masking, prompt-injection defense |
 | `validation/` | Nachiketha | Scheduled re-runs of stored workflows, UI drift detection (Phase 4) |
@@ -73,7 +73,10 @@ Every boundary is an interface with a mock that ships *before* the real implemen
 | Browser | `BrowserSession` | `RecordedSession`: replays stored observations | `PlaywrightSession` | verifier/policy unit tests |
 | Verifier | `Verifier` | `ScriptedVerifier`: results given by the test | `LayeredVerifier` | executor/replan tests |
 | Executor | `RunExecutor` | `InProcessExecutor` | `ArqExecutor` (Phase 3) | everything before Redis jobs |
-| Artifacts | `ArtifactStore` | `LocalFsStore` | S3/MinIO (later) | — |
+| Artifacts | `ArtifactStore` | `LocalFsStore` | SeaweedFS (later, [ADR 0005](adr/0005-object-storage-seaweedfs.md)) | — |
+| Export narration | `Narrator` (Python) | `FakeNarrator`: fixed-rate clips and word timings, no audio | `PiperNarrator` (`tts/`) | export job (#126) and export API tests |
+| Export queue | `ExportQueue` | mock queue that finishes with a fixture MP4 | arq export job (`export/`, #126) | export API (#124) and the export dialog (#127) before the renderer exists |
+| Export status | `ExportStore` | in-memory fake | `exports` table (`db/`, #124) | export job tests |
 | Backend API | `ApiClient` (TS) | `MockApiClient`: serves `contracts/fixtures/`, replays SSE with real timings | `HttpApiClient` | the whole frontend until the backend is ready (`NEXT_PUBLIC_API_MODE=mock`) |
 | Narration | `Narrator` (TS) | `SilentNarrator` | `WebSpeechNarrator`, Piper | player tests |
 
@@ -101,6 +104,10 @@ Every boundary is an interface with a mock that ships *before* the real implemen
 | Only deterministic heals go live without a human | Structural scorers like Healenium heal onto look-alike controls at full confidence; a code heal must win by a margin and the whole workflow must re-verify. Gemini-chosen heals wait for the owner's review | [Phase 4 Alignment](research/phase-4-decisions-alignment.md) |
 | The environment never makes a tutorial OUTDATED | CAPTCHA, auth walls, rate limits, failed resets and site outages say nothing about the tutorial, so they give `blocked`; a failure counts as drift only if a confirm re-run fails at the same step for the same reason | [Phase 4 Alignment](research/phase-4-decisions-alignment.md) |
 | In-app review queue, owner only | No mail infrastructure and free tiers only; outdated, heal-pending, unstable and can't-check items go to the workflow's owner | [Phase 4 Alignment](research/phase-4-decisions-alignment.md) |
+| Narration voice `en_US-ljspeech-medium`; Piper as a separate GPL worker | Public-domain training data (lessac and voices fine-tuned from it are research-only); keeps GPL code out of the backend | [0004](adr/0004-piper-voice-and-license.md) |
+| Local disk for artifacts now; SeaweedFS when storage must be shared | MinIO's open-source repo is archived; exports are ~5 MB/min, so disk size isn't the trigger, a second machine or a deploy is | [0005](adr/0005-object-storage-seaweedfs.md) |
+| Export scenes follow the narration | scene = max(recorded action, 300 ms + Piper clip + 400 ms), in whole frames; the compiler's word-count estimate is too short for most real steps | [Phase 5 Alignment](research/phase-5-decisions-alignment.md) |
+| Export via ports + polling | `exports` row → `ExportQueue` (arq job, Nachiketha) → `ExportStore` progress; the UI polls every 2 s; only verified workflows; owner only | [Phase 5 Alignment](research/phase-5-decisions-alignment.md) |
 
 ## 6. Hardware rules
 
