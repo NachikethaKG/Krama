@@ -55,7 +55,10 @@
 | 3 | GET | `/metrics/summary` | → `MetricsSummary` | The last benchmark's `benchmarks/results/summary.json`; `404` before any benchmark has run |
 | 4 | POST | `/workflows/{id}/regenerate` | → `202 Task` | Re-plans a workflow that can't heal, from its original prompt and URL: a new task with `regenerates_workflow_id` set, planned like `POST /tasks` (poll it, then review and approve its plan as usual). When its run verifies, the steps become the workflow's next version (`source: regenerate`, current); no new workflow. Owner only, `404` otherwise |
 | 4 | GET | `/workflows/{id}/versions` | → `WorkflowVersionList` | Every version of the workflow, newest first, each with its `change_summary` (step diff vs its parent; null for the first). Owner only, like `GET /workflows/{id}`; `404` otherwise. `GET /workflows/{id}` returns the `current` version's steps and recording, and its `revision` |
-| 5 | POST | `/workflows/{id}/exports` | `{format: "mp4", preset}` → `202 Export` | |
+| 5 | POST | `/workflows/{id}/exports` | `{preset: "landscape"\|"portrait"}` → `202 Export`, or `200 Export` | Planned (#124's contract PR fixes the shapes). Exports the current version. `200` returns the existing export when the same version, preset and voice is `queued`, `rendering` or `ready`. Owner only (`404`). `409 workflow_not_verified` if the workflow is `outdated` or a heal is pending |
+| 5 | GET | `/exports/{id}` | → `Export` | Planned. `status`: `queued\|rendering\|ready\|failed\|expired`, `progress` 0–100; the UI polls every 2 s. Owner only |
+| 5 | GET | `/exports/{id}/download` | → `video/mp4` | Planned. Supports `Range` (206/416); `Content-Disposition: attachment`. `409` unless `ready`. Owner only |
+| 5 | GET | `/exports/{id}/captions.vtt` | → `text/vtt` | Planned. Captions from the Piper word timings. Owner only |
 
 The tutorial itself has **no endpoint**: the frontend compiles `Workflow → TutorialSpec` with `packages/tutorial-compiler`. The spec's shape is `contracts/schemas/tutorial-spec.schema.json`.
 
