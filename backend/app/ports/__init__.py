@@ -38,6 +38,14 @@ from app.ports.narration import (
 )
 from app.ports.observer import Observer
 from app.ports.policy import Policy
+from app.ports.validation import (
+    ReplayOutcome,
+    StepEvidence,
+    ValidationBackend,
+    ValidationRecord,
+    Validator,
+    WorkflowCandidate,
+)
 
 __all__ = [
     "ArtifactFiles",
@@ -63,10 +71,16 @@ __all__ = [
     "Policy",
     "PolicyDecision",
     "RecordingRef",
+    "ReplayOutcome",
     "RiskReport",
     "SceneTiming",
+    "StepEvidence",
     "StepRef",
     "StepRisk",
     "StoredArtifact",
+    "ValidationBackend",
+    "ValidationRecord",
+    "Validator",
+    "WorkflowCandidate",
     "plan_scenes",
 ]

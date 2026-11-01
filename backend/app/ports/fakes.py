@@ -50,6 +50,7 @@ from app.ports.narration import (
 )
 from app.ports.observer import Observer
 from app.ports.policy import Policy
+from app.ports.validation import ReplayOutcome, ValidationBackend, ValidationRecord, WorkflowCandidate
 
 
 class FakeObserver:
@@ -303,6 +304,34 @@ class FakeExportQueue:
         await self.store.mark_ready(export_id, video=ref, captions=None, duration_ms=1000)
 
 
+class FakeValidationBackend:
+    """Scripted stored workflows and replay outcomes; records what validation stores."""
+
+    def __init__(
+        self,
+        candidates: Iterable[WorkflowCandidate] = (),
+        outcomes: dict[UUID, list[ReplayOutcome]] | None = None,
+    ) -> None:
+        self.workflows = list(candidates)
+        self.outcomes = {k: list(v) for k, v in (outcomes or {}).items()}
+        """Per workflow, the outcomes of its next replays, in order."""
+        self.replayed: list[UUID] = []
+        self.records: list[ValidationRecord] = []
+
+    async def candidates(self) -> list[WorkflowCandidate]:
+        return list(self.workflows)
+
+    async def replay(self, workflow_id: UUID) -> ReplayOutcome:
+        if all(c.workflow_id != workflow_id for c in self.workflows):
+            raise LookupError(str(workflow_id))
+        self.replayed.append(workflow_id)
+        scripted = self.outcomes.get(workflow_id) or []
+        return scripted.pop(0) if scripted else ReplayOutcome(result="verified")
+
+    async def record(self, record: ValidationRecord) -> None:
+        self.records.append(record)
+
+
 # Typed conformance: strict mypy fails here if a fake drifts from its port.
 _observer: Observer = FakeObserver()
 _policy: Policy = FakePolicy()
@@ -311,3 +340,4 @@ _narrator: Narrator = FakeNarrator()
 _artifact_files: ArtifactFiles = FakeArtifactStore()
 _export_store: ExportStore = FakeExportStore()
 _export_queue: ExportQueue = FakeExportQueue()
+_validation_backend: ValidationBackend = FakeValidationBackend()
