@@ -16,6 +16,7 @@ from app.config import get_settings
 from app.db import create_engine, create_sessionmaker
 from app.runs import InProcessExecutor, RunStore
 from app.runs.validation_backend import RunValidationBackend
+from app.storage import LocalFsStore
 from app.targets import target_setup
 from app.validation import RedisSiteLimits, ScheduledValidator
 
@@ -40,7 +41,8 @@ async def _validate(workflow_id: UUID | None) -> int:
     sessions = create_sessionmaker(engine)
     executor = InProcessExecutor(RunStore(sessions), build_run_environment(settings))
     backend = RunValidationBackend(sessions, executor, lambda url: target_setup(url, settings))
-    validator = ScheduledValidator(backend, RedisSiteLimits(settings.redis_url))
+    artifacts = LocalFsStore(settings.artifacts_dir)
+    validator = ScheduledValidator(backend, RedisSiteLimits(settings.redis_url), artifacts=artifacts)
     try:
         if workflow_id is None:
             print(f"Validated {await validator.run_due()} workflow(s).")

@@ -11,6 +11,7 @@ from app.db import ValidationRow, WorkflowRow
 from app.ports.validation import ValidationRecord
 from app.runs import InProcessExecutor
 from app.runs.validation_backend import RunValidationBackend
+from app.storage import LocalFsStore
 from app.targets import TargetSetup
 from app.validation import ScheduledValidator
 from tests.api.test_flow import Api, Sessions, reply, services
@@ -121,3 +122,26 @@ async def test_an_unreplayable_workflow_is_refused_without_a_run(
         2,
         None,
     )
+
+
+async def test_an_unchanged_page_is_validated_passed_with_no_drift(
+    sessions: Sessions, tmp_path: Path, site: str
+) -> None:
+    """#111 end to end: the real screenshots of the stored run and of the replay, read through the artifact
+    store, show no visual change and no moved target on the static test site."""
+    async with Api(services(sessions, tmp_path, reply(GOOD_PLAN))) as api:
+        workflow_id = await verified_workflow(api, site)
+        validator = ScheduledValidator(backend_of(api), OpenLimits(), artifacts=LocalFsStore(tmp_path))
+
+        assert await validator.run_due() == 1
+
+    async with sessions() as s:
+        [row] = (await s.scalars(select(ValidationRow).where(ValidationRow.workflow_id == workflow_id))).all()
+    details = row.drift_details or {}
+    assert row.status == "passed" and (details["drift_class"], details["drift_reason"]) == (
+        "ignore",
+        "no change",
+    )
+    signals = details["signals"]
+    assert [s["seq"] for s in signals] == [1, 2, 3, 4]
+    assert all(s["visual_change"] < 0.05 and s.get("shift_px", 0) <= 30 for s in signals), signals

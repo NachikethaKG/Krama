@@ -14,8 +14,10 @@ from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
+from app.ports.artifacts import ArtifactStore
 from app.ports.validation import ReplayOutcome, ValidationBackend, ValidationRecord, WorkflowCandidate
 from app.validation.classify import classify, is_drift
+from app.validation.drift import drift_class, step_signals
 from app.validation.limits import SiteLimits
 
 logger = logging.getLogger(__name__)
@@ -47,11 +49,14 @@ class ScheduledValidator:
         backend: ValidationBackend,
         limits: SiteLimits,
         *,
+        artifacts: ArtifactStore | None = None,
         per_pass: int = PER_PASS,
         now: Callable[[], datetime] = lambda: datetime.now(UTC),
     ) -> None:
         self._backend = backend
         self._limits = limits
+        self._artifacts = artifacts
+        """Where the screenshots are, for the visual diff (#111). None: positions only."""
         self._per_pass = per_pass
         self._now = now
 
@@ -81,12 +86,19 @@ class ScheduledValidator:
         status = classify(outcome)
         if flake is not None and status == "outdated":
             status = "blocked"  # failed twice, differently: can't tell; don't mark the tutorial outdated
+        details = _details(outcome, flake)
+        signals = await step_signals(outcome.steps, self._artifacts)
+        if signals:
+            details["signals"] = signals
+        klass, why = drift_class(status, signals)
+        if klass is not None:
+            details["drift_class"], details["drift_reason"] = klass, why
         record = ValidationRecord(
             workflow_id=candidate.workflow_id,
             status=status,
             version_id=outcome.version_id,
             run_id=outcome.run_id,
-            drift_details=_details(outcome, flake),
+            drift_details=details,
         )
         await self._backend.record(record)
         await self._limits.finished(candidate.site, blocked=status == "blocked")
