@@ -8,7 +8,7 @@ import json
 import os
 import urllib.request
 import uuid
-from collections.abc import Sequence
+from collections.abc import Awaitable, Callable, Sequence
 from pathlib import Path
 from typing import Any
 from uuid import UUID
@@ -33,7 +33,7 @@ from app.verifier import LayeredVerifier
 from app.verifier.task_check import TaskVerdict
 from tests.runs.test_runner import GOOD_PLAN, step
 
-pytestmark = pytest.mark.anyio
+pytestmark = [pytest.mark.anyio, pytest.mark.usefixtures("stop_runs")]
 
 Sessions = async_sessionmaker[AsyncSession]
 EVENTS: TypeAdapter[RunEvent] = TypeAdapter(RunEvent)
@@ -83,7 +83,7 @@ def environment(tmp_path: Path, **kw: Any) -> RunEnvironment:
 
 async def run_to_end(executor: InProcessExecutor, run_id: UUID) -> None:
     await executor.submit(run_id)
-    await asyncio.wait_for(executor.wait(run_id), timeout=120)
+    await finished(executor, run_id)
 
 
 async def events(sessions: Sessions, run_id: UUID) -> list[dict[str, Any]]:
@@ -95,7 +95,25 @@ async def events(sessions: Sessions, run_id: UUID) -> list[dict[str, Any]]:
     return payloads
 
 
-async def until_paused(sessions: Sessions, run_id: UUID, timeout_s: float = 30) -> None:
+RUN_END_S = 120.0
+"""How long a test waits for a run to end after its last answer: generous, because Chromium can take many
+seconds to close on a busy laptop (#339). A run that really hangs still fails; `stop_runs` cleans it up."""
+
+
+async def finished(executor: InProcessExecutor, run_id: UUID, timeout_s: float = RUN_END_S) -> None:
+    await asyncio.wait_for(executor.wait(run_id), timeout=timeout_s)
+
+
+async def until(check: Callable[[], Awaitable[bool]], what: str, timeout_s: float = 60) -> None:
+    """Poll `check` every 50 ms; fail naming `what` if it never holds (not on a stale value later)."""
+    for _ in range(int(timeout_s / 0.05)):
+        if await check():
+            return
+        await asyncio.sleep(0.05)
+    raise AssertionError(f"timed out after {timeout_s:g} s waiting for {what}")
+
+
+async def until_paused(sessions: Sessions, run_id: UUID, timeout_s: float = 60) -> None:
     for _ in range(int(timeout_s / 0.05)):
         if (await run_row(sessions, run_id)).status == "paused":
             return
@@ -213,7 +231,7 @@ async def test_a_failed_step_without_a_planner_pauses_for_the_human(
     await executor.submit(run_id)
     await until_paused(sessions, run_id)
     assert await executor.confirm(run_id, 1, "deny")
-    await asyncio.wait_for(executor.wait(run_id), timeout=10)
+    await finished(executor, run_id)
 
     assert (await run_row(sessions, run_id)).status == "cancelled"
     stream = await events(sessions, run_id)
@@ -240,7 +258,7 @@ async def test_cancel_stops_a_running_run_at_its_step(sessions: Sessions, site: 
         await asyncio.sleep(0.05)
 
     assert await executor.cancel(run_id)
-    await asyncio.wait_for(executor.wait(run_id), timeout=5)  # the browser closes at once
+    await finished(executor, run_id)  # the browser closes at once
 
     run = await run_row(sessions, run_id)
     assert run.status == "cancelled" and run.finished_at is not None
@@ -318,9 +336,9 @@ async def test_a_run_submitted_twice_runs_once(sessions: Sessions, site: str, tm
 
     await executor.submit(run_id)
     await executor.submit(run_id)
-    await asyncio.wait_for(executor.wait(run_id), timeout=60)
+    await finished(executor, run_id)
     await executor.submit(run_id)  # after it finished: loads, sees "verified", does nothing
-    await asyncio.wait_for(executor.wait(run_id), timeout=60)
+    await finished(executor, run_id)
 
     starts = [e for e in await events(sessions, run_id) if e["type"] == "run.started"]
     assert len(starts) == 1
@@ -412,7 +430,7 @@ async def test_a_duplicate_create_on_real_gitea_never_verifies(sessions: Session
     paused = (await events(sessions, second))[-1]
     assert (paused["reason"], paused["step_seq"]) == ("verification_unclear", 3)  # a human looks
     assert await executor.confirm(second, 3, "deny")
-    await asyncio.wait_for(executor.wait(second), timeout=10)
+    await finished(executor, second)
     assert (await run_row(sessions, second)).status == "cancelled"
     async with sessions() as s:
         assert (
