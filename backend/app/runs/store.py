@@ -16,8 +16,16 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.contracts_gen.plan_schema import PlannedStep
 from app.db import PlanRow, RunRow, TaskRow, WorkflowRow, WorkflowStepRow
-from app.db.repositories import add_workflow, append_event, decide_plan, runs_with_status, transition_run
+from app.db.repositories import (
+    add_workflow,
+    add_workflow_version,
+    append_event,
+    decide_plan,
+    runs_with_status,
+    transition_run,
+)
 from app.runs.states import ACTIVE, RunStatus, event_type, sources
+from app.runs.step_diff import step_diff
 
 
 @dataclass(frozen=True)
@@ -211,6 +219,70 @@ class RunStore:
                 **changes,
             )
         return await self._committed(job.run_id, row is not None)
+
+    async def stored_targets(self, workflow_id: UUID) -> dict[int, dict[str, Any]]:
+        """The current version's stored targets (with their fingerprints, #112), by step seq."""
+        async with self._sessions() as s:
+            workflow = await s.get(WorkflowRow, workflow_id)
+            return {st.seq: dict(st.target or {}) for st in (workflow.steps if workflow else [])}
+
+    async def complete_heal(
+        self,
+        job: RunJob,
+        rows: Sequence[WorkflowStepRow],
+        *,
+        needs_review: bool,
+        confidence: float,
+        recording_path: str | None,
+        viewport: dict[str, Any] | None,
+        **changes: Any,
+    ) -> UUID | None:
+        """End a reverify run that healed a step (#112) as verified, and store what it ran as the next version
+        of the workflow, in ONE transaction. `needs_review` (a Gemini heal, D8): the version waits for a human
+        and the workflow is outdated meanwhile; otherwise it is current at once. None if the run was no longer
+        running."""
+        assert job.source_workflow_id is not None
+        try:
+            async with self._sessions.begin() as s:
+                workflow = await s.get(WorkflowRow, job.source_workflow_id, with_for_update=True)
+                if workflow is None:
+                    raise _NotRunningError  # deleted meanwhile: nothing to add a version to
+                parent, parent_revision = list(workflow.steps), workflow.revision
+                version = await add_workflow_version(
+                    s,
+                    workflow,
+                    rows,
+                    source="heal",
+                    status="pending_review" if needs_review else "current",
+                    run_id=job.run_id,
+                    confidence=confidence,
+                    recording_path=recording_path,
+                    viewport=viewport,
+                    change_summary=None,
+                )
+                diff = step_diff(parent, rows, old_rev=parent_revision, new_rev=version.revision)
+                version.change_summary = diff.model_dump(mode="json", by_alias=True, exclude_none=True)
+                row = await transition_run(
+                    s,
+                    job.run_id,
+                    to=RunStatus.VERIFIED,
+                    allowed_from=(RunStatus.RUNNING,),
+                    event_type="run.completed",
+                    event_data={
+                        "workflow_id": str(workflow.id),
+                        "verified_steps": len(rows),
+                        "failed_actions": 0,
+                    },
+                    finished_at=datetime.now(UTC),
+                    **changes,
+                )
+                if row is None:
+                    raise _NotRunningError
+                version_id = version.id
+        except _NotRunningError:
+            return None
+        await self._committed(job.run_id, True)
+        return version_id
 
     async def _complete(
         self,

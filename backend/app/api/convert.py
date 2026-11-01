@@ -67,6 +67,10 @@ def run_out(row: RunRow, workflow_id: UUID | None) -> Run:
     )
 
 
+_INTERNAL_TARGET_KEYS = frozenset({"fingerprint"})
+"""Stored with a step's target for self-healing (#112), not part of the contract's StepTarget."""
+
+
 def workflow_out(row: WorkflowRow, task_prompt: str | None) -> Workflow:
     steps = [
         Step.model_validate(
@@ -75,7 +79,7 @@ def workflow_out(row: WorkflowRow, task_prompt: str | None) -> Workflow:
                 "workflow_id": row.id,
                 "seq": st.seq,
                 "action": st.action,
-                "target": st.target,
+                "target": {k: v for k, v in (st.target or {}).items() if k not in _INTERNAL_TARGET_KEYS},
                 "instruction_text": st.instruction_text,
                 "before_state": st.before_state,
                 "expected_state": st.expected_state,

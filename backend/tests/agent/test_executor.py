@@ -251,3 +251,20 @@ async def test_nothing_is_refilled_when_the_fields_kept_their_values(executor: A
     click = await executor.execute(Action(type="click"), Target(role="button", name="Create Repository"))
 
     assert click.ok and click.refilled == []
+
+
+async def test_the_resolved_target_is_described_for_healing(executor: ActionExecutor) -> None:
+    """#112: an acted-on element's fingerprint (stored with the step) holds its form and attributes."""
+    await executor.execute(Action(type="navigate", value="/form"))
+    result = await executor.execute(
+        Action(type="fill", value="demo"), Target(role="textbox", name="Repository")
+    )
+
+    assert result.ok and result.element is not None
+    assert (result.element.role, result.element.name) == ("textbox", "Repository Name *")
+    assert (result.element.form, result.element.name_attr, result.element.element_id) == (
+        "/done|",
+        "repo",
+        None,
+    )
+    assert result.element.bbox == result.bbox

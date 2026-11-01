@@ -10,7 +10,7 @@ import json
 import logging
 import time
 from collections.abc import Callable, Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Literal, Protocol
@@ -20,6 +20,7 @@ from uuid import UUID
 from playwright.async_api import Page
 
 from app.agent import ActionExecutor, PlaywrightSession, SessionConfig, open_start_page, page_snapshot
+from app.agent.healer import HealBudget, HealChooser, HealOutcome, heal, stored_element
 from app.agent.runlog import MASK, ScriptedStep, looks_sensitive, mask_expected, run_script
 from app.agent.vision import VisionLocator
 from app.contracts_gen.events_schema import PauseReason
@@ -101,6 +102,10 @@ class RunEnvironment:
     max_replans_per_run: int = 3
     task_check: TaskChecker | None = None
     """Asked once after the last step whether the steps did the whole task (#274). None: not checked."""
+    heal_chooser: HealChooser | None = None
+    """Self-healing (#112): chooses among the candidates when scoring can't decide. None: scoring only."""
+    heal_budget: HealBudget | None = None
+    """The daily budget for `heal_chooser` (D12). None: the chooser is never asked."""
 
 
 class InProcessExecutor:
@@ -115,6 +120,8 @@ class InProcessExecutor:
         """Paused runs waiting for /confirm allow."""
         self._paused_s: dict[UUID, float] = {}
         """Seconds each run spent paused (they don't count toward run_timeout_s)."""
+        self._heals: dict[UUID, list[HealOutcome]] = {}
+        """Steps a reverify run healed (#112): their outcomes, in step order."""
 
     @property
     def artifacts_dir(self) -> Path:
@@ -207,6 +214,8 @@ class InProcessExecutor:
                 status = await self._store.status(run_id)
                 if status in (RunStatus.QUEUED, RunStatus.RUNNING):
                     await self._store.fail(run_id, from_=status, message="Internal error", reason="crash")
+            finally:
+                self._heals.pop(run_id, None)  # a run that failed or stopped saves no heals
 
     async def _run(self, run_id: UUID) -> None:
         job = await self._store.load(run_id)
@@ -266,18 +275,28 @@ class InProcessExecutor:
         self._to_recording_offsets(rows, recording.path)
         if job.kind == "reverify":
             duration_ms = round((time.perf_counter() - t0) * 1000)
-            await self._store.complete_reverify(job, verified_steps=len(rows), duration_ms=duration_ms)
+            heals = self._heals.pop(run_id, [])
+            if not heals:
+                await self._store.complete_reverify(job, verified_steps=len(rows), duration_ms=duration_ms)
+                return
+            # Every step verified after a heal: what ran is the workflow's next version (D8: a Gemini heal
+            # waits for a human, a deterministic one is published).
+            await self._store.complete_heal(
+                job,
+                rows,
+                needs_review=any(h.how == "gemini" for h in heals),
+                confidence=min((r.verification["confidence"] for r in rows), default=1.0),
+                recording_path=self._artifact_key(recording.path),
+                viewport=_viewport(config),
+                duration_ms=duration_ms,
+            )
             return
         await self._store.complete(
             job,
             rows,
             confidence=min((r.verification["confidence"] for r in rows), default=1.0),
             recording_path=self._artifact_key(recording.path),
-            viewport={
-                "width": config.viewport_width,
-                "height": config.viewport_height,
-                "device_scale_factor": config.device_scale_factor,
-            },
+            viewport=_viewport(config),
             duration_ms=round((time.perf_counter() - t0) * 1000),
         )
 
@@ -292,6 +311,9 @@ class InProcessExecutor:
         rows: list[WorkflowStepRow] = []
         budget = _Recovery(max_replans=env.max_replans_per_run)
         self._paused_s[job.run_id] = 0.0
+        stored: dict[int, dict[str, Any]] = {}
+        if job.kind == "reverify" and job.source_workflow_id is not None:
+            stored = await store.stored_targets(job.source_workflow_id)
         t0 = time.perf_counter()
         i = 0
         while i < len(steps):
@@ -327,7 +349,17 @@ class InProcessExecutor:
             if move == "retry":
                 continue  # same step again; budget.retry_count already counts it
             if job.kind == "reverify":
-                await self._fail_reverify(job, step, out)
+                healed = await self._heal(job, step, out, stored.get(step.seq), executor, observer, page,
+                                          budget.retry_count, verify_timeout_s)  # fmt: skip
+                if healed.stopped:
+                    return None  # the policy stopped the healed step, or the run was cancelled
+                if healed.step is not None and healed.out is not None:
+                    steps[i] = healed.step
+                    rows.append(self._row(job, healed.step, healed.out))
+                    budget.succeeded()
+                    i += 1
+                    continue  # the later steps must verify too, or the run fails and nothing is saved
+                await self._fail_reverify(job, step, out, healed.outcome)
                 return None  # the later steps depend on this one: they are not run
             if move == "replan":
                 replanned = await self._replan(job, steps, i, out, page, budget)
@@ -501,7 +533,51 @@ class InProcessExecutor:
         )
         return False
 
-    async def _fail_reverify(self, job: RunJob, step: PlannedStep, out: StepOutcome) -> None:
+    async def _heal(
+        self,
+        job: RunJob,
+        step: PlannedStep,
+        out: StepOutcome,
+        stored: dict[str, Any] | None,
+        executor: ActionExecutor,
+        observer: Observer,
+        page: Page,
+        retry_count: int,
+        verify_timeout_s: float,
+    ) -> "_HealAttempt":
+        """Self-healing (#112, phase-4-vishwas-self-healing-locators.md) after a reverify step's element went
+        missing: pick the element that is the target now, then run the step again on it through the normal
+        path, so the policy checks the new target and the verifier decides."""
+        error = out.result.error
+        if error is None or error.code != "target_not_found" or not step.target.role or step.risk == "high":
+            return _HealAttempt(None)  # ambiguous: role+name can't single out a look-alike; high risk: never
+        outcome = await heal(
+            page,
+            stored_element(stored or step.target.model_dump(exclude_none=True)),
+            list(out.result.candidates),
+            instruction=step.instruction_text,
+            expected=step.expected_state,
+            chooser=self._env.heal_chooser,
+            budget=self._env.heal_budget,
+        )
+        logger.info("heal for run %s step %s: %s", job.run_id, step.seq, outcome.reason)
+        if outcome.target is None:
+            return _HealAttempt(outcome)
+        healed = step.model_copy(update={"target": outcome.target})
+        again = await self._attempt(job, healed, executor, observer, page, retry_count, verify_timeout_s)
+        if again is None:
+            return _HealAttempt(outcome, stopped=True)
+        if not again.verified:
+            failed = replace(
+                outcome, target=None, reason=f"{outcome.reason}, but the step didn't verify on it"
+            )
+            return _HealAttempt(failed)
+        self._heals.setdefault(job.run_id, []).append(outcome)
+        return _HealAttempt(outcome, healed, again)
+
+    async def _fail_reverify(
+        self, job: RunJob, step: PlannedStep, out: StepOutcome, heal: "HealOutcome | None" = None
+    ) -> None:
         """A stored step no longer works. locator_miss: its element is gone or ambiguous (the UI changed);
         action_failed: the action itself failed; state_mismatch: it ran but its expected state didn't hold."""
         error = out.result.error
@@ -513,7 +589,7 @@ class InProcessExecutor:
             reason, what = "state_mismatch", "it ran, but the expected state didn't hold"
         await self._store.fail(
             job.run_id, from_=RunStatus.RUNNING, message=f"Step {step.seq} no longer works: {what}",
-            reason=reason, step_seq=step.seq, **failure_details(step, out),
+            reason=reason, step_seq=step.seq, **failure_details(step, out, heal),
         )  # fmt: skip
 
     async def _pause(
@@ -580,6 +656,10 @@ class InProcessExecutor:
                 **step.target.model_dump(mode="json", exclude_none=True),
                 "bbox": list(out.result.bbox) if out.result.bbox else None,
                 "scroll": out.result.scroll.model_dump() if out.result.scroll else None,
+                # What a healer compares a changed page against (#112, D2). Internal: not in the contract.
+                "fingerprint": out.result.element.model_dump(mode="json", exclude_none=True)
+                if out.result.element
+                else None,
             },
             instruction_text=self._step_text(job, step, out, sensitive=sensitive),
             expected_state=mask_expected(step.expected_state).model_dump(mode="json", exclude_none=True),
@@ -746,3 +826,22 @@ def _failure_text(step: PlannedStep, out: StepOutcome) -> str:
     if out.verification is not None:
         lines += [f"- {c.kind} {c.expected}: {c.detail}" for c in out.verification.failures()]
     return "\n".join(lines)
+
+
+@dataclass(frozen=True)
+class _HealAttempt:
+    outcome: HealOutcome | None
+    """Why it healed or not; None when healing doesn't apply to the failure."""
+    step: PlannedStep | None = None
+    """The step with its new target, when it verified on it."""
+    out: StepOutcome | None = None
+    stopped: bool = False
+    """The run stopped on the healed step (policy stop, cancel): the store already says so."""
+
+
+def _viewport(config: SessionConfig) -> dict[str, Any]:
+    return {
+        "width": config.viewport_width,
+        "height": config.viewport_height,
+        "device_scale_factor": config.device_scale_factor,
+    }

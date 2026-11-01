@@ -8,6 +8,7 @@ workflow (docs/research/phase-2-vishwas-reverify.md).
 from collections.abc import Sequence
 from typing import Any
 
+from app.agent.healer import HealOutcome
 from app.agent.runlog import MASK
 from app.contracts_gen.plan_schema import PlannedStep
 from app.db import WorkflowStepRow
@@ -65,7 +66,7 @@ def plan_risk(steps: Sequence[WorkflowStepRow]) -> str:
     return max((s.risk for s in steps), key=_RISK_ORDER.__getitem__, default="low")
 
 
-def failure_details(step: PlannedStep, out: StepOutcome) -> dict[str, Any]:
+def failure_details(step: PlannedStep, out: StepOutcome, heal: HealOutcome | None = None) -> dict[str, Any]:
     """Evidence for validation (#109): what the step looked for, and what the page offered (a locator miss) or
     which expected-state checks failed (a state mismatch). Page text in it is untrusted data."""
     details: dict[str, Any] = {
@@ -76,6 +77,12 @@ def failure_details(step: PlannedStep, out: StepOutcome) -> dict[str, Any]:
         details["error_code"] = out.result.error.code
     if out.result.candidates:
         details["candidates"] = [c.model_dump(mode="json", exclude_none=True) for c in out.result.candidates]
+    if heal is not None:
+        # Why self-healing (#112) didn't fix it, and how the candidates scored: for the review queue.
+        details["heal"] = {
+            "reason": heal.reason,
+            "scores": [{"name": s.candidate.name, "score": s.score} for s in heal.ranked[:5]],
+        }
     if out.verification is not None and out.result.ok:
         details["failed_checks"] = [
             {"kind": c.kind, "expected": c.expected, "detail": c.detail} for c in out.verification.failures()

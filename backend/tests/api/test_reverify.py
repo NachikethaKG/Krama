@@ -13,6 +13,7 @@ from sqlalchemy import func, select, update
 
 from app.contracts_gen.plan_schema import Plan
 from app.contracts_gen.run_schema import Run
+from app.contracts_gen.workflow_schema import Workflow, WorkflowVersionList
 from app.db import WorkflowRow, WorkflowStepRow
 from app.targets import ResetError, TargetSetup
 from tests.api.test_flow import Api, Sessions, reply, services
@@ -176,3 +177,112 @@ async def test_an_unknown_workflow_is_404(sessions: Sessions, tmp_path: Path) ->
         response = await api.client.post("/workflows/6f1c2a4e-1111-4b8a-9a1b-123456789abc/reverify")
 
         assert response.status_code == 404 and response.json()["error"]["code"] == "not_found"
+
+
+# --- Self-healing (#112) ----------------------------------------------------------------------------------
+
+
+async def rename_stored_link(
+    sessions: Sessions, workflow_id: UUID, old_name: str, **fingerprint: Any
+) -> None:
+    """Make step 1's stored link look as if it was recorded when the page called it `old_name`: the page has
+    "changed" since, and the stored locator misses."""
+    async with sessions.begin() as s:
+        step = await s.scalar(
+            select(WorkflowStepRow).where(
+                WorkflowStepRow.workflow_id == workflow_id, WorkflowStepRow.seq == 1
+            )
+        )
+        assert step is not None and step.target["fingerprint"]["element_id"] == "new-item"
+        old = {**step.target["fingerprint"], "name": old_name, **fingerprint}
+        step.target = {**step.target, "name": old_name, "fingerprint": old}
+
+
+class PickByName:
+    """A fake Gemini heal chooser: answers with the candidate called `name`."""
+
+    def __init__(self, name: str) -> None:
+        self.name = name
+        self.calls = 0
+
+    async def choose(self, page, stored, candidates, instruction, expected):  # type: ignore[no-untyped-def]
+        self.calls += 1
+        return next(i for i, c in enumerate(candidates) if c.name == self.name), []
+
+
+class Budget:
+    async def take(self) -> bool:
+        return True
+
+
+async def versions(api: Api, workflow_id: UUID) -> list[dict[str, Any]]:
+    response = await api.client.get(f"/workflows/{workflow_id}/versions")
+    assert response.status_code == 200, response.text
+    return list(
+        WorkflowVersionList.model_validate(response.json()).model_dump(mode="json", by_alias=True)["items"]
+    )
+
+
+async def test_a_renamed_link_heals_and_its_new_version_is_published(
+    sessions: Sessions, tmp_path: Path, site: str
+) -> None:
+    async with Api(services(sessions, tmp_path, reply(GOOD_PLAN))) as api:
+        workflow_id = await verified_workflow(api, site)
+        await rename_stored_link(sessions, workflow_id, "Add an item")
+
+        run, stream = await reverify(api, workflow_id)
+
+        assert run.status == "verified", run.error
+        assert [e["type"] for e in stream].count("step.failed") == 1  # the miss, then the healed try verified
+        [v2, v1] = await versions(api, workflow_id)
+        assert (v2["revision"], v2["source"], v2["status"], v2["run_id"]) == (
+            2,
+            "heal",
+            "current",
+            str(run.id),
+        )
+        assert (v1["revision"], v1["status"]) == (1, "superseded") and v2["parent_version_id"] == v1["id"]
+        [changed] = [s for s in v2["change_summary"]["steps"] if s["kind"] != "same"]
+        assert (changed["old_seq"], changed["category"]) == (1, "behaviour")
+        assert changed["fields"][0] == {"field": "target.name", "from": "Add an item", "to": "New item"}
+        workflow = Workflow.model_validate((await api.client.get(f"/workflows/{workflow_id}")).json())
+        assert workflow.revision == 2 and workflow.status == "verified"
+        assert (
+            workflow.steps[0].target.name == "New item" and "New item" in workflow.steps[0].instruction_text
+        )
+        assert workflow.recording_path is not None and str(run.id) in workflow.recording_path  # this run's
+
+
+async def test_a_heal_gemini_chose_waits_for_review(sessions: Sessions, tmp_path: Path, site: str) -> None:
+    chooser = PickByName("New item")
+    async with Api(
+        services(sessions, tmp_path, reply(GOOD_PLAN), heal_chooser=chooser, heal_budget=Budget())
+    ) as api:
+        workflow_id = await verified_workflow(api, site)
+        # The stable id changed too, so scoring can't decide (0.69 < 0.75): Gemini is asked.
+        await rename_stored_link(sessions, workflow_id, "Add an item", element_id="add-item")
+
+        run, _ = await reverify(api, workflow_id)
+
+        assert run.status == "verified" and chooser.calls == 1
+        [v2, v1] = await versions(api, workflow_id)
+        assert (v2["status"], v1["status"]) == ("pending_review", "current")
+        workflow = Workflow.model_validate((await api.client.get(f"/workflows/{workflow_id}")).json())
+        assert (workflow.status, workflow.revision) == ("outdated", 1)  # D8: a human accepts it first
+        assert workflow.steps[0].target.name == "Add an item"
+
+
+async def test_an_undecided_heal_fails_the_reverify_with_the_scores(
+    sessions: Sessions, tmp_path: Path, site: str
+) -> None:
+    async with Api(services(sessions, tmp_path, reply(GOOD_PLAN))) as api:  # no Gemini chooser
+        workflow_id = await verified_workflow(api, site)
+        await rename_stored_link(sessions, workflow_id, "Add an item", element_id="add-item")
+
+        run, _ = await reverify(api, workflow_id)
+
+        assert run.status == "failed" and run.error is not None
+        details = run.error.details or {}
+        assert details["reason"] == "locator_miss" and "needs 0.75 and 0.15" in details["heal"]["reason"]
+        assert details["heal"]["scores"][0]["name"] == "New item"
+        assert len(await versions(api, workflow_id)) == 1  # nothing saved
