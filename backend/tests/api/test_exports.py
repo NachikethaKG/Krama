@@ -21,16 +21,21 @@ from tests.api.test_flow import Api, Sessions, make_user, services
 
 pytestmark = pytest.mark.anyio
 
-FIXTURE = Path(__file__).resolve().parents[3] / "contracts" / "fixtures" / "gitea-create-repo-workflow.json"
-STEP_FIELDS = ("seq", "action", "target", "instruction_text", "before_state", "expected_state", "observed_state",
-               "verification", "risk", "sensitive", "screenshot_path", "start_ms", "end_ms")  # fmt: skip
+CONTRACTS = Path(__file__).resolve().parents[3] / "contracts"
+FIXTURE = CONTRACTS / "fixtures" / "gitea-create-repo-workflow.json"
+STEP_FIELDS = (
+    "seq", "action", "target", "instruction_text", "before_state", "expected_state", "observed_state",
+    "verification", "risk", "sensitive", "screenshot_path", "start_ms", "end_ms",
+)  # fmt: skip
 
 
 async def stored_workflow(sessions: Sessions, user: UserRow, *, status: str = "verified") -> UUID:
     """A stored workflow owned by `user`, with the contract fixture's steps (no browser run needed)."""
     fixture = json.loads(FIXTURE.read_text("utf-8"))
     async with sessions.begin() as s:
-        task = TaskRow(user_id=user.id, prompt="Create a repository", target_url="http://gitea", status="planned")
+        task = TaskRow(
+            user_id=user.id, prompt="Create a repository", target_url="http://gitea", status="planned"
+        )
         s.add(task)
         await s.flush()
         plan = PlanRow(task_id=task.id, status="approved", risk="low", expected_result="repo", steps=[])
@@ -66,13 +71,19 @@ class ExportApi(Api):
         def pick_queue() -> ExportQueue:
             if queue == "record":
                 return self.recorder
-            return FakeExportQueue(DbExportStore(sessions), self.files, fail="render_failed" if queue == "fail" else None)
+            return FakeExportQueue(
+                DbExportStore(sessions), self.files, fail="render_failed" if queue == "fail" else None
+            )
 
         def pick_files() -> ArtifactFiles:
             return self.files
 
         self.app.dependency_overrides[get_export_queue] = pick_queue
         self.app.dependency_overrides[get_artifact_files] = pick_files
+
+    async def __aenter__(self) -> "ExportApi":
+        await super().__aenter__()
+        return self
 
     async def export(self, workflow_id: UUID, preset: str = "landscape") -> tuple[int, dict[str, Any]]:
         r = await self.client.post(f"/workflows/{workflow_id}/exports", json={"preset": preset})
@@ -98,7 +109,10 @@ async def test_export_renders_with_the_mock_queue_and_downloads(sessions: Sessio
     assert polled.size_bytes == TINY_MP4.stat().st_size and polled.duration_ms == 1000
     assert download.status_code == 200 and download.content == TINY_MP4.read_bytes()
     assert download.headers["content-type"] == "video/mp4"
-    assert 'filename="create-a-repository-in-local-gitea-v1-landscape.mp4"' in download.headers["content-disposition"]
+    assert (
+        'filename="create-a-repository-in-local-gitea-v1-landscape.mp4"'
+        in download.headers["content-disposition"]
+    )
     assert part.status_code == 206 and len(part.content) == 100
 
 
