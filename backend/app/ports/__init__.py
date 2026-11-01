@@ -19,6 +19,15 @@ from app.ports.models import (
     StepRisk,
     StoredArtifact,
 )
+from app.ports.narration import (
+    NarrationClip,
+    NarrationError,
+    NarrationLine,
+    NarrationManifest,
+    Narrator,
+    SceneTiming,
+    plan_scenes,
+)
 from app.ports.observer import Observer
 from app.ports.policy import Policy
 
@@ -27,6 +36,11 @@ __all__ = [
     "ArtifactRef",
     "ArtifactStore",
     "InvalidArtifactKeyError",
+    "NarrationClip",
+    "NarrationError",
+    "NarrationLine",
+    "NarrationManifest",
+    "Narrator",
     "ObservedState",
     "Observer",
     "PageState",
@@ -35,7 +49,9 @@ __all__ = [
     "PolicyDecision",
     "RecordingRef",
     "RiskReport",
+    "SceneTiming",
     "StepRef",
     "StepRisk",
     "StoredArtifact",
+    "plan_scenes",
 ]
