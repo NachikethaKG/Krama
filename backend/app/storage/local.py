@@ -16,6 +16,7 @@ from app.ports.models import (
 
 _PNG = b"\x89PNG\r\n\x1a\n"
 _JPEG = b"\xff\xd8\xff"
+_UTF8_BOM = b"\xef\xbb\xbf"
 
 
 class LocalFsStore:
@@ -51,11 +52,18 @@ class LocalFsStore:
 
 
 def sniff_content_type(data: bytes) -> ArtifactContentType:
-    """png and jpeg by their signature; everything else is served as JSON (never as HTML or SVG)."""
+    """By signature: png, jpeg, wav, mp4, WebVTT. Everything else is served as JSON (never as HTML or SVG)."""
     if data.startswith(_PNG):
         return "image/png"
     if data.startswith(_JPEG):
         return "image/jpeg"
+    if data[:4] == b"RIFF" and data[8:12] == b"WAVE":
+        return "audio/wav"
+    if data[4:8] == b"ftyp":  # ISO base media file: the first box is `ftyp`
+        return "video/mp4"
+    text = data.removeprefix(_UTF8_BOM)
+    if text.startswith(b"WEBVTT") and text[6:7] in (b"", b"\n", b"\r", b" ", b"\t"):
+        return "text/vtt"
     return "application/json"
 
 
