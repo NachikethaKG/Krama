@@ -2,6 +2,7 @@
 
 from app.db.base import Base
 from app.db.models import (
+    ExportRow,
     PlanRow,
     RunEventRow,
     RunRow,
@@ -18,6 +19,7 @@ from app.db.session import create_engine, create_sessionmaker
 
 __all__ = [
     "Base",
+    "ExportRow",
     "PlanRow",
     "RunEventRow",
     "RunRow",

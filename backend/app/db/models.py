@@ -7,10 +7,22 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID, uuid4
 
-from sqlalchemy import REAL, Boolean, ForeignKey, Index, Integer, Text, UniqueConstraint, func, text
+from sqlalchemy import (
+    REAL,
+    BigInteger,
+    Boolean,
+    ForeignKey,
+    Index,
+    Integer,
+    Text,
+    UniqueConstraint,
+    func,
+    text,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.contracts_gen.common_schema import Risk
+from app.contracts_gen.export_schema import ExportErrorCode, ExportPreset, ExportStatus
 from app.contracts_gen.plan_schema import PlanStatus
 from app.contracts_gen.run_schema import RunKind, RunStatus
 from app.contracts_gen.task_schema import TaskStatus
@@ -31,6 +43,9 @@ WORKFLOW_VERSION_SOURCES = literal_values(WorkflowVersionSource)
 WORKFLOW_VERSION_STATUSES = literal_values(WorkflowVersionStatus)
 VALIDATION_STATUSES = literal_values(ValidationStatus)
 RISKS = literal_values(Risk)
+EXPORT_STATUSES = literal_values(ExportStatus)
+EXPORT_PRESETS = literal_values(ExportPreset)
+EXPORT_ERROR_CODES = literal_values(ExportErrorCode)
 
 
 class UserRow(Timestamps, Base):
@@ -249,6 +264,41 @@ class ValidationRow(Timestamps, Base):
     status: Mapped[str] = mapped_column(Text)
     drift_details: Mapped[dict[str, Any] | None] = mapped_column(default=None)
     ran_at: Mapped[datetime] = mapped_column(server_default=func.now())
+
+
+class ExportRow(Timestamps, Base):
+    """One MP4 render of one workflow version with one preset (#124, docs/database-schema.md).
+
+    Status only moves forward: queued -> rendering -> ready | failed, and ready -> expired when cleanup
+    deletes the file (#125)."""
+
+    __tablename__ = "exports"
+    __table_args__ = (
+        status_check("status", EXPORT_STATUSES, "status"),
+        status_check("preset", EXPORT_PRESETS, "preset"),
+        status_check("error_code", EXPORT_ERROR_CODES, "error_code"),
+        # Re-use (D16): the same version, preset and voice that is queued, rendering or ready.
+        Index(None, "workflow_id", "version_id", "preset", "voice"),
+        Index(None, "status", "finished_at"),
+    )
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    workflow_id: Mapped[UUID] = mapped_column(ForeignKey("workflows.id", ondelete="CASCADE"))
+    version_id: Mapped[UUID] = mapped_column(ForeignKey("workflow_versions.id", ondelete="CASCADE"))
+    user_id: Mapped[UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), default=None)
+    """Who asked for it."""
+    preset: Mapped[str] = mapped_column(Text)
+    voice: Mapped[str] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(Text, default="queued", server_default="queued")
+    progress: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    video_key: Mapped[str | None] = mapped_column(Text, default=None)
+    captions_key: Mapped[str | None] = mapped_column(Text, default=None)
+    size_bytes: Mapped[int | None] = mapped_column(BigInteger, default=None)
+    duration_ms: Mapped[int | None] = mapped_column(Integer, default=None)
+    error_code: Mapped[str | None] = mapped_column(Text, default=None)
+    error_message: Mapped[str | None] = mapped_column(Text, default=None)
+    started_at: Mapped[datetime | None] = mapped_column(default=None)
+    finished_at: Mapped[datetime | None] = mapped_column(default=None)
 
 
 class TutorialShareRow(Timestamps, Base):
