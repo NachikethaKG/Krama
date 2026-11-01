@@ -1,17 +1,23 @@
-"""`ArtifactStore` on the local disk (`ARTIFACTS_DIR`, default `data/artifacts`). S3/MinIO comes later."""
+"""`ArtifactStore` + `ArtifactFiles` on the local disk (`ARTIFACTS_DIR`, default `data/artifacts`).
+
+Object storage (SeaweedFS) comes later, behind the same ports (docs/adr/0005)."""
 
 import asyncio
 import os
+import shutil
 import tempfile
+from datetime import UTC, datetime
 from pathlib import Path
 
 from app.ports.models import (
     ArtifactContentType,
+    ArtifactInfo,
     ArtifactNotFoundError,
     ArtifactRef,
     InvalidArtifactKeyError,
     StoredArtifact,
     validate_artifact_key,
+    validate_artifact_prefix,
 )
 
 _PNG = b"\x89PNG\r\n\x1a\n"
@@ -43,6 +49,34 @@ class LocalFsStore:
     async def exists(self, key: str) -> bool:
         return await asyncio.to_thread(self._path(key).is_file)
 
+    async def put_file(self, key: str, path: Path, content_type: ArtifactContentType) -> ArtifactRef:
+        target = self._path(key)
+        size = await asyncio.to_thread(_copy_atomically, path, target)
+        return ArtifactRef(key=key, content_type=content_type, size_bytes=size)
+
+    async def local_path(self, key: str) -> Path:
+        path = self._path(key)
+        if not await asyncio.to_thread(path.is_file):
+            raise ArtifactNotFoundError(key)
+        return path
+
+    async def delete(self, key: str) -> bool:
+        path = self._path(key)
+        try:
+            await asyncio.to_thread(path.unlink)
+        except FileNotFoundError:
+            return False
+        except (IsADirectoryError, PermissionError):
+            # A folder is never an artifact (on Windows unlinking one raises PermissionError).
+            if await asyncio.to_thread(path.is_dir):
+                return False
+            raise
+        return True
+
+    async def list(self, prefix: str) -> list[ArtifactInfo]:
+        folder = self._path(validate_artifact_prefix(prefix)[:-1])
+        return await asyncio.to_thread(_list_files, self.root, folder)
+
     def _path(self, key: str) -> Path:
         path = (self.root / validate_artifact_key(key)).resolve()
         # The key is already safe; this also stops a symlink inside the store from pointing outside it.
@@ -65,6 +99,45 @@ def sniff_content_type(data: bytes) -> ArtifactContentType:
     if text.startswith(b"WEBVTT") and text[6:7] in (b"", b"\n", b"\r", b" ", b"\t"):
         return "text/vtt"
     return "application/json"
+
+
+def _list_files(root: Path, folder: Path) -> list[ArtifactInfo]:
+    """Every file under `folder` as an artifact of the store at `root`."""
+    if not folder.is_dir():
+        return []
+    out = []
+    for path in folder.rglob("*"):
+        if not path.is_file() or path.name.startswith("."):  # half-written temp files start with a dot
+            continue
+        key = path.relative_to(root).as_posix()
+        try:
+            validate_artifact_key(key)
+        except InvalidArtifactKeyError:
+            continue  # not something we wrote
+        stat = path.stat()
+        out.append(
+            ArtifactInfo(
+                key=key,
+                size_bytes=stat.st_size,
+                modified_at=datetime.fromtimestamp(stat.st_mtime, UTC),
+            )
+        )
+    return sorted(out, key=lambda i: i.key)
+
+
+def _copy_atomically(source: Path, path: Path) -> int:
+    """Like `_write_atomically`, from a file: videos are copied in chunks, never read into memory."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}.", suffix=".tmp")
+    os.close(fd)
+    try:
+        shutil.copyfile(source, tmp)
+        size = os.path.getsize(tmp)
+        os.replace(tmp, path)
+    except BaseException:
+        Path(tmp).unlink(missing_ok=True)
+        raise
+    return size
 
 
 def _write_atomically(path: Path, data: bytes) -> None:
