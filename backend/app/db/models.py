@@ -77,6 +77,11 @@ class TaskRow(Timestamps, Base):
     interpretation: Mapped[dict[str, Any] | None] = mapped_column(default=None)
     clarification_question: Mapped[str | None] = mapped_column(Text, default=None)
     error: Mapped[dict[str, Any] | None] = mapped_column(default=None)
+    regenerates_workflow_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("workflows.id", ondelete="SET NULL", use_alter=True), default=None
+    )
+    """Set by POST /workflows/{id}/regenerate (#113): this task's verified run becomes that workflow's next
+    version instead of a new workflow."""
 
 
 class PlanRow(Timestamps, Base):
