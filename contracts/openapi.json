@@ -1585,6 +1585,19 @@
             "title": "Prompt",
             "type": "string"
           },
+          "regenerates_workflow_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Set by POST /workflows/{id}/regenerate: this task re-plans that workflow's task, and its verified run becomes the workflow's next version instead of a new workflow.",
+            "title": "Regenerates Workflow Id"
+          },
           "status": {
             "$ref": "#/components/schemas/TaskStatus"
           },

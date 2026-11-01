@@ -655,6 +655,10 @@ export interface Task {
   interpretation?: Interpretation | null;
   clarification_question?: string | null;
   plan_id?: string | null;
+  /**
+   * Set by POST /workflows/{id}/regenerate: this task re-plans that workflow's task, and its verified run becomes the workflow's next version instead of a new workflow.
+   */
+  regenerates_workflow_id?: string | null;
   error?: ApiError | null;
   created_at: string;
 }

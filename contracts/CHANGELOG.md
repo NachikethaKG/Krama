@@ -2,6 +2,15 @@
 
 Every change to `contracts/` is listed here. Additive change = minor version bump; breaking change = major bump + ADR.
 
+## 1.10 (#345)
+
+Regenerating a workflow that can't heal (#113; D3 in `docs/research/phase-4-decisions-alignment.md`). Additive.
+
+- `task.schema.json` v1.1: `Task.regenerates_workflow_id`, the workflow whose next version this task's verified
+  run becomes (set by `POST /workflows/{id}/regenerate`; null for ordinary tasks).
+- `docs/api-contract.md`: `POST /workflows/{id}/regenerate` → `202 Task`.
+- `docs/database-schema.md`: `tasks.regenerates_workflow_id` (migration in #113).
+
 ## 1.9 (#335)
 
 Workflow versions, the step diff and validation results (Phase 4, #108; decisions D1, D5, D6 in
