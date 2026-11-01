@@ -59,14 +59,26 @@ async def test_load_renders_the_exported_version_after_a_newer_one(sessions: Ses
     async with sessions.begin() as s:
         workflow = await s.get(WorkflowRow, workflow_id)
         assert workflow is not None
-        old_steps = (await s.scalars(select(WorkflowStepRow).where(WorkflowStepRow.workflow_id == workflow_id))).all()
-        copy = [WorkflowStepRow(**{c: getattr(st, c) for c in ("seq", "action", "target", "expected_state",
-                "observed_state", "verification", "risk")}, instruction_text="New wording")  # fmt: skip
-                for st in old_steps]  # fmt: skip
+        old_steps = (
+            await s.scalars(select(WorkflowStepRow).where(WorkflowStepRow.workflow_id == workflow_id))
+        ).all()
+        fields = ("seq", "action", "target", "expected_state", "observed_state", "verification", "risk")
+        copy = [
+            WorkflowStepRow(**{c: getattr(st, c) for c in fields}, instruction_text="New wording")
+            for st in old_steps
+        ]
         await add_workflow_version(
-            s, workflow, copy, source="heal", status="current", run_id=None, confidence=0.9,
-            recording_path="runs/new/rrweb_recording.json", viewport=None, change_summary=None,
-        )  # fmt: skip
+            s,
+            workflow,
+            copy,
+            source="heal",
+            status="current",
+            run_id=None,
+            confidence=0.9,
+            recording_path="runs/new/rrweb_recording.json",
+            viewport=None,
+            change_summary=None,
+        )
 
     job = await DbExportStore(sessions).load(export_id)
 
@@ -96,7 +108,11 @@ async def test_failed_keeps_a_short_message(sessions: Sessions) -> None:
     export_id, _ = await new_export(sessions)
     await DbExportStore(sessions).mark_failed(export_id, "narration_failed", "x" * 2000)
     failed = await row(sessions, export_id)
-    assert (failed.status, failed.error_code, len(failed.error_message or "")) == ("failed", "narration_failed", 500)
+    assert (failed.status, failed.error_code, len(failed.error_message or "")) == (
+        "failed",
+        "narration_failed",
+        500,
+    )
 
 
 @pytest.mark.parametrize("status", ["ready", "failed", "expired"])
