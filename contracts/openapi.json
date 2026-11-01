@@ -3986,6 +3986,70 @@
         ]
       }
     },
+    "/api/v1/workflows/{workflow_id}/regenerate": {
+      "post": {
+        "description": "Re-plan a workflow that can't heal (#113), from its original prompt and URL. Like POST /tasks: poll the\ntask, then review and approve its plan. When that run verifies, its steps become this workflow's next\nversion (D3); no new workflow.",
+        "operationId": "regenerate_workflow_api_v1_workflows__workflow_id__regenerate_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workflow_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workflow Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Task"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal error"
+          }
+        },
+        "summary": "Regenerate Workflow",
+        "tags": [
+          "workflows"
+        ]
+      }
+    },
     "/api/v1/workflows/{workflow_id}/reverify": {
       "post": {
         "description": "Replay the stored workflow's steps headlessly, without the planner (#77). The run stores no new\nworkflow; its events and final status say whether every step still works.",
