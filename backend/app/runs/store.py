@@ -15,7 +15,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.contracts_gen.plan_schema import PlannedStep
-from app.db import PlanRow, RunRow, TaskRow, WorkflowRow, WorkflowStepRow
+from app.db import PlanRow, RunRow, TaskRow, WorkflowRow, WorkflowStepRow, WorkflowVersionRow
 from app.db.repositories import (
     add_workflow,
     add_workflow_version,
@@ -179,22 +179,37 @@ class RunStore:
         **changes: Any,
     ) -> UUID | None:
         """Store the verified workflow and finish the run, in ONE transaction: a workflow exists only for a
-        run that completed. None if the run was no longer running (e.g. cancelled at the last moment)."""
+        run that completed. None if the run was no longer running (e.g. cancelled at the last moment).
+
+        A task made by POST /workflows/{id}/regenerate (#113) stores no new workflow: what ran becomes that
+        workflow's next version (`regenerate`, current; D3), and the id returned is that workflow's."""
         try:
             async with self._sessions.begin() as s:
-                workflow = WorkflowRow(
-                    task_id=job.task_id,
-                    run_id=job.run_id,
-                    user_id=await s.scalar(select(TaskRow.user_id).where(TaskRow.id == job.task_id)),
-                    title=job.prompt,
-                    target_app=_app_of(job.target_url),
-                    target_url=job.target_url,
-                    status="verified",
-                    confidence=confidence,
-                    recording_path=recording_path,
-                    viewport=viewport,
-                )
-                workflow_id = await self._complete(s, job, workflow, steps, **changes)
+                task = await s.get(TaskRow, job.task_id)
+                replaced = None
+                if task is not None and task.regenerates_workflow_id is not None:
+                    replaced = await s.get(WorkflowRow, task.regenerates_workflow_id, with_for_update=True)
+                if replaced is not None:
+                    await self._add_version(
+                        s, job, replaced, steps, source="regenerate", status="current",
+                        created_by=task.user_id if task else None, confidence=confidence,
+                        recording_path=recording_path, viewport=viewport, **changes,
+                    )  # fmt: skip
+                    workflow_id = replaced.id
+                else:
+                    workflow = WorkflowRow(
+                        task_id=job.task_id,
+                        run_id=job.run_id,
+                        user_id=task.user_id if task else None,
+                        title=job.prompt,
+                        target_app=_app_of(job.target_url),
+                        target_url=job.target_url,
+                        status="verified",
+                        confidence=confidence,
+                        recording_path=recording_path,
+                        viewport=viewport,
+                    )
+                    workflow_id = await self._complete(s, job, workflow, steps, **changes)
         except _NotRunningError:
             return None  # the transaction rolled back, workflow included
         await self._committed(job.run_id, True)
@@ -247,42 +262,63 @@ class RunStore:
                 workflow = await s.get(WorkflowRow, job.source_workflow_id, with_for_update=True)
                 if workflow is None:
                     raise _NotRunningError  # deleted meanwhile: nothing to add a version to
-                parent, parent_revision = list(workflow.steps), workflow.revision
-                version = await add_workflow_version(
-                    s,
-                    workflow,
-                    rows,
-                    source="heal",
-                    status="pending_review" if needs_review else "current",
-                    run_id=job.run_id,
-                    confidence=confidence,
-                    recording_path=recording_path,
-                    viewport=viewport,
-                    change_summary=None,
-                )
-                diff = step_diff(parent, rows, old_rev=parent_revision, new_rev=version.revision)
-                version.change_summary = diff.model_dump(mode="json", by_alias=True, exclude_none=True)
-                row = await transition_run(
-                    s,
-                    job.run_id,
-                    to=RunStatus.VERIFIED,
-                    allowed_from=(RunStatus.RUNNING,),
-                    event_type="run.completed",
-                    event_data={
-                        "workflow_id": str(workflow.id),
-                        "verified_steps": len(rows),
-                        "failed_actions": 0,
-                    },
-                    finished_at=datetime.now(UTC),
-                    **changes,
-                )
-                if row is None:
-                    raise _NotRunningError
+                version = await self._add_version(
+                    s, job, workflow, rows, source="heal",
+                    status="pending_review" if needs_review else "current", created_by=None,
+                    confidence=confidence, recording_path=recording_path, viewport=viewport, **changes,
+                )  # fmt: skip
                 version_id = version.id
         except _NotRunningError:
             return None
         await self._committed(job.run_id, True)
         return version_id
+
+    async def _add_version(
+        self,
+        s: AsyncSession,
+        job: RunJob,
+        workflow: WorkflowRow,
+        rows: Sequence[WorkflowStepRow],
+        *,
+        source: str,
+        status: str,
+        created_by: UUID | None,
+        confidence: float,
+        recording_path: str | None,
+        viewport: dict[str, Any] | None,
+        **changes: Any,
+    ) -> WorkflowVersionRow:
+        """What the run did as the workflow's next version (with its step diff against the version it
+        replaces), and the run verified, naming the workflow. Raises _NotRunningError if the run stopped."""
+        parent, parent_revision = list(workflow.steps), workflow.revision
+        version = await add_workflow_version(
+            s,
+            workflow,
+            rows,
+            source=source,
+            status=status,
+            run_id=job.run_id,
+            confidence=confidence,
+            recording_path=recording_path,
+            viewport=viewport,
+            change_summary=None,
+            created_by=created_by,
+        )
+        diff = step_diff(parent, rows, old_rev=parent_revision, new_rev=version.revision)
+        version.change_summary = diff.model_dump(mode="json", by_alias=True, exclude_none=True)
+        row = await transition_run(
+            s,
+            job.run_id,
+            to=RunStatus.VERIFIED,
+            allowed_from=(RunStatus.RUNNING,),
+            event_type="run.completed",
+            event_data={"workflow_id": str(workflow.id), "verified_steps": len(rows), "failed_actions": 0},
+            finished_at=datetime.now(UTC),
+            **changes,
+        )
+        if row is None:
+            raise _NotRunningError
+        return version
 
     async def _complete(
         self,
