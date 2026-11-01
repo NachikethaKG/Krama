@@ -1,0 +1,4 @@
+{"threads": "default", "n": 15, "p50_ms": 907, "p90_ms": 3077, "max_ms": 3347}
+{"threads": "1", "n": 15, "p50_ms": 366, "p90_ms": 3599, "max_ms": 3913}
+{"threads": "2", "n": 15, "p50_ms": 232, "p90_ms": 1626, "max_ms": 2064}
+{"threads": "4", "n": 15, "p50_ms": 146, "p90_ms": 1713, "max_ms": 1923}

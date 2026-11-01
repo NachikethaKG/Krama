@@ -1,0 +1,79 @@
+{
+ "seconds": 60,
+ "fps": 30,
+ "audio_kbps": 96,
+ "rows": [
+  {
+   "preset_name": "16:9 1080p",
+   "size": "1920x1080",
+   "crf": 18,
+   "preset": "medium",
+   "mb_per_min": 5.16,
+   "encode_s_per_min": 7.0,
+   "realtime_x": 8.6
+  },
+  {
+   "preset_name": "16:9 1080p",
+   "size": "1920x1080",
+   "crf": 23,
+   "preset": "medium",
+   "mb_per_min": 3.43,
+   "encode_s_per_min": 6.8,
+   "realtime_x": 8.8
+  },
+  {
+   "preset_name": "16:9 1080p",
+   "size": "1920x1080",
+   "crf": 23,
+   "preset": "veryfast",
+   "mb_per_min": 3.21,
+   "encode_s_per_min": 4.7,
+   "realtime_x": 12.9
+  },
+  {
+   "preset_name": "16:9 1080p",
+   "size": "1920x1080",
+   "crf": 28,
+   "preset": "medium",
+   "mb_per_min": 2.5,
+   "encode_s_per_min": 6.5,
+   "realtime_x": 9.2
+  },
+  {
+   "preset_name": "16:9 720p",
+   "size": "1280x720",
+   "crf": 18,
+   "preset": "medium",
+   "mb_per_min": 3.41,
+   "encode_s_per_min": 4.4,
+   "realtime_x": 13.6
+  },
+  {
+   "preset_name": "16:9 720p",
+   "size": "1280x720",
+   "crf": 23,
+   "preset": "medium",
+   "mb_per_min": 2.38,
+   "encode_s_per_min": 4.3,
+   "realtime_x": 13.9
+  },
+  {
+   "preset_name": "9:16 1080x1920",
+   "size": "1080x1920",
+   "crf": 18,
+   "preset": "medium",
+   "mb_per_min": 3.47,
+   "encode_s_per_min": 8.0,
+   "realtime_x": 7.5
+  },
+  {
+   "preset_name": "9:16 1080x1920",
+   "size": "1080x1920",
+   "crf": 23,
+   "preset": "medium",
+   "mb_per_min": 2.43,
+   "encode_s_per_min": 7.8,
+   "realtime_x": 7.7
+  }
+ ]
+}

@@ -1,0 +1,104 @@
+Click "Create Repository" to create the repository.
+Click "New Repository" to open the repository creation page.
+Click "Update Settings".
+Click Create Repository to create the repository.
+Click on the New Repository link to navigate to the repository creation page.
+Click the Create Repository button to finalize repository creation.
+Click the Create Repository button.
+Click the New Repository link.
+Click “Comment”.
+Click “Commit Changes”.
+Click “Create Issue”.
+Click “Create Repository”.
+Click “Create repository”.
+Click “Create”.
+Click “Edit repository metadata”.
+Click “New Repository”.
+Click “New branch”.
+Click “New label”.
+Enter "krama-scroll-9d7902" into the repository name field.
+Enter demo-repo-56623 into the Repository Name field.
+Enter e2e-mvayq2a03tkx into the Repository Name field.
+Enter krama-live-383cce into the Repository Name field.
+Enter krama-live-b22c5c into the repository name field.
+Enter my-test-1 into the repository name input.
+Enter the repository name.
+Enter “Bug: fix login” in “Add a title”.
+Enter “First note” in “Editor content”.
+Enter “Live stream check” in “Title”.
+Enter “Login page shows a blank screen” in “Title”.
+Enter “Reproduced on the latest build.” in “Leave a comment”.
+Enter “Survives an API restart” in “Title”.
+Enter “Vishwas” in “Repository Name”.
+Enter “krama-scroll-daa7be” in “Repository Name”.
+Enter “my-new-repo” in “Repository Name”.
+Enter “notes.md” in “Name your file…”.
+Enter “test-repo” in “Repository Name”.
+Go to the "Branches" page for the "bench-branches" repository.
+Go to the "Branches" page.
+Go to the "Issue #1" page.
+Go to the "Labels" page.
+Go to the "New File" page for the "main" branch.
+Go to the "New File" page for the main branch.
+Go to the "New Issue" page for "bench-issues".
+Go to the "New Issue" page.
+Go to the "New file" page for the "feature-docs" branch.
+Go to the "New file" page for the "main" branch.
+Go to the "New file" page for the main branch.
+Go to the "New repository" page for the "krama-bench" organization.
+Go to the "New repository" page for the krama-bench organization.
+Go to the "Repository Settings" page.
+Go to the "Repository settings" page.
+Go to the "Settings" page.
+Go to the "bench-branches" page.
+Go to the "bench-branches" repository page.
+Go to the "bench-cover" repository page.
+Go to the "bench-files" page.
+Go to the "bench-files" repository page.
+Go to the "bench-issues" page.
+Go to the "bench-issues" repository page.
+Go to the "bench-settings repository settings" page.
+Go to the "bench-settings settings" page.
+Go to the "bench-settings" page.
+Go to the "bench-settings" repository settings page.
+Go to the "bench-sse" repository page.
+Go to the "demo/bench-branches" page.
+Go to the "demo/bench-files" page.
+Go to the "demo/bench-files" repository page.
+Go to the "demo/bench-issues" page.
+Go to the "demo/bench-settings" page.
+Go to the "demo/bench-settings/settings" page.
+Go to the "krama-bench/bench-settings" page.
+Go to the “Branches” page.
+Go to the “Labels” page.
+Go to the “New File” page.
+Go to the “New Issue” page.
+Go to the “New Repository” page.
+Go to the “New file” page.
+Go to the “New issue” page.
+Go to the “Repository” page.
+Go to the “Settings” page.
+Go to the “krama-bench/bench-settings” page.
+In the “Commit changes” dialog, click “Commit changes”.
+In the “Create a branch” dialog, click “Create new branch”.
+In the “Create a branch” dialog, enter your new branch name, for example “feature-branch-9245”.
+In the “Create a branch” dialog, enter “feature-8298” in “New branch name”.
+In the “Create a branch” dialog, enter “feature-docs” in “New branch name”.
+In the “Create new branch” dialog, click “Confirm”.
+In the “Create new branch” dialog, enter “feature-docs” in “Branch Name”.
+In the “Edit repository details” dialog, click “Save changes”.
+In the “Edit repository details” dialog, enter “Docs for the team” in “Description”.
+In the “New label” dialog, click “Create label”.
+In the “New label” dialog, enter “#d73a4a” in “Color”.
+In the “New label” dialog, enter “Docs are missing” in “Description”.
+In the “New label” dialog, enter “needs-docs” in “Name”.
+Navigate to the repository creation page.
+Select the “Initialize Repository (Adds .gitignore, License and README)” checkbox.
+Under “Basic Settings”, click “Update Settings”.
+Under “Basic Settings”, enter “Docs for the team” in “Description”.
+Under “Creating a new file in bench-files”, click “Commit changes...”.
+Under “Default Branch”, click “Create new branch from "main"”.
+Under “Default Branch”, click “Create new branch from main”.
+Under “Default Branch”, click “Create new branch from”.
+Under “General”, enter “bench-new” in “Repository name”.
+Wait for the page to update.

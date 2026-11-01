@@ -1,0 +1,153 @@
+# English Piper voices: dataset + license lines from each MODEL_CARD, rhasspy/piper-voices @ b4e358ffcb232591bf73a540e70f7de528e4174a (fetched 2026-11-01)
+== en/en_GB/alan/low/MODEL_CARD
+* URL: https://github.com/MycroftAI/mimic3-voices/blob/master/voices/en_UK/apope_low
+* License: See URL
+Finetuned from U.S. English Ryan voice (low quality).
+== en/en_GB/alan/medium/MODEL_CARD
+* URL: https://github.com/MycroftAI/mimic3-voices/blob/master/voices/en_UK/apope_low
+* License: See URL
+Finetuned from U.S. English lessac voice (medium quality).
+== en/en_GB/alba/medium/MODEL_CARD
+* URL: https://datashare.ed.ac.uk/handle/10283/3270
+* License: https://creativecommons.org/licenses/by/4.0/
+Finetuned from U.S. English lessac voice (medium quality).
+== en/en_GB/aru/medium/MODEL_CARD
+* URL: https://www.liverpool.ac.uk/architecture/research/acoustics-research-unit/speech-corpus/
+* License: https://creativecommons.org/licenses/by/4.0/
+Finetuned from U.S. English lessac voice (medium quality).
+== en/en_GB/cori/high/MODEL_CARD
+* URL: https://librivox.org
+* License: public domain
+UK English female voice. Single Speaker. Trained from scratch on high quality settings for 500 epochs. I put together the dataset, which ended up with about 24 hours of recordings. All recordings came from LibriVox.org.
+== en/en_GB/cori/medium/MODEL_CARD
+* URL: https://librivox.org
+* License: public domain
+UK English female voice. Single Speaker. Trained from scratch on medium quality settings for 640 epochs. I put together the dataset, which ended up with about 24 hours of recordings. All recordings came from LibriVox.org.
+== en/en_GB/jenny_dioco/medium/MODEL_CARD
+* URL: https://github.com/dioco-group/jenny-tts-dataset
+* License: See URL
+Finetuned from U.S. English lessac voice (medium quality).
+== en/en_GB/northern_english_male/medium/MODEL_CARD
+* URL: http://www.openslr.org/83/
+* License: CC-BY-SA 4.0 International
+Finetuned from U.S. English lessac voice (medium quality).
+== en/en_GB/semaine/medium/MODEL_CARD
+* URL: https://github.com/marytts/dfki-semaine-data
+* License: http://creativecommons.org/licenses/by-nc-sa/4.0/
+Finetuned from U.S. English lessac voice (medium quality).
+== en/en_GB/southern_english_female/low/MODEL_CARD
+* URL: http://www.openslr.org/83/
+* License: CC-BY-SA 4.0 International
+Finetuned from U.S. English Ryan voice (low quality).
+== en/en_GB/vctk/medium/MODEL_CARD
+* URL: https://datashare.ed.ac.uk/handle/10283/3443
+* License: https://creativecommons.org/licenses/by/4.0/
+Finetuned from U.S. English lessac voice (medium quality).
+== en/en_US/amy/low/MODEL_CARD
+* URL: https://github.com/MycroftAI/mimic3-voices
+* License: See URL
+Finetuned from U.S. English Ryan voice (low quality).
+== en/en_US/amy/medium/MODEL_CARD
+* URL: https://github.com/MycroftAI/mimic3-voices
+* License: See URL
+Finetuned from U.S. English lessac voice (medium quality).
+== en/en_US/arctic/medium/MODEL_CARD
+* URL: http://www.festvox.org/cmu_arctic/
+* License: See LICENSE file
+Finetuned from U.S. English lessac voice (medium quality).
+== en/en_US/bryce/medium/MODEL_CARD
+* License: public domain
+US English male voice. Single Speaker. Finetuned for an additional 1000 epochs from an unreleased voice which had 2500 epochs. This is my voice, I only recorded about 750 samples.
+== en/en_US/danny/low/MODEL_CARD
+* URL: https://github.com/MycroftAI/mimic3-voices
+* License: See URL
+Finetuned from U.S. English Ryan voice (low quality).
+== en/en_US/hfc_female/medium/MODEL_CARD
+* URL: https://ast-astrec.nict.go.jp/en/release/hi-fi-captain/
+* License: https://creativecommons.org/licenses/by-nc-sa/4.0/deed.en
+Finetuned from U.S. English lessac voice (medium quality).
+== en/en_US/hfc_male/medium/MODEL_CARD
+* URL: https://ast-astrec.nict.go.jp/en/release/hi-fi-captain/
+* License: https://creativecommons.org/licenses/by-nc-sa/4.0/deed.en
+Finetuned from U.S. English lessac voice (medium quality).
+== en/en_US/joe/medium/MODEL_CARD
+* URL: https://github.com/OHF-Voice/voice-datasets
+* License: CC0
+Finetuned from U.S. English lessac voice (medium quality).
+== en/en_US/john/medium/MODEL_CARD
+* URL: https://librivox.org
+* License: public domain
+US English male voice. Single Speaker. Finetuned from Kristin (above) on medium quality settings for an additional 600 epochs. I put together the dataset, which ended up with about 12.5 hours of recordings. All recordings came from LibriVox.org.
+== en/en_US/kathleen/low/MODEL_CARD
+* URL: https://github.com/rhasspy/dataset-voice-kathleen
+* License: CC0
+Finetuned from U.S. English Ryan voice (low quality).
+== en/en_US/kristin/medium/MODEL_CARD
+* URL: https://librivox.org
+* License: public domain
+US English female voice. Single Speaker. Trained from scratch on medium quality settings for 2000 epochs. I put together the dataset, which ended up with about 11.5 hours of recordings. All recordings came from LibriVox.org.
+== en/en_US/kusal/medium/MODEL_CARD
+* URL: https://github.com/MycroftAI/mimic2
+* License: See URL
+Finetuned from U.S. English lessac voice (medium quality).
+== en/en_US/l2arctic/medium/MODEL_CARD
+* URL: https://www.isca-speech.org/archive/interspeech_2018/zhao18b_interspeech.html
+* License: https://creativecommons.org/licenses/by-nc/4.0/
+Finetuned from U.S. English lessac voice (medium quality).
+== en/en_US/lessac/high/MODEL_CARD
+* URL: https://www.cstr.ed.ac.uk/projects/blizzard/2013/lessac_blizzard2013/
+* License: https://www.cstr.ed.ac.uk/projects/blizzard/2013/lessac_blizzard2013/license.html
+Trained from scratch.
+== en/en_US/lessac/low/MODEL_CARD
+* URL: https://www.cstr.ed.ac.uk/projects/blizzard/2013/lessac_blizzard2013/
+* License: https://www.cstr.ed.ac.uk/projects/blizzard/2013/lessac_blizzard2013/license.html
+Trained from scratch.
+== en/en_US/lessac/medium/MODEL_CARD
+* URL: https://www.cstr.ed.ac.uk/projects/blizzard/2013/lessac_blizzard2013/
+* License: https://www.cstr.ed.ac.uk/projects/blizzard/2013/lessac_blizzard2013/license.html
+Trained from scratch.
+== en/en_US/libritts/high/MODEL_CARD
+* URL: http://www.openslr.org/60/
+* License: CC BY 4.0
+Trained from scratch on train-clean-360.
+== en/en_US/libritts_r/medium/MODEL_CARD
+* URL: http://www.openslr.org/141/
+* License: CC BY 4.0
+Fine-tuned from English lessac medium on train-clean-360.
+== en/en_US/ljspeech/high/MODEL_CARD
+* URL: https://keithito.com/LJ-Speech-Dataset/
+* License: public domain
+US English female voice. Single speaker. Trained from scratch for 1000 epochs on medium quality settings using the LJ Speech dataset. I reencoded the recordings to a bit rate of 22500 Hz so it would match other voices released for Piper TTS.
+== en/en_US/ljspeech/medium/MODEL_CARD
+* URL: https://keithito.com/LJ-Speech-Dataset/
+* License: public domain
+US English female voice. Single speaker. Trained from scratch for 1000 epochs on medium quality settings using the LJ Speech dataset. I reencoded the recordings to a bit rate of 22500 Hz so it would match other voices released for Piper TTS.
+== en/en_US/mike/medium/MODEL_CARD
+* URL: https://github.com/OHF-Voice/voice-datasets
+* License: CC0
+Finetuned from U.S. English lessac voice (medium quality).
+== en/en_US/norman/medium/MODEL_CARD
+* URL: https://librivox.org
+* License: public domain
+US English male voice. Single Speaker. Trained from scratch on medium quality settings for 1200 epochs. I put together the dataset, which ended up with about 15.5 hours of recordings. All recordings came from LibriVox.org. I forgot to save the ckpt file on this one, sorry.
+== en/en_US/reza_ibrahim/medium/MODEL_CARD
+* URL: https://huggingface.co/datasets/mah92/Hedayatfar-Persian-Quran-Audio-Dataset
+* URL2: https://huggingface.co/datasets/mah92/Ibrahim-Walk-English-Quran-Audio-Dataset
+* License: CC0
+Finetuned from U.S. English lessac voice (medium quality).
+== en/en_US/ryan/high/MODEL_CARD
+* URL: https://www.kaggle.com/datasets/roholazandie/ryanspeech
+* License: CC BY-NC-SA 4.0
+Trained from scratch.
+== en/en_US/ryan/low/MODEL_CARD
+* URL: https://www.kaggle.com/datasets/roholazandie/ryanspeech
+* License: CC BY-NC-SA 4.0
+Trained from scratch.
+== en/en_US/ryan/medium/MODEL_CARD
+* URL: https://www.kaggle.com/datasets/roholazandie/ryanspeech
+* License: CC BY-NC-SA 4.0
+Finetuned from U.S. English lessac voice (medium quality).
+== en/en_US/sam/medium/MODEL_CARD
+* URL: https://github.com/Sam-Accenture-Non-Binary-Voice/non-binary-voice-files
+* License: https://www.apache.org/licenses/LICENSE-2.0.txt
+Finetuned from U.S. English lessac voice (medium quality).
