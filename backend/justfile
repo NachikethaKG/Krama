@@ -14,6 +14,11 @@ dev:
 worker:
     uv run krama worker
 
+# Narration for video export (#120): the Piper worker's own venv (GPL, docs/adr/0004) + the voice (64 MB)
+tts-setup:
+    uv sync --project tts-worker --frozen
+    uv run --project tts-worker --frozen python -m piper.download_voices --data-dir ../data/tts/voices en_US-ljspeech-medium
+
 # Apply all database migrations (Postgres from `just up`; DATABASE_URL in the repo-root .env)
 migrate:
     uv run alembic upgrade head

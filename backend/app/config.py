@@ -5,7 +5,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
-from pydantic import SecretStr, field_validator
+from pydantic import Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -63,6 +63,14 @@ class Settings(BaseSettings):
     krama_demo_password: SecretStr = SecretStr("")
 
     artifacts_dir: Path = REPO_ROOT / "data" / "artifacts"
+
+    # Narration for video export (#120, docs/adr/0004): Piper runs in backend/tts-worker (GPL, own venv) as a
+    # subprocess. `just backend tts-setup` installs it and downloads the voice into tts_voices_dir.
+    tts_voice: str = "en_US-ljspeech-medium"
+    tts_voices_dir: Path = REPO_ROOT / "data" / "tts" / "voices"
+    tts_worker_dir: Path = REPO_ROOT / "backend" / "tts-worker"
+    # onnxruntime threads in the worker. The default (one per core) stalls while Chromium or Remotion run.
+    tts_threads: int = Field(default=2, ge=1, le=16)
     # Written by the benchmark reporter, served by GET /metrics/summary (#102).
     metrics_summary_path: Path = REPO_ROOT / "benchmarks" / "results" / "summary.json"
     max_concurrent_runs: int = 1
@@ -74,7 +82,9 @@ class Settings(BaseSettings):
     def gemini_model_list(self) -> list[str]:
         return [m.strip() for m in self.gemini_models.split(",") if m.strip()]
 
-    @field_validator("artifacts_dir", "sessions_dir", "metrics_summary_path")
+    @field_validator(
+        "artifacts_dir", "sessions_dir", "metrics_summary_path", "tts_voices_dir", "tts_worker_dir"
+    )
     @classmethod
     def _relative_to_repo_root(cls, v: Path) -> Path:
         # `.env` paths like ./data/artifacts mean the repo root, not whatever folder the process started in.
