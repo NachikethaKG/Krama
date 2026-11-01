@@ -4,8 +4,16 @@ Changing anything here is a contract change: both owners review. Implementations
 other's modules; they only depend on these protocols and their value types.
 """
 
-from app.ports.artifacts import ArtifactStore
+from app.ports.artifacts import ArtifactFiles, ArtifactStore
+from app.ports.exports import (
+    ExportJobInput,
+    ExportNotFoundError,
+    ExportQueue,
+    ExportStateError,
+    ExportStore,
+)
 from app.ports.models import (
+    ArtifactInfo,
     ArtifactNotFoundError,
     ArtifactRef,
     InvalidArtifactKeyError,
@@ -32,9 +40,16 @@ from app.ports.observer import Observer
 from app.ports.policy import Policy
 
 __all__ = [
+    "ArtifactFiles",
+    "ArtifactInfo",
     "ArtifactNotFoundError",
     "ArtifactRef",
     "ArtifactStore",
+    "ExportJobInput",
+    "ExportNotFoundError",
+    "ExportQueue",
+    "ExportStateError",
+    "ExportStore",
     "InvalidArtifactKeyError",
     "NarrationClip",
     "NarrationError",
