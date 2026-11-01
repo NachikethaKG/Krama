@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "task.schema.json",
   "title": "Task",
-  "$comment": "v1.0. A user's request, interpreted and turned into a plan (docs/api-contract.md: /tasks).",
+  "$comment": "v1.1. A user's request, interpreted and turned into a plan (docs/api-contract.md: /tasks).",
   "type": "object",
   "required": ["id", "prompt", "target_url", "status", "created_at"],
   "additionalProperties": false,
@@ -16,6 +16,11 @@
     },
     "clarification_question": { "type": ["string", "null"] },
     "plan_id": { "type": ["string", "null"], "format": "uuid" },
+    "regenerates_workflow_id": {
+      "type": ["string", "null"],
+      "format": "uuid",
+      "description": "Set by POST /workflows/{id}/regenerate: this task re-plans that workflow's task, and its verified run becomes the workflow's next version instead of a new workflow."
+    },
     "error": {
       "oneOf": [{ "$ref": "common.schema.json#/$defs/ApiError" }, { "type": "null" }]
     },

@@ -52,5 +52,11 @@ class Task(BaseModel):
     interpretation: Interpretation | None = None
     clarification_question: str | None = None
     plan_id: UUID | None = None
+    regenerates_workflow_id: Annotated[
+        UUID | None,
+        Field(
+            description="Set by POST /workflows/{id}/regenerate: this task re-plans that workflow's task, and its verified run becomes the workflow's next version instead of a new workflow."
+        ),
+    ] = None
     error: common_schema.ApiError | None = None
     created_at: AwareDatetime

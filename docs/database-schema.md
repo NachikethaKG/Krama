@@ -18,6 +18,7 @@ PostgreSQL 16. All ids are UUID, timestamps are `timestamptz` (UTC), and every t
 | interpretation | jsonb | `{app, goal, parameters}` |
 | clarification_question | text null | |
 | error | jsonb null | |
+| regenerates_workflow_id | uuid fk → workflows, null | Phase 4 (#113): this task re-plans that workflow; its verified run becomes the workflow's next version |
 
 ### `plans`
 | column | type | notes |
