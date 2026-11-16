@@ -36,14 +36,14 @@ export function RunPagination({
       aria-label="Pagination Navigation"
       className={`flex flex-col sm:flex-row items-center justify-between gap-4 py-4 px-2 ${className}`}
     >
-      <div data-testid="pagination-info" className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400">
+      <div data-testid="pagination-info" className="text-xs sm:text-sm text-ink-400">
         {itemCount === 0 ? (
           <span>No runs to display</span>
         ) : (
           <span>
-            Showing <span className="font-medium text-zinc-900 dark:text-zinc-100">{startItem}</span> to{" "}
-            <span className="font-medium text-zinc-900 dark:text-zinc-100">{endItem}</span> (Page{" "}
-            <span data-testid="current-page-num" className="font-semibold text-zinc-900 dark:text-zinc-100">
+            Showing <span className="font-medium text-white">{startItem}</span> to{" "}
+            <span className="font-medium text-white">{endItem}</span> (Page{" "}
+            <span data-testid="current-page-num" className="font-semibold text-white">
               {page}
             </span>
             {hasNext ? ", older runs available" : ", oldest runs"})
@@ -58,7 +58,7 @@ export function RunPagination({
           aria-label="Newer runs"
           disabled={!hasPrevious || disabled}
           onClick={onPrevious}
-          className="inline-flex items-center justify-center px-3 py-1.5 text-xs sm:text-sm font-medium rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-750 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          className="kr-btn kr-btn-ghost kr-run px-4 py-1.5 text-xs sm:text-sm"
         >
           &larr; Newer
         </button>
@@ -66,7 +66,7 @@ export function RunPagination({
         <span
           data-testid="pagination-current-page"
           aria-current="page"
-          className="px-3 py-1.5 text-xs sm:text-sm font-semibold rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 min-w-8 text-center"
+          className="min-w-9 rounded-full bg-run px-3 py-1.5 text-center font-mono text-xs font-extrabold text-ink-950 shadow-[0_0_18px_-4px_var(--run)] sm:text-sm"
         >
           {page}
         </span>
@@ -77,7 +77,7 @@ export function RunPagination({
           aria-label="Older runs"
           disabled={!hasNext || disabled}
           onClick={onNext}
-          className="inline-flex items-center justify-center px-3 py-1.5 text-xs sm:text-sm font-medium rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-750 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          className="kr-btn kr-btn-ghost kr-run px-4 py-1.5 text-xs sm:text-sm"
         >
           Older &rarr;
         </button>

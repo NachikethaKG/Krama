@@ -4,7 +4,9 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import type { RunListItem } from "@/lib/types";
+import { BarChart3, RefreshCw } from "lucide-react";
 import { RunListTable, RunPagination } from "@/components/runs";
+import { PageHero } from "@/components/ui";
 
 const PAGE_SIZE = 20;
 
@@ -61,41 +63,35 @@ export default function RunsPage() {
   };
 
   return (
-    <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-4 py-10">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">Runs</h1>
-          <p className="mt-1 text-xs sm:text-sm text-zinc-600 dark:text-zinc-400">
-            Every time Krama did a task for you, with what it checked at each step.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            data-testid="refresh-runs-button"
-            onClick={handleRefresh}
-            disabled={isLoading}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-750 disabled:opacity-50 transition-colors"
-          >
-            <svg
-              className={`size-3.5 ${isLoading ? "animate-spin" : ""}`}
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+    <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-4 py-10 sm:px-6">
+      <PageHero
+        stage="run"
+        eyebrow="Run history"
+        title="Runs"
+        subtitle="Every time Krama did a task for you, with what it checked at each step."
+        actions={
+          <>
+            <button
+              type="button"
+              data-testid="refresh-runs-button"
+              onClick={handleRefresh}
+              disabled={isLoading}
+              className="kr-btn kr-btn-ghost kr-run px-4 py-2 text-xs"
             >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-            Refresh
-          </button>
-          <Link
-            href="/dashboard/metrics"
-            data-testid="nav-technical-metrics"
-            className="px-3 py-1.5 text-xs font-medium text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
-          >
-            Benchmark metrics
-          </Link>
-        </div>
-      </div>
+              <RefreshCw aria-hidden="true" className={`size-3.5 ${isLoading ? "animate-spin" : ""}`} />
+              Refresh
+            </button>
+            <Link
+              href="/dashboard/metrics"
+              data-testid="nav-technical-metrics"
+              className="kr-btn kr-btn-ghost kr-plan px-4 py-2 text-xs"
+            >
+              <BarChart3 aria-hidden="true" className="size-3.5 text-plan" />
+              Benchmark metrics
+            </Link>
+          </>
+        }
+      />
 
       <RunListTable
         runs={runs}
