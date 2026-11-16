@@ -1,3 +1,5 @@
+import { ExternalLink, Globe, ListChecks, Sparkles } from "lucide-react";
+
 export interface TaskHeaderProps {
   prompt: string;
   targetUrl?: string | null;
@@ -7,60 +9,70 @@ export interface TaskHeaderProps {
   className?: string;
 }
 
-export function TaskHeader({
-  prompt,
-  targetUrl,
-  title,
-  targetApp,
-  status,
-  className = "",
-}: TaskHeaderProps) {
+// The plan status wears the stage it belongs to: proposed = plan amber, approved = approve violet, rejected = coral.
+const STATUS_TONE: Record<string, string> = {
+  proposed: "kr-plan",
+  draft: "kr-plan",
+  approved: "kr-approve",
+  executing: "kr-run",
+  rejected: "kr-danger",
+  cancelled: "kr-danger",
+};
+
+export function TaskHeader({ prompt, targetUrl, title, targetApp, status, className = "" }: TaskHeaderProps) {
   return (
     <header
       data-testid="task-header"
-      className={`rounded-xl border border-zinc-200 bg-white p-6 shadow-xs dark:border-zinc-800 dark:bg-zinc-900 ${className}`}
+      className={`kr-plan kr-tone-card relative overflow-hidden rounded-[2rem] p-6 sm:p-8 ${className}`}
     >
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex flex-col gap-1.5">
+      {/* amber -> violet glow: the plan is waiting for approval */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -right-20 -top-24 size-72 rounded-full opacity-40 blur-3xl"
+        style={{ background: "radial-gradient(circle, var(--approve), transparent 70%)" }}
+      />
+      <div className="relative flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex flex-col gap-3">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-md bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
+            <span className="kr-chip kr-plan">
+              <ListChecks aria-hidden="true" className="size-3.5" />
               Workflow Plan
             </span>
             {targetApp && (
-              <span className="rounded-md bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-400">
+              <span className="kr-chip kr-run">
+                <Globe aria-hidden="true" className="size-3.5" />
                 {targetApp}
               </span>
             )}
             {status && (
               <span
                 data-testid="workflow-status-badge"
-                className="rounded-md bg-zinc-100 px-2 py-0.5 text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
+                className={`kr-chip ${STATUS_TONE[status] ?? "kr-approve"} uppercase tracking-widest`}
               >
                 {status}
               </span>
             )}
           </div>
-          <h1 className="text-xl font-semibold tracking-tight text-zinc-900 sm:text-2xl dark:text-zinc-100">
+          <h1 className="kr-display text-3xl font-extrabold leading-tight text-white sm:text-4xl">
             {title || "Here's the plan"}
           </h1>
         </div>
       </div>
 
-      <div className="mt-5 grid grid-cols-1 gap-4 border-t border-zinc-100 pt-4 sm:grid-cols-2 dark:border-zinc-800">
-        <div className="flex flex-col gap-1">
-          <span className="text-xs font-medium text-zinc-500 uppercase tracking-wider dark:text-zinc-400">
+      <div className="relative mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="flex flex-col gap-1.5 rounded-2xl border border-white/10 bg-ink-950/50 p-4">
+          <span className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-ask">
+            <Sparkles aria-hidden="true" className="size-3.5" />
             Task Prompt
           </span>
-          <p
-            data-testid="task-prompt"
-            className="text-sm font-medium text-zinc-800 dark:text-zinc-200"
-          >
+          <p data-testid="task-prompt" className="text-sm font-medium text-white">
             {prompt}
           </p>
         </div>
 
-        <div className="flex flex-col gap-1">
-          <span className="text-xs font-medium text-zinc-500 uppercase tracking-wider dark:text-zinc-400">
+        <div className="flex flex-col gap-1.5 rounded-2xl border border-white/10 bg-ink-950/50 p-4">
+          <span className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-run">
+            <Globe aria-hidden="true" className="size-3.5" />
             Target System URL
           </span>
           {targetUrl ? (
@@ -69,29 +81,13 @@ export function TaskHeader({
               href={targetUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-sm font-mono text-blue-600 hover:underline dark:text-blue-400"
+              className="inline-flex items-center gap-1.5 font-mono text-sm text-run hover:text-white hover:underline"
             >
               <span>{targetUrl}</span>
-              <svg
-                aria-hidden="true"
-                className="size-3.5"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={2}
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"
-                />
-              </svg>
+              <ExternalLink aria-hidden="true" className="size-3.5" />
             </a>
           ) : (
-            <span
-              data-testid="target-url"
-              className="text-sm text-zinc-400 italic dark:text-zinc-500"
-            >
+            <span data-testid="target-url" className="text-sm italic text-ink-400">
               No target URL configured
             </span>
           )}
