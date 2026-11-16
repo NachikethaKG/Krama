@@ -53,7 +53,7 @@ export function RunStatusBanners({
         className={`kr-plan kr-tone-card flex flex-col gap-3 rounded-3xl p-5 ${className}`}
       >
         <div className="flex items-start gap-3">
-          <div className="kr-dot-live mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-2xl bg-plan text-ink-950 shadow-[0_0_24px_-4px_var(--plan)]">
+          <div className="kr-dot-live mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-2xl bg-plan text-oncolor shadow-[0_0_24px_-4px_var(--plan)]">
             <svg
               className="size-5"
               fill="none"
@@ -121,7 +121,7 @@ export function RunStatusBanners({
         className={`kr-danger kr-tone-card flex flex-col gap-3 rounded-3xl p-5 ${className}`}
       >
         <div className="flex items-start gap-3">
-          <div className="mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-2xl bg-danger text-ink-950 shadow-[0_0_24px_-4px_var(--danger)]">
+          <div className="mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-2xl bg-danger text-oncolor shadow-[0_0_24px_-4px_var(--danger)]">
             <svg
               className="size-5"
               fill="none"
@@ -192,7 +192,7 @@ export function RunStatusBanners({
         className={`kr-spectrum-border kr-verify flex flex-col justify-between gap-3 rounded-3xl bg-ink-900/85 p-5 sm:flex-row sm:items-center ${className}`}
       >
         <div className="flex items-center gap-3">
-          <div className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-verify text-ink-950 shadow-[0_0_24px_-4px_var(--verify)]">
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-verify text-oncolor shadow-[0_0_24px_-4px_var(--verify)]">
             <svg
               className="size-5"
               fill="none"

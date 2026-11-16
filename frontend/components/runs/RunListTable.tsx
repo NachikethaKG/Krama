@@ -76,7 +76,7 @@ export function RunListTable({
         data-testid="runs-empty-state"
         className="kr-run kr-tone-card flex flex-col items-center justify-center rounded-3xl border-dashed p-12 text-center"
       >
-        <div className="kr-float mb-3 flex size-14 items-center justify-center rounded-2xl bg-run text-ink-950 shadow-[0_0_30px_-4px_var(--run)]">
+        <div className="kr-float mb-3 flex size-14 items-center justify-center rounded-2xl bg-run text-oncolor shadow-[0_0_30px_-4px_var(--run)]">
           <svg className="size-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
           </svg>

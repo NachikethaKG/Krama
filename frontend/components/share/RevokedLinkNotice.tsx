@@ -17,7 +17,7 @@ export function RevokedLinkNotice({
     >
       <div className="kr-danger kr-tone-card kr-rise mx-auto flex max-w-md flex-col items-center rounded-[2rem] p-9">
         <div
-          className="kr-float mb-5 flex size-16 items-center justify-center rounded-2xl text-ink-950"
+          className="kr-float mb-5 flex size-16 items-center justify-center rounded-2xl text-oncolor"
           style={{ background: "var(--danger)", boxShadow: "0 0 40px -6px var(--danger)" }}
         >
           <Unlink aria-hidden="true" className="size-8" />

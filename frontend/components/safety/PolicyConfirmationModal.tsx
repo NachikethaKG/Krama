@@ -90,7 +90,7 @@ export function PolicyConfirmationModal({
         />
         {/* Header Icon & Title */}
         <div className="flex items-start gap-4">
-          <div className="kr-dot-live flex size-12 shrink-0 items-center justify-center rounded-2xl bg-danger text-ink-950">
+          <div className="kr-dot-live flex size-12 shrink-0 items-center justify-center rounded-2xl bg-danger text-oncolor">
             <svg
               aria-hidden="true"
               className="size-6"
@@ -129,7 +129,7 @@ export function PolicyConfirmationModal({
         <div className="mt-6 rounded-2xl border border-white/10 bg-ink-950/60 p-4">
           <div className="flex items-center justify-between gap-3 border-b border-white/10 pb-3">
             <div className="flex items-center gap-2">
-              <span className="flex size-7 items-center justify-center rounded-full bg-danger font-mono text-xs font-extrabold text-ink-950">
+              <span className="flex size-7 items-center justify-center rounded-full bg-danger font-mono text-xs font-extrabold text-oncolor">
                 {stepSeq}
               </span>
               <span className="text-xs font-bold uppercase tracking-widest text-ink-400">
@@ -175,7 +175,7 @@ export function PolicyConfirmationModal({
             </span>
             <span
               data-testid="policy-flag-badge"
-              className="rounded-full bg-plan px-2.5 py-0.5 font-mono text-[10px] font-extrabold tracking-wide text-ink-950"
+              className="rounded-full bg-plan px-2.5 py-0.5 font-mono text-[10px] font-extrabold tracking-wide text-oncolor"
             >
               {formattedReason}
             </span>

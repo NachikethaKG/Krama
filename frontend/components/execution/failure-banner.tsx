@@ -31,7 +31,7 @@ export function FailureBanner({
     >
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-start gap-3.5">
-          <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-danger text-ink-950 shadow-[0_0_26px_-4px_var(--danger)]">
+          <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-danger text-oncolor shadow-[0_0_26px_-4px_var(--danger)]">
             <svg
               className="size-5"
               fill="none"

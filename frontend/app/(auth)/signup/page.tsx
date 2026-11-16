@@ -11,7 +11,7 @@ export default function SignupPage() {
     <div className="kr-spectrum-border rounded-[2rem] bg-ink-900/85 px-6 py-9 backdrop-blur-xl sm:px-10">
       <div className="mb-6 text-center">
         <div
-          className="kr-float mx-auto mb-4 flex size-14 items-center justify-center rounded-2xl text-ink-950"
+          className="kr-float mx-auto mb-4 flex size-14 items-center justify-center rounded-2xl text-oncolor"
           style={{ background: "var(--plan)", boxShadow: "0 0 34px -4px var(--plan)" }}
         >
           <LockKeyhole aria-hidden="true" className="size-7" />

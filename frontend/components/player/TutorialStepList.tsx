@@ -104,7 +104,7 @@ export function TutorialStepList({
                     <div className="flex items-center gap-1.5">
                       {isActive && (
                         <span
-                          className="rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-ink-950"
+                          className="rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-oncolor"
                           style={{ background: color }}
                         >
                           Active

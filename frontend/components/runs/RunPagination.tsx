@@ -66,7 +66,7 @@ export function RunPagination({
         <span
           data-testid="pagination-current-page"
           aria-current="page"
-          className="min-w-9 rounded-full bg-run px-3 py-1.5 text-center font-mono text-xs font-extrabold text-ink-950 shadow-[0_0_18px_-4px_var(--run)] sm:text-sm"
+          className="min-w-9 rounded-full bg-run px-3 py-1.5 text-center font-mono text-xs font-extrabold text-oncolor shadow-[0_0_18px_-4px_var(--run)] sm:text-sm"
         >
           {page}
         </span>

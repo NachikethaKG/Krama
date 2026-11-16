@@ -379,7 +379,7 @@ function SiteLine({
           onClick={() => onChoose(option)}
           className={`rounded-full border px-3.5 py-1 text-xs font-bold transition-all ${
             site?.id === option.id
-              ? "border-approve bg-approve text-ink-950 shadow-[0_0_18px_-4px_var(--approve)]"
+              ? "border-approve bg-approve text-oncolor shadow-[0_0_18px_-4px_var(--approve)]"
               : "border-white/15 text-ink-300 hover:border-approve hover:text-white"
           }`}
         >

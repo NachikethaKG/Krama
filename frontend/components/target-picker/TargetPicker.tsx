@@ -159,7 +159,7 @@ export function TargetPicker({
                   style={
                     isSelected
                       ? { background: opt.color, color: "var(--ink-950)" }
-                      : { color: opt.color, background: "rgb(255 255 255 / 0.06)" }
+                      : { color: opt.color, background: "rgb(var(--fg-rgb) / 0.06)" }
                   }
                 >
                   {opt.badge}

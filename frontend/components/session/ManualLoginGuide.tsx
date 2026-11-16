@@ -132,7 +132,7 @@ export function ManualLoginGuide({
     >
       <div className="flex flex-col gap-3">
         <div className="flex items-start gap-3">
-          <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-approve text-ink-950 shadow-[0_0_22px_-4px_var(--approve)]">
+          <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-approve text-oncolor shadow-[0_0_22px_-4px_var(--approve)]">
             <svg
               className="size-4"
               fill="none"

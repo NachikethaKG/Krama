@@ -213,7 +213,7 @@ export function ApprovalControls({
               <>
                 <svg
                   aria-hidden="true"
-                  className="size-4 animate-spin text-ink-950"
+                  className="size-4 animate-spin text-oncolor"
                   fill="none"
                   viewBox="0 0 24 24"
                 >

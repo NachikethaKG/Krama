@@ -112,7 +112,7 @@ export function VerificationFailureCard({
       <div className="border-b border-danger/30 bg-gradient-to-r from-danger/25 via-learn/10 to-transparent p-4 sm:p-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-start gap-3">
-            <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-danger text-ink-950 shadow-[0_0_26px_-4px_var(--danger)]">
+            <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-danger text-oncolor shadow-[0_0_26px_-4px_var(--danger)]">
               <svg className="size-5" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
                 <path
                   strokeLinecap="round"
@@ -190,7 +190,7 @@ export function VerificationFailureCard({
               className="kr-verify kr-tone-card flex flex-col gap-2.5 rounded-2xl p-3.5 text-xs"
             >
               <div className="flex items-center gap-1.5 font-semibold text-verify">
-                <span className="flex size-4 items-center justify-center rounded-full bg-verify text-[10px] font-bold text-ink-950">
+                <span className="flex size-4 items-center justify-center rounded-full bg-verify text-[10px] font-bold text-oncolor">
                   ✓
                 </span>
                 <span className="text-xs font-bold uppercase tracking-wider">Expected State (X)</span>
@@ -278,7 +278,7 @@ export function VerificationFailureCard({
               className="kr-danger kr-tone-card flex flex-col gap-2.5 rounded-2xl p-3.5 text-xs"
             >
               <div className="flex items-center gap-1.5 font-semibold text-danger">
-                <span className="flex size-4 items-center justify-center rounded-full bg-danger text-[10px] font-bold text-ink-950">
+                <span className="flex size-4 items-center justify-center rounded-full bg-danger text-[10px] font-bold text-oncolor">
                   ✕
                 </span>
                 <span className="text-xs font-bold uppercase tracking-wider">Observed State (Y)</span>

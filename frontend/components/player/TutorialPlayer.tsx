@@ -193,7 +193,7 @@ export function TutorialPlayer({
             >
               <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-3">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="kr-display flex size-9 items-center justify-center rounded-xl text-base font-extrabold text-ink-950" style={{ background: "var(--kr-tone)", boxShadow: "0 0 22px -4px var(--kr-tone)" }}>
+                  <span className="kr-display flex size-9 items-center justify-center rounded-xl text-base font-extrabold text-oncolor" style={{ background: "var(--kr-tone)", boxShadow: "0 0 22px -4px var(--kr-tone)" }}>
                     {currentScene.step_seq}
                   </span>
                   <span className="kr-display text-lg font-bold text-white">
