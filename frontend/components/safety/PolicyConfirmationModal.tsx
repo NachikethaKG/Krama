@@ -70,7 +70,7 @@ export function PolicyConfirmationModal({
   return (
     <div
       role="presentation"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/60 backdrop-blur-xs pointer-events-none transition-opacity animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink-950/75 backdrop-blur-md pointer-events-none transition-opacity animate-in fade-in duration-200"
     >
       <div
         role="dialog"
@@ -80,11 +80,17 @@ export function PolicyConfirmationModal({
         data-testid="policy-confirmation-modal"
         ref={dialogRef}
         tabIndex={-1}
-        className={`pointer-events-auto relative w-full max-w-lg rounded-2xl border border-amber-300/80 bg-white p-6 shadow-2xl transition-all sm:p-7 dark:border-amber-700/80 dark:bg-zinc-900 ${className}`}
+        className={`kr-danger kr-tone-card kr-rise pointer-events-auto relative w-full max-w-lg overflow-hidden rounded-[2rem] bg-ink-900/95 p-6 pt-8 shadow-2xl backdrop-blur-2xl sm:p-8 sm:pt-9 ${className}`}
       >
+        {/* hazard stripe */}
+        <div
+          aria-hidden="true"
+          className="absolute inset-x-0 top-0 h-2"
+          style={{ background: "repeating-linear-gradient(-45deg, var(--danger) 0 12px, var(--plan) 12px 24px)" }}
+        />
         {/* Header Icon & Title */}
         <div className="flex items-start gap-4">
-          <div className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-amber-300 bg-amber-100 text-amber-800 dark:border-amber-700 dark:bg-amber-950/70 dark:text-amber-300">
+          <div className="kr-dot-live flex size-12 shrink-0 items-center justify-center rounded-2xl bg-danger text-ink-950">
             <svg
               aria-hidden="true"
               className="size-6"
@@ -105,28 +111,28 @@ export function PolicyConfirmationModal({
             <div className="flex flex-wrap items-center gap-2">
               <h2
                 id="policy-modal-title"
-                className="text-lg font-bold tracking-tight text-zinc-900 dark:text-zinc-50"
+                className="kr-display text-2xl font-extrabold text-white"
               >
                 Policy Confirmation Required
               </h2>
             </div>
             <p
               id="policy-modal-desc"
-              className="mt-1 text-xs text-zinc-600 dark:text-zinc-400"
+              className="mt-1 text-xs text-ink-300"
             >
-              Execution paused at <span className="font-semibold text-zinc-900 dark:text-zinc-200">Step {stepSeq}</span> awaiting explicit human authorization.
+              Execution paused at <span className="font-bold text-danger">Step {stepSeq}</span> awaiting explicit human authorization.
             </p>
           </div>
         </div>
 
         {/* Step Details & Risk Card */}
-        <div className="mt-5 rounded-xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-950/60">
-          <div className="flex items-center justify-between gap-3 border-b border-zinc-200/80 pb-3 dark:border-zinc-800/80">
+        <div className="mt-6 rounded-2xl border border-white/10 bg-ink-950/60 p-4">
+          <div className="flex items-center justify-between gap-3 border-b border-white/10 pb-3">
             <div className="flex items-center gap-2">
-              <span className="flex size-6 items-center justify-center rounded-full bg-indigo-100 font-mono text-xs font-bold text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
+              <span className="flex size-7 items-center justify-center rounded-full bg-danger font-mono text-xs font-extrabold text-ink-950">
                 {stepSeq}
               </span>
-              <span className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+              <span className="text-xs font-bold uppercase tracking-widest text-ink-400">
                 Target Step
               </span>
             </div>
@@ -135,24 +141,24 @@ export function PolicyConfirmationModal({
           </div>
 
           <div className="mt-3">
-            <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 leading-snug">
+            <p className="text-base font-semibold leading-snug text-white">
               {stepInstruction}
             </p>
 
             {(actionType || targetRole || targetName) && (
-              <div className="mt-2.5 flex flex-wrap items-center gap-1.5 font-mono text-[11px] text-zinc-600 dark:text-zinc-400">
+              <div className="mt-2.5 flex flex-wrap items-center gap-1.5 font-mono text-[11px] text-ink-300">
                 {actionType && (
-                  <span className="rounded bg-zinc-200/80 px-1.5 py-0.5 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-300">
+                  <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-ink-300">
                     action: {actionType}
                   </span>
                 )}
                 {targetRole && (
-                  <span className="rounded bg-zinc-200/80 px-1.5 py-0.5 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-300">
+                  <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-ink-300">
                     role: {targetRole}
                   </span>
                 )}
                 {targetName && (
-                  <span className="rounded bg-zinc-200/80 px-1.5 py-0.5 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-300">
+                  <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-ink-300">
                     target: &ldquo;{targetName}&rdquo;
                   </span>
                 )}
@@ -162,19 +168,19 @@ export function PolicyConfirmationModal({
         </div>
 
         {/* Explicit Policy Rationale & Safety Flag Callout */}
-        <div className="mt-4 rounded-xl border border-amber-200/80 bg-amber-50/80 p-3.5 dark:border-amber-900/60 dark:bg-amber-950/30">
+        <div className="kr-plan kr-tone-card mt-4 rounded-2xl p-3.5">
           <div className="flex items-center justify-between gap-2">
-            <span className="text-xs font-semibold text-amber-950 dark:text-amber-200">
+            <span className="text-xs font-bold uppercase tracking-wider text-plan">
               Safety Policy Flag
             </span>
             <span
               data-testid="policy-flag-badge"
-              className="rounded-md border border-amber-300 bg-amber-200/60 px-2 py-0.5 font-mono text-[10px] font-bold tracking-wide text-amber-900 dark:border-amber-700 dark:bg-amber-900/60 dark:text-amber-200"
+              className="rounded-full bg-plan px-2.5 py-0.5 font-mono text-[10px] font-extrabold tracking-wide text-ink-950"
             >
               {formattedReason}
             </span>
           </div>
-          <p className="mt-1 text-xs text-amber-900/90 leading-relaxed dark:text-amber-300/90">
+          <p className="mt-1.5 text-xs leading-relaxed text-ink-300">
             {explicitRationale}
           </p>
         </div>
@@ -186,11 +192,11 @@ export function PolicyConfirmationModal({
             data-testid="modal-deny-btn"
             disabled={isConfirming}
             onClick={onDeny}
-            className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-4 py-2.5 text-xs font-semibold text-zinc-700 shadow-xs transition hover:bg-zinc-100 focus:outline-hidden focus:ring-2 focus:ring-rose-500/50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
+            className="kr-btn kr-btn-ghost kr-danger px-5 py-3 text-xs"
           >
             <svg
               aria-hidden="true"
-              className="size-3.5 text-rose-500"
+              className="size-3.5 text-danger"
               fill="none"
               viewBox="0 0 24 24"
               strokeWidth={2.5}
@@ -206,7 +212,7 @@ export function PolicyConfirmationModal({
             data-testid="modal-allow-btn"
             disabled={isConfirming}
             onClick={onAllow}
-            className="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-5 py-2.5 text-xs font-semibold text-white shadow-xs transition hover:bg-emerald-500 focus:outline-hidden focus:ring-2 focus:ring-emerald-500/50 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-emerald-600 dark:hover:bg-emerald-500"
+            className="kr-btn kr-btn-tone kr-danger px-6 py-3 text-xs"
           >
             <svg
               aria-hidden="true"
