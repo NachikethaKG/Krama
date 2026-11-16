@@ -165,8 +165,11 @@ export function ApprovalScreen({ planId, client, initialPlan, initialTask = null
         data-testid="approval-screen-loading"
         className="mx-auto flex w-full max-w-4xl flex-1 flex-col items-center justify-center gap-3 px-4 py-20 text-center"
       >
-        <div className="size-8 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-800 dark:border-zinc-700 dark:border-t-zinc-200" />
-        <p className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Loading workflow plan…</p>
+        <div className="relative size-14">
+          <div className="absolute inset-0 animate-spin rounded-full border-4 border-white/10 border-t-plan border-r-approve" />
+          <div className="absolute inset-3 animate-ping rounded-full bg-plan/40" />
+        </div>
+        <p className="kr-display text-lg font-bold text-white">Loading workflow plan…</p>
       </main>
     );
   }
@@ -177,14 +180,15 @@ export function ApprovalScreen({ planId, client, initialPlan, initialTask = null
         data-testid="approval-screen-error"
         className="mx-auto flex w-full max-w-4xl flex-1 flex-col items-center justify-center gap-4 px-4 py-20 text-center"
       >
-        <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">Plan Not Found</h1>
-        <p className="max-w-md text-sm text-zinc-600 dark:text-zinc-400">{error}</p>
+        <div className="kr-float flex size-16 items-center justify-center rounded-3xl bg-danger/15 text-4xl text-danger" aria-hidden="true">?</div>
+        <h1 className="kr-display text-4xl font-extrabold text-white">Plan Not Found</h1>
+        <p className="max-w-md text-sm text-ink-300">{error}</p>
       </main>
     );
   }
 
   return (
-    <main data-testid="approval-screen" className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 px-4 py-8 sm:py-12">
+    <main data-testid="approval-screen" className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-7 px-4 py-8 sm:py-12">
       <TaskHeader
         title={plan.expected_result ? `Goal: ${plan.expected_result}` : "Here's the plan"}
         prompt={task?.prompt ?? plan.expected_result}
@@ -197,17 +201,17 @@ export function ApprovalScreen({ planId, client, initialPlan, initialTask = null
         <div
           role="alert"
           data-testid="plan-conflict-banner"
-          className="flex flex-col gap-3 rounded-xl border border-amber-300 bg-amber-50 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-amber-800 dark:bg-amber-950/40"
+          className="kr-plan kr-tone-card flex flex-col gap-3 rounded-2xl p-4 sm:flex-row sm:items-center sm:justify-between"
         >
           <div>
-            <h3 className="text-sm font-semibold text-amber-900 dark:text-amber-100">This plan changed in the meantime</h3>
-            <p className="text-xs text-amber-800 dark:text-amber-300">{conflictError}</p>
+            <h3 className="text-sm font-bold text-plan">This plan changed in the meantime</h3>
+            <p className="text-xs text-ink-300">{conflictError}</p>
           </div>
           <button
             type="button"
             data-testid="reload-plan-btn"
             onClick={handleReloadPlan}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-amber-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow-xs transition-colors hover:bg-amber-500 dark:bg-amber-500 dark:hover:bg-amber-400"
+            className="kr-btn kr-btn-tone kr-plan shrink-0 px-4 py-2 text-xs"
           >
             Load the latest version
           </button>
@@ -246,11 +250,7 @@ function PlanSummary({ steps }: { steps: { risk?: string | null }[] }) {
   return (
     <p
       data-testid="plan-summary"
-      className={`rounded-lg border px-4 py-3 text-sm ${
-        risky
-          ? "border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200"
-          : "border-zinc-200 bg-white text-zinc-700 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300"
-      }`}
+      className={`kr-tone-card rounded-2xl px-5 py-4 text-sm leading-relaxed text-white ${risky ? "kr-learn" : "kr-verify"}`}
     >
       I found a {steps.length}-step plan.{" "}
       {risky

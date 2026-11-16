@@ -76,12 +76,12 @@ export function ApprovalControls({
         <div
           role="alert"
           data-testid="approval-error-banner"
-          className="flex items-center justify-between rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-300"
+          className="kr-danger kr-tone-card flex items-center justify-between rounded-2xl px-4 py-3 text-sm text-danger"
         >
           <div className="flex items-center gap-2">
             <svg
               aria-hidden="true"
-              className="size-4 shrink-0 text-rose-600 dark:text-rose-400"
+              className="size-4 shrink-0 text-danger"
               fill="none"
               viewBox="0 0 24 24"
               strokeWidth={2}
@@ -98,7 +98,7 @@ export function ApprovalControls({
           <button
             type="button"
             onClick={() => setInternalError(null)}
-            className="text-xs text-rose-600 underline hover:text-rose-800 dark:text-rose-400"
+            className="text-xs font-bold text-danger underline hover:text-white"
           >
             Dismiss
           </button>
@@ -110,12 +110,12 @@ export function ApprovalControls({
         <div
           data-testid="approval-success-banner"
           role="status"
-          className="flex flex-col gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/40 dark:text-emerald-300"
+          className="kr-verify kr-tone-card flex flex-col gap-2 rounded-2xl px-4 py-3 text-sm font-semibold text-verify"
         >
           <div className="flex items-center gap-2">
             <svg
               aria-hidden="true"
-              className="size-4 shrink-0 text-emerald-600 dark:text-emerald-400"
+              className="size-4 shrink-0 text-verify"
               fill="none"
               viewBox="0 0 24 24"
               strokeWidth={2}
@@ -130,7 +130,7 @@ export function ApprovalControls({
               <a
                 href={`/runs/${runId}/live`}
                 data-testid="live-execution-link"
-                className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 underline hover:text-emerald-900 dark:text-emerald-300 dark:hover:text-emerald-100"
+                className="inline-flex items-center gap-1 text-xs font-bold text-verify underline hover:text-white"
               >
                 Go to Live Execution &rarr;
               </a>
@@ -143,11 +143,11 @@ export function ApprovalControls({
         <div
           data-testid="approval-rejected-banner"
           role="status"
-          className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm font-medium text-zinc-800 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300"
+          className="kr-glass flex items-center gap-2 rounded-2xl px-4 py-3 text-sm font-medium text-ink-300"
         >
           <svg
             aria-hidden="true"
-            className="size-4 shrink-0 text-zinc-500"
+            className="size-4 shrink-0 text-danger"
             fill="none"
             viewBox="0 0 24 24"
             strokeWidth={2}
@@ -160,7 +160,7 @@ export function ApprovalControls({
       )}
 
       {/* Action buttons bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-white p-4 shadow-xs dark:border-zinc-800 dark:bg-zinc-900">
+      <div className="kr-spectrum-border sticky bottom-4 z-20 flex flex-wrap items-center justify-between gap-3 rounded-[2rem] bg-ink-900/90 p-3 backdrop-blur-xl">
         <div>
           {onToggleEdit && (
             <button
@@ -168,11 +168,7 @@ export function ApprovalControls({
               data-testid="edit-btn"
               disabled={pending || disabled || isTerminal}
               onClick={onToggleEdit}
-              className={`inline-flex items-center gap-1.5 rounded-lg border px-3.5 py-2 text-sm font-medium transition-colors ${
-                isEditing
-                  ? "border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300"
-                  : "border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
-              } disabled:cursor-not-allowed disabled:opacity-50`}
+              className={`kr-btn kr-plan px-4 py-2.5 text-sm ${isEditing ? "kr-btn-tone" : "kr-btn-ghost"}`}
             >
               <svg
                 aria-hidden="true"
@@ -199,7 +195,7 @@ export function ApprovalControls({
             data-testid="reject-btn"
             disabled={pending || disabled || isTerminal}
             onClick={handleReject}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-rose-200 bg-white px-4 py-2 text-sm font-medium text-rose-700 transition-colors hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-rose-900/60 dark:bg-zinc-900 dark:text-rose-400 dark:hover:bg-rose-950/40"
+            className="kr-btn kr-btn-ghost kr-danger px-4 py-2.5 text-sm text-danger"
           >
             <span>Cancel</span>
           </button>
@@ -211,13 +207,13 @@ export function ApprovalControls({
             disabled={approveDisabled}
             title={isEditing ? "Save your edits before approving" : undefined}
             onClick={handleApprove}
-            className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-5 py-2 text-sm font-medium text-white shadow-xs transition-colors hover:bg-emerald-700 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-emerald-600 dark:hover:bg-emerald-500"
+            className="kr-btn kr-btn-primary px-7 py-3 text-base"
           >
             {pending ? (
               <>
                 <svg
                   aria-hidden="true"
-                  className="size-4 animate-spin text-white"
+                  className="size-4 animate-spin text-ink-950"
                   fill="none"
                   viewBox="0 0 24 24"
                 >
