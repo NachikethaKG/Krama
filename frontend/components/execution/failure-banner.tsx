@@ -27,11 +27,11 @@ export function FailureBanner({
     <div
       role="alert"
       data-testid="failure-banner"
-      className={`rounded-xl border border-rose-300 bg-rose-50 p-4 shadow-xs sm:p-5 dark:border-rose-900/80 dark:bg-rose-950/40 ${className}`}
+      className={`kr-danger kr-tone-card relative overflow-hidden rounded-3xl p-4 sm:p-5 ${className}`}
     >
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-start gap-3.5">
-          <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-rose-100 text-rose-700 dark:bg-rose-900/60 dark:text-rose-300">
+          <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-danger text-ink-950 shadow-[0_0_26px_-4px_var(--danger)]">
             <svg
               className="size-5"
               fill="none"
@@ -49,12 +49,12 @@ export function FailureBanner({
 
           <div className="flex flex-col gap-1.5">
             <div className="flex flex-wrap items-center gap-2">
-              <h3 className="text-sm font-semibold text-rose-950 dark:text-rose-100">
+              <h3 className="kr-display text-lg font-bold text-white">
                 Workflow Execution Failed
               </h3>
               <span
                 data-testid="failure-code-badge"
-                className="rounded-md border border-rose-300 bg-rose-100/70 px-2 py-0.5 font-mono text-[11px] font-semibold text-rose-800 uppercase dark:border-rose-800 dark:bg-rose-900/70 dark:text-rose-200"
+                className="kr-chip font-mono uppercase"
               >
                 {errorCode}
               </span>
@@ -63,21 +63,21 @@ export function FailureBanner({
             {failedStep && (
               <div
                 data-testid="failed-step-details"
-                className="flex items-center gap-1.5 text-xs font-medium text-rose-950 dark:text-rose-100"
+                className="flex items-center gap-1.5 text-xs font-medium text-white"
               >
-                <span className="rounded bg-rose-200/80 px-1.5 py-0.5 font-mono text-[10px] dark:bg-rose-900/80">
+                <span className="rounded-md bg-danger/25 px-1.5 py-0.5 font-mono text-[10px] text-danger">
                   Step {failedStep.seq}
                 </span>
                 <span className="truncate">{failedStep.instructionText}</span>
               </div>
             )}
 
-            <p data-testid="failure-message" className="text-xs text-rose-900/90 sm:text-sm dark:text-rose-200/90">
+            <p data-testid="failure-message" className="text-xs text-ink-300 sm:text-sm">
               {errorMessage}
             </p>
 
-            <div className="mt-1 flex items-start gap-1.5 text-xs text-rose-800/80 dark:text-rose-300/80">
-              <span className="font-medium">Remediation:</span>
+            <div className="mt-1 flex items-start gap-1.5 text-xs text-ink-400">
+              <span className="font-bold text-plan">Remediation:</span>
               <span>
                 Verify target system state and inspect the failed step verification assertions.
               </span>
@@ -92,7 +92,7 @@ export function FailureBanner({
               type="button"
               data-testid="back-to-plan-btn"
               onClick={onBackToPlan}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-rose-300 bg-white px-3 py-2 text-xs font-semibold text-rose-800 shadow-xs transition hover:bg-rose-100/60 dark:border-rose-800 dark:bg-zinc-900 dark:text-rose-200 dark:hover:bg-rose-950/60"
+              className="kr-btn kr-btn-ghost kr-approve px-3.5 py-2 text-xs"
             >
               Back to Plan
             </button>
@@ -100,7 +100,7 @@ export function FailureBanner({
             <a
               href={planId ? `/workflows/${planId}/approval` : "/"}
               data-testid="back-to-plan-btn"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-rose-300 bg-white px-3 py-2 text-xs font-semibold text-rose-800 shadow-xs transition hover:bg-rose-100/60 dark:border-rose-800 dark:bg-zinc-900 dark:text-rose-200 dark:hover:bg-rose-950/60"
+              className="kr-btn kr-btn-ghost kr-approve px-3.5 py-2 text-xs"
             >
               Back to Plan
             </a>
@@ -111,7 +111,7 @@ export function FailureBanner({
               type="button"
               data-testid="retry-run-btn"
               onClick={onRetry}
-              className="inline-flex items-center gap-2 rounded-lg bg-rose-600 px-3.5 py-2 text-xs font-semibold text-white shadow-xs transition hover:bg-rose-500 focus:outline-hidden focus:ring-2 focus:ring-rose-500/50 dark:bg-rose-500 dark:hover:bg-rose-400"
+              className="kr-btn kr-btn-tone px-3.5 py-2 text-xs"
             >
               <svg
                 className="size-3.5"

@@ -40,6 +40,19 @@ const REASON_DESCRIPTIONS: Record<PauseReason, string> = {
   prompt_injection: "The page seems to contain instructions aimed at the agent. Please check before continuing.",
 };
 
+/** Each pause reason wears its own spectrum tone, so the kind of stop reads at a glance. */
+const REASON_TONES: Record<PauseReason, string> = {
+  destructive_action: "var(--danger)",
+  captcha: "var(--plan)",
+  auth_wall: "var(--plan)",
+  rate_limited: "var(--plan)",
+  verification_unclear: "var(--run)",
+  replan_review: "var(--approve)",
+  recovery_exhausted: "var(--learn)",
+  sensitive_data: "var(--ask)",
+  prompt_injection: "var(--danger)",
+};
+
 export function PauseBanner({
   reason,
   stepSeq,
@@ -58,11 +71,13 @@ export function PauseBanner({
       role="alert"
       data-testid="pause-banner"
       data-pause-reason={reason}
-      className={`rounded-xl border border-amber-300 bg-amber-50 p-4 shadow-xs sm:p-5 dark:border-amber-800/80 dark:bg-amber-950/40 ${className}`}
+      style={{ ["--kr-tone" as string]: REASON_TONES[reason] ?? "var(--plan)" }}
+      className={`kr-tone-card relative overflow-hidden rounded-3xl p-4 sm:p-5 ${className}`}
     >
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-start gap-3.5">
-          <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-700 dark:bg-amber-900/60 dark:text-amber-300">
+          <div className="kr-dot-live flex size-11 shrink-0 items-center justify-center rounded-2xl text-ink-950"
+            style={{ background: "var(--kr-tone)", boxShadow: "0 0 26px -4px var(--kr-tone)" }}>
             <svg
               className="size-5"
               fill="none"
@@ -80,15 +95,15 @@ export function PauseBanner({
 
           <div className="flex flex-col gap-1">
             <div className="flex flex-wrap items-center gap-2">
-              <h3 className="text-sm font-semibold text-amber-950 dark:text-amber-100">
+              <h3 className="kr-display text-lg font-bold text-white">
                 Execution Paused at Step {stepSeq}
               </h3>
-              <span className="rounded-md border border-amber-300 bg-amber-100/70 px-2 py-0.5 font-mono text-[11px] font-semibold text-amber-800 uppercase dark:border-amber-700 dark:bg-amber-900/70 dark:text-amber-200">
+              <span className="kr-chip font-mono uppercase">
                 {reason.replace(/_/g, " ")}
               </span>
             </div>
 
-            <p className="text-xs text-amber-900/90 sm:text-sm dark:text-amber-200/90">
+            <p className="text-xs text-ink-300 sm:text-sm">
               {message || reasonText}
             </p>
           </div>
@@ -102,9 +117,9 @@ export function PauseBanner({
               data-testid="deny-run-btn"
               disabled={isConfirming}
               onClick={onDeny}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-amber-300 bg-white px-3.5 py-2 text-xs font-semibold text-amber-900 shadow-xs transition hover:bg-amber-100/60 disabled:cursor-not-allowed disabled:opacity-50 dark:border-amber-800 dark:bg-zinc-900 dark:text-amber-200 dark:hover:bg-amber-950/60"
+              className="kr-btn kr-btn-ghost kr-danger px-3.5 py-2 text-xs"
             >
-              <svg aria-hidden="true" className="size-3.5 text-rose-500" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+              <svg aria-hidden="true" className="size-3.5 text-danger" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
               </svg>
               {isConfirming ? "Processing…" : "Deny & cancel run"}
@@ -116,7 +131,7 @@ export function PauseBanner({
             data-testid="resume-run-btn"
             disabled={isConfirming || allowDisabled}
             onClick={onResume}
-            className="inline-flex items-center gap-2 rounded-lg bg-amber-600 px-4 py-2 text-xs font-semibold text-white shadow-xs transition hover:bg-amber-500 focus:outline-hidden focus:ring-2 focus:ring-amber-500/50 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-amber-500 dark:hover:bg-amber-400"
+            className="kr-btn kr-btn-tone px-4 py-2 text-xs"
           >
             <svg
               className="size-3.5"
