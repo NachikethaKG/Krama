@@ -71,8 +71,8 @@ export function RunDetailRouter({
           data-testid="run-details-loading"
           className="flex flex-col items-center justify-center p-10 text-center"
         >
-          <div className="size-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mb-4" />
-          <h2 className="text-base font-semibold text-zinc-800 dark:text-zinc-200">
+          <div className="mb-4 size-12 animate-spin rounded-full border-4 border-white/10 border-t-run shadow-[0_0_30px_-4px_var(--run)]" />
+          <h2 className="font-mono text-sm font-semibold text-run">
             Loading Run…
           </h2>
         </div>
@@ -85,24 +85,24 @@ export function RunDetailRouter({
       <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col justify-center px-4 py-16">
         <div
           data-testid="run-not-found"
-          className="p-8 border border-rose-200 dark:border-rose-900/60 rounded-2xl bg-white dark:bg-zinc-900 text-center shadow-sm"
+          className="kr-danger kr-tone-card rounded-3xl p-8 text-center"
         >
-          <div className="size-12 rounded-full bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto mb-3">
+          <div className="mx-auto mb-3 flex size-14 items-center justify-center rounded-2xl bg-danger text-ink-950 shadow-[0_0_30px_-4px_var(--danger)]">
             <svg className="size-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
           </div>
-          <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
+          <h2 className="kr-display text-2xl font-extrabold text-white">
             Run Not Found
           </h2>
-          <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 mt-1 max-w-md mx-auto">
+          <p className="text-xs sm:text-sm text-ink-400 mt-1 max-w-md mx-auto">
             {error || `The requested run "${runId}" does not exist.`}
           </p>
           <div className="mt-6 flex items-center justify-center gap-3">
             <Link
               href="/runs"
               data-testid="back-to-runs-button"
-              className="px-4 py-2 text-xs font-semibold rounded-lg bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 hover:bg-zinc-800 transition-colors"
+              className="kr-btn kr-btn-primary px-4 py-2 text-xs"
             >
               Back to runs
             </Link>
@@ -122,7 +122,7 @@ export function RunDetailRouter({
               type="button"
               data-testid="toggle-live-observer-btn"
               onClick={() => setActiveTab("live")}
-              className="rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-medium text-indigo-700 hover:bg-indigo-100 dark:border-indigo-900/60 dark:bg-indigo-950/40 dark:text-indigo-300 dark:hover:bg-indigo-900/60"
+              className="kr-btn kr-btn-tone kr-run px-4 py-1.5 text-xs"
             >
               Watch live
             </button>
@@ -141,7 +141,7 @@ export function RunDetailRouter({
             type="button"
             data-testid="toggle-evidence-view-btn"
             onClick={() => setActiveTab("evidence")}
-            className="rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800"
+            className="kr-btn kr-btn-ghost kr-verify px-4 py-1.5 text-xs"
           >
             Show each step&apos;s checks →
           </button>

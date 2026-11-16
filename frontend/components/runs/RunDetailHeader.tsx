@@ -14,11 +14,11 @@ export function RunDetailHeader({ runDetails, className = "" }: RunDetailHeaderP
   return (
     <div className={`space-y-4 ${className}`}>
       {/* Navigation Breadcrumb */}
-      <div className="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
+      <div className="flex items-center gap-2 text-xs text-ink-400">
         <Link
           href="/runs"
           data-testid="back-to-runs-link"
-          className="inline-flex items-center gap-1 hover:text-zinc-900 dark:hover:text-zinc-100 font-medium transition-colors"
+          className="inline-flex items-center gap-1 hover:text-white font-medium transition-colors"
         >
           <svg className="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -32,12 +32,12 @@ export function RunDetailHeader({ runDetails, className = "" }: RunDetailHeaderP
       </div>
 
       {/* Main Title & Status */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm">
+      <div className="kr-run kr-tone-card relative flex flex-col justify-between gap-4 overflow-hidden rounded-3xl p-6 md:flex-row md:items-center">
         <div className="space-y-1 max-w-3xl">
           <div className="flex items-center gap-2.5">
             <h1
               data-testid="run-detail-prompt"
-              className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-zinc-100"
+              className="kr-display text-2xl font-extrabold text-white sm:text-3xl"
             >
               {run.prompt ?? "(prompt unavailable)"}
             </h1>
@@ -46,71 +46,71 @@ export function RunDetailHeader({ runDetails, className = "" }: RunDetailHeaderP
           {targetUrl && (
             <p
               data-testid="stat-target-url"
-              className="text-xs text-zinc-500 dark:text-zinc-400 truncate"
+              className="text-xs text-ink-400 truncate"
             >
-              Website: <span className="text-zinc-700 dark:text-zinc-300">{targetUrl.replace(/^https?:\/\//, "").replace(/\/$/, "")}</span>
+              Website: <span className="font-mono text-run">{targetUrl.replace(/^https?:\/\//, "").replace(/\/$/, "")}</span>
             </p>
           )}
         </div>
 
-        <div className="text-xs text-zinc-500 dark:text-zinc-400 shrink-0 space-y-2">
+        <div className="text-xs text-ink-400 shrink-0 space-y-2">
           {run.workflowId && (
             <Link
               href={`/tutorials/${run.workflowId}`}
               data-testid="watch-tutorial-link"
-              className="inline-block rounded-lg bg-indigo-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-indigo-500"
+              className="kr-btn kr-btn-primary px-4 py-1.5 text-xs"
             >
               &#9654; Watch the tutorial
             </Link>
           )}
-          <div>Started: <span className="font-medium text-zinc-700 dark:text-zinc-300">{formatDateTime(run.startedAt || run.createdAt)}</span></div>
+          <div>Started: <span className="font-medium text-ink-300">{formatDateTime(run.startedAt || run.createdAt)}</span></div>
           {run.finishedAt && (
-            <div>Finished: <span className="font-medium text-zinc-700 dark:text-zinc-300">{formatDateTime(run.finishedAt)}</span></div>
+            <div>Finished: <span className="font-medium text-ink-300">{formatDateTime(run.finishedAt)}</span></div>
           )}
         </div>
       </div>
 
       {/* Summary KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="p-3.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
-          <span className="text-xs text-zinc-500 dark:text-zinc-400 block mb-0.5">Total Steps</span>
+        <div className="kr-tone-card rounded-2xl p-4" style={{ ["--kr-tone" as string]: "var(--approve)" }}>
+          <span className="mb-1 block text-[11px] font-bold uppercase tracking-[0.16em] text-ink-400">Total Steps</span>
           <span
             data-testid="stat-total-steps"
-            className="text-xl font-bold text-zinc-900 dark:text-zinc-100"
+            className="kr-display text-3xl font-extrabold text-white"
           >
             {summary.totalSteps}
           </span>
         </div>
 
-        <div className="p-3.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
-          <span className="text-xs text-zinc-500 dark:text-zinc-400 block mb-0.5">Verified Steps</span>
+        <div className="kr-tone-card rounded-2xl p-4" style={{ ["--kr-tone" as string]: "var(--verify)" }}>
+          <span className="mb-1 block text-[11px] font-bold uppercase tracking-[0.16em] text-ink-400">Verified Steps</span>
           <span
             data-testid="stat-verified-steps"
-            className="text-xl font-bold text-emerald-600 dark:text-emerald-400"
+            className="kr-display text-3xl font-extrabold text-verify [text-shadow:0_0_18px_var(--verify)]"
           >
             {summary.verifiedSteps}
           </span>
         </div>
 
-        <div className="p-3.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
-          <span className="text-xs text-zinc-500 dark:text-zinc-400 block mb-0.5">Failed Steps</span>
+        <div className="kr-tone-card rounded-2xl p-4" style={{ ["--kr-tone" as string]: "var(--danger)" }}>
+          <span className="mb-1 block text-[11px] font-bold uppercase tracking-[0.16em] text-ink-400">Failed Steps</span>
           <span
             data-testid="stat-failed-steps"
-            className={`text-xl font-bold ${
+            className={`kr-display text-3xl font-extrabold ${
               summary.failedSteps > 0
-                ? "text-rose-600 dark:text-rose-400"
-                : "text-zinc-600 dark:text-zinc-400"
+                ? "text-danger"
+                : "text-ink-400"
             }`}
           >
             {summary.failedSteps}
           </span>
         </div>
 
-        <div className="p-3.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
-          <span className="text-xs text-zinc-500 dark:text-zinc-400 block mb-0.5">Duration</span>
+        <div className="kr-tone-card rounded-2xl p-4" style={{ ["--kr-tone" as string]: "var(--plan)" }}>
+          <span className="mb-1 block text-[11px] font-bold uppercase tracking-[0.16em] text-ink-400">Duration</span>
           <span
             data-testid="stat-duration"
-            className="text-xl font-bold text-zinc-900 dark:text-zinc-100 font-mono"
+            className="font-mono text-3xl font-bold text-plan [text-shadow:0_0_18px_var(--plan)]"
           >
             {formatDuration(summary.durationSeconds ?? run.durationSeconds)}
           </span>

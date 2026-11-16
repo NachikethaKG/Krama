@@ -19,8 +19,8 @@ export default async function RunDetailPage({ params, searchParams }: RunDetailP
             data-testid="run-details-loading"
             className="flex flex-col items-center justify-center p-10 text-center"
           >
-            <div className="size-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mb-4" />
-            <h2 className="text-base font-semibold text-zinc-800 dark:text-zinc-200">
+            <div className="mb-4 size-12 animate-spin rounded-full border-4 border-white/10 border-t-run shadow-[0_0_30px_-4px_var(--run)]" />
+            <h2 className="font-mono text-sm font-semibold text-run">
               Loading Run…
             </h2>
           </div>
