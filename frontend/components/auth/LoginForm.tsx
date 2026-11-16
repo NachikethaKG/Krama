@@ -73,12 +73,12 @@ export function LoginForm({ client, from: propFrom, onSuccess }: LoginFormProps)
   };
 
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white px-6 py-8 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 sm:px-10">
+    <div className="kr-spectrum-border kr-ask rounded-[2rem] bg-ink-900/85 px-6 py-9 backdrop-blur-xl sm:px-10">
       <div className="mb-6 text-center">
-        <h1 className="text-xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 sm:text-2xl">
-          Sign in to Krama
+        <h1 className="kr-display text-3xl font-extrabold text-white sm:text-4xl">
+          Sign in to <span className="kr-gradient-text">Krama</span>
         </h1>
-        <p className="mt-1.5 text-xs text-zinc-500 dark:text-zinc-400">
+        <p className="mt-2 text-sm text-ink-300">
           Access your interactive tutorials, dashboard, and execution runs
         </p>
       </div>
@@ -87,10 +87,10 @@ export function LoginForm({ client, from: propFrom, onSuccess }: LoginFormProps)
         <div
           role="alert"
           data-testid="login-error"
-          className="mb-5 rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/30 dark:text-rose-400 flex items-start gap-2"
+          className="kr-danger kr-tone-card mb-5 flex items-start gap-2 rounded-2xl p-3 text-xs text-danger"
         >
           <svg
-            className="size-4 shrink-0 mt-0.5 text-rose-500"
+            className="size-4 shrink-0 mt-0.5 text-danger"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -111,7 +111,7 @@ export function LoginForm({ client, from: propFrom, onSuccess }: LoginFormProps)
         <div>
           <label
             htmlFor="email"
-            className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300"
+            className="block text-xs font-bold uppercase tracking-wider text-ink-300"
           >
             Email address
           </label>
@@ -126,7 +126,7 @@ export function LoginForm({ client, from: propFrom, onSuccess }: LoginFormProps)
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="demo@krama.dev"
-              className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100 dark:placeholder:text-zinc-500"
+              className="kr-input w-full px-4 py-3 text-sm"
             />
           </div>
         </div>
@@ -134,7 +134,7 @@ export function LoginForm({ client, from: propFrom, onSuccess }: LoginFormProps)
         <div>
           <label
             htmlFor="password"
-            className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300"
+            className="block text-xs font-bold uppercase tracking-wider text-ink-300"
           >
             Password
           </label>
@@ -149,7 +149,7 @@ export function LoginForm({ client, from: propFrom, onSuccess }: LoginFormProps)
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••••••"
-              className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100 dark:placeholder:text-zinc-500"
+              className="kr-input w-full px-4 py-3 text-sm"
             />
           </div>
         </div>
@@ -158,11 +158,11 @@ export function LoginForm({ client, from: propFrom, onSuccess }: LoginFormProps)
           type="submit"
           data-testid="login-submit"
           disabled={isLoading}
-          className="w-full flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-xs hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+          className="kr-btn kr-btn-primary w-full px-4 py-3 text-sm"
         >
           {isLoading ? (
             <>
-              <div className="size-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
+              <div className="size-4 rounded-full border-2 border-ink-950 border-t-transparent animate-spin" />
               <span>Signing in…</span>
             </>
           ) : (
@@ -174,33 +174,33 @@ export function LoginForm({ client, from: propFrom, onSuccess }: LoginFormProps)
       {/* Seeded credentials helper: mock mode only. The real password is KRAMA_DEMO_PASSWORD in .env and is never
           shown; krama-demo-pass only works with the mock client (#104). */}
       {IS_MOCK && (
-      <div className="mt-6 rounded-lg border border-indigo-100 bg-indigo-50/70 p-3.5 dark:border-indigo-900/40 dark:bg-indigo-950/20">
+      <div className="kr-plan kr-tone-card mt-6 rounded-2xl p-3.5">
         <div className="flex items-center justify-between mb-1.5">
-          <span className="text-[11px] font-semibold text-indigo-900 dark:text-indigo-300 flex items-center gap-1.5">
-            <span className="size-1.5 rounded-full bg-indigo-500" />
+          <span className="text-[11px] font-bold text-plan flex items-center gap-1.5">
+            <span className="kr-dot !size-1.5" />
             Seeded MVP Evaluation Account
           </span>
           <button
             type="button"
             data-testid="use-demo-creds-btn"
             onClick={handleFillDemo}
-            className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 underline decoration-indigo-300 underline-offset-2"
+            className="text-[11px] font-bold text-plan underline decoration-plan/50 underline-offset-2 hover:text-white"
           >
             Fill credentials
           </button>
         </div>
-        <p className="text-[11px] text-zinc-600 dark:text-zinc-400">
-          Email: <code className="font-mono text-zinc-800 dark:text-zinc-200">demo@krama.dev</code> · Password: <code className="font-mono text-zinc-800 dark:text-zinc-200">krama-demo-pass</code>
+        <p className="text-[11px] text-ink-300">
+          Email: <code className="font-mono text-white">demo@krama.dev</code> · Password: <code className="font-mono text-white">krama-demo-pass</code>
         </p>
       </div>
       )}
 
-      <div className="mt-6 border-t border-zinc-100 pt-4 text-center dark:border-zinc-800">
-        <p className="text-xs text-zinc-500 dark:text-zinc-400">
+      <div className="mt-6 border-t border-white/10 pt-4 text-center">
+        <p className="text-xs text-ink-400">
           Need an account?{" "}
           <Link
             href="/signup"
-            className="font-semibold text-indigo-600 hover:text-indigo-500 dark:text-indigo-400"
+            className="font-bold text-ask hover:text-white"
           >
             Learn about access →
           </Link>
