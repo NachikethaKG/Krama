@@ -179,7 +179,7 @@ export function ReplayViewer({
   if (!isClient) {
     return (
       <div
-        className={`flex items-center justify-center bg-slate-900 text-slate-400 rounded-lg ${className}`}
+        className={`flex items-center justify-center bg-white/[0.04] text-ink-400 rounded-lg ${className}`}
         style={{ width, height }}
       >
         <span className="text-sm font-medium">Initializing replay environment...</span>
@@ -190,12 +190,12 @@ export function ReplayViewer({
   if (!events || events.length === 0) {
     return (
       <div
-        className={`flex flex-col items-center justify-center bg-slate-900 border border-slate-800 text-slate-400 rounded-lg p-6 ${className}`}
+        className={`flex flex-col items-center justify-center bg-white/[0.04] border border-white/10 text-ink-400 rounded-lg p-6 ${className}`}
         style={{ width, height }}
         data-testid="replay-empty-state"
       >
         <p className="text-sm font-medium">No recorded session events available for replay.</p>
-        <p className="text-xs text-slate-500 mt-1">Provide a valid rrweb event stream to inspect execution.</p>
+        <p className="text-xs text-ink-400 mt-1">Provide a valid rrweb event stream to inspect execution.</p>
       </div>
     );
   }
@@ -213,7 +213,7 @@ export function ReplayViewer({
   return (
     <div
       ref={containerRef}
-      className={`relative overflow-hidden bg-slate-950 rounded-lg border border-slate-800 shadow-xl ${className}`}
+      className={`relative overflow-hidden bg-ink-900/70 rounded-lg border border-white/10 shadow-xl ${className}`}
       style={{ width, height }}
       data-testid="replay-viewer"
     >
@@ -240,7 +240,7 @@ export function ReplayViewer({
       {/* Interactive Step Timeline Bar */}
       {showControls && steps.length > 0 && (
         <div
-          className="absolute bottom-3 left-3 right-3 z-30 flex items-center justify-between bg-slate-900/90 backdrop-blur border border-slate-700/60 rounded-md px-3 py-2 text-xs text-slate-300 focus:outline-hidden focus:ring-1 focus:ring-blue-500"
+          className="absolute bottom-3 left-3 right-3 z-30 flex items-center justify-between bg-white/[0.04] backdrop-blur border border-white/10 rounded-md px-3 py-2 text-xs text-ink-300 focus:outline-hidden focus:ring-1 focus:ring-run/40"
           data-testid="step-navigation-bar"
           tabIndex={0}
           role="region"
@@ -252,19 +252,19 @@ export function ReplayViewer({
               type="button"
               onClick={() => handleStepSelect(activeIndex - 1)}
               disabled={activeIndex === 0}
-              className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:hover:bg-slate-800 transition font-medium focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-hidden"
+              className="px-2 py-1 rounded bg-white/10 hover:bg-learn/30 disabled:opacity-40 disabled:hover:bg-white/10 transition font-medium focus-visible:ring-2 focus-visible:ring-run/40 focus-visible:outline-hidden"
               data-testid="prev-step-btn"
             >
               &larr; Prev
             </button>
-            <span className="font-semibold text-slate-200">
+            <span className="font-semibold text-white">
               Step {activeIndex + 1} of {steps.length}
             </span>
             <button
               type="button"
               onClick={() => handleStepSelect(activeIndex + 1)}
               disabled={activeIndex === steps.length - 1}
-              className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:hover:bg-slate-800 transition font-medium focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-hidden"
+              className="px-2 py-1 rounded bg-white/10 hover:bg-learn/30 disabled:opacity-40 disabled:hover:bg-white/10 transition font-medium focus-visible:ring-2 focus-visible:ring-run/40 focus-visible:outline-hidden"
               data-testid="next-step-btn"
             >
               Next &rarr;
@@ -272,7 +272,7 @@ export function ReplayViewer({
           </div>
 
           {currentStep && (
-            <div className="hidden sm:block truncate max-w-[50%] text-slate-400 font-mono text-[11px]" data-testid="current-step-label">
+            <div className="hidden sm:block truncate max-w-[50%] text-ink-400 font-mono text-[11px]" data-testid="current-step-label">
               {currentStep.instruction ?? `Step ${activeIndex + 1}`}
             </div>
           )}
@@ -287,7 +287,7 @@ export function ReplayViewer({
                 className={`w-3 h-3 rounded-full transition-all ${
                   idx === activeIndex
                     ? 'bg-blue-500 ring-2 ring-blue-400/50 scale-110'
-                    : 'bg-slate-600 hover:bg-slate-400'
+                    : 'bg-white/20 hover:bg-learn/60'
                 }`}
                 title={`Jump to step ${idx + 1}: ${step.instruction ?? ''}`}
                 data-testid={`step-pill-${idx}`}
