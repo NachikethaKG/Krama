@@ -142,7 +142,7 @@ export function TargetPicker({
               disabled={disabled}
               onClick={() => handleSelect(opt.type)}
               className={`flex flex-col items-start rounded-2xl border p-3.5 text-left transition-all ${
-                isSelected ? "bg-white/[0.07]" : "border-white/10 bg-white/[0.03] hover:-translate-y-0.5 hover:border-white/25"
+                isSelected ? "bg-white/[0.07]" : "border-white/10 bg-white/[0.03] hover:border-white/25"
               } ${disabled ? "cursor-not-allowed opacity-60" : "cursor-pointer"}`}
               style={
                 isSelected

@@ -49,7 +49,7 @@ export function TutorialLibrary() {
         <li key={w.id} className={`${TONES[i % TONES.length]} kr-rise`} style={{ animationDelay: `${i * 50}ms` }}>
           <Link
             href={`/tutorials/${w.id}`}
-            className="kr-tone-card group flex items-center justify-between gap-3 rounded-2xl p-4 hover:-translate-y-0.5"
+            className="kr-tone-card group flex items-center justify-between gap-3 rounded-2xl p-4"
           >
             <span>
               <span className="block text-sm font-bold text-white">{w.title}</span>
