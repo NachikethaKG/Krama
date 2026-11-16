@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ArrowLeft, Unlink } from "lucide-react";
 
 export interface RevokedLinkNoticeProps {
   status?: number;
@@ -14,46 +15,29 @@ export function RevokedLinkNotice({
       data-testid="revoked-link-notice"
       className="flex min-h-[60vh] w-full flex-col items-center justify-center px-4 py-16 text-center"
     >
-      <div className="mx-auto flex max-w-md flex-col items-center rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
-        <div className="mb-4 flex size-12 items-center justify-center rounded-full bg-rose-100 text-rose-600 dark:bg-rose-950/60 dark:text-rose-400">
-          <svg
-            className="size-6"
-            fill="none"
-            viewBox="0 0 24 24"
-            strokeWidth="1.75"
-            stroke="currentColor"
-            aria-hidden="true"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M18.364 18.364A9 9 0 0 0 5.636 5.636m12.728 12.728A9 9 0 0 1 5.636 5.636m12.728 12.728L5.636 5.636"
-            />
-          </svg>
+      <div className="kr-danger kr-tone-card kr-rise mx-auto flex max-w-md flex-col items-center rounded-[2rem] p-9">
+        <div
+          className="kr-float mb-5 flex size-16 items-center justify-center rounded-2xl text-ink-950"
+          style={{ background: "var(--danger)", boxShadow: "0 0 40px -6px var(--danger)" }}
+        >
+          <Unlink aria-hidden="true" className="size-8" />
         </div>
 
-        <span className="mb-1 text-xs font-semibold uppercase tracking-wider text-rose-600 dark:text-rose-400">
+        <span className="mb-2 font-mono text-xs font-bold uppercase tracking-[0.2em] text-danger">
           {status === 404 ? "Link Not Found (404)" : `Unavailable (${status})`}
         </span>
 
-        <h1 className="text-xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
-          Tutorial Link Unavailable
-        </h1>
+        <h1 className="kr-display text-3xl font-extrabold text-white">Tutorial Link Unavailable</h1>
 
-        <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-          {message}
-        </p>
+        <p className="mt-3 text-sm text-ink-300">{message}</p>
 
-        <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-500">
+        <p className="mt-1 text-xs text-ink-400">
           This tutorial may have been removed, or the share link was revoked by the creator.
         </p>
 
-        <div className="mt-6 flex items-center gap-3">
-          <Link
-            href="/"
-            data-testid="revoked-home-link"
-            className="inline-flex items-center justify-center rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white shadow-xs hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200 transition-colors"
-          >
+        <div className="mt-7 flex items-center gap-3">
+          <Link href="/" data-testid="revoked-home-link" className="kr-btn kr-btn-primary px-5 py-2.5 text-sm">
+            <ArrowLeft aria-hidden="true" className="size-4" />
             Return to Homepage
           </Link>
         </div>
