@@ -1,6 +1,9 @@
 "use client";
 
 import type { MetricsSummary } from "@krama/contracts-ts";
+import type { ReactNode } from "react";
+import { Activity, Gauge, LifeBuoy, ShieldCheck } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { formatMs } from "./LatencySparkline";
 
 export interface MetricsKpiGridProps {
@@ -47,176 +50,146 @@ export function MetricsKpiGrid({ summary }: MetricsKpiGridProps) {
   const isLatencyPassed = isTotalLatencyPassed && isPlanningLatencyPassed;
 
   return (
-    <div
-      data-testid="metrics-kpi-grid"
-      className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"
-    >
-      {/* 1. Success Rate KPI */}
-      <div
-        data-testid="kpi-success-rate"
-        className="relative overflow-hidden rounded-xl border border-zinc-200 bg-white p-5 shadow-xs dark:border-zinc-800 dark:bg-zinc-950"
+    <div data-testid="metrics-kpi-grid" className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <KpiTile
+        id="success-rate"
+        tone="kr-verify"
+        icon={Activity}
+        label="Task Success Rate"
+        target="Target ≥ 80%"
+        passed={isSuccessPassed}
+        value={`${successRatePct}%`}
+        unit={`(${summary.overall_successful_runs ?? 0}/${summary.overall_total_runs ?? 0} runs)`}
+        meter={successRate}
       >
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold text-zinc-500 uppercase tracking-wider dark:text-zinc-400">
-            Task Success Rate
-          </span>
-          <span
-            data-testid="badge-success-rate"
-            className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${
-              isSuccessPassed
-                ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
-                : "bg-rose-50 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300 border border-rose-200 dark:border-rose-800"
-            }`}
-          >
-            <span
-              className={`size-1.5 rounded-full ${
-                isSuccessPassed ? "bg-emerald-500" : "bg-rose-500"
-              }`}
-            />
-            Target ≥ 80%
-          </span>
-        </div>
+        Workflows executing end-to-end to verified state
+      </KpiTile>
 
-        <div className="mt-3 flex items-baseline gap-2">
-          <span
-            data-testid="value-success-rate"
-            className="text-3xl font-extrabold tracking-tight text-zinc-900 dark:text-zinc-50 font-mono"
-          >
-            {successRatePct}%
-          </span>
-          <span className="text-xs text-zinc-500 dark:text-zinc-400">
-            ({summary.overall_successful_runs ?? 0}/{summary.overall_total_runs ?? 0} runs)
-          </span>
-        </div>
-
-        <p className="mt-2 text-xs text-zinc-600 dark:text-zinc-400">
-          Workflows executing end-to-end to verified state
-        </p>
-      </div>
-
-      {/* 2. Verifier Accuracy KPI */}
-      <div
-        data-testid="kpi-verifier-accuracy"
-        className="relative overflow-hidden rounded-xl border border-zinc-200 bg-white p-5 shadow-xs dark:border-zinc-800 dark:bg-zinc-950"
+      <KpiTile
+        id="verifier-accuracy"
+        tone="kr-approve"
+        icon={ShieldCheck}
+        label="Verifier Accuracy"
+        target="Target ≥ 90%"
+        passed={isAccuracyPassed}
+        value={`${verifierAccuracyPct}%`}
+        unit="precision"
+        meter={verifierAccuracy}
       >
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold text-zinc-500 uppercase tracking-wider dark:text-zinc-400">
-            Verifier Accuracy
-          </span>
-          <span
-            data-testid="badge-verifier-accuracy"
-            className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${
-              isAccuracyPassed
-                ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
-                : "bg-rose-50 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300 border border-rose-200 dark:border-rose-800"
-            }`}
-          >
-            <span
-              className={`size-1.5 rounded-full ${
-                isAccuracyPassed ? "bg-emerald-500" : "bg-rose-500"
-              }`}
-            />
-            Target ≥ 90%
-          </span>
-        </div>
+        Layered verifier (DOM + visual + network) without false alarms
+      </KpiTile>
 
-        <div className="mt-3 flex items-baseline gap-2">
-          <span
-            data-testid="value-verifier-accuracy"
-            className="text-3xl font-extrabold tracking-tight text-zinc-900 dark:text-zinc-50 font-mono"
-          >
-            {verifierAccuracyPct}%
-          </span>
-          <span className="text-xs text-zinc-500 dark:text-zinc-400">precision</span>
-        </div>
-
-        <p className="mt-2 text-xs text-zinc-600 dark:text-zinc-400">
-          Layered verifier (DOM + visual + network) without false alarms
-        </p>
-      </div>
-
-      {/* 3. Recovery Rate KPI */}
-      <div
-        data-testid="kpi-recovery-rate"
-        className="relative overflow-hidden rounded-xl border border-zinc-200 bg-white p-5 shadow-xs dark:border-zinc-800 dark:bg-zinc-950"
+      <KpiTile
+        id="recovery-rate"
+        tone="kr-plan"
+        icon={LifeBuoy}
+        label="Recovery Rate"
+        target="Target ≥ 50%"
+        passed={isRecoveryPassed}
+        warnOnly
+        value={recoveryRatePct}
+        unit="replan success"
+        meter={recoveryRate ?? 0}
       >
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold text-zinc-500 uppercase tracking-wider dark:text-zinc-400">
-            Recovery Rate
-          </span>
-          <span
-            data-testid="badge-recovery-rate"
-            className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${
-              isRecoveryPassed
-                ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
-                : "bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300 border border-amber-200 dark:border-amber-800"
-            }`}
-          >
-            <span
-              className={`size-1.5 rounded-full ${
-                isRecoveryPassed ? "bg-emerald-500" : "bg-amber-500"
-              }`}
-            />
-            Target ≥ 50%
-          </span>
-        </div>
+        Automatic recovery from transient DOM drift and step failures
+      </KpiTile>
 
-        <div className="mt-3 flex items-baseline gap-2">
-          <span
-            data-testid="value-recovery-rate"
-            className="text-3xl font-extrabold tracking-tight text-zinc-900 dark:text-zinc-50 font-mono"
-          >
-            {recoveryRatePct}
-          </span>
-          <span className="text-xs text-zinc-500 dark:text-zinc-400">replan success</span>
-        </div>
-
-        <p className="mt-2 text-xs text-zinc-600 dark:text-zinc-400">
-          Automatic recovery from transient DOM drift and step failures
-        </p>
-      </div>
-
-      {/* 4. Latency Profile KPI */}
-      <div
-        data-testid="kpi-latency-profile"
-        className="relative overflow-hidden rounded-xl border border-zinc-200 bg-white p-5 shadow-xs dark:border-zinc-800 dark:bg-zinc-950"
+      <KpiTile
+        id="latency-profile"
+        tone="kr-run"
+        icon={Gauge}
+        label="Latency Profile"
+        target="Target < 60s"
+        passed={isLatencyPassed}
+        warnOnly
+        value={formatMs(avgLatencyMs)}
+        unit="mean total"
+        meter={Math.max(0, 1 - avgLatencyMs / 90000)}
       >
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold text-zinc-500 uppercase tracking-wider dark:text-zinc-400">
-            Latency Profile
-          </span>
-          <span
-            data-testid="badge-latency-profile"
-            className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${
-              isLatencyPassed
-                ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
-                : "bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300 border border-amber-200 dark:border-amber-800"
-            }`}
-          >
-            <span
-              className={`size-1.5 rounded-full ${
-                isLatencyPassed ? "bg-emerald-500" : "bg-amber-500"
-              }`}
-            />
-            Target &lt; 60s
-          </span>
-        </div>
-
-        <div className="mt-3 flex items-baseline gap-2">
-          <span
-            data-testid="value-latency-profile"
-            className="text-3xl font-extrabold tracking-tight text-zinc-900 dark:text-zinc-50 font-mono"
-          >
-            {formatMs(avgLatencyMs)}
-          </span>
-          <span className="text-xs text-zinc-500 dark:text-zinc-400">mean total</span>
-        </div>
-
-        <div className="mt-2 flex items-center justify-between text-xs text-zinc-600 dark:text-zinc-400 font-mono">
+        <span className="flex items-center justify-between font-mono">
           <span>Plan: {planningLatencyMs == null ? "not measured" : formatMs(planningLatencyMs)} (&lt; 15s)</span>
           <span>P90: {formatMs(p90LatencyMs)}</span>
-        </div>
+        </span>
+      </KpiTile>
+    </div>
+  );
+}
+
+function KpiTile({
+  id,
+  tone,
+  icon: Icon,
+  label,
+  target,
+  passed,
+  warnOnly = false,
+  value,
+  unit,
+  meter,
+  children,
+}: {
+  id: string;
+  tone: string;
+  icon: LucideIcon;
+  label: string;
+  target: string;
+  passed: boolean;
+  warnOnly?: boolean;
+  value: string;
+  unit: string;
+  meter: number;
+  children: ReactNode;
+}) {
+  const badgeColor = passed ? "var(--verify)" : warnOnly ? "var(--plan)" : "var(--danger)";
+  return (
+    <div data-testid={`kpi-${id}`} className={`${tone} kr-tone-card group relative overflow-hidden rounded-3xl p-5`}>
+      <div className="flex items-center justify-between gap-2">
+        <span className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-ink-300">
+          <span
+            className="flex size-7 items-center justify-center rounded-lg text-ink-950 transition-transform group-hover:rotate-12"
+            style={{ background: "var(--kr-tone)" }}
+          >
+            <Icon aria-hidden="true" className="size-4" />
+          </span>
+          {label}
+        </span>
+        <span
+          data-testid={`badge-${id}`}
+          className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold"
+          style={{
+            color: badgeColor,
+            borderColor: `color-mix(in oklab, ${badgeColor} 45%, transparent)`,
+            background: `color-mix(in oklab, ${badgeColor} 14%, transparent)`,
+          }}
+        >
+          <span className="size-1.5 rounded-full" style={{ background: badgeColor, boxShadow: `0 0 8px ${badgeColor}` }} />
+          {target}
+        </span>
       </div>
+
+      <div className="mt-4 flex items-baseline gap-2">
+        <span
+          data-testid={`value-${id}`}
+          className="kr-display text-4xl font-extrabold tracking-tight"
+          style={{ color: "var(--kr-tone)", textShadow: "0 0 28px var(--kr-tone)" }}
+        >
+          {value}
+        </span>
+        <span className="text-xs text-ink-400">{unit}</span>
+      </div>
+
+      <div aria-hidden="true" className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10">
+        <div
+          className="h-full rounded-full"
+          style={{
+            width: `${Math.min(100, Math.max(0, meter * 100))}%`,
+            background: "linear-gradient(90deg, var(--kr-tone), white)",
+            boxShadow: "0 0 12px var(--kr-tone)",
+          }}
+        />
+      </div>
+
+      <p className="mt-3 text-xs text-ink-300">{children}</p>
     </div>
   );
 }
