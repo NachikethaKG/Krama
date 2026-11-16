@@ -19,7 +19,7 @@ export interface StepListProps {
 const BEAD_COLORS = ["var(--plan)", "var(--approve)", "var(--run)", "var(--verify)", "var(--learn)", "var(--ask)"];
 
 const iconButton =
-  "flex size-8 items-center justify-center rounded-full border border-white/15 bg-white/5 text-ink-300 transition-all hover:-translate-y-0.5 hover:border-run hover:text-run disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:translate-y-0";
+  "flex size-8 items-center justify-center rounded-full border border-white/15 bg-white/5 text-ink-300 transition-all hover:border-run hover:text-run disabled:cursor-not-allowed disabled:opacity-30";
 
 export function StepList({
   steps,
@@ -165,7 +165,7 @@ export function StepList({
                           aria-label={`Delete step ${step.seq}`}
                           data-testid={`delete-step-${step.seq}`}
                           onClick={() => onDeleteStep?.(step.seq)}
-                          className="flex size-8 items-center justify-center rounded-full border border-danger/40 bg-danger/10 text-danger transition-all hover:-translate-y-0.5 hover:bg-danger hover:text-ink-950"
+                          className="flex size-8 items-center justify-center rounded-full border border-danger/40 bg-danger/10 text-danger transition-all hover:bg-danger hover:text-ink-950"
                           title="Delete step"
                         >
                           <Trash2 aria-hidden="true" className="size-4" />

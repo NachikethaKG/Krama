@@ -193,7 +193,7 @@ export function TaskInput({
                   key={example}
                   type="button"
                   onClick={() => setPrompt(example)}
-                  className={`${EXAMPLE_TONES[i % EXAMPLE_TONES.length]} kr-chip kr-rise cursor-pointer !px-3.5 !py-1.5 !text-xs transition-all hover:-translate-y-0.5 hover:shadow-[0_0_20px_-4px_var(--kr-tone)]`}
+                  className={`${EXAMPLE_TONES[i % EXAMPLE_TONES.length]} kr-chip kr-rise cursor-pointer !px-3.5 !py-1.5 !text-xs transition-all hover:shadow-[0_0_20px_-4px_var(--kr-tone)]`}
                   style={{ animationDelay: `${150 + i * 90}ms` }}
                 >
                   <Sparkles aria-hidden="true" className="size-3" />

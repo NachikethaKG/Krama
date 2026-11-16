@@ -72,7 +72,7 @@ export function TutorialStepList({
                   }}
                   aria-current={isActive ? "step" : undefined}
                   className={`group flex min-h-[44px] w-full flex-col justify-center rounded-2xl border p-3 text-left transition-all duration-300 ${
-                    isActive ? "translate-x-1" : "border-transparent hover:translate-x-1 hover:bg-white/5"
+                    isActive ? "translate-x-1" : "border-transparent hover:bg-white/5"
                   }`}
                   style={
                     isActive

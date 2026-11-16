@@ -87,7 +87,7 @@ export function TutorialControls({
   };
 
   const ICON_BTN =
-    "flex min-h-[44px] min-w-[44px] items-center justify-center rounded-2xl border border-white/10 bg-white/5 p-2.5 text-ink-300 transition-all hover:-translate-y-0.5 hover:border-learn/60 hover:text-white hover:shadow-[0_0_20px_-6px_var(--learn)] disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:translate-y-0";
+    "flex min-h-[44px] min-w-[44px] items-center justify-center rounded-2xl border border-white/10 bg-white/5 p-2.5 text-ink-300 transition-all hover:border-learn/60 hover:text-white hover:shadow-[0_0_20px_-6px_var(--learn)] disabled:cursor-not-allowed disabled:opacity-35";
   const toggle = (on: boolean, color: string) =>
     on
       ? { background: color, borderColor: color, color: "var(--ink-950)", boxShadow: `0 0 22px -4px ${color}` }
