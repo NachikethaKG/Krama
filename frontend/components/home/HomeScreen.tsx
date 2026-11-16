@@ -28,7 +28,7 @@ export function HomeScreen({ client }: { client?: ApiClient }) {
   return (
     <main data-testid="home-screen" className="mx-auto flex max-w-5xl flex-col gap-14 px-4 py-10 sm:px-6">
       <section className="flex flex-col gap-5">
-        <div className="kr-rise flex flex-col items-start gap-4">
+        <div className="kr-slide flex flex-col items-start gap-4">
           <span className="kr-chip kr-ask">
             <span className="kr-dot kr-dot-live !size-1.5" />
             Ask anything about a website
@@ -50,7 +50,7 @@ export function HomeScreen({ client }: { client?: ApiClient }) {
               return (
                 <span key={stage.key} className="flex items-center gap-1.5">
                   <span
-                    className="kr-rise flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold text-ink-950"
+                    className="kr-slide flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold text-ink-950"
                     style={{
                       background: stage.color,
                       boxShadow: `0 0 16px -4px ${stage.color}`,

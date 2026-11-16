@@ -22,7 +22,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
               return (
                 <div
                   key={stage.key}
-                  className="kr-rise flex items-center gap-3"
+                  className="kr-slide flex items-center gap-3"
                   style={{ animationDelay: `${200 + i * 90}ms` }}
                 >
                   <span
