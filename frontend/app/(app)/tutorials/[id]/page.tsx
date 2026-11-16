@@ -54,8 +54,8 @@ export default function TutorialDetailPage({ params }: TutorialDetailPageProps) 
       fallback={
         <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col items-center justify-center gap-4 px-4 py-20">
           <div className="flex flex-col items-center justify-center p-10 text-center">
-            <div className="size-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mb-4" />
-            <h2 className="text-base font-semibold text-zinc-800 dark:text-zinc-200">
+            <div className="kr-spectrum-border mb-5 size-14 animate-spin rounded-full bg-ink-900 [animation-duration:2.5s]" />
+            <h2 className="kr-display text-lg font-bold text-white">
               Loading tutorial…
             </h2>
           </div>

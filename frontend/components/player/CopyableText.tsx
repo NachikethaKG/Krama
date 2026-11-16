@@ -53,16 +53,16 @@ export function CopyableText({
 
   return (
     <div
-      className={`group flex items-center justify-between gap-2 rounded-md border border-zinc-200 bg-zinc-50 px-3 py-1.5 text-xs text-zinc-800 transition-colors dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200 ${className}`}
+      className={`group flex items-center justify-between gap-2 rounded-2xl border border-white/10 bg-ink-950/60 px-3 py-1 text-xs text-ink-300 transition-all hover:border-learn/50 hover:shadow-[0_0_20px_-8px_var(--learn)] ${className}`}
     >
       <div className="flex min-w-0 items-center gap-2">
         {label && (
-          <span className="shrink-0 font-medium text-zinc-500 dark:text-zinc-400">
+          <span className="shrink-0 font-bold uppercase tracking-wider text-[10px] text-learn">
             {label}:
           </span>
         )}
         <span
-          className={`truncate ${code ? "font-mono font-medium text-zinc-900 dark:text-zinc-100" : ""}`}
+          className={`truncate ${code ? "font-mono font-semibold text-white" : ""}`}
           title={text}
         >
           {text}
@@ -74,12 +74,12 @@ export function CopyableText({
         onClick={handleCopy}
         data-testid="copy-button"
         aria-label={copied ? "Copied to clipboard" : `Copy ${text} to clipboard`}
-        className="flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center gap-1.5 rounded-md px-2.5 py-2 text-xs font-medium text-zinc-600 hover:bg-zinc-200 hover:text-zinc-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+        className="flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center gap-1.5 rounded-xl px-2.5 py-2 text-xs font-bold text-ink-300 transition-colors hover:bg-white/10 hover:text-white"
       >
         {copied ? (
           <>
             <svg
-              className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400"
+              className="h-3.5 w-3.5 text-verify"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -88,7 +88,7 @@ export function CopyableText({
             >
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
             </svg>
-            <span className="text-emerald-600 dark:text-emerald-400">Copied!</span>
+            <span className="text-verify">Copied!</span>
           </>
         ) : (
           <>
