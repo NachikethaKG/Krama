@@ -4,7 +4,9 @@ import { useRef, useState } from "react";
 import type { TutorialSpec } from "@krama/tutorial-compiler";
 import type { eventWithTime } from "@rrweb/types";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
+import { Clapperboard, Eye, Timer } from "lucide-react";
 import { CopyableText } from "./CopyableText";
+import { stepColor } from "./spectrum";
 import { TutorialControls } from "./TutorialControls";
 import { TutorialStage } from "./TutorialStage";
 import { TutorialStepList } from "./TutorialStepList";
@@ -111,27 +113,31 @@ export function TutorialPlayer({
       </div>
 
       {/* Tutorial Header: one title, then what the learner needs to know (#318) */}
-      <header className="flex flex-col gap-1 border-b border-zinc-200 pb-4 dark:border-zinc-800">
+      <header className="kr-learn relative flex flex-col gap-2 pb-5">
         <div className="flex items-center gap-2">
+          <span className="kr-chip">
+            <Clapperboard aria-hidden="true" className="size-3.5" />
+            Learn
+          </span>
           {readOnly ? (
-            <span
-              data-testid="readonly-badge"
-              className="rounded bg-zinc-100 px-2 py-0.5 text-xs font-semibold text-zinc-700 ring-1 ring-inset ring-zinc-500/20 dark:bg-zinc-800 dark:text-zinc-300 dark:ring-zinc-700"
-            >
+            <span data-testid="readonly-badge" className="kr-chip kr-run">
+              <Eye aria-hidden="true" className="size-3.5" />
               Read-Only
             </span>
           ) : null}
         </div>
-        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
+        <h1 className="kr-display text-3xl font-extrabold leading-tight text-white sm:text-4xl">
           {spec.title}
         </h1>
         {spec.description && spec.description.trim() !== spec.title.trim() && (
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">{spec.description}</p>
+          <p className="max-w-3xl text-sm text-ink-300">{spec.description}</p>
         )}
-        <p data-testid="tutorial-summary" className="text-xs text-zinc-500 dark:text-zinc-400">
+        <p data-testid="tutorial-summary" className="flex items-center gap-1.5 font-mono text-xs text-learn">
+          <Timer aria-hidden="true" className="size-3.5" />
           {spec.scenes.length} {spec.scenes.length === 1 ? "step" : "steps"}, each one checked ·{" "}
           {Math.max(1, Math.round((spec.total_duration_ms || 1) / 1000))} s to watch
         </p>
+        <div aria-hidden="true" className="kr-rail absolute bottom-0 left-0 w-full opacity-60" />
       </header>
 
       {/* Main Grid: Stage & Controls (Left/Center) + Step List Sidebar (Right) */}
@@ -182,27 +188,28 @@ export function TutorialPlayer({
           {currentScene && (
             <div
               data-testid="current-step-card"
-              className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-950"
+              className="kr-tone-card rounded-3xl p-5"
+              style={{ ["--kr-tone" as string]: stepColor(player.currentSceneIndex) }}
             >
-              <div className="flex items-center justify-between gap-2 border-b border-zinc-100 pb-3 dark:border-zinc-900">
-                <div className="flex items-center gap-2">
-                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-600 text-xs font-bold text-white dark:bg-indigo-500">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="kr-display flex size-9 items-center justify-center rounded-xl text-base font-extrabold text-ink-950" style={{ background: "var(--kr-tone)", boxShadow: "0 0 22px -4px var(--kr-tone)" }}>
                     {currentScene.step_seq}
                   </span>
-                  <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                  <span className="kr-display text-lg font-bold text-white">
                     {currentScene.title || `Step ${currentScene.step_seq}`}
                   </span>
-                  <span className="rounded bg-zinc-100 px-2 py-0.5 text-xs font-mono font-medium text-zinc-700 uppercase dark:bg-zinc-800 dark:text-zinc-300">
+                  <span className="kr-chip font-mono uppercase">
                     {currentScene.action.type}
                   </span>
                   {currentScene.sensitive && (
-                    <span className="rounded bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
+                    <span className="kr-chip kr-plan">
                       Sensitive
                     </span>
                   )}
                 </div>
 
-                <span className="text-xs text-zinc-400">
+                <span className="font-mono text-xs text-ink-400">
                   Duration: {(currentScene.duration_ms / 1000).toFixed(1)}s
                 </span>
               </div>
@@ -210,12 +217,12 @@ export function TutorialPlayer({
               {/* Instruction Text with Copyable Action */}
               <div className="mt-3 space-y-3">
                 <div>
-                  <h3 className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                  <h3 className="text-[11px] font-bold uppercase tracking-[0.2em]" style={{ color: "var(--kr-tone)" }}>
                     Instruction
                   </h3>
                   <p
                     data-testid="instruction-text"
-                    className="mt-1 text-sm font-medium text-zinc-800 dark:text-zinc-200"
+                    className="mt-1.5 text-lg font-semibold leading-snug text-white"
                   >
                     {currentScene.caption?.text}
                   </p>
@@ -224,7 +231,7 @@ export function TutorialPlayer({
                 {/* Copyable Action Value */}
                 {actionValue && (
                   <div>
-                    <h3 className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1">
+                    <h3 className="mb-1 text-[11px] font-bold uppercase tracking-[0.2em] text-ink-400">
                       Input Value
                     </h3>
                     <CopyableText
@@ -271,11 +278,11 @@ export function TutorialPlayer({
           aria-modal="true"
           aria-label="Steps drawer"
           data-testid="mobile-step-drawer"
-          className="fixed inset-0 z-50 flex flex-col justify-end bg-black/60 backdrop-blur-xs lg:hidden"
+          className="fixed inset-0 z-50 flex flex-col justify-end bg-ink-950/70 backdrop-blur-sm lg:hidden"
           onClick={() => setIsMobileDrawerOpen(false)}
         >
           <div
-            className="max-h-[80vh] w-full rounded-t-2xl bg-white p-4 shadow-2xl dark:bg-zinc-950 flex flex-col"
+            className="kr-spectrum-border flex max-h-[80vh] w-full flex-col rounded-t-[2rem] bg-ink-900 p-4 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <TutorialStepList
