@@ -5,4 +5,5 @@ export { Reveal } from "./Reveal";
 export { Spotlight } from "./Spotlight";
 export { STAGE, STAGES } from "./stages";
 export type { Stage, StageKey } from "./stages";
+export { ThemeToggle } from "./ThemeToggle";
 export { TiltCard } from "./TiltCard";
