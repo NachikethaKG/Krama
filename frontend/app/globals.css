@@ -80,6 +80,8 @@
 
 html {
   color-scheme: dark;
+  /* The floating header is sticky: anything scrolled into view (anchors, focus, tests) stops below it. */
+  scroll-padding-top: 6rem;
   scrollbar-color: var(--ink-600) transparent;
 }
 
@@ -144,7 +146,21 @@ body {
   }
 }
 
+/* Entrance for anything that may hold controls: fades and unblurs but never moves, so a button is
+   clickable (stable) from its first frame. */
 @keyframes kr-rise {
+  from {
+    opacity: 0;
+    filter: blur(6px);
+  }
+  to {
+    opacity: 1;
+    filter: none;
+  }
+}
+
+/* Entrance with motion, for decorative elements only (nothing clickable inside). */
+@keyframes kr-slide {
   from {
     opacity: 0;
     transform: translateY(18px) scale(0.98);
@@ -359,11 +375,12 @@ body {
     box-shadow 0.25s,
     filter 0.2s;
 }
+/* Hover never moves the button: a box that shifts under the pointer makes clicks at its edge miss. */
 .kr-btn:hover:not(:disabled) {
-  transform: translateY(-2px);
+  filter: brightness(1.1);
 }
 .kr-btn:active:not(:disabled) {
-  transform: translateY(0) scale(0.98);
+  filter: brightness(0.95);
 }
 .kr-btn:disabled {
   opacity: 0.5;
@@ -495,7 +512,10 @@ body {
 /* ---------- motion helpers ---------- */
 
 .kr-rise {
-  animation: kr-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: kr-rise 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.kr-slide {
+  animation: kr-slide 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 .kr-float {
   animation: kr-float 6s ease-in-out infinite;
