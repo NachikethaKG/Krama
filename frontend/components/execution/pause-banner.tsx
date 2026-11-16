@@ -76,7 +76,7 @@ export function PauseBanner({
     >
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-start gap-3.5">
-          <div className="kr-dot-live flex size-11 shrink-0 items-center justify-center rounded-2xl text-ink-950"
+          <div className="kr-dot-live flex size-11 shrink-0 items-center justify-center rounded-2xl text-oncolor"
             style={{ background: "var(--kr-tone)", boxShadow: "0 0 26px -4px var(--kr-tone)" }}>
             <svg
               className="size-5"

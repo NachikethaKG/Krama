@@ -104,7 +104,7 @@ export function StepEvidenceCard({
         <div className="flex items-center gap-3">
           <span
             data-testid="step-seq-badge"
-            className="flex size-9 items-center justify-center rounded-xl font-mono text-sm font-extrabold text-ink-950"
+            className="flex size-9 items-center justify-center rounded-xl font-mono text-sm font-extrabold text-oncolor"
             style={{ background: "var(--kr-tone)", boxShadow: "0 0 18px -2px var(--kr-tone)" }}
           >
             {step.seq ?? (index !== undefined ? index + 1 : 1)}

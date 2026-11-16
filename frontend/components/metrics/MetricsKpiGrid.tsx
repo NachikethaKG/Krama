@@ -146,7 +146,7 @@ function KpiTile({
       <div className="flex items-center justify-between gap-2">
         <span className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-ink-300">
           <span
-            className="flex size-7 items-center justify-center rounded-lg text-ink-950 transition-transform group-hover:rotate-12"
+            className="flex size-7 items-center justify-center rounded-lg text-oncolor transition-transform group-hover:rotate-12"
             style={{ background: "var(--kr-tone)" }}
           >
             <Icon aria-hidden="true" className="size-4" />

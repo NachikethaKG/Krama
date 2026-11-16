@@ -92,7 +92,7 @@ export function StepChecklist({ steps, currentStepSeq, className = "" }: StepChe
                         <span
                           data-testid="step-running"
                           aria-label="Running step"
-                          className="flex size-5 items-center justify-center rounded-full bg-run text-ink-950 shadow-[0_0_12px_var(--run)]"
+                          className="flex size-5 items-center justify-center rounded-full bg-run text-oncolor shadow-[0_0_12px_var(--run)]"
                         >
                           <svg
                             className="size-3 animate-spin"
@@ -120,7 +120,7 @@ export function StepChecklist({ steps, currentStepSeq, className = "" }: StepChe
                         <span
                           data-testid="step-completed"
                           aria-label="Completed step"
-                          className="flex size-5 items-center justify-center rounded-full bg-verify text-ink-950 shadow-[0_0_12px_var(--verify)]"
+                          className="flex size-5 items-center justify-center rounded-full bg-verify text-oncolor shadow-[0_0_12px_var(--verify)]"
                         >
                           <svg
                             className="size-3"
@@ -142,7 +142,7 @@ export function StepChecklist({ steps, currentStepSeq, className = "" }: StepChe
                         <span
                           data-testid="step-paused"
                           aria-label="Paused step"
-                          className="flex size-5 items-center justify-center rounded-full bg-plan text-ink-950 shadow-[0_0_12px_var(--plan)]"
+                          className="flex size-5 items-center justify-center rounded-full bg-plan text-oncolor shadow-[0_0_12px_var(--plan)]"
                         >
                           <svg
                             className="size-3"
@@ -164,7 +164,7 @@ export function StepChecklist({ steps, currentStepSeq, className = "" }: StepChe
                         <span
                           data-testid="step-failed"
                           aria-label="Failed step"
-                          className="flex size-5 items-center justify-center rounded-full bg-danger text-ink-950 shadow-[0_0_12px_var(--danger)]"
+                          className="flex size-5 items-center justify-center rounded-full bg-danger text-oncolor shadow-[0_0_12px_var(--danger)]"
                         >
                           <svg
                             className="size-3"

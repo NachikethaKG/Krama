@@ -72,7 +72,7 @@ export function StepProgressItem({
             <span
               data-testid="step-verified-icon"
               aria-label={`Step ${seq} verified`}
-              className="flex size-7 items-center justify-center rounded-full bg-verify text-ink-950 shadow-[0_0_18px_var(--verify)]"
+              className="flex size-7 items-center justify-center rounded-full bg-verify text-oncolor shadow-[0_0_18px_var(--verify)]"
             >
               <svg className="size-4" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
@@ -84,7 +84,7 @@ export function StepProgressItem({
             <span
               data-testid="step-failed-icon"
               aria-label={`Step ${seq} failed`}
-              className="flex size-7 items-center justify-center rounded-full bg-danger text-ink-950 shadow-[0_0_18px_var(--danger)]"
+              className="flex size-7 items-center justify-center rounded-full bg-danger text-oncolor shadow-[0_0_18px_var(--danger)]"
             >
               <svg className="size-4" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />

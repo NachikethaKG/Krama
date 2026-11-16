@@ -56,7 +56,7 @@ export function HeroRunDemo() {
       <div className="relative h-64 overflow-hidden rounded-2xl bg-gradient-to-br from-ink-850 to-ink-800 sm:h-72">
         <div className="absolute left-[6%] top-[8%] h-3 w-1/3 rounded bg-white/15" />
         <div
-          className="absolute right-[6%] top-[8%] rounded-lg px-3 py-1.5 text-[10px] font-bold text-ink-950"
+          className="absolute right-[6%] top-[8%] rounded-lg px-3 py-1.5 text-[10px] font-bold text-oncolor"
           style={{ background: "var(--plan)" }}
         >
           New repository
@@ -74,7 +74,7 @@ export function HeroRunDemo() {
           </span>
           Private
         </div>
-        <div className="absolute left-[6%] top-[76%] rounded-lg bg-verify px-3 py-1.5 text-[10px] font-bold text-ink-950">
+        <div className="absolute left-[6%] top-[76%] rounded-lg bg-verify px-3 py-1.5 text-[10px] font-bold text-oncolor">
           Create repository
         </div>
 
@@ -97,7 +97,7 @@ export function HeroRunDemo() {
         )}
         {/* cursor */}
         <MousePointer2
-          className="absolute size-6 fill-white text-ink-950 drop-shadow-[0_4px_10px_rgba(0,0,0,0.6)] transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]"
+          className="absolute size-6 fill-white text-oncolor drop-shadow-[0_4px_10px_rgba(0,0,0,0.6)] transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]"
           style={{ left: `${step.target.x + 1}%`, top: `${step.target.y + 2}%` }}
         />
         {/* scan line */}
@@ -112,7 +112,7 @@ export function HeroRunDemo() {
           {step.evidence.map((e) => (
             <span
               key={e}
-              className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold text-ink-950 transition-opacity duration-300"
+              className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold text-oncolor transition-opacity duration-300"
               style={{ background: "var(--verify)", opacity: clicked ? 1 : 0.15 }}
             >
               <Check className="size-3" /> {e}
@@ -125,7 +125,7 @@ export function HeroRunDemo() {
           <span
             key={s.label}
             className="h-1.5 flex-1 rounded-full transition-all duration-500"
-            style={{ background: i <= index ? s.tone : "rgb(255 255 255 / 0.1)", boxShadow: i === index ? `0 0 12px ${s.tone}` : undefined }}
+            style={{ background: i <= index ? s.tone : "rgb(var(--fg-rgb) / 0.1)", boxShadow: i === index ? `0 0 12px ${s.tone}` : undefined }}
           />
         ))}
       </div>

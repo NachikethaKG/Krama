@@ -41,7 +41,7 @@ function FilterTab({
       aria-selected={selected}
       onClick={onClick}
       className={`flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold transition-all ${
-        selected ? "text-ink-950" : "text-ink-300 hover:text-white"
+        selected ? "text-oncolor" : "text-ink-300 hover:text-white"
       }`}
       style={selected ? { background: color, boxShadow: `0 0 20px -4px ${color}` } : undefined}
     >
@@ -49,7 +49,7 @@ function FilterTab({
       <span>{label}</span>
       <span
         className={`rounded-full px-1.5 text-[10px] font-extrabold ${
-          selected ? "bg-ink-950/20 text-ink-950" : "bg-white/10 text-ink-300"
+          selected ? "bg-ink-950/20 text-oncolor" : "bg-white/10 text-ink-300"
         }`}
       >
         {count}

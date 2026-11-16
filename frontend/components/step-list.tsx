@@ -82,7 +82,7 @@ export function StepList({
               >
                 {/* Step sequence bead */}
                 <div
-                  className="relative z-10 flex size-12 shrink-0 items-center justify-center rounded-full border-4 border-ink-950 font-mono text-sm font-extrabold text-ink-950 transition-transform duration-300 group-hover:scale-110"
+                  className="relative z-10 flex size-12 shrink-0 items-center justify-center rounded-full border-4 border-ink-950 font-mono text-sm font-extrabold text-oncolor transition-transform duration-300 group-hover:scale-110"
                   style={{ background: color, boxShadow: `0 0 24px -2px ${color}` }}
                 >
                   {step.seq}
@@ -97,7 +97,7 @@ export function StepList({
                   <div className="flex flex-1 flex-col gap-2">
                     <div className="flex flex-wrap items-center gap-2">
                       <span
-                        className="rounded-full px-2.5 py-0.5 font-mono text-[11px] font-bold uppercase tracking-wider text-ink-950"
+                        className="rounded-full px-2.5 py-0.5 font-mono text-[11px] font-bold uppercase tracking-wider text-oncolor"
                         style={{ background: color }}
                       >
                         {actionType}
@@ -165,7 +165,7 @@ export function StepList({
                           aria-label={`Delete step ${step.seq}`}
                           data-testid={`delete-step-${step.seq}`}
                           onClick={() => onDeleteStep?.(step.seq)}
-                          className="flex size-8 items-center justify-center rounded-full border border-danger/40 bg-danger/10 text-danger transition-all hover:bg-danger hover:text-ink-950"
+                          className="flex size-8 items-center justify-center rounded-full border border-danger/40 bg-danger/10 text-danger transition-all hover:bg-danger hover:text-oncolor"
                           title="Delete step"
                         >
                           <Trash2 aria-hidden="true" className="size-4" />

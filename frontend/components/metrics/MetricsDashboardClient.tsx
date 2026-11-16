@@ -190,7 +190,7 @@ export function MetricsDashboardClient({ initialData }: MetricsDashboardClientPr
                 onClick={() => setPlatformFilter("all")}
                 className={`rounded-full px-3.5 py-1.5 text-xs font-bold transition-all ${
                   platformFilter === "all"
-                    ? "bg-run text-ink-950 shadow-[0_0_18px_-4px_var(--run)]"
+                    ? "bg-run text-oncolor shadow-[0_0_18px_-4px_var(--run)]"
                     : "text-ink-400 hover:text-white"
                 }`}
               >
@@ -204,7 +204,7 @@ export function MetricsDashboardClient({ initialData }: MetricsDashboardClientPr
                 onClick={() => setPlatformFilter("gitea")}
                 className={`rounded-full px-3.5 py-1.5 text-xs font-bold transition-all ${
                   platformFilter === "gitea"
-                    ? "bg-run text-ink-950 shadow-[0_0_18px_-4px_var(--run)]"
+                    ? "bg-run text-oncolor shadow-[0_0_18px_-4px_var(--run)]"
                     : "text-ink-400 hover:text-white"
                 }`}
               >
@@ -218,7 +218,7 @@ export function MetricsDashboardClient({ initialData }: MetricsDashboardClientPr
                 onClick={() => setPlatformFilter("github")}
                 className={`rounded-full px-3.5 py-1.5 text-xs font-bold transition-all ${
                   platformFilter === "github"
-                    ? "bg-run text-ink-950 shadow-[0_0_18px_-4px_var(--run)]"
+                    ? "bg-run text-oncolor shadow-[0_0_18px_-4px_var(--run)]"
                     : "text-ink-400 hover:text-white"
                 }`}
               >

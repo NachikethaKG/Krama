@@ -99,7 +99,7 @@ export function AutomationRestrictedScreen({
       <div className="flex flex-col gap-6">
         {/* Header with Barrier Badge */}
         <div className="flex items-start gap-4">
-          <div className="kr-float flex size-14 shrink-0 items-center justify-center rounded-2xl bg-plan text-ink-950 shadow-[0_0_30px_-4px_var(--plan)]">
+          <div className="kr-float flex size-14 shrink-0 items-center justify-center rounded-2xl bg-plan text-oncolor shadow-[0_0_30px_-4px_var(--plan)]">
             <svg
               aria-hidden="true"
               className="size-7"

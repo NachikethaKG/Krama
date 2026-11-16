@@ -50,7 +50,7 @@ export function HomeScreen({ client }: { client?: ApiClient }) {
               return (
                 <span key={stage.key} className="flex items-center gap-1.5">
                   <span
-                    className="kr-slide flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold text-ink-950"
+                    className="kr-slide flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold text-oncolor"
                     style={{
                       background: stage.color,
                       boxShadow: `0 0 16px -4px ${stage.color}`,
@@ -74,7 +74,7 @@ export function HomeScreen({ client }: { client?: ApiClient }) {
           <div className="flex items-center gap-3">
             <span
               aria-hidden="true"
-              className="flex size-10 items-center justify-center rounded-2xl text-ink-950"
+              className="flex size-10 items-center justify-center rounded-2xl text-oncolor"
               style={{ background: "var(--learn)", boxShadow: "0 0 24px -4px var(--learn)" }}
             >
               <GraduationCap className="size-5" />

@@ -159,7 +159,7 @@ export function TutorialLibraryView({
           className="kr-danger kr-tone-card mt-8 rounded-3xl p-8 text-center"
         >
           <div
-            className="mx-auto flex size-12 items-center justify-center rounded-2xl text-ink-950"
+            className="mx-auto flex size-12 items-center justify-center rounded-2xl text-oncolor"
             style={{ background: "var(--danger)", boxShadow: "0 0 30px -4px var(--danger)" }}
           >
             <AlertTriangle className="size-6" aria-hidden="true" />
@@ -216,7 +216,7 @@ export function TutorialLibraryView({
           className="mt-12 rounded-[2rem] border border-dashed border-white/15 bg-white/[0.02] p-12 text-center"
         >
           <div
-            className="kr-float mx-auto flex size-16 items-center justify-center rounded-3xl text-ink-950"
+            className="kr-float mx-auto flex size-16 items-center justify-center rounded-3xl text-oncolor"
             style={{
               background: "linear-gradient(135deg, var(--learn), var(--ask))",
               boxShadow: "0 0 40px -6px var(--learn)",

@@ -74,7 +74,7 @@ export function ReplanStatusIndicator({
         <div className="flex items-start gap-3.5">
           {/* Animated Status Icon */}
           <div
-            className={`flex size-11 shrink-0 items-center justify-center rounded-2xl text-ink-950 ${
+            className={`flex size-11 shrink-0 items-center justify-center rounded-2xl text-oncolor ${
               isExhausted || isSucceeded ? "" : "kr-dot-live"
             }`}
             style={{ background: "var(--kr-tone)", boxShadow: "0 0 26px -4px var(--kr-tone)" }}

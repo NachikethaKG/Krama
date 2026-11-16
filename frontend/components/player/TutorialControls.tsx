@@ -199,7 +199,7 @@ export function TutorialControls({
           {/* Step & Time display */}
           <div className="ml-1 flex items-center gap-2 text-xs font-medium text-ink-300 sm:ml-2">
             <span
-              className="rounded-full px-2.5 py-1 font-bold text-ink-950"
+              className="rounded-full px-2.5 py-1 font-bold text-oncolor"
               style={{ background: sceneColor, boxShadow: `0 0 16px -4px ${sceneColor}` }}
             >
               Step {currentSceneIndex + 1} of {totalScenes}
