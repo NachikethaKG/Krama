@@ -54,20 +54,20 @@ export function LiveAgentObserverView({
       className={`mx-auto flex w-full max-w-7xl flex-col gap-6 p-4 sm:p-6 ${className}`}
     >
       {/* Top Header & Breadcrumb */}
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-zinc-200 pb-4 dark:border-zinc-800">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b pb-4 border-white/10">
         <div>
-          <div className="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
+          <div className="flex items-center gap-2 text-xs text-ink-400">
             <Link
               href="/runs"
               data-testid="observer-back-to-runs"
-              className="hover:text-zinc-900 dark:hover:text-zinc-100 font-medium transition-colors"
+              className="hover:text-white font-medium transition-colors"
             >
               ← All Runs
             </Link>
             <span>/</span>
             <span
               data-testid="run-detail-id"
-              className="font-mono text-zinc-700 dark:text-zinc-300"
+              className="font-mono text-ink-300"
             >
               {runId}
             </span>
@@ -75,7 +75,7 @@ export function LiveAgentObserverView({
 
           <h1
             data-testid="run-detail-prompt"
-            className="mt-1 text-lg sm:text-xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100"
+            className="kr-display mt-1 text-3xl font-extrabold text-white sm:text-4xl"
           >
             {prompt || "Live Agent Headless Execution"}
           </h1>
@@ -85,15 +85,15 @@ export function LiveAgentObserverView({
         <div className="flex items-center gap-3 shrink-0">
           <div
             data-testid="stream-connection-badge"
-            className="flex items-center gap-1.5 rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-semibold text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
+            className="kr-glass flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold text-ink-300"
           >
             <span
               className={`size-2 rounded-full ${
                 isConnected
-                  ? "bg-emerald-500 animate-pulse"
+                  ? "kr-dot-live bg-verify shadow-[0_0_10px_var(--verify)]"
                   : isReconnecting
-                    ? "bg-amber-500 animate-ping"
-                    : "bg-zinc-400"
+                    ? "animate-ping bg-plan"
+                    : "bg-ink-400"
               }`}
             />
             <span>
@@ -111,9 +111,9 @@ export function LiveAgentObserverView({
       {isReconnecting && (
         <div
           data-testid="stream-reconnecting-banner"
-          className="flex items-center gap-2 rounded-xl border border-amber-300 bg-amber-50 px-4 py-2.5 text-xs font-medium text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-200"
+          className="kr-plan kr-tone-card flex items-center gap-2 rounded-2xl px-4 py-2.5 text-xs font-semibold text-plan"
         >
-          <div className="size-2 rounded-full bg-amber-500 animate-pulse" />
+          <div className="kr-dot kr-dot-live !size-2" />
           <span>Stream connection lost. Reconnecting to live observer stream…</span>
         </div>
       )}
@@ -150,12 +150,12 @@ export function LiveAgentObserverView({
           {/* Activity Log Tracker */}
           <div
             data-testid="activity-log-card"
-            className="rounded-2xl border border-zinc-200 bg-white p-4 text-xs shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
+            className="kr-approve kr-tone-card rounded-3xl p-4 text-xs"
           >
-            <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-2">
+            <h3 className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-approve">
               Observer Stream Activity
             </h3>
-            <div className="space-y-1.5 font-mono text-[11px] text-zinc-600 dark:text-zinc-400">
+            <div className="space-y-1.5 font-mono text-[11px] text-ink-400">
               <p>• Run: {runId}</p>
               <p>• Status: <span className="font-semibold uppercase">{status}</span></p>
               {currentStepSeq && <p>• Active Step: {currentStepSeq}</p>}
