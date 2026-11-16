@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ArrowRight, Eye, Fingerprint, Radar, ShieldAlert, Sparkles, Wand2 } from "lucide-react";
 import { ApiStatus } from "@/components/api-status";
 import { HeroRunDemo } from "@/components/landing/HeroRunDemo";
-import { Logo, Reveal, STAGE, TiltCard } from "@/components/ui";
+import { Logo, Reveal, STAGE, ThemeToggle, TiltCard } from "@/components/ui";
 import type { ApiClient } from "@/lib/api";
 
 export interface LandingPageProps {
@@ -101,6 +101,7 @@ export function LandingPage({ signedIn = false, client }: LandingPageProps = {})
             </span>
           </div>
           <nav className="flex items-center gap-2 text-sm font-medium sm:gap-4">
+            <ThemeToggle />
             <a href="#how-it-works" className="hidden text-ink-300 transition-colors hover:text-white sm:inline">
               How it works
             </a>
@@ -179,7 +180,7 @@ export function LandingPage({ signedIn = false, client }: LandingPageProps = {})
               <Reveal key={feature.title} delay={i * 80} className={feature.span}>
                 <TiltCard className={`${feature.tone} kr-tone-card group h-full rounded-3xl p-6`}>
                   <div
-                    className="flex size-12 items-center justify-center rounded-2xl text-ink-950 transition-transform duration-500 group-hover:rotate-12 group-hover:scale-110"
+                    className="flex size-12 items-center justify-center rounded-2xl text-oncolor transition-transform duration-500 group-hover:rotate-12 group-hover:scale-110"
                     style={{ background: "var(--kr-tone)", boxShadow: "0 10px 30px -8px var(--kr-tone)" }}
                   >
                     <Icon aria-hidden="true" className="size-6" />
@@ -208,7 +209,7 @@ export function LandingPage({ signedIn = false, client }: LandingPageProps = {})
                   <li key={step.title} className="relative">
                     <Reveal delay={i * 120} className="flex flex-col items-center text-center">
                       <span
-                        className="relative z-10 flex size-14 items-center justify-center rounded-full border-4 border-ink-950 text-ink-950"
+                        className="relative z-10 flex size-14 items-center justify-center rounded-full border-4 border-ink-950 text-oncolor"
                         style={{ background: step.stage.color, boxShadow: `0 0 34px ${step.stage.color}` }}
                       >
                         <Icon aria-hidden="true" className="size-6" />

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Eye, Share2 } from "lucide-react";
-import { Logo } from "@/components/ui";
+import { Logo, ThemeToggle } from "@/components/ui";
 
 export interface SharedPageHeaderProps {
   title?: string;
@@ -39,6 +39,7 @@ export function SharedPageHeader({ title }: SharedPageHeaderProps) {
             <Eye aria-hidden="true" className="size-3" />
             Read-only preview
           </span>
+          <ThemeToggle />
         </div>
       </div>
     </header>

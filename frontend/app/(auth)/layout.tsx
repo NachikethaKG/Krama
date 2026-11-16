@@ -1,10 +1,11 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { Logo, STAGES } from "@/components/ui";
+import { Logo, STAGES, ThemeToggle } from "@/components/ui";
 
 export default function AuthLayout({ children }: { children: ReactNode }) {
   return (
     <div className="relative grid min-h-screen lg:grid-cols-2">
+      <ThemeToggle className="!absolute right-4 top-4 z-10" />
       {/* Left: the spectrum story, on large screens only */}
       <aside aria-hidden="true" className="relative hidden flex-col justify-between overflow-hidden p-12 lg:flex">
         <Logo size={38} />
@@ -26,7 +27,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
                   style={{ animationDelay: `${200 + i * 90}ms` }}
                 >
                   <span
-                    className="flex size-9 items-center justify-center rounded-xl text-ink-950"
+                    className="flex size-9 items-center justify-center rounded-xl text-oncolor"
                     style={{ background: stage.color, boxShadow: `0 0 20px -2px ${stage.color}` }}
                   >
                     <Icon className="size-4" />
