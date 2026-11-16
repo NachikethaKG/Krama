@@ -66,25 +66,18 @@ export function ReplanStatusIndicator({
       aria-live="polite"
       data-testid="replan-status-indicator"
       data-replan-status={status}
-      className={`rounded-xl border p-4 shadow-sm transition-all sm:p-5 ${
-        isExhausted
-          ? "border-rose-300 bg-rose-50/90 dark:border-rose-900/80 dark:bg-rose-950/40"
-          : isSucceeded
-            ? "border-emerald-300 bg-emerald-50/90 dark:border-emerald-900/80 dark:bg-emerald-950/40"
-            : "border-indigo-300 bg-indigo-50/70 dark:border-indigo-900/80 dark:bg-indigo-950/40"
+      className={`kr-tone-card rounded-3xl p-4 transition-all sm:p-5 ${
+        isExhausted ? "kr-danger" : isSucceeded ? "kr-verify" : "kr-approve"
       } ${className}`}
     >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-start gap-3.5">
           {/* Animated Status Icon */}
           <div
-            className={`flex size-9 shrink-0 items-center justify-center rounded-xl text-white shadow-2xs ${
-              isExhausted
-                ? "bg-rose-600"
-                : isSucceeded
-                  ? "bg-emerald-600"
-                  : "bg-indigo-600"
+            className={`flex size-11 shrink-0 items-center justify-center rounded-2xl text-ink-950 ${
+              isExhausted || isSucceeded ? "" : "kr-dot-live"
             }`}
+            style={{ background: "var(--kr-tone)", boxShadow: "0 0 26px -4px var(--kr-tone)" }}
           >
             {isExhausted ? (
               <svg className="size-5" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
@@ -104,7 +97,7 @@ export function ReplanStatusIndicator({
           <div className="flex flex-col gap-1.5">
             {/* Badges row */}
             <div className="flex flex-wrap items-center gap-2">
-              <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
+              <h3 className="kr-display text-lg font-bold text-white">
                 {isExhausted
                   ? "Automatic Recovery Exhausted"
                   : isSucceeded
@@ -115,16 +108,16 @@ export function ReplanStatusIndicator({
               {/* Status Badge */}
               <span
                 data-testid={`replan-badge-${status}`}
-                className={`rounded-md border px-2 py-0.5 font-mono text-[11px] font-semibold tracking-wide uppercase ${
+                className={`kr-chip font-mono uppercase ${
                   status === "re-locating"
-                    ? "border-amber-300 bg-amber-100 text-amber-800 dark:border-amber-800 dark:bg-amber-950/80 dark:text-amber-200"
+                    ? "kr-plan"
                     : status === "retrying"
-                      ? "border-sky-300 bg-sky-100 text-sky-800 dark:border-sky-800 dark:bg-sky-950/80 dark:text-sky-200"
+                      ? "kr-run"
                       : status === "replanning"
-                        ? "border-indigo-300 bg-indigo-100 text-indigo-800 dark:border-indigo-800 dark:bg-indigo-950/80 dark:text-indigo-200"
+                        ? "kr-approve"
                         : status === "exhausted"
-                          ? "border-rose-300 bg-rose-100 text-rose-800 dark:border-rose-800 dark:bg-rose-950/80 dark:text-rose-200"
-                          : "border-emerald-300 bg-emerald-100 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-200"
+                          ? "kr-danger"
+                          : "kr-verify"
                 }`}
               >
                 {status}
@@ -133,7 +126,7 @@ export function ReplanStatusIndicator({
               {/* Attempt Counter Badge */}
               <span
                 data-testid="replan-attempt-counter"
-                className="rounded-md border border-zinc-200 bg-white px-2 py-0.5 font-mono text-xs font-semibold text-zinc-700 shadow-2xs dark:border-zinc-800 dark:bg-zinc-800 dark:text-zinc-300"
+                className="rounded-full border border-white/15 bg-white/5 px-2.5 py-0.5 font-mono text-xs font-semibold text-ink-300"
               >
                 {maxAttempts ? `Attempt ${attempt} of ${maxAttempts}` : `Attempt ${attempt}`}
               </span>
@@ -141,21 +134,21 @@ export function ReplanStatusIndicator({
 
             {/* Reason */}
             {reason && (
-              <p data-testid="replan-reason" className="text-xs text-zinc-700 dark:text-zinc-300">
-                <span className="font-semibold text-zinc-900 dark:text-zinc-100">Trigger:</span> {reason}
+              <p data-testid="replan-reason" className="text-xs text-ink-300">
+                <span className="font-bold text-white">Trigger:</span> {reason}
               </p>
             )}
 
             {/* Strategy & Timeout */}
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-zinc-600 dark:text-zinc-400">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-ink-400">
               {strategy && (
                 <span data-testid="replan-strategy">
-                  <strong className="text-zinc-800 dark:text-zinc-200">Strategy:</strong> {strategy}
+                  <strong className="text-ink-300">Strategy:</strong> {strategy}
                 </span>
               )}
 
               {countdown !== undefined && countdown > 0 && !isExhausted && !isSucceeded && (
-                <span data-testid="replan-timeout" className="font-mono font-medium text-amber-700 dark:text-amber-400">
+                <span data-testid="replan-timeout" className="font-mono font-bold text-plan">
                   Timeout in {countdown}s
                 </span>
               )}
@@ -172,7 +165,7 @@ export function ReplanStatusIndicator({
                   type="button"
                   data-testid="replan-takeover-btn"
                   onClick={onTakeover || onResume}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-900 shadow-2xs transition hover:bg-amber-100 dark:border-amber-800 dark:bg-amber-950/60 dark:text-amber-200 dark:hover:bg-amber-900/60"
+                  className="kr-btn kr-btn-ghost kr-plan px-3 py-1.5 text-xs"
                 >
                   <svg className="size-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
@@ -186,7 +179,7 @@ export function ReplanStatusIndicator({
                   type="button"
                   data-testid="replan-abort-btn"
                   onClick={onAbort}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-rose-300 bg-white px-3 py-1.5 text-xs font-semibold text-rose-800 shadow-2xs transition hover:bg-rose-50 dark:border-rose-800 dark:bg-zinc-900 dark:text-rose-300 dark:hover:bg-rose-950/50"
+                  className="kr-btn kr-btn-ghost kr-danger px-3 py-1.5 text-xs"
                 >
                   <svg className="size-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -202,7 +195,7 @@ export function ReplanStatusIndicator({
               type="button"
               data-testid="replan-cancel-btn"
               onClick={onAbort}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-2.5 py-1 text-xs font-medium text-zinc-700 transition hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
+              className="kr-btn kr-btn-ghost px-2.5 py-1 text-xs"
             >
               Cancel Replan
             </button>
