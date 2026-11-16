@@ -39,9 +39,7 @@ export function LatencySparkline({
   const budgetX = budgetRatio * width;
 
   const isUnderBudget = p90Ms <= targetBudgetMs;
-  const barColor = isUnderBudget
-    ? "fill-emerald-500/80 dark:fill-emerald-400/80"
-    : "fill-amber-500/80 dark:fill-amber-400/80";
+  const gradientId = `kr-spark-${isUnderBudget ? "ok" : "warn"}`;
 
   return (
     <div
@@ -55,6 +53,16 @@ export function LatencySparkline({
         viewBox={`0 0 ${width} ${height}`}
         className="overflow-visible"
       >
+        <defs>
+          <linearGradient id="kr-spark-ok" x1="0" x2="1" y1="0" y2="0">
+            <stop offset="0%" stopColor="var(--run)" />
+            <stop offset="100%" stopColor="var(--verify)" />
+          </linearGradient>
+          <linearGradient id="kr-spark-warn" x1="0" x2="1" y1="0" y2="0">
+            <stop offset="0%" stopColor="var(--plan)" />
+            <stop offset="100%" stopColor="var(--ask)" />
+          </linearGradient>
+        </defs>
         {/* Track background */}
         <rect
           x={0}
@@ -62,7 +70,7 @@ export function LatencySparkline({
           width={width}
           height={8}
           rx={4}
-          className="fill-zinc-100 dark:fill-zinc-800"
+          className="fill-white/10"
         />
 
         {/* 60s target budget line marker */}
@@ -72,7 +80,7 @@ export function LatencySparkline({
           x2={budgetX}
           y2={18}
           strokeDasharray="2 2"
-          className="stroke-zinc-400 dark:stroke-zinc-600"
+          className="stroke-ink-400"
           strokeWidth="1.5"
         />
 
@@ -83,7 +91,7 @@ export function LatencySparkline({
           width={Math.max(4, p90X)}
           height={8}
           rx={4}
-          className="fill-indigo-100 dark:fill-indigo-950/60"
+          className="fill-approve/30"
         />
 
         {/* P50 bar fill (solid) */}
@@ -93,7 +101,7 @@ export function LatencySparkline({
           width={Math.max(4, p50X)}
           height={8}
           rx={4}
-          className={barColor}
+          fill={`url(#${gradientId})`}
         />
 
         {/* P90 whisker marker */}
@@ -102,15 +110,15 @@ export function LatencySparkline({
           y1={4}
           x2={p90X}
           y2={16}
-          className="stroke-zinc-700 dark:stroke-zinc-300"
+          className="stroke-white"
           strokeWidth="2"
           strokeLinecap="round"
         />
       </svg>
 
-      <div className="flex w-full justify-between text-[10px] text-zinc-500 dark:text-zinc-400 font-mono">
+      <div className="flex w-full justify-between text-[10px] text-ink-400 font-mono">
         <span>P50: {formatMs(p50Ms)}</span>
-        <span className={isUnderBudget ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"}>
+        <span className={isUnderBudget ? "text-verify" : "text-plan"}>
           P90: {formatMs(p90Ms)}
         </span>
       </div>
