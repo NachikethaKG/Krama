@@ -6,7 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { History, LibraryBig, LogOut, Sparkles } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { User } from "@krama/contracts-ts";
-import { Logo } from "@/components/ui";
+import { Logo, ThemeToggle } from "@/components/ui";
 import { type ApiClient, getApiClient } from "@/lib/api";
 
 // `short` is shown on phones, where the full labels don't fit next to the logo and Sign out.
@@ -92,7 +92,7 @@ export function AppHeader({ client }: { client?: ApiClient }) {
                 href={item.href}
                 aria-current={active ? "page" : undefined}
                 className={`group relative flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1.5 font-semibold transition-all sm:px-3.5 ${
-                  active ? "text-ink-950" : "text-ink-300 hover:text-white"
+                  active ? "text-oncolor" : "text-ink-300 hover:text-white"
                 }`}
                 style={
                   active
@@ -112,11 +112,12 @@ export function AppHeader({ client }: { client?: ApiClient }) {
           })}
         </nav>
         <div className="ml-auto flex shrink-0 items-center gap-2 text-sm">
+          <ThemeToggle />
           {user && (
             <span className="hidden items-center gap-2 rounded-full bg-white/5 py-1 pl-1 pr-3 sm:flex">
               <span
                 aria-hidden="true"
-                className="flex size-6 items-center justify-center rounded-full text-xs font-extrabold text-ink-950"
+                className="flex size-6 items-center justify-center rounded-full text-xs font-extrabold text-oncolor"
                 style={{ background: "linear-gradient(135deg, var(--ask), var(--plan))" }}
               >
                 {initial}
