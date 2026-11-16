@@ -28,21 +28,21 @@ export interface LiveExecutionViewProps {
 function ProposedSteps({ proposal }: { proposal: ProposedPlanState | null }) {
   if (!proposal || proposal.loading) {
     return (
-      <p data-testid="proposed-steps-loading" className="text-xs text-amber-900 dark:text-amber-200">
+      <p data-testid="proposed-steps-loading" className="text-xs text-ink-300">
         Loading the proposed steps…
       </p>
     );
   }
   if (proposal.error) {
     return (
-      <p data-testid="proposed-steps-error" role="alert" className="text-xs font-medium text-rose-700 dark:text-rose-300">
+      <p data-testid="proposed-steps-error" role="alert" className="text-xs font-semibold text-danger">
         {proposal.error} Allow is disabled; deny cancels the run.
       </p>
     );
   }
   return (
-    <div data-testid="proposed-steps" className="rounded-lg border border-amber-200 bg-white p-3 dark:border-amber-900/60 dark:bg-zinc-900">
-      <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-amber-900 dark:text-amber-200">
+    <div data-testid="proposed-steps" className="rounded-2xl border border-approve/40 bg-ink-950/60 p-3">
+      <h4 className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-approve">
         Proposed remaining steps ({proposal.steps.length})
       </h4>
       <ol className="flex flex-col gap-2">
@@ -51,10 +51,10 @@ function ProposedSteps({ proposal }: { proposal: ProposedPlanState | null }) {
             key={s.seq}
             data-testid="proposed-step-item"
             data-step-seq={s.seq}
-            className="flex items-start justify-between gap-3 text-xs text-zinc-800 dark:text-zinc-200"
+            className="flex items-start justify-between gap-3 text-xs text-ink-300"
           >
             <span className="flex items-start gap-2">
-              <span className="rounded bg-amber-100 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-amber-900 dark:bg-amber-900/60 dark:text-amber-100">
+              <span className="rounded-md bg-approve/20 px-1.5 py-0.5 font-mono text-[10px] font-bold text-approve">
                 {s.seq}
               </span>
               <span>{s.instruction_text}</span>
@@ -103,8 +103,8 @@ export function LiveExecutionView({ runId, speed, client, className = "" }: Live
         data-testid="live-execution-loading"
         className="mx-auto flex w-full max-w-4xl flex-1 flex-col items-center justify-center gap-3 px-4 py-20 text-center"
       >
-        <div className="size-8 animate-spin rounded-full border-2 border-indigo-300 border-t-indigo-600 dark:border-indigo-800 dark:border-t-indigo-400" />
-        <p className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Loading the run…</p>
+        <div className="size-12 animate-spin rounded-full border-4 border-white/10 border-t-run shadow-[0_0_30px_-4px_var(--run)]" />
+        <p className="font-mono text-sm text-run">Loading the run…</p>
       </main>
     );
   }
@@ -115,9 +115,9 @@ export function LiveExecutionView({ runId, speed, client, className = "" }: Live
         data-testid="live-execution-error"
         className="mx-auto flex w-full max-w-4xl flex-1 flex-col items-center justify-center gap-4 px-4 py-20 text-center"
       >
-        <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">Run Not Found</h1>
-        <p className="max-w-md text-sm text-zinc-600 dark:text-zinc-400">{loadError}</p>
-        <Link href="/" className="text-sm font-semibold text-indigo-600 underline dark:text-indigo-400">
+        <h1 className="kr-display text-4xl font-extrabold text-white">Run Not Found</h1>
+        <p className="max-w-md text-sm text-ink-300">{loadError}</p>
+        <Link href="/" className="kr-btn kr-btn-primary px-5 py-2 text-sm">
           Start a new task
         </Link>
       </main>
@@ -154,7 +154,7 @@ export function LiveExecutionView({ runId, speed, client, className = "" }: Live
         <div
           role="alert"
           data-testid="execution-error-banner"
-          className="flex flex-col gap-3 rounded-xl border border-rose-300 bg-rose-50 p-4 text-sm text-rose-900 sm:flex-row sm:items-center sm:justify-between dark:border-rose-900/80 dark:bg-rose-950/40 dark:text-rose-200"
+          className="kr-danger kr-tone-card flex flex-col gap-3 rounded-2xl p-4 text-sm text-white sm:flex-row sm:items-center sm:justify-between"
         >
           <span data-testid="execution-error-message">{error}</span>
           <div className="flex shrink-0 items-center gap-2">
@@ -163,7 +163,7 @@ export function LiveExecutionView({ runId, speed, client, className = "" }: Live
                 type="button"
                 data-testid="reconnect-stream-btn"
                 onClick={reconnect}
-                className="rounded-lg bg-rose-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-rose-500"
+                className="kr-btn kr-btn-tone px-3 py-1.5 text-xs"
               >
                 Reconnect
               </button>
@@ -172,7 +172,7 @@ export function LiveExecutionView({ runId, speed, client, className = "" }: Live
               type="button"
               data-testid="dismiss-error-btn"
               onClick={dismissError}
-              className="text-xs text-rose-700 underline hover:text-rose-900 dark:text-rose-300"
+              className="text-xs text-ink-300 underline hover:text-white"
             >
               Dismiss
             </button>
@@ -184,7 +184,7 @@ export function LiveExecutionView({ runId, speed, client, className = "" }: Live
         <div
           role="status"
           data-testid="stream-reconnecting"
-          className="rounded-xl border border-zinc-200 bg-zinc-50 p-3 text-xs text-zinc-700 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300"
+          className="kr-plan kr-tone-card rounded-2xl p-3 text-xs text-ink-300"
         >
           Connection to the live view dropped. Reconnecting and resuming from the last event…
         </div>
@@ -193,13 +193,13 @@ export function LiveExecutionView({ runId, speed, client, className = "" }: Live
       {isLive && (
         <div
           data-testid="run-controls-bar"
-          className="flex items-center justify-between rounded-xl border border-zinc-200 bg-white p-4 shadow-xs dark:border-zinc-800 dark:bg-zinc-900"
+          className="kr-glass flex items-center justify-between rounded-2xl p-4"
         >
           <div className="flex items-center gap-2.5">
             <span
-              className={`size-2.5 rounded-full ${runStatus === "paused" ? "bg-amber-500" : "animate-pulse bg-indigo-500"}`}
+              className={`kr-dot kr-dot-live ${runStatus === "paused" ? "kr-plan" : "kr-run"}`}
             />
-            <span className="text-xs font-medium text-zinc-600 sm:text-sm dark:text-zinc-300">
+            <span className="text-xs font-semibold text-ink-300 sm:text-sm">
               {runStatus === "paused"
                 ? "Waiting for you to confirm a step"
                 : runStatus === "queued"
@@ -213,7 +213,7 @@ export function LiveExecutionView({ runId, speed, client, className = "" }: Live
             data-testid="cancel-run-btn"
             disabled={isCancelling || isConfirming}
             onClick={cancel}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-rose-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-rose-700 transition hover:bg-rose-50 focus:outline-hidden focus:ring-2 focus:ring-rose-500/50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-rose-900/60 dark:bg-zinc-900 dark:text-rose-400 dark:hover:bg-rose-950/40"
+            className="kr-btn kr-btn-ghost kr-danger px-3.5 py-1.5 text-xs text-danger"
           >
             {isCancelling ? "Cancelling…" : "Cancel Run"}
           </button>
@@ -288,11 +288,11 @@ export function LiveExecutionView({ runId, speed, client, className = "" }: Live
         <div
           role="status"
           data-testid="cancelled-banner"
-          className="flex flex-col gap-4 rounded-xl border border-zinc-200 bg-zinc-50 p-4 shadow-xs sm:flex-row sm:items-center sm:justify-between dark:border-zinc-800 dark:bg-zinc-900/60"
+          className="kr-glass flex flex-col gap-4 rounded-2xl p-4 sm:flex-row sm:items-center sm:justify-between"
         >
           <div>
-            <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Workflow Execution Cancelled</h3>
-            <p className="text-xs text-zinc-600 dark:text-zinc-400">
+            <h3 className="kr-display text-lg font-bold text-white">Workflow Execution Cancelled</h3>
+            <p className="text-xs text-ink-400">
               The run was halted before all steps could be completed.
             </p>
           </div>
@@ -301,7 +301,7 @@ export function LiveExecutionView({ runId, speed, client, className = "" }: Live
               <a
                 href={`/workflows/${planId}/approval`}
                 data-testid="back-to-plan-btn"
-                className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
+                className="kr-btn kr-btn-ghost kr-approve px-3 py-1.5 text-xs"
               >
                 Back to Plan
               </a>
@@ -309,7 +309,7 @@ export function LiveExecutionView({ runId, speed, client, className = "" }: Live
             <Link
               href="/"
               data-testid="new-task-link"
-              className="rounded-lg bg-zinc-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+              className="kr-btn kr-btn-primary px-3.5 py-1.5 text-xs"
             >
               New Task
             </Link>
@@ -321,11 +321,11 @@ export function LiveExecutionView({ runId, speed, client, className = "" }: Live
         <div
           role="status"
           data-testid="completion-banner"
-          className="flex flex-col gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-semibold text-emerald-900 shadow-xs sm:flex-row sm:items-center sm:justify-between dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-100"
+          className="kr-spectrum-border kr-verify flex flex-col gap-3 rounded-3xl bg-ink-900/85 p-5 text-sm font-semibold text-white sm:flex-row sm:items-center sm:justify-between"
         >
           <div>
-            <div>Tutorial ready</div>
-            <div className="text-xs font-normal text-emerald-800/80 dark:text-emerald-300/80">
+            <div className="kr-display kr-gradient-text text-2xl font-extrabold">Tutorial ready</div>
+            <div className="text-xs font-normal text-ink-300">
               {totalSteps} verified {totalSteps === 1 ? "step" : "steps"} · 0 failed actions · 0 unresolved states
             </div>
           </div>
@@ -335,7 +335,7 @@ export function LiveExecutionView({ runId, speed, client, className = "" }: Live
               <a
                 href={`/tutorials/${workflowId}`}
                 data-testid="watch-tutorial-link"
-                className="rounded-lg bg-indigo-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-indigo-500"
+                className="kr-btn kr-btn-primary px-4 py-2 text-xs"
               >
                 &#9654; Start tutorial
               </a>
@@ -343,7 +343,7 @@ export function LiveExecutionView({ runId, speed, client, className = "" }: Live
             <a
               href={`/runs/${runId}`}
               data-testid="view-workflow-link"
-              className="rounded-lg bg-emerald-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-emerald-500"
+              className="kr-btn kr-btn-tone kr-verify px-4 py-2 text-xs"
             >
               See each step&apos;s checks &rarr;
             </a>
@@ -353,13 +353,20 @@ export function LiveExecutionView({ runId, speed, client, className = "" }: Live
 
       <section aria-label="Execution steps" className="flex flex-col gap-3">
         <div className="flex items-center justify-between px-1">
-          <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Execution Steps ({steps.length})</h2>
-          <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
+          <h2 className="kr-display text-xl font-bold text-white">Execution Steps ({steps.length})</h2>
+          <span className="kr-chip kr-verify">
             {verifiedCount}/{totalSteps} verified
           </span>
         </div>
 
-        <ol data-testid="execution-step-list" className="flex flex-col gap-3">
+        <div className="relative">
+          {/* the level map: a spectrum rail every step node hangs on */}
+          <div
+            aria-hidden="true"
+            className="absolute bottom-4 left-[1.85rem] top-4 w-[3px] rounded-full opacity-60"
+            style={{ background: "linear-gradient(var(--run), var(--approve), var(--verify), var(--learn))" }}
+          />
+          <ol data-testid="execution-step-list" className="relative flex flex-col gap-3">
           {steps.map((step) => (
             <StepProgressItem
               key={step.seq}
@@ -377,7 +384,8 @@ export function LiveExecutionView({ runId, speed, client, className = "" }: Live
               observedTitle={step.observedTitle}
             />
           ))}
-        </ol>
+          </ol>
+        </div>
       </section>
     </main>
   );
