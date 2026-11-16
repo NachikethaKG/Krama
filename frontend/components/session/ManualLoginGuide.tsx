@@ -128,11 +128,11 @@ export function ManualLoginGuide({
   return (
     <div
       data-testid="manual-login-guide"
-      className={`rounded-xl border border-indigo-100 bg-indigo-50/50 p-4 dark:border-indigo-900/40 dark:bg-indigo-950/20 ${className}`}
+      className={`kr-approve kr-tone-card rounded-3xl p-5 ${className}`}
     >
       <div className="flex flex-col gap-3">
         <div className="flex items-start gap-3">
-          <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-indigo-600 text-white shadow-xs dark:bg-indigo-500">
+          <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-approve text-ink-950 shadow-[0_0_22px_-4px_var(--approve)]">
             <svg
               className="size-4"
               fill="none"
@@ -149,12 +149,12 @@ export function ManualLoginGuide({
             </svg>
           </div>
           <div className="flex flex-col gap-0.5">
-            <h4 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+            <h4 className="kr-display text-base font-bold text-white">
               One-Time Manual Authentication
             </h4>
             <p
               data-testid="manual-login-explainer"
-              className="text-xs text-zinc-600 dark:text-zinc-400"
+              className="text-xs text-ink-300"
             >
               You will log in directly in a separate browser window. Krama only saves an encrypted session cookie, never your password.
             </p>
@@ -166,10 +166,10 @@ export function ManualLoginGuide({
           <div className="flex items-center justify-between gap-3 pt-1">
             <div
               data-testid="manual-login-active-badge"
-              className="inline-flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-300"
+              className="kr-chip kr-verify !gap-2 !px-3 !py-1.5"
             >
               <svg
-                className="size-4 text-emerald-600 dark:text-emerald-400"
+                className="size-4 text-verify"
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="2.5"
@@ -180,7 +180,7 @@ export function ManualLoginGuide({
               </svg>
               <span>Session Active (Encrypted Storage State Saved)</span>
               {session?.expires_at && (
-                <span className="text-[10px] font-normal text-emerald-700 dark:text-emerald-300">
+                <span className="text-[10px] font-normal text-verify/80">
                   (Expires {new Date(session.expires_at).toLocaleDateString()})
                 </span>
               )}
@@ -189,7 +189,7 @@ export function ManualLoginGuide({
               type="button"
               data-testid="reauth-manual-login-btn"
               onClick={handleLaunch}
-              className="text-xs font-medium text-zinc-500 underline hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200"
+              className="text-xs font-medium text-ink-400 underline hover:text-white"
             >
               Re-authenticate
             </button>
@@ -200,10 +200,10 @@ export function ManualLoginGuide({
         {(phase === "launching" || phase === "pending") && (
           <div
             data-testid="manual-login-pending"
-            className="flex items-center gap-2.5 rounded-lg border border-indigo-200 bg-white/80 px-3.5 py-2 text-xs font-medium text-indigo-900 shadow-xs dark:border-indigo-800 dark:bg-zinc-900/80 dark:text-indigo-200"
+            className="flex items-center gap-2.5 rounded-2xl border border-approve/40 bg-ink-950/60 px-3.5 py-2 text-xs font-medium text-approve"
           >
             <svg
-              className="size-4 animate-spin text-indigo-600 dark:text-indigo-400"
+              className="size-4 animate-spin text-approve"
               fill="none"
               viewBox="0 0 24 24"
               aria-hidden="true"
@@ -220,7 +220,7 @@ export function ManualLoginGuide({
           <div
             data-testid="manual-login-error"
             role="alert"
-            className="flex flex-col gap-2 rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-300"
+            className="kr-danger kr-tone-card flex flex-col gap-2 rounded-2xl p-3 text-xs text-danger"
           >
             <p>{error || "Authentication could not be completed."}</p>
             <div className="flex justify-end">
@@ -228,7 +228,7 @@ export function ManualLoginGuide({
                 type="button"
                 data-testid="retry-manual-login-btn"
                 onClick={handleLaunch}
-                className="inline-flex items-center gap-1.5 rounded-md bg-rose-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-rose-700"
+                className="kr-btn kr-btn-tone kr-danger px-3.5 py-1.5 text-xs"
               >
                 Retry Manual Login
               </button>
@@ -243,7 +243,7 @@ export function ManualLoginGuide({
               type="button"
               data-testid="launch-manual-login-btn"
               onClick={handleLaunch}
-              className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-indigo-700 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 dark:bg-indigo-600 dark:hover:bg-indigo-500"
+              className="kr-btn kr-btn-tone kr-approve px-5 py-2 text-xs"
             >
               <span>Launch Manual Login</span>
             </button>

@@ -88,12 +88,18 @@ export function AutomationRestrictedScreen({
       role="alert"
       aria-live="assertive"
       data-testid="automation-restricted-screen"
-      className={`rounded-2xl border-2 border-amber-400 bg-amber-50/90 p-6 shadow-lg sm:p-8 dark:border-amber-600 dark:bg-amber-950/40 ${className}`}
+      className={`kr-plan kr-tone-card relative overflow-hidden rounded-[2rem] p-6 pt-8 sm:p-8 sm:pt-10 ${className}`}
     >
+      {/* caution tape */}
+      <div
+        aria-hidden="true"
+        className="absolute inset-x-0 top-0 h-2.5"
+        style={{ background: "repeating-linear-gradient(-45deg, var(--plan) 0 14px, var(--ink-950) 14px 28px)" }}
+      />
       <div className="flex flex-col gap-6">
         {/* Header with Barrier Badge */}
         <div className="flex items-start gap-4">
-          <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-amber-200/80 text-amber-900 dark:bg-amber-900/80 dark:text-amber-200">
+          <div className="kr-float flex size-14 shrink-0 items-center justify-center rounded-2xl bg-plan text-ink-950 shadow-[0_0_30px_-4px_var(--plan)]">
             <svg
               aria-hidden="true"
               className="size-7"
@@ -112,17 +118,17 @@ export function AutomationRestrictedScreen({
 
           <div className="flex-1 min-w-0">
             <div className="flex flex-wrap items-center gap-2.5">
-              <h2 className="text-xl font-bold tracking-tight text-amber-950 dark:text-amber-100">
+              <h2 className="kr-display text-2xl font-extrabold text-white">
                 Automation restricted &rarr; Take over manually
               </h2>
               <span
                 data-testid="barrier-type-badge"
-                className="rounded-md border border-amber-300 bg-amber-100/90 px-2.5 py-0.5 font-mono text-xs font-semibold uppercase text-amber-900 dark:border-amber-700 dark:bg-amber-900/90 dark:text-amber-200"
+                className="kr-chip kr-danger font-mono uppercase"
               >
                 {barrier.badge}
               </span>
             </div>
-            <p className="mt-1 text-sm text-amber-900/80 dark:text-amber-300/80">
+            <p className="mt-2 text-sm text-ink-300">
               {barrier.explanation}
             </p>
           </div>
@@ -130,21 +136,21 @@ export function AutomationRestrictedScreen({
 
         {/* Detailed Message / Reason Banner */}
         {message && (
-          <div className="rounded-xl border border-amber-300 bg-amber-100/60 p-3.5 text-xs text-amber-950 dark:border-amber-800/80 dark:bg-amber-900/40 dark:text-amber-200">
-            <span className="font-semibold">Detection Detail: </span>
+          <div className="rounded-2xl border border-plan/40 bg-plan/10 p-3.5 text-xs text-plan">
+            <span className="font-bold">Detection Detail: </span>
             {message}
           </div>
         )}
 
         {/* Target URL Reference Card */}
         {targetUrl && (
-        <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-2xs dark:border-zinc-800 dark:bg-zinc-900">
+        <div className="rounded-2xl border border-white/10 bg-ink-950/60 p-4">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+              <span className="text-[11px] font-bold uppercase tracking-widest text-run">
                 Target Location {stepSeq ? `(Step ${stepSeq})` : ""}
               </span>
-              <p className="mt-0.5 font-mono text-xs font-medium text-zinc-900 dark:text-zinc-100 break-all">
+              <p className="mt-1 break-all font-mono text-xs font-medium text-white">
                 {targetUrl}
               </p>
             </div>
@@ -154,7 +160,7 @@ export function AutomationRestrictedScreen({
               target="_blank"
               rel="noopener noreferrer"
               data-testid="open-target-url-btn"
-              className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50 px-3.5 py-2 text-xs font-semibold text-indigo-700 transition hover:bg-indigo-100 dark:border-indigo-800 dark:bg-indigo-950/60 dark:text-indigo-300 dark:hover:bg-indigo-900/60"
+              className="kr-btn kr-btn-tone kr-run shrink-0 px-4 py-2 text-xs"
             >
               Open Target URL
               <svg aria-hidden="true" className="size-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
@@ -166,13 +172,13 @@ export function AutomationRestrictedScreen({
         )}
 
         {/* Manual Takeover Instructions */}
-        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-900/50 dark:bg-amber-950/20">
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-amber-900 dark:text-amber-200">
+        <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+          <h3 className="text-xs font-bold uppercase tracking-widest text-approve">
             Manual Takeover Workflow
           </h3>
-          <ol className="mt-2.5 list-decimal space-y-1.5 pl-4 text-xs text-amber-900/90 dark:text-amber-300/90 leading-relaxed">
+          <ol className="mt-2.5 list-decimal space-y-1.5 pl-4 text-xs leading-relaxed text-ink-300 marker:font-bold marker:text-approve">
             <li>
-              Click <span className="font-semibold">&ldquo;Open Target URL&rdquo;</span> to view the blocked challenge page in your browser.
+              Click <span className="font-semibold text-white">&ldquo;Open Target URL&rdquo;</span> to view the blocked challenge page in your browser.
             </li>
             <li>
               Complete the CAPTCHA puzzle, check Turnstile verification, or sign into your account manually.
@@ -190,7 +196,7 @@ export function AutomationRestrictedScreen({
             <a
               href={runHref}
               data-testid="takeover-run-link"
-              className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-4 py-2.5 text-xs font-semibold text-zinc-700 shadow-xs transition hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
+              className="kr-btn kr-btn-ghost px-5 py-2.5 text-xs"
             >
               View run evidence
             </a>
@@ -198,7 +204,7 @@ export function AutomationRestrictedScreen({
           <a
             href={newTaskHref}
             data-testid="takeover-new-task-link"
-            className="inline-flex items-center justify-center gap-2 rounded-lg bg-amber-600 px-5 py-2.5 text-xs font-semibold text-white shadow-xs transition hover:bg-amber-500 dark:bg-amber-500 dark:hover:bg-amber-400"
+            className="kr-btn kr-btn-primary px-6 py-2.5 text-xs"
           >
             Start a new task
           </a>
