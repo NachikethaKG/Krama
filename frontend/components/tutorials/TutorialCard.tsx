@@ -1,10 +1,24 @@
 "use client";
 
 import Link from "next/link";
+import { ArrowUpRight, Box, Clock, Globe, Layers, TriangleAlert } from "lucide-react";
+import { TiltCard } from "@/components/ui";
 import type { TargetPlatform, TutorialStatus, TutorialSummary } from "@/types/tutorial";
 
 export interface TutorialCardProps {
   tutorial: TutorialSummary;
+  /** Position in its grid: picks the card's spectrum colour. Without it the colour comes from the id. */
+  index?: number;
+}
+
+/** Every card wears a different spectrum colour, so a grid of tutorials reads like the Krama spectrum. */
+const TONES = ["kr-learn", "kr-ask", "kr-run", "kr-plan", "kr-verify", "kr-approve"];
+
+function toneFor(tutorial: TutorialSummary, index?: number): string {
+  if (index !== undefined) return TONES[index % TONES.length];
+  let hash = 0;
+  for (const ch of tutorial.id) hash = (hash * 31 + ch.charCodeAt(0)) >>> 0;
+  return TONES[hash % TONES.length];
 }
 
 function formatDuration(durationMs: number): string {
@@ -28,6 +42,8 @@ function formatDate(isoString: string): string {
   }
 }
 
+const BADGE = "inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-bold";
+
 function TargetBadge({ target }: { target: TargetPlatform }) {
   switch (target) {
     case "github":
@@ -35,13 +51,9 @@ function TargetBadge({ target }: { target: TargetPlatform }) {
         <span
           data-testid="tutorial-card-target"
           data-target="github"
-          className="inline-flex items-center gap-1 rounded-full border border-zinc-300 bg-zinc-100 px-2.5 py-0.5 text-xs font-semibold text-zinc-800 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
+          className={`${BADGE} border-white/20 bg-white/10 text-white`}
         >
-          <svg
-            className="size-3.5 fill-current"
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-          >
+          <svg className="size-3.5 fill-current" viewBox="0 0 24 24" aria-hidden="true">
             <path
               fillRule="evenodd"
               clipRule="evenodd"
@@ -56,16 +68,9 @@ function TargetBadge({ target }: { target: TargetPlatform }) {
         <span
           data-testid="tutorial-card-target"
           data-target="custom"
-          className="inline-flex items-center gap-1 rounded-full border border-purple-200 bg-purple-50 px-2.5 py-0.5 text-xs font-semibold text-purple-700 dark:border-purple-800 dark:bg-purple-950/40 dark:text-purple-300"
+          className={`${BADGE} border-approve/50 bg-approve/15 text-approve`}
         >
-          <svg
-            className="size-3.5 fill-none stroke-current stroke-2"
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-          >
-            <circle cx="12" cy="12" r="10" />
-            <path d="M12 2a14.5 14.5 0 000 20M2 12h20" />
-          </svg>
+          <Globe className="size-3.5" aria-hidden="true" />
           Custom
         </span>
       );
@@ -75,16 +80,9 @@ function TargetBadge({ target }: { target: TargetPlatform }) {
         <span
           data-testid="tutorial-card-target"
           data-target="gitea"
-          className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-blue-700 dark:border-blue-800 dark:bg-blue-950/40 dark:text-blue-300"
+          className={`${BADGE} border-verify/50 bg-verify/15 text-verify`}
         >
-          <svg
-            className="size-3.5 fill-none stroke-current stroke-2"
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-          >
-            <path d="M4 6a2 2 0 012-2h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V6z" />
-            <path d="M9 10h6M9 14h6" />
-          </svg>
+          <Box className="size-3.5" aria-hidden="true" />
           Gitea
         </span>
       );
@@ -97,9 +95,9 @@ function StatusBadge({ status }: { status: TutorialStatus }) {
       <span
         data-testid="tutorial-card-status"
         data-status="verified"
-        className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300"
+        className={`${BADGE} border-verify/50 bg-verify/15 text-verify`}
       >
-        <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+        <span className="kr-verify kr-dot kr-dot-live !size-1.5" />
         Verified
       </span>
     );
@@ -108,72 +106,77 @@ function StatusBadge({ status }: { status: TutorialStatus }) {
     <span
       data-testid="tutorial-card-status"
       data-status="outdated"
-      className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-700 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300"
+      className={`${BADGE} border-plan/50 bg-plan/15 text-plan`}
     >
-      <span className="size-1.5 rounded-full bg-amber-500" />
+      <TriangleAlert className="size-3" aria-hidden="true" />
       Outdated
     </span>
   );
 }
 
-export function TutorialCard({ tutorial }: TutorialCardProps) {
+export function TutorialCard({ tutorial, index }: TutorialCardProps) {
   const durationLabel = formatDuration(tutorial.durationMs);
   const dateLabel = formatDate(tutorial.createdAt);
+  const tone = toneFor(tutorial, index);
 
   return (
-    <article
-      data-testid="tutorial-card"
-      data-tutorial-id={tutorial.id}
-      className="group flex flex-col justify-between rounded-xl border border-zinc-200 bg-white p-5 shadow-xs transition-all hover:border-indigo-400 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-indigo-500"
-    >
-      <div>
-        <div className="flex items-center justify-between gap-2 mb-3">
-          <TargetBadge target={tutorial.target} />
-          <StatusBadge status={tutorial.status} />
+    <TiltCard max={6} className={`${tone} kr-tone-card group h-full rounded-3xl`}>
+      <article
+        data-testid="tutorial-card"
+        data-tutorial-id={tutorial.id}
+        className="relative flex h-full flex-col justify-between overflow-hidden rounded-3xl p-5"
+      >
+        {/* corner glow orb */}
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute -right-10 -top-10 size-32 rounded-full opacity-40 blur-2xl transition-opacity duration-500 group-hover:opacity-80"
+          style={{ background: "var(--kr-tone)" }}
+        />
+        <div className="relative">
+          <div className="mb-4 flex items-center justify-between gap-2">
+            <TargetBadge target={tutorial.target} />
+            <StatusBadge status={tutorial.status} />
+          </div>
+
+          <h3 className="kr-display line-clamp-2 text-lg font-bold leading-snug text-white transition-colors">
+            {tutorial.title}
+          </h3>
+
+          {tutorial.description ? (
+            <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-ink-300">{tutorial.description}</p>
+          ) : tutorial.taskPrompt ? (
+            <p className="mt-2 line-clamp-2 text-sm italic text-ink-400">&ldquo;{tutorial.taskPrompt}&rdquo;</p>
+          ) : null}
         </div>
 
-        <h3 className="text-base font-semibold text-zinc-900 dark:text-zinc-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors line-clamp-2">
-          {tutorial.title}
-        </h3>
+        <div className="relative mt-5 border-t border-white/10 pt-4">
+          <div
+            data-testid="tutorial-card-meta"
+            className="mb-4 flex items-center justify-between text-xs text-ink-300"
+          >
+            <span className="flex items-center gap-1.5 font-semibold">
+              <Layers className="size-3.5" style={{ color: "var(--kr-tone)" }} aria-hidden="true" />
+              {tutorial.stepCount} {tutorial.stepCount === 1 ? "step" : "steps"} · {durationLabel}
+            </span>
+            <span className="flex items-center gap-1 text-ink-400">
+              <Clock className="size-3" aria-hidden="true" />
+              {dateLabel}
+            </span>
+          </div>
 
-        {tutorial.description ? (
-          <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400 line-clamp-2 leading-relaxed">
-            {tutorial.description}
-          </p>
-        ) : tutorial.taskPrompt ? (
-          <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400 italic line-clamp-2">
-            &ldquo;{tutorial.taskPrompt}&rdquo;
-          </p>
-        ) : null}
-      </div>
-
-      <div className="mt-5 pt-4 border-t border-zinc-100 dark:border-zinc-800/80">
-        <div
-          data-testid="tutorial-card-meta"
-          className="flex items-center justify-between text-xs text-zinc-500 dark:text-zinc-400 mb-3"
-        >
-          <span className="flex items-center gap-1.5 font-medium">
-            <svg
-              className="size-3.5 stroke-current stroke-2 fill-none"
-              viewBox="0 0 24 24"
+          <Link
+            href={`/tutorials/${tutorial.id}`}
+            data-testid="tutorial-card-open"
+            className="kr-btn kr-btn-tone w-full px-3.5 py-2.5 text-xs"
+          >
+            <span>Open Tutorial</span>
+            <ArrowUpRight
               aria-hidden="true"
-            >
-              <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-            </svg>
-            {tutorial.stepCount} {tutorial.stepCount === 1 ? "step" : "steps"} · {durationLabel}
-          </span>
-          <span className="text-zinc-400 dark:text-zinc-500">{dateLabel}</span>
+              className="size-4 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
+            />
+          </Link>
         </div>
-
-        <Link
-          href={`/tutorials/${tutorial.id}`}
-          data-testid="tutorial-card-open"
-          className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-zinc-900 px-3.5 py-2 text-xs font-semibold text-white transition-colors hover:bg-indigo-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-indigo-500 dark:hover:text-white"
-        >
-          <span>Open Tutorial</span>
-          <span aria-hidden="true">→</span>
-        </Link>
-      </div>
-    </article>
+      </article>
+    </TiltCard>
   );
 }
