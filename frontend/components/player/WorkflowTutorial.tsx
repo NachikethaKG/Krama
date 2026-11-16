@@ -1,5 +1,6 @@
 "use client";
 
+import { FileText } from "lucide-react";
 import { useEffect, useState } from "react";
 import { compileWorkflow, type TutorialSpec } from "@krama/tutorial-compiler";
 import type { Workflow } from "@krama/contracts-ts";
@@ -63,14 +64,15 @@ export function WorkflowTutorial({ workflowId }: { workflowId: string }) {
 
   if (loaded.state === "loading") {
     return (
-      <p role="status" data-testid="workflow-tutorial-loading" className="py-20 text-center text-sm text-zinc-500">
+      <p role="status" data-testid="workflow-tutorial-loading" className="flex flex-col items-center gap-4 py-24 text-center text-sm text-ink-300">
+        <span aria-hidden="true" className="kr-spectrum-border size-14 animate-spin rounded-full bg-ink-900 [animation-duration:2.5s]" />
         Loading the tutorial…
       </p>
     );
   }
   if (loaded.state === "error") {
     return (
-      <p role="alert" data-testid="workflow-tutorial-error" className="py-20 text-center text-sm text-rose-600">
+      <p role="alert" data-testid="workflow-tutorial-error" className="mx-auto my-16 max-w-lg rounded-3xl border border-danger/40 bg-danger/10 px-6 py-8 text-center text-sm font-semibold text-danger">
         {loaded.message}
       </p>
     );
@@ -79,7 +81,8 @@ export function WorkflowTutorial({ workflowId }: { workflowId: string }) {
   return (
     <div data-testid="workflow-tutorial" data-real-ui={loaded.recording ? "true" : "false"}>
       <div className="mx-auto mb-3 flex max-w-7xl items-center justify-end px-4">
-        <a href={guideUrl} className="text-xs font-medium text-indigo-600 hover:underline dark:text-indigo-400">
+        <a href={guideUrl} className="kr-btn kr-btn-ghost kr-learn px-3.5 py-1.5 text-xs">
+          <FileText aria-hidden="true" className="size-3.5" />
           Read as text
         </a>
       </div>

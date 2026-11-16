@@ -98,7 +98,7 @@ export function RecordedPage({ events, timeOffsetMs, viewport, scroll = null }: 
     >
       <div ref={rootRef} className="krama-replay-root" />
       {failed && (
-        <p className="absolute inset-0 flex items-center justify-center text-sm text-zinc-500">
+        <p className="absolute inset-0 flex items-center justify-center bg-ink-900 text-sm text-ink-300">
           The recording could not be shown.
         </p>
       )}
