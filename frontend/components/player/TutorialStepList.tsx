@@ -1,6 +1,8 @@
 "use client";
 
 import type { Scene, TutorialSpec } from "@krama/tutorial-compiler";
+import { X } from "lucide-react";
+import { stepColor } from "./spectrum";
 
 export interface TutorialStepListProps {
   spec: TutorialSpec;
@@ -25,14 +27,12 @@ export function TutorialStepList({
     <aside
       data-testid="step-list"
       aria-label="Tutorial step list"
-      className={`flex flex-col rounded-lg border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950 ${className}`}
+      className={`kr-glass flex flex-col overflow-hidden rounded-3xl ${className}`}
     >
-      <div className="flex items-center justify-between border-b border-zinc-200 px-4 py-3 dark:border-zinc-800">
-        <div className="flex items-center gap-2">
-          <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-            Steps ({scenes.length})
-          </h2>
-          <span className="text-xs text-zinc-500 dark:text-zinc-400">
+      <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
+        <div className="flex items-baseline gap-2">
+          <h2 className="kr-display text-lg font-extrabold text-white">Steps ({scenes.length})</h2>
+          <span className="font-mono text-xs text-learn">
             Total: {((spec.total_duration_ms || 1) / 1000).toFixed(1)}s
           </span>
         </div>
@@ -43,29 +43,21 @@ export function TutorialStepList({
             onClick={onClose}
             data-testid="drawer-close-button"
             aria-label="Close steps list"
-            className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+            className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-2xl text-ink-300 transition-colors hover:bg-white/10 hover:text-white"
           >
-            <svg
-              className="h-5 w-5"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
+            <X aria-hidden="true" className="size-5" />
           </button>
         )}
       </div>
 
-      <nav className="flex-1 overflow-y-auto p-2" aria-label="Steps">
-        <ol className="flex flex-col gap-1.5">
+      <nav className="kr-scroll flex-1 overflow-y-auto p-2.5" aria-label="Steps">
+        <ol className="relative flex flex-col gap-1.5">
           {scenes.map((scene: Scene, index: number) => {
             const isActive = index === currentSceneIndex;
+            const isDone = index < currentSceneIndex;
+            const color = stepColor(index);
             const durationSec = (scene.duration_ms / 1000).toFixed(1);
-            const stepTitle =
-              scene.title || `${scene.action.type.toUpperCase()}`;
+            const stepTitle = scene.title || `${scene.action.type.toUpperCase()}`;
 
             return (
               <li key={scene.id ?? `step-${scene.step_seq}`}>
@@ -79,51 +71,52 @@ export function TutorialStepList({
                     }
                   }}
                   aria-current={isActive ? "step" : undefined}
-                  className={`flex min-h-[44px] w-full flex-col justify-center rounded-md border p-2.5 text-left transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-950 ${
-                    isActive
-                      ? "border-indigo-500 bg-indigo-50/70 shadow-xs dark:border-indigo-500 dark:bg-indigo-950/40"
-                      : "border-transparent bg-transparent hover:border-zinc-200 hover:bg-zinc-50 dark:hover:border-zinc-800 dark:hover:bg-zinc-900/50"
+                  className={`group flex min-h-[44px] w-full flex-col justify-center rounded-2xl border p-3 text-left transition-all duration-300 ${
+                    isActive ? "translate-x-1" : "border-transparent hover:translate-x-1 hover:bg-white/5"
                   }`}
+                  style={
+                    isActive
+                      ? {
+                          borderColor: color,
+                          background: `linear-gradient(110deg, color-mix(in oklab, ${color} 22%, transparent), transparent 75%)`,
+                          boxShadow: `0 0 26px -10px ${color}`,
+                        }
+                      : undefined
+                  }
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2.5">
                       <span
-                        className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${
-                          isActive
-                            ? "bg-indigo-600 text-white dark:bg-indigo-500"
-                            : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300"
-                        }`}
+                        className="flex size-7 shrink-0 items-center justify-center rounded-xl text-xs font-extrabold transition-all"
+                        style={
+                          isActive || isDone
+                            ? { background: color, color: "var(--ink-950)", boxShadow: isActive ? `0 0 16px ${color}` : undefined }
+                            : { border: `1.5px solid ${color}`, color }
+                        }
                       >
                         {scene.step_seq}
                       </span>
-                      <span
-                        className={`text-xs font-semibold ${
-                          isActive
-                            ? "text-indigo-950 dark:text-indigo-200"
-                            : "text-zinc-800 dark:text-zinc-200"
-                        }`}
-                      >
+                      <span className={`text-sm font-bold ${isActive ? "text-white" : "text-ink-300 group-hover:text-white"}`}>
                         {stepTitle}
                       </span>
                     </div>
 
                     <div className="flex items-center gap-1.5">
                       {isActive && (
-                        <span className="rounded bg-indigo-100 px-1.5 py-0.5 text-[10px] font-medium text-indigo-700 dark:bg-indigo-900/60 dark:text-indigo-300">
+                        <span
+                          className="rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-ink-950"
+                          style={{ background: color }}
+                        >
                           Active
                         </span>
                       )}
-                      <span className="text-[11px] font-mono text-zinc-400 dark:text-zinc-500">
-                        {durationSec}s
-                      </span>
+                      <span className="font-mono text-[11px] text-ink-400">{durationSec}s</span>
                     </div>
                   </div>
 
                   <p
-                    className={`mt-1 line-clamp-2 text-xs leading-relaxed ${
-                      isActive
-                        ? "text-zinc-900 dark:text-zinc-100 font-medium"
-                        : "text-zinc-500 dark:text-zinc-400"
+                    className={`mt-1.5 line-clamp-2 pl-9 text-xs leading-relaxed ${
+                      isActive ? "font-medium text-white" : "text-ink-400"
                     }`}
                   >
                     {scene.caption?.text || "No instruction"}
