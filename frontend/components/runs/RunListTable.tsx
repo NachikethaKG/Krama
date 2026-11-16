@@ -45,10 +45,10 @@ export function RunListTable({
     return (
       <div
         data-testid="runs-loading"
-        className="flex flex-col items-center justify-center p-12 text-center border border-zinc-200 dark:border-zinc-800 rounded-xl bg-white dark:bg-zinc-900"
+        className="kr-glass flex flex-col items-center justify-center rounded-3xl p-12 text-center"
       >
-        <div className="size-8 border-3 border-emerald-500 border-t-transparent rounded-full animate-spin mb-3" />
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">Loading runs…</p>
+        <div className="mb-3 size-10 animate-spin rounded-full border-4 border-white/10 border-t-run shadow-[0_0_24px_-4px_var(--run)]" />
+        <p className="text-sm text-ink-400">Loading runs…</p>
       </div>
     );
   }
@@ -57,15 +57,15 @@ export function RunListTable({
     return (
       <div
         data-testid="runs-error"
-        className="p-6 border border-rose-200 dark:border-rose-900/50 rounded-xl bg-rose-50 dark:bg-rose-950/30 text-rose-800 dark:text-rose-300"
+        className="kr-danger kr-tone-card rounded-3xl p-6 text-danger"
       >
         <div className="flex items-center gap-2 font-semibold text-sm mb-1">
-          <svg className="size-5 text-rose-600 dark:text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg className="size-5 text-danger" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           Couldn&apos;t load your runs
         </div>
-        <p className="text-xs text-rose-700 dark:text-rose-400">{error}</p>
+        <p className="text-xs text-danger">{error}</p>
       </div>
     );
   }
@@ -74,20 +74,20 @@ export function RunListTable({
     return (
       <div
         data-testid="runs-empty-state"
-        className="flex flex-col items-center justify-center p-12 text-center border border-dashed border-zinc-300 dark:border-zinc-700 rounded-xl bg-zinc-50 dark:bg-zinc-900/50"
+        className="kr-run kr-tone-card flex flex-col items-center justify-center rounded-3xl border-dashed p-12 text-center"
       >
-        <div className="size-12 rounded-full bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center mb-3 text-zinc-400 dark:text-zinc-500">
+        <div className="kr-float mb-3 flex size-14 items-center justify-center rounded-2xl bg-run text-ink-950 shadow-[0_0_30px_-4px_var(--run)]">
           <svg className="size-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
           </svg>
         </div>
-        <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">No runs yet</h3>
-        <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 max-w-sm">
+        <h3 className="kr-display text-xl font-bold text-white">No runs yet</h3>
+        <p className="text-xs text-ink-400 mt-1 max-w-sm">
           Each time Krama does a task for you, it shows up here.
         </p>
         <Link
           href="/"
-          className="mt-4 px-3.5 py-1.5 text-xs font-medium rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white transition-colors"
+          className="kr-btn kr-btn-primary mt-5 px-5 py-2 text-xs"
         >
           New tutorial
         </Link>
@@ -98,11 +98,11 @@ export function RunListTable({
   return (
     <div
       data-testid="runs-list-table"
-      className={`overflow-hidden border border-zinc-200 dark:border-zinc-800 rounded-xl bg-white dark:bg-zinc-900 shadow-sm ${className}`}
+      className={`kr-glass overflow-hidden rounded-3xl ${className}`}
     >
       <div className="overflow-x-auto">
         <table className="w-full text-left text-sm">
-          <thead className="bg-zinc-50 dark:bg-zinc-800/60 text-xs font-semibold text-zinc-600 dark:text-zinc-400 border-b border-zinc-200 dark:border-zinc-800">
+          <thead className="border-b border-white/10 bg-white/[0.03] text-[11px] font-bold uppercase tracking-[0.18em] text-ink-400">
             <tr>
               <th scope="col" className="py-3.5 px-4">Task</th>
               <th scope="col" className="py-3.5 px-4">Result</th>
@@ -113,18 +113,18 @@ export function RunListTable({
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
+          <tbody className="divide-y divide-white/10">
             {runs.map((run) => (
               <tr
                 key={run.id}
                 data-testid={`run-row-${run.id}`}
-                className="hover:bg-zinc-50/80 dark:hover:bg-zinc-800/40 transition-colors"
+                className="group relative transition-all duration-300 hover:bg-gradient-to-r hover:from-run/10 hover:via-approve/5 hover:to-transparent"
               >
                 <td className="py-3.5 px-4 max-w-md">
                   <Link
                     href={`/runs/${run.id}`}
                     data-testid="run-link"
-                    className="block truncate font-medium text-zinc-900 hover:text-indigo-600 dark:text-zinc-100 dark:hover:text-indigo-400"
+                    className="block truncate font-semibold text-white transition-colors group-hover:text-run"
                     title={run.prompt ?? undefined}
                   >
                     <span data-testid="run-prompt">{run.prompt ?? "(task text unavailable)"}</span>
@@ -135,7 +135,7 @@ export function RunListTable({
                   {run.retryCount && run.retryCount > 0 ? (
                     <span
                       data-testid="run-retries"
-                      className="inline-block text-[11px] text-amber-600 dark:text-amber-400 mt-0.5"
+                      className="inline-block text-[11px] text-plan mt-0.5"
                     >
                       {run.retryCount === 1 ? "Retried once" : `Retried ${run.retryCount} times`}
                     </span>
@@ -146,13 +146,13 @@ export function RunListTable({
                 </td>
                 <td
                   data-testid="run-started-at"
-                  className="py-3.5 px-4 whitespace-nowrap text-xs text-zinc-600 dark:text-zinc-400"
+                  className="py-3.5 px-4 whitespace-nowrap text-xs text-ink-400"
                 >
                   {formatDateTime(run.startedAt || run.createdAt)}
                 </td>
                 <td
                   data-testid="run-duration"
-                  className="py-3.5 px-4 whitespace-nowrap text-xs text-zinc-600 dark:text-zinc-400"
+                  className="py-3.5 px-4 whitespace-nowrap text-xs text-ink-400"
                 >
                   {formatDuration(run.durationSeconds)}
                 </td>
@@ -160,7 +160,7 @@ export function RunListTable({
                   <Link
                     href={`/runs/${run.id}`}
                     data-testid="run-view-button"
-                    className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors"
+                    className="kr-btn kr-btn-ghost kr-run px-3 py-1 text-xs"
                   >
                     Details
                     <svg className="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

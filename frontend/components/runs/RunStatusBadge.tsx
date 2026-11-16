@@ -26,44 +26,44 @@ const STATUS_CONFIG: Record<
   verified: {
     label: "Verified",
     containerClass:
-      "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800",
-    dotClass: "bg-emerald-500",
+      "bg-verify/15 text-verify border-verify/40",
+    dotClass: "bg-verify",
   },
   completed: {
     label: "Verified",
     containerClass:
-      "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800",
-    dotClass: "bg-emerald-500",
+      "bg-verify/15 text-verify border-verify/40",
+    dotClass: "bg-verify",
   },
   failed: {
     label: "Failed",
     containerClass:
-      "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-800",
-    dotClass: "bg-rose-500",
+      "bg-danger/15 text-danger border-danger/40",
+    dotClass: "bg-danger",
   },
   paused: {
     label: "Paused",
     containerClass:
-      "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800",
-    dotClass: "bg-amber-500",
+      "bg-plan/15 text-plan border-plan/40",
+    dotClass: "bg-plan",
   },
   cancelled: {
     label: "Cancelled",
     containerClass:
-      "bg-zinc-100 text-zinc-700 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700",
-    dotClass: "bg-zinc-400",
+      "bg-white/[0.06] text-ink-300 border-white/10",
+    dotClass: "bg-ink-400",
   },
   queued: {
     label: "Queued",
     containerClass:
-      "bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/40 dark:text-sky-400 dark:border-sky-800",
-    dotClass: "bg-sky-500",
+      "bg-approve/15 text-approve border-approve/40",
+    dotClass: "bg-approve animate-pulse",
   },
   running: {
     label: "Running",
     containerClass:
-      "bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-400 dark:border-indigo-800",
-    dotClass: "bg-indigo-500 animate-pulse",
+      "bg-run/15 text-run border-run/40",
+    dotClass: "bg-run kr-dot-live",
   },
 };
 
@@ -72,8 +72,8 @@ export function RunStatusBadge({ status, className = "", size = "md" }: RunStatu
   const config = STATUS_CONFIG[normalized] ?? {
     label: normalized.charAt(0).toUpperCase() + normalized.slice(1),
     containerClass:
-      "bg-zinc-100 text-zinc-700 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700",
-    dotClass: "bg-zinc-400",
+      "bg-white/[0.06] text-ink-300 border-white/10",
+    dotClass: "bg-ink-400",
   };
 
   const sizeClasses =
@@ -86,11 +86,11 @@ export function RunStatusBadge({ status, className = "", size = "md" }: RunStatu
       data-testid="run-status-badge"
       data-status={normalized}
       aria-label={`Run status: ${config.label}`}
-      className={`inline-flex items-center rounded-full border ${config.containerClass} ${sizeClasses} ${className}`}
+      className={`inline-flex items-center rounded-full border font-bold tracking-wide backdrop-blur ${config.containerClass} ${sizeClasses} ${className}`}
     >
       <span
         aria-hidden="true"
-        className={`inline-block size-1.5 rounded-full ${config.dotClass}`}
+        className={`inline-block size-1.5 rounded-full shadow-[0_0_8px_currentColor] ${config.dotClass}`}
       />
       <span>{config.label}</span>
     </span>
