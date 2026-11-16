@@ -12,12 +12,8 @@ export interface ApiStatusBadgeProps {
 }
 
 export function ApiStatusBadge({ status, className = "" }: ApiStatusBadgeProps) {
-  const dotColor =
-    status === "online"
-      ? "bg-emerald-500"
-      : status === "offline"
-        ? "bg-rose-500"
-        : "bg-amber-500 animate-pulse";
+  // The status wears a spectrum colour: lime when up, coral when down, amber while checking.
+  const tone = status === "online" ? "kr-verify" : status === "offline" ? "kr-danger" : "kr-plan";
 
   const label =
     status === "online"
@@ -28,11 +24,11 @@ export function ApiStatusBadge({ status, className = "" }: ApiStatusBadgeProps) 
 
   return (
     <div
-      className={`inline-flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400 ${className}`}
+      className={`${tone} kr-chip !px-3 !py-1 ${className}`}
       aria-label="System Status"
       role="status"
     >
-      <span className={`h-2 w-2 rounded-full ${dotColor}`} />
+      <span className={`kr-dot !size-2 ${status === "offline" ? "" : "kr-dot-live"}`} />
       <span>{label}</span>
     </div>
   );
@@ -82,10 +78,10 @@ export function ApiStatus({
         <div
           role="alert"
           aria-label="Backend offline notification"
-          className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-300"
+          className="kr-plan kr-tone-card rounded-2xl px-3 py-2 text-xs text-plan"
         >
           <div className="flex items-center gap-2">
-            <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+            <span className="kr-dot !size-1.5" />
             <span>
               Backend service offline. Cached workflows and mock mode remain available.
             </span>

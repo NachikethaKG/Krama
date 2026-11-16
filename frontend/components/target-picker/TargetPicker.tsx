@@ -20,6 +20,7 @@ export interface TargetPickerProps {
 
 interface TargetOption {
   type: TargetType;
+  color: string;
   name: string;
   badge: string;
   description: string;
@@ -30,6 +31,7 @@ interface TargetOption {
 const TARGET_OPTIONS: TargetOption[] = [
   {
     type: "gitea",
+    color: "var(--verify)",
     name: "Gitea (Local)",
     badge: "Local",
     description: "Sandbox repository instance for offline testing",
@@ -38,6 +40,7 @@ const TARGET_OPTIONS: TargetOption[] = [
   },
   {
     type: "github",
+    color: "var(--run)",
     name: "GitHub (Real)",
     badge: "Live",
     description: "github.com repository (uses encrypted browser session)",
@@ -46,6 +49,7 @@ const TARGET_OPTIONS: TargetOption[] = [
   },
   {
     type: "custom",
+    color: "var(--approve)",
     name: "Custom Target",
     badge: "Custom",
     description: "Arbitrary Git server or enterprise web endpoint",
@@ -112,11 +116,11 @@ export function TargetPicker({
       <div className="flex flex-col gap-1">
         <label
           id="target-picker-label"
-          className="text-xs font-semibold uppercase tracking-wider text-zinc-600 dark:text-zinc-400"
+          className="text-xs font-bold uppercase tracking-wider text-plan"
         >
           Target Environment
         </label>
-        <p className="text-xs text-zinc-500 dark:text-zinc-400">
+        <p className="text-xs text-ink-400">
           Choose where the workflow agent executes tasks.
         </p>
       </div>
@@ -137,31 +141,35 @@ export function TargetPicker({
               data-testid={opt.testId}
               disabled={disabled}
               onClick={() => handleSelect(opt.type)}
-              className={`flex flex-col items-start rounded-xl border p-3.5 text-left transition-all ${
-                isSelected
-                  ? "border-indigo-600 bg-indigo-50/40 ring-2 ring-indigo-500/20 dark:border-indigo-500 dark:bg-indigo-950/20"
-                  : "border-zinc-200 bg-white hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-700"
+              className={`flex flex-col items-start rounded-2xl border p-3.5 text-left transition-all ${
+                isSelected ? "bg-white/[0.07]" : "border-white/10 bg-white/[0.03] hover:-translate-y-0.5 hover:border-white/25"
               } ${disabled ? "cursor-not-allowed opacity-60" : "cursor-pointer"}`}
+              style={
+                isSelected
+                  ? { borderColor: opt.color, boxShadow: `0 0 0 1px ${opt.color}, 0 10px 30px -12px ${opt.color}` }
+                  : undefined
+              }
             >
               <div className="flex w-full items-center justify-between gap-2">
-                <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                <span className="text-sm font-bold text-white">
                   {opt.name}
                 </span>
                 <span
-                  className={`rounded-md px-1.5 py-0.5 text-[10px] font-medium ${
+                  className="rounded-full px-2 py-0.5 text-[10px] font-extrabold"
+                  style={
                     isSelected
-                      ? "bg-indigo-600 text-white dark:bg-indigo-500"
-                      : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400"
-                  }`}
+                      ? { background: opt.color, color: "var(--ink-950)" }
+                      : { color: opt.color, background: "rgb(255 255 255 / 0.06)" }
+                  }
                 >
                   {opt.badge}
                 </span>
               </div>
-              <p className="mt-1 line-clamp-2 text-xs text-zinc-500 dark:text-zinc-400">
+              <p className="mt-1 line-clamp-2 text-xs text-ink-300">
                 {opt.description}
               </p>
               {opt.url && (
-                <span className="mt-2 text-[11px] font-mono text-zinc-400 dark:text-zinc-500">
+                <span className="mt-2 font-mono text-[11px] text-ink-400">
                   {opt.url}
                 </span>
               )}
@@ -175,13 +183,13 @@ export function TargetPicker({
         data-testid="custom-target-section"
         className={
           activeTarget === "custom"
-            ? "mt-1 flex flex-col gap-1.5 rounded-xl border border-zinc-200 bg-zinc-50/50 p-3.5 dark:border-zinc-800 dark:bg-zinc-900/50"
+            ? "kr-approve kr-tone-card mt-1 flex flex-col gap-1.5 rounded-2xl p-3.5"
             : "hidden"
         }
       >
         <label
           htmlFor={customInputId}
-          className="text-xs font-semibold text-zinc-700 dark:text-zinc-300"
+          className="text-xs font-bold text-approve"
         >
           Custom Target Base URL
         </label>
@@ -195,13 +203,13 @@ export function TargetPicker({
           placeholder="https://git.example.corp"
           disabled={disabled}
           required={activeTarget === "custom"}
-          className="w-full rounded-lg border border-zinc-300 bg-white px-3.5 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-indigo-500 focus:outline-hidden focus:ring-1 focus:ring-indigo-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+          className="kr-input w-full px-3.5 py-2 font-mono text-sm"
         />
         {activeTarget === "custom" && validation.error && (
           <p
             role="alert"
             data-testid="target-url-error"
-            className="text-xs font-medium text-rose-600 dark:text-rose-400"
+            className="text-xs font-bold text-danger"
           >
             {validation.error}
           </p>
