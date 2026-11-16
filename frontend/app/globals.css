@@ -28,6 +28,11 @@
   --ink-400: #8c84b8;
   --ink-300: #b8b1de;
 
+  /* RGB channels of the foreground, for translucent overlays and borders: white on dark, ink on light. */
+  --fg-rgb: 255 255 255;
+  /* Text that sits on a bright stage-coloured fill: always dark, in both themes. */
+  --on-color: var(--on-color);
+
   --spectrum: linear-gradient(
     90deg,
     var(--ask),
@@ -49,6 +54,34 @@
   );
 }
 
+/*
+ * Light theme. Same spectrum, deeper tones so coloured text stays readable on white. The ink scale and
+ * "white" flip, so every `text-white`, `bg-white/5`, `border-white/10` and `bg-ink-*` in the components
+ * becomes dark text, faint dark overlays and light surfaces without touching the components.
+ */
+:root[data-theme="light"] {
+  --background: #f8f5ff;
+  --foreground: #16112c;
+  --fg-rgb: 22 17 44;
+
+  --ask: #d926a8;
+  --plan: #e08600;
+  --approve: #7a4bf0;
+  --run: #0597b5;
+  --verify: #4f9a0c;
+  --learn: #ec600b;
+  --danger: #e8304f;
+
+  --ink-950: #f8f5ff;
+  --ink-900: #ffffff;
+  --ink-850: #f3eefe;
+  --ink-800: #ebe4fd;
+  --ink-700: #ddd4fa;
+  --ink-600: #c6bbef;
+  --ink-400: #6c6491;
+  --ink-300: #4b4470;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -59,6 +92,8 @@
   --color-verify: var(--verify);
   --color-learn: var(--learn);
   --color-danger: var(--danger);
+  --color-white: rgb(var(--fg-rgb));
+  --color-oncolor: var(--on-color);
   --color-ink-950: var(--ink-950);
   --color-ink-900: var(--ink-900);
   --color-ink-850: var(--ink-850);
@@ -80,6 +115,7 @@
 
 html {
   color-scheme: dark;
+  transition: background-color 0.4s;
   /* The floating header is sticky: anything scrolled into view (anchors, focus, tests) stops below it. */
   scroll-padding-top: 6rem;
   scrollbar-color: var(--ink-600) transparent;
@@ -89,6 +125,10 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
 }
 
 ::selection {
@@ -234,12 +274,12 @@ body {
 
 /* Frosted dark glass card. */
 .kr-glass {
-  background: linear-gradient(160deg, rgb(255 255 255 / 0.07), rgb(255 255 255 / 0.02));
-  border: 1px solid rgb(255 255 255 / 0.09);
+  background: linear-gradient(160deg, rgb(var(--fg-rgb) / 0.07), rgb(var(--fg-rgb) / 0.02));
+  border: 1px solid rgb(var(--fg-rgb) / 0.09);
   backdrop-filter: blur(18px) saturate(140%);
   -webkit-backdrop-filter: blur(18px) saturate(140%);
   box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.06),
+    inset 0 1px 0 rgb(var(--fg-rgb) / 0.06),
     0 20px 50px -20px rgb(0 0 0 / 0.6);
 }
 
@@ -279,7 +319,7 @@ body {
 .kr-tone-card {
   background:
     radial-gradient(120% 90% at 0% 0%, color-mix(in oklab, var(--kr-tone) 22%, transparent), transparent 60%),
-    linear-gradient(160deg, rgb(255 255 255 / 0.06), rgb(255 255 255 / 0.015));
+    linear-gradient(160deg, rgb(var(--fg-rgb) / 0.06), rgb(var(--fg-rgb) / 0.015));
   border: 1px solid color-mix(in oklab, var(--kr-tone) 38%, transparent);
   box-shadow:
     0 0 0 1px rgb(0 0 0 / 0.3),
@@ -389,7 +429,7 @@ body {
 
 /* Primary: animated spectrum fill. */
 .kr-btn-primary {
-  color: #0b0716;
+  color: var(--on-color);
   background: var(--spectrum);
   background-size: 200% auto;
   animation: kr-shimmer 5s linear infinite;
@@ -403,7 +443,7 @@ body {
 
 /* Toned: solid colour of the current tone. */
 .kr-btn-tone {
-  color: #0b0716;
+  color: var(--on-color);
   background: var(--kr-tone);
   box-shadow: 0 10px 28px -12px var(--kr-tone);
 }
@@ -414,8 +454,8 @@ body {
 /* Ghost: glass with a toned edge. */
 .kr-btn-ghost {
   color: var(--foreground);
-  background: rgb(255 255 255 / 0.05);
-  border: 1px solid rgb(255 255 255 / 0.14);
+  background: rgb(var(--fg-rgb) / 0.05);
+  border: 1px solid rgb(var(--fg-rgb) / 0.14);
 }
 .kr-btn-ghost:hover:not(:disabled) {
   border-color: color-mix(in oklab, var(--kr-tone, var(--run)) 70%, transparent);
@@ -423,8 +463,8 @@ body {
 }
 
 .kr-input {
-  background: rgb(255 255 255 / 0.04);
-  border: 1px solid rgb(255 255 255 / 0.12);
+  background: rgb(var(--fg-rgb) / 0.04);
+  border: 1px solid rgb(var(--fg-rgb) / 0.12);
   color: var(--foreground);
   border-radius: 1rem;
   transition:
@@ -437,7 +477,7 @@ body {
 }
 .kr-input:focus {
   outline: none;
-  background: rgb(255 255 255 / 0.06);
+  background: rgb(var(--fg-rgb) / 0.06);
   border-color: color-mix(in oklab, var(--kr-tone, var(--run)) 80%, transparent);
   box-shadow: 0 0 0 4px color-mix(in oklab, var(--kr-tone, var(--run)) 22%, transparent);
 }
@@ -484,8 +524,8 @@ body {
 
 .kr-grid-bg {
   background-image:
-    linear-gradient(rgb(255 255 255 / 0.045) 1px, transparent 1px),
-    linear-gradient(90deg, rgb(255 255 255 / 0.045) 1px, transparent 1px);
+    linear-gradient(rgb(var(--fg-rgb) / 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(var(--fg-rgb) / 0.045) 1px, transparent 1px);
   background-size: 44px 44px;
   mask-image: radial-gradient(ellipse at 50% 30%, #000 30%, transparent 75%);
 }
@@ -564,4 +604,11 @@ body {
     opacity: 1;
     transform: none;
   }
+}
+
+/* Theme switch: the new theme is revealed by ThemeToggle's expanding circle, not the default crossfade. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
 }
