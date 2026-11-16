@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Task } from "@krama/contracts-ts";
+import { AlertTriangle, CornerDownLeft, Globe, HelpCircle, Loader2, Sparkles, Terminal, Wrench } from "lucide-react";
 
 import { TargetPicker, type TargetType, useTargetSelection } from "@/components/target-picker";
 import { type ApiClient, errorMessage, getApiClient } from "@/lib/api";
@@ -27,6 +28,9 @@ const EXAMPLES = [
   "How do I add a label to a GitHub repository?",
   "Create a new branch on GitHub",
 ];
+
+/** Each example chip wears a different spectrum colour. */
+const EXAMPLE_TONES = ["kr-plan", "kr-run", "kr-verify"];
 
 type Phase = "idle" | "submitting" | "planning" | "clarifying";
 
@@ -146,11 +150,28 @@ export function TaskInput({
     <section
       aria-label="New tutorial"
       data-testid="task-input-section"
-      className={`rounded-xl border border-zinc-200 bg-white p-6 shadow-xs dark:border-zinc-800 dark:bg-zinc-900 ${className}`}
+      className={`kr-spectrum-border kr-ask rounded-[2rem] bg-ink-900/85 p-5 backdrop-blur-xl sm:p-7 ${className}`}
     >
+      {/* console title bar */}
+      <div aria-hidden="true" className="mb-5 flex items-center gap-2">
+        <span className="size-3 rounded-full bg-danger shadow-[0_0_10px_var(--danger)]" />
+        <span className="size-3 rounded-full bg-plan shadow-[0_0_10px_var(--plan)]" />
+        <span className="size-3 rounded-full bg-verify shadow-[0_0_10px_var(--verify)]" />
+        <span className="ml-3 flex items-center gap-1.5 font-mono text-xs text-ink-400">
+          <Terminal className="size-3.5 text-ask" />
+          krama://ask
+        </span>
+        <span className="kr-chip ml-auto !py-0.5 !text-[10px]">
+          <span className="kr-dot kr-dot-live !size-1.5" />
+          {busy ? "PLANNING" : "READY"}
+        </span>
+      </div>
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <div className="flex flex-col gap-2">
-          <label htmlFor="task-prompt-input" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+        <div className="flex flex-col gap-3">
+          <label
+            htmlFor="task-prompt-input"
+            className="kr-display flex items-center gap-2 text-2xl font-extrabold text-white sm:text-3xl"
+          >
             What do you want to learn?
           </label>
           <textarea
@@ -163,17 +184,19 @@ export function TaskInput({
             placeholder="e.g. Show me how to create a private GitHub repository"
             disabled={phase !== "idle"}
             required
-            className="w-full rounded-lg border border-zinc-300 px-3.5 py-2.5 text-base text-zinc-900 placeholder:text-zinc-400 focus:border-indigo-500 focus:outline-hidden focus:ring-1 focus:ring-indigo-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+            className="kr-input w-full resize-none !rounded-2xl px-5 py-4 text-lg leading-relaxed sm:text-xl"
           />
           {!prompt && phase === "idle" && (
             <div className="flex flex-wrap gap-2" data-testid="example-prompts">
-              {EXAMPLES.map((example) => (
+              {EXAMPLES.map((example, i) => (
                 <button
                   key={example}
                   type="button"
                   onClick={() => setPrompt(example)}
-                  className="rounded-full border border-zinc-200 px-3 py-1 text-xs text-zinc-600 hover:border-indigo-300 hover:text-indigo-700 dark:border-zinc-700 dark:text-zinc-400"
+                  className={`${EXAMPLE_TONES[i % EXAMPLE_TONES.length]} kr-chip kr-rise cursor-pointer !px-3.5 !py-1.5 !text-xs transition-all hover:-translate-y-0.5 hover:shadow-[0_0_20px_-4px_var(--kr-tone)]`}
+                  style={{ animationDelay: `${150 + i * 90}ms` }}
                 >
+                  <Sparkles aria-hidden="true" className="size-3" />
                   {example}
                 </button>
               ))}
@@ -190,9 +213,12 @@ export function TaskInput({
             data-testid="dev-target-options"
             open={useDevTarget}
             onToggle={(e) => setUseDevTarget((e.target as HTMLDetailsElement).open)}
-            className="rounded-lg border border-dashed border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700"
+            className="rounded-2xl border border-dashed border-white/15 bg-white/[0.02] px-4 py-3 text-sm"
           >
-            <summary className="cursor-pointer text-zinc-500">Developer options: choose the target site</summary>
+            <summary className="cursor-pointer text-ink-400 hover:text-white">
+              <Wrench aria-hidden="true" className="mr-1.5 inline size-3.5 text-plan" />
+              Developer options: choose the target site
+            </summary>
             <div className="mt-3">
               <TargetPicker
                 value={targetSelection.targetType}
@@ -226,8 +252,10 @@ export function TaskInput({
           <div
             role="status"
             data-testid="task-planning-status"
-            className="rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm text-indigo-900 dark:border-indigo-900/60 dark:bg-indigo-950/40 dark:text-indigo-200"
+            className="kr-run kr-tone-card relative overflow-hidden rounded-2xl px-4 py-3 pb-4 text-sm text-ink-300"
           >
+            <span aria-hidden="true" className="kr-rail absolute inset-x-0 bottom-0 !h-1 !rounded-none" />
+            <Loader2 aria-hidden="true" className="mr-2 inline size-4 animate-spin text-run" />
             Planning the steps… {elapsed > 0 ? `${elapsed} s` : ""} Krama is opening {site?.name ?? "the site"} and
             working out each step. This usually takes 15–60 seconds.
           </div>
@@ -237,30 +265,34 @@ export function TaskInput({
           <div
             role="alert"
             data-testid="task-error-banner"
-            className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-300"
+            className="kr-danger kr-tone-card flex items-start gap-2 rounded-2xl px-4 py-3 text-sm text-danger"
           >
+            <AlertTriangle aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
             {error}
           </div>
         )}
 
         {phase !== "clarifying" && (
-          <div className="flex justify-end pt-2">
+          <div className="flex items-center justify-between gap-3 pt-1">
+            <span aria-hidden="true" className="hidden items-center gap-1.5 font-mono text-xs text-ink-400 sm:flex">
+              <CornerDownLeft className="size-3.5" /> plan → approve → run → verify → learn
+            </span>
             <button
               type="submit"
               data-testid="submit-task-btn"
               disabled={phase !== "idle" || !prompt.trim() || !canSubmit}
-              className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-xs transition-colors hover:bg-indigo-700 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-indigo-600 dark:hover:bg-indigo-500"
+              className="kr-btn kr-btn-primary ml-auto px-6 py-3 text-sm"
             >
               {busy ? (
                 <>
-                  <svg aria-hidden="true" className="size-4 animate-spin text-white" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-                  </svg>
+                  <Loader2 aria-hidden="true" className="size-4 animate-spin" />
                   <span>Planning…</span>
                 </>
               ) : (
-                <span>Plan the steps</span>
+                <>
+                  <Sparkles aria-hidden="true" className="size-4" />
+                  <span>Plan the steps</span>
+                </>
               )}
             </button>
           </div>
@@ -271,8 +303,9 @@ export function TaskInput({
         <form onSubmit={handleClarify} data-testid="task-clarify-form" className="mt-4 flex flex-col gap-3">
           <p
             data-testid="task-clarification-question"
-            className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200"
+            className="kr-plan kr-tone-card rounded-2xl px-4 py-3 text-sm text-plan"
           >
+            <HelpCircle aria-hidden="true" className="mr-2 inline size-4" />
             {task.clarification_question || "Krama needs a little more detail to plan this."}
           </p>
           <label htmlFor="task-clarify-input" className="sr-only">
@@ -285,14 +318,14 @@ export function TaskInput({
             onChange={(e) => setAnswer(e.target.value)}
             placeholder="Your answer"
             required
-            className="w-full rounded-lg border border-zinc-300 px-3.5 py-2 text-sm text-zinc-900 focus:border-indigo-500 focus:outline-hidden focus:ring-1 focus:ring-indigo-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+            className="kr-input kr-plan w-full px-4 py-2.5 text-sm"
           />
           <div className="flex justify-end">
             <button
               type="submit"
               data-testid="task-clarify-submit"
               disabled={!answer.trim()}
-              className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+              className="kr-btn kr-btn-tone kr-plan px-5 py-2.5 text-sm"
             >
               Send answer
             </button>
@@ -317,15 +350,16 @@ function SiteLine({
 }) {
   if (detection.kind === "unsupported") {
     return (
-      <p data-testid="site-unsupported" className="text-sm text-amber-700 dark:text-amber-400">
+      <p data-testid="site-unsupported" className="kr-plan kr-tone-card rounded-xl px-3 py-2 text-sm text-plan">
         Krama can&apos;t do tasks on {detection.name} yet. It works on {sites.map((s) => s.name).join(", ")}.
       </p>
     );
   }
   if (detection.kind === "found") {
     return (
-      <p data-testid="detected-site" className="text-sm text-zinc-600 dark:text-zinc-400">
-        Website: <span className="font-medium text-zinc-900 dark:text-zinc-100">{detection.site.name}</span>
+      <p data-testid="detected-site" className="flex items-center gap-2 text-sm text-ink-300">
+        <Globe aria-hidden="true" className="size-4 text-verify" />
+        Website: <span className="kr-chip kr-verify">{detection.site.name}</span>
       </p>
     );
   }
@@ -333,7 +367,7 @@ function SiteLine({
   return (
     <div
       data-testid="site-question"
-      className="flex flex-wrap items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400"
+      className="flex flex-wrap items-center gap-2 text-sm text-ink-300"
     >
       <span>Which website is this for?</span>
       {options.map((option) => (
@@ -343,10 +377,10 @@ function SiteLine({
           data-testid={`site-option-${option.id}`}
           aria-pressed={site?.id === option.id}
           onClick={() => onChoose(option)}
-          className={`rounded-full border px-3 py-1 text-xs font-medium ${
+          className={`rounded-full border px-3.5 py-1 text-xs font-bold transition-all ${
             site?.id === option.id
-              ? "border-indigo-500 bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300"
-              : "border-zinc-300 text-zinc-700 hover:border-indigo-300 dark:border-zinc-700 dark:text-zinc-300"
+              ? "border-approve bg-approve text-ink-950 shadow-[0_0_18px_-4px_var(--approve)]"
+              : "border-white/15 text-ink-300 hover:border-approve hover:text-white"
           }`}
         >
           {option.name}
