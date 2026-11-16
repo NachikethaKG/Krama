@@ -167,9 +167,11 @@ export function TutorialStage({
     <div
       ref={containerRef}
       data-testid="tutorial-stage-container"
-      className={`relative w-full overflow-hidden rounded-xl border border-zinc-200 bg-zinc-950 shadow-md select-none dark:border-zinc-800 ${className}`}
+      className={`relative w-full overflow-hidden rounded-3xl border border-learn/50 bg-ink-950 select-none ${className}`}
       style={{
         aspectRatio: `${viewport.width} / ${viewport.height}`,
+        boxShadow:
+          "0 0 0 1px rgb(0 0 0 / 0.4), 0 0 60px -12px var(--learn), 0 30px 80px -30px var(--ask)",
       }}
     >
       {/* Scaled Canvas Container */}
@@ -200,42 +202,42 @@ export function TutorialStage({
           ) : (
           <>
           {/* Mock Browser & Page Content Backdrop */}
-          <div className="absolute inset-0 bg-zinc-900 text-zinc-100 flex flex-col">
+          <div className="absolute inset-0 flex flex-col bg-ink-900 text-white">
             {/* Browser Chrome Header */}
-            <div className="flex h-10 w-full items-center gap-3 border-b border-zinc-800 bg-zinc-950 px-4">
+            <div className="flex h-10 w-full items-center gap-3 border-b border-white/10 bg-ink-950 px-4">
               <div className="flex items-center gap-1.5">
-                <div className="h-3 w-3 rounded-full bg-rose-500/80" />
-                <div className="h-3 w-3 rounded-full bg-amber-500/80" />
-                <div className="h-3 w-3 rounded-full bg-emerald-500/80" />
+                <div className="h-3 w-3 rounded-full bg-danger" />
+                <div className="h-3 w-3 rounded-full bg-plan" />
+                <div className="h-3 w-3 rounded-full bg-verify" />
               </div>
               <div className="flex flex-1 items-center justify-center">
-                <div className="flex h-6 w-full max-w-md items-center justify-between rounded-md border border-zinc-800 bg-zinc-900 px-3 text-xs text-zinc-400">
+                <div className="flex h-6 w-full max-w-md items-center justify-between rounded-full border border-white/10 bg-white/5 px-3 font-mono text-xs text-ink-300">
                   <span className="truncate">
                     https://git.local/{spec.title.toLowerCase().replace(/\s+/g, "-")}
                   </span>
-                  <span className="text-[10px] text-zinc-500">🔒 SSL</span>
+                  <span className="text-[10px] text-verify">🔒 SSL</span>
                 </div>
               </div>
-              <div className="flex items-center gap-2 text-xs text-zinc-400">
-                <span className="font-semibold text-indigo-400">Krama Tutorial</span>
+              <div className="flex items-center gap-2 text-xs text-ink-300">
+                <span className="font-bold text-learn">Krama Tutorial</span>
               </div>
             </div>
 
             {/* Simulated Page Body */}
-            <div className="relative flex-1 overflow-hidden bg-zinc-900 p-8">
+            <div className="relative flex-1 overflow-hidden bg-gradient-to-br from-ink-900 via-ink-850 to-ink-800 p-8">
               {/* Decorative Mock Application Elements */}
               <div className="mx-auto max-w-4xl space-y-6">
-                <div className="flex items-center justify-between border-b border-zinc-800 pb-4">
+                <div className="flex items-center justify-between border-b border-white/10 pb-4">
                   <div>
-                    <h1 className="text-xl font-bold tracking-tight text-zinc-100">
+                    <h1 className="text-xl font-bold tracking-tight text-white">
                       {spec.title}
                     </h1>
-                    <p className="text-xs text-zinc-400 mt-1">
+                    <p className="text-xs text-ink-300 mt-1">
                       {spec.description || "Follow the highlighted steps to complete the workflow."}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="h-8 w-24 rounded bg-indigo-600/30 border border-indigo-500/50 flex items-center justify-center text-xs font-medium text-indigo-300">
+                    <div className="h-8 w-24 rounded-lg border border-ask/50 bg-ask/25 flex items-center justify-center text-xs font-bold text-ask">
                       + New
                     </div>
                   </div>
@@ -243,31 +245,31 @@ export function TutorialStage({
 
                 {/* Simulated Content Grid */}
                 <div className="grid grid-cols-3 gap-4">
-                  <div className="h-28 rounded-lg border border-zinc-800 bg-zinc-950/40 p-4">
-                    <div className="h-4 w-20 rounded bg-zinc-800" />
-                    <div className="mt-3 h-3 w-full rounded bg-zinc-800/60" />
-                    <div className="mt-2 h-3 w-3/4 rounded bg-zinc-800/40" />
+                  <div className="h-28 rounded-lg border border-white/10 bg-white/[0.03] p-4">
+                    <div className="h-4 w-20 rounded bg-ask/60" />
+                    <div className="mt-3 h-3 w-full rounded bg-white/10" />
+                    <div className="mt-2 h-3 w-3/4 rounded bg-white/5" />
                   </div>
-                  <div className="h-28 rounded-lg border border-zinc-800 bg-zinc-950/40 p-4">
-                    <div className="h-4 w-24 rounded bg-zinc-800" />
-                    <div className="mt-3 h-3 w-full rounded bg-zinc-800/60" />
-                    <div className="mt-2 h-3 w-2/3 rounded bg-zinc-800/40" />
+                  <div className="h-28 rounded-lg border border-white/10 bg-white/[0.03] p-4">
+                    <div className="h-4 w-24 rounded bg-run/60" />
+                    <div className="mt-3 h-3 w-full rounded bg-white/10" />
+                    <div className="mt-2 h-3 w-2/3 rounded bg-white/5" />
                   </div>
-                  <div className="h-28 rounded-lg border border-zinc-800 bg-zinc-950/40 p-4">
-                    <div className="h-4 w-16 rounded bg-zinc-800" />
-                    <div className="mt-3 h-3 w-full rounded bg-zinc-800/60" />
-                    <div className="mt-2 h-3 w-4/5 rounded bg-zinc-800/40" />
+                  <div className="h-28 rounded-lg border border-white/10 bg-white/[0.03] p-4">
+                    <div className="h-4 w-16 rounded bg-plan/60" />
+                    <div className="mt-3 h-3 w-full rounded bg-white/10" />
+                    <div className="mt-2 h-3 w-4/5 rounded bg-white/5" />
                   </div>
                 </div>
 
                 {/* Form or Table Wireframe */}
-                <div className="rounded-lg border border-zinc-800 bg-zinc-950/60 p-6 space-y-4">
-                  <div className="h-5 w-48 rounded bg-zinc-800" />
-                  <div className="h-10 w-full rounded border border-zinc-800 bg-zinc-900" />
-                  <div className="h-20 w-full rounded border border-zinc-800 bg-zinc-900" />
+                <div className="rounded-lg border border-white/10 bg-white/[0.04] p-6 space-y-4">
+                  <div className="h-5 w-48 rounded bg-approve/50" />
+                  <div className="h-10 w-full rounded border border-white/10 bg-ink-950/50" />
+                  <div className="h-20 w-full rounded border border-white/10 bg-ink-950/50" />
                   <div className="flex justify-end gap-2 pt-2">
-                    <div className="h-8 w-20 rounded border border-zinc-700 bg-zinc-800" />
-                    <div className="h-8 w-28 rounded bg-indigo-600" />
+                    <div className="h-8 w-20 rounded border border-white/15 bg-white/10" />
+                    <div className="h-8 w-28 rounded-lg bg-verify/80" />
                   </div>
                 </div>
               </div>
@@ -308,8 +310,8 @@ export function TutorialStage({
                 top: `${rippleCenter.y - rippleRadius}px`,
                 width: `${rippleRadius * 2}px`,
                 height: `${rippleRadius * 2}px`,
-                border: `2px solid ${currentScene?.cursor?.ripple?.color || "rgba(99, 102, 241, 0.8)"}`,
-                backgroundColor: `${currentScene?.cursor?.ripple?.color || "rgba(99, 102, 241, 0.3)"}`,
+                border: `2px solid ${currentScene?.cursor?.ripple?.color || "rgba(255, 122, 26, 0.85)"}`,
+                backgroundColor: `${currentScene?.cursor?.ripple?.color || "rgba(255, 122, 26, 0.3)"}`,
                 opacity: rippleOpacity,
                 transition: effectiveReducedMotion
                   ? "none"
@@ -339,12 +341,12 @@ export function TutorialStage({
                 viewBox="0 0 24 24"
                 fill="none"
                 xmlns="http://www.w3.org/2000/svg"
-                className="drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]"
+                className="drop-shadow-[0_0_8px_rgba(255,79,216,0.75)]"
               >
                 <path
                   d="M4 3L11.5 21L14.5 13.5L22 10.5L4 3Z"
-                  fill="#0f172a"
-                  stroke="#ffffff"
+                  fill="#ffffff"
+                  stroke="#07060f"
                   strokeWidth="1.5"
                   strokeLinejoin="round"
                 />
@@ -358,7 +360,7 @@ export function TutorialStage({
       {isCaptionsEnabled && currentScene?.caption?.text && (
         <div
           data-testid="tutorial-caption"
-          className="absolute bottom-4 left-1/2 -translate-x-1/2 max-w-[90%] rounded-lg border border-zinc-700/80 bg-zinc-950/90 px-4 py-2.5 text-center text-sm font-medium text-white shadow-xl backdrop-blur-md z-40 transition-all"
+          className="absolute bottom-4 left-1/2 z-40 max-w-[90%] -translate-x-1/2 rounded-2xl border border-learn/60 bg-ink-950/85 px-5 py-3 text-center text-sm font-semibold text-white shadow-[0_0_40px_-10px_var(--learn)] backdrop-blur-md transition-all sm:text-base"
         >
           {currentScene.caption.words && currentScene.caption.words.length > 0 ? (
             <div className="flex flex-wrap items-center justify-center gap-x-1.5 gap-y-0.5">
@@ -378,10 +380,10 @@ export function TutorialStage({
                     <span
                       className={`transition-colors duration-100 ${
                         isWordActive
-                          ? "font-bold text-indigo-400 underline decoration-indigo-400 decoration-2 underline-offset-4"
+                          ? "font-extrabold text-learn underline decoration-ask decoration-2 underline-offset-4 [text-shadow:0_0_14px_var(--learn)]"
                           : isWordSpoken
-                            ? "text-zinc-100 font-semibold"
-                            : "text-zinc-400"
+                            ? "text-white font-bold"
+                            : "text-ink-400"
                       }`}
                     >
                       {wordObj.word}
