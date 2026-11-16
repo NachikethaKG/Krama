@@ -50,10 +50,10 @@ export function RunStatusBanners({
       <div
         role="alert"
         data-testid="paused-banner"
-        className={`flex flex-col gap-3 rounded-2xl border border-amber-300 bg-amber-50 p-4 shadow-sm dark:border-amber-900/60 dark:bg-amber-950/40 ${className}`}
+        className={`kr-plan kr-tone-card flex flex-col gap-3 rounded-3xl p-5 ${className}`}
       >
         <div className="flex items-start gap-3">
-          <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-800 dark:bg-amber-900/80 dark:text-amber-200">
+          <div className="kr-dot-live mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-2xl bg-plan text-ink-950 shadow-[0_0_24px_-4px_var(--plan)]">
             <svg
               className="size-5"
               fill="none"
@@ -70,14 +70,14 @@ export function RunStatusBanners({
           </div>
 
           <div className="flex-1 space-y-1">
-            <h3 className="text-sm font-bold text-amber-900 dark:text-amber-100">
+            <h3 className="kr-display text-lg font-bold text-white">
               Execution Paused: Action requires manual approval / bot barrier detected
             </h3>
-            <p className="text-xs text-amber-800 dark:text-amber-200 leading-relaxed">
+            <p className="text-xs leading-relaxed text-ink-300">
               {pausedState?.message || "Execution paused for safety policy review."}
             </p>
             {pausedState?.triggerContext && (
-              <p className="text-[11px] font-medium text-amber-700 dark:text-amber-300">
+              <p className="text-[11px] font-medium text-plan">
                 Context: <span className="font-semibold">{pausedState.triggerContext}</span>
                 {pausedState.stepSeq ? ` at Step ${pausedState.stepSeq}` : ""}
               </p>
@@ -85,13 +85,13 @@ export function RunStatusBanners({
           </div>
         </div>
 
-        <div className="flex items-center justify-end gap-2.5 pt-1 border-t border-amber-200/60 dark:border-amber-900/40">
+        <div className="flex items-center justify-end gap-2.5 pt-1 border-t border-plan/40">
           <button
             type="button"
             data-testid="abort-run-button"
             disabled={isSubmitting}
             onClick={handleAbort}
-            className="rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-xs font-semibold text-amber-900 hover:bg-amber-100/60 focus:outline-none focus:ring-2 focus:ring-amber-500 disabled:opacity-50 dark:border-amber-800 dark:bg-zinc-900 dark:text-amber-200 dark:hover:bg-amber-950/60"
+            className="kr-btn kr-btn-ghost kr-danger px-3.5 py-1.5 text-xs"
           >
             {isSubmitting ? "Processing…" : "Abort Run"}
           </button>
@@ -101,7 +101,7 @@ export function RunStatusBanners({
             data-testid="allow-resume-button"
             disabled={isSubmitting}
             onClick={handleResume}
-            className="rounded-lg bg-amber-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500 disabled:opacity-50 dark:bg-amber-500 dark:hover:bg-amber-400"
+            className="kr-btn kr-btn-tone px-4 py-1.5 text-xs"
           >
             {isSubmitting ? "Resuming…" : "Allow & Resume"}
           </button>
@@ -118,10 +118,10 @@ export function RunStatusBanners({
       <div
         role="alert"
         data-testid="failed-banner"
-        className={`flex flex-col gap-3 rounded-2xl border border-rose-200 bg-rose-50 p-4 shadow-sm dark:border-rose-900/60 dark:bg-rose-950/40 ${className}`}
+        className={`kr-danger kr-tone-card flex flex-col gap-3 rounded-3xl p-5 ${className}`}
       >
         <div className="flex items-start gap-3">
-          <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-xl bg-rose-100 text-rose-700 dark:bg-rose-900/80 dark:text-rose-200">
+          <div className="mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-2xl bg-danger text-ink-950 shadow-[0_0_24px_-4px_var(--danger)]">
             <svg
               className="size-5"
               fill="none"
@@ -138,10 +138,10 @@ export function RunStatusBanners({
           </div>
 
           <div className="flex-1 space-y-1">
-            <h3 className="text-sm font-bold text-rose-900 dark:text-rose-100">
+            <h3 className="kr-display text-lg font-bold text-white">
               Execution Failed at Step {stepIndex}: {errorMsg}
             </h3>
-            <p className="text-xs text-rose-800 dark:text-rose-200">
+            <p className="text-xs text-ink-300">
               The agent stopped because the observed environment did not match expectations or encountered a policy restriction.
             </p>
           </div>
@@ -151,28 +151,28 @@ export function RunStatusBanners({
         {(failedState?.expected || failedState?.observed) && (
           <div
             data-testid="expected-observed-card"
-            className="rounded-xl border border-rose-200 bg-white p-3 dark:border-rose-900/80 dark:bg-zinc-900"
+            className="rounded-2xl border border-danger/30 bg-ink-950/60 p-3"
           >
-            <h4 className="text-[11px] font-bold uppercase tracking-wider text-rose-900 dark:text-rose-200 mb-2">
+            <h4 className="text-[11px] font-bold uppercase tracking-wider text-danger mb-2">
               State Verification Mismatch
             </h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs font-mono">
-              <div className="rounded-lg bg-zinc-50 p-2.5 dark:bg-zinc-950">
-                <span className="block text-[10px] uppercase font-bold text-zinc-500 dark:text-zinc-400 mb-1">
+              <div className="rounded-lg p-2.5 bg-ink-950">
+                <span className="block text-[10px] uppercase font-bold text-ink-400 mb-1">
                   Expected
                 </span>
-                <pre className="whitespace-pre-wrap text-zinc-800 dark:text-zinc-200 text-[11px]">
+                <pre className="whitespace-pre-wrap text-ink-300 text-[11px]">
                   {typeof failedState.expected === "object"
                     ? JSON.stringify(failedState.expected, null, 2)
                     : String(failedState.expected)}
                 </pre>
               </div>
 
-              <div className="rounded-lg bg-zinc-50 p-2.5 dark:bg-zinc-950">
-                <span className="block text-[10px] uppercase font-bold text-zinc-500 dark:text-zinc-400 mb-1">
+              <div className="rounded-lg p-2.5 bg-ink-950">
+                <span className="block text-[10px] uppercase font-bold text-ink-400 mb-1">
                   Observed
                 </span>
-                <pre className="whitespace-pre-wrap text-zinc-800 dark:text-zinc-200 text-[11px]">
+                <pre className="whitespace-pre-wrap text-ink-300 text-[11px]">
                   {typeof failedState.observed === "object"
                     ? JSON.stringify(failedState.observed, null, 2)
                     : String(failedState.observed)}
@@ -189,10 +189,10 @@ export function RunStatusBanners({
     return (
       <div
         data-testid="completed-banner"
-        className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 shadow-sm dark:border-emerald-900/60 dark:bg-emerald-950/40 ${className}`}
+        className={`kr-spectrum-border kr-verify flex flex-col justify-between gap-3 rounded-3xl bg-ink-900/85 p-5 sm:flex-row sm:items-center ${className}`}
       >
         <div className="flex items-center gap-3">
-          <div className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700 dark:bg-emerald-900/80 dark:text-emerald-200">
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-verify text-ink-950 shadow-[0_0_24px_-4px_var(--verify)]">
             <svg
               className="size-5"
               fill="none"
@@ -209,10 +209,10 @@ export function RunStatusBanners({
           </div>
 
           <div>
-            <h3 className="text-sm font-bold text-emerald-900 dark:text-emerald-100">
+            <h3 className="kr-display text-lg font-bold text-white">
               Workflow Execution Complete
             </h3>
-            <p className="text-xs text-emerald-800 dark:text-emerald-200">
+            <p className="text-xs text-ink-300">
               All planned steps have been successfully executed and verified.
             </p>
           </div>
@@ -222,7 +222,7 @@ export function RunStatusBanners({
           <Link
             href={`/tutorials/${workflowId}`}
             data-testid="open-tutorial-btn"
-            className="inline-flex items-center justify-center rounded-lg bg-emerald-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-emerald-500 dark:hover:bg-emerald-400"
+            className="kr-btn kr-btn-primary px-4 py-1.5 text-xs"
           >
             Open Interactive Tutorial
           </Link>
