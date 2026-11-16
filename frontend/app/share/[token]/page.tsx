@@ -68,7 +68,7 @@ export default async function SharePage({ params }: SharePageProps) {
 
   if (!spec) {
     return (
-      <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900/50 flex flex-col">
+      <div className="flex min-h-screen flex-col">
         <SharedPageHeader />
         <main className="flex-1 container mx-auto p-4 flex items-center justify-center">
           <RevokedLinkNotice status={status} />
@@ -78,9 +78,9 @@ export default async function SharePage({ params }: SharePageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900/50 flex flex-col">
+    <div className="flex min-h-screen flex-col">
       <SharedPageHeader title={spec.title} />
-      <main className="flex-1 container mx-auto p-4">
+      <main className="container mx-auto flex-1 p-4 pt-6">
         <TutorialPlayer readOnly={true} spec={spec} />
       </main>
     </div>
