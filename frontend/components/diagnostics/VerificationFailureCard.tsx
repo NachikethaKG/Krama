@@ -106,13 +106,13 @@ export function VerificationFailureCard({
       role="region"
       aria-label="Verification Failure Diagnostic"
       data-testid="verification-failure-card"
-      className={`overflow-hidden rounded-2xl border border-rose-300 bg-white shadow-sm dark:border-rose-900/80 dark:bg-zinc-900 ${className}`}
+      className={`kr-danger kr-tone-card overflow-hidden rounded-3xl ${className}`}
     >
       {/* 1. Diagnostic Header */}
-      <div className="border-b border-rose-200 bg-gradient-to-r from-rose-50 to-orange-50/40 p-4 sm:p-5 dark:border-rose-950 dark:from-rose-950/60 dark:to-zinc-900">
+      <div className="border-b border-danger/30 bg-gradient-to-r from-danger/25 via-learn/10 to-transparent p-4 sm:p-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-start gap-3">
-            <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-rose-600 text-white shadow-xs dark:bg-rose-600">
+            <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-danger text-ink-950 shadow-[0_0_26px_-4px_var(--danger)]">
               <svg className="size-5" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
                 <path
                   strokeLinecap="round"
@@ -124,32 +124,32 @@ export function VerificationFailureCard({
 
             <div className="flex flex-col gap-1">
               <div className="flex flex-wrap items-center gap-2">
-                <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-100">
+                <h3 className="kr-display text-lg font-bold text-white">
                   Step Verification Failure Diagnostic
                 </h3>
                 {stepSeq !== undefined && (
                   <span
                     data-testid="diagnostic-step-seq"
-                    className="rounded-md bg-rose-100 px-2 py-0.5 font-mono text-xs font-semibold text-rose-800 dark:bg-rose-900/60 dark:text-rose-200"
+                    className="rounded-md px-2 py-0.5 font-mono text-xs font-semibold bg-danger/15 text-danger"
                   >
                     Step #{stepSeq}
                   </span>
                 )}
                 <span
                   data-testid="failed-layer-badge"
-                  className="rounded-md border border-rose-200 bg-white px-2 py-0.5 font-mono text-[11px] font-semibold tracking-wide text-rose-700 uppercase shadow-2xs dark:border-rose-800 dark:bg-zinc-800 dark:text-rose-300"
+                  className="rounded-md border px-2 py-0.5 font-mono text-[11px] font-semibold tracking-wide uppercase shadow-2xs border-danger/40 bg-white/5 text-danger"
                 >
                   {layerName}
                 </span>
               </div>
 
               {instructionText && (
-                <p data-testid="diagnostic-instruction" className="text-xs font-medium text-zinc-600 sm:text-sm dark:text-zinc-400">
-                  Target action: <span className="font-semibold text-zinc-800 dark:text-zinc-200">{instructionText}</span>
+                <p data-testid="diagnostic-instruction" className="text-xs font-medium sm:text-sm text-ink-400">
+                  Target action: <span className="font-semibold text-ink-300">{instructionText}</span>
                 </p>
               )}
 
-              <p data-testid="diagnostic-reason" className="mt-1 text-xs font-medium text-rose-800 dark:text-rose-300">
+              <p data-testid="diagnostic-reason" className="mt-1 text-xs font-medium text-danger">
                 {reasonText}
               </p>
             </div>
@@ -160,7 +160,7 @@ export function VerificationFailureCard({
               type="button"
               data-testid="diagnostic-retry-btn"
               onClick={onRetryReplan}
-              className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-rose-300 bg-white px-3 py-1.5 text-xs font-semibold text-rose-800 shadow-2xs transition hover:bg-rose-50 dark:border-rose-800 dark:bg-zinc-800 dark:text-rose-200 dark:hover:bg-zinc-700"
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold shadow-2xs transition border-danger/40 bg-white/5 text-danger hover:bg-white/5"
             >
               <svg className="size-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
@@ -175,10 +175,10 @@ export function VerificationFailureCard({
         {/* 2. Expected X vs Observed Y Text Comparison */}
         <div data-testid="expected-vs-observed-section" className="flex flex-col gap-3">
           <div className="flex items-center justify-between">
-            <h4 className="text-xs font-bold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
+            <h4 className="text-xs font-bold tracking-wider uppercase text-ink-400">
               Assertion Breakdown: Expected (X) vs. Observed (Y)
             </h4>
-            <span className="font-mono text-[11px] text-zinc-400 dark:text-zinc-500">
+            <span className="font-mono text-[11px] text-ink-400">
               State Diff
             </span>
           </div>
@@ -187,10 +187,10 @@ export function VerificationFailureCard({
             {/* Expected Box (X) */}
             <div
               data-testid="expected-state-box"
-              className="flex flex-col gap-2.5 rounded-xl border border-emerald-200/90 bg-emerald-50/30 p-3.5 text-xs dark:border-emerald-900/60 dark:bg-emerald-950/20"
+              className="kr-verify kr-tone-card flex flex-col gap-2.5 rounded-2xl p-3.5 text-xs"
             >
-              <div className="flex items-center gap-1.5 font-semibold text-emerald-900 dark:text-emerald-200">
-                <span className="flex size-4 items-center justify-center rounded-full bg-emerald-600 text-[10px] font-bold text-white">
+              <div className="flex items-center gap-1.5 font-semibold text-verify">
+                <span className="flex size-4 items-center justify-center rounded-full bg-verify text-[10px] font-bold text-ink-950">
                   ✓
                 </span>
                 <span className="text-xs font-bold uppercase tracking-wider">Expected State (X)</span>
@@ -199,8 +199,8 @@ export function VerificationFailureCard({
               <div className="flex flex-col gap-1.5 font-mono text-[11px]">
                 {expected?.url_matches && (
                   <div data-testid="expected-url" className="flex flex-col gap-0.5">
-                    <span className="text-[10px] font-semibold text-zinc-500 uppercase dark:text-zinc-400">URL Pattern:</span>
-                    <span className="rounded bg-white/80 px-2 py-1 text-emerald-900 shadow-2xs dark:bg-zinc-800 dark:text-emerald-300">
+                    <span className="text-[10px] font-semibold uppercase text-ink-400">URL Pattern:</span>
+                    <span className="rounded px-2 py-1 shadow-2xs bg-white/5 text-verify">
                       {expected.url_matches}
                     </span>
                   </div>
@@ -208,8 +208,8 @@ export function VerificationFailureCard({
 
                 {expected?.title_contains && (
                   <div data-testid="expected-title" className="flex flex-col gap-0.5">
-                    <span className="text-[10px] font-semibold text-zinc-500 uppercase dark:text-zinc-400">Page Title:</span>
-                    <span className="rounded bg-white/80 px-2 py-1 text-emerald-900 shadow-2xs dark:bg-zinc-800 dark:text-emerald-300">
+                    <span className="text-[10px] font-semibold uppercase text-ink-400">Page Title:</span>
+                    <span className="rounded px-2 py-1 shadow-2xs bg-white/5 text-verify">
                       contains &quot;{expected.title_contains}&quot;
                     </span>
                   </div>
@@ -217,12 +217,12 @@ export function VerificationFailureCard({
 
                 {expected?.visible && expected.visible.length > 0 && (
                   <div data-testid="expected-visible-elements" className="flex flex-col gap-0.5">
-                    <span className="text-[10px] font-semibold text-zinc-500 uppercase dark:text-zinc-400">Visible Elements:</span>
+                    <span className="text-[10px] font-semibold uppercase text-ink-400">Visible Elements:</span>
                     <div className="flex flex-wrap gap-1">
                       {expected.visible.map((elem, idx) => (
                         <span
                           key={`${elem.role}-${elem.name}-${idx}`}
-                          className="rounded bg-white/80 px-1.5 py-0.5 text-emerald-900 shadow-2xs dark:bg-zinc-800 dark:text-emerald-300"
+                          className="rounded px-1.5 py-0.5 shadow-2xs bg-white/5 text-verify"
                         >
                           {elem.role} &quot;{elem.name}&quot;
                         </span>
@@ -233,12 +233,12 @@ export function VerificationFailureCard({
 
                 {expected?.absent && expected.absent.length > 0 && (
                   <div data-testid="expected-absent-elements" className="flex flex-col gap-0.5">
-                    <span className="text-[10px] font-semibold text-zinc-500 uppercase dark:text-zinc-400">Absent Elements (Must Not Appear):</span>
+                    <span className="text-[10px] font-semibold uppercase text-ink-400">Absent Elements (Must Not Appear):</span>
                     <div className="flex flex-wrap gap-1">
                       {expected.absent.map((elem, idx) => (
                         <span
                           key={`${elem.role}-${elem.name}-${idx}`}
-                          className="rounded bg-white/80 px-1.5 py-0.5 text-emerald-900 shadow-2xs dark:bg-zinc-800 dark:text-emerald-300"
+                          className="rounded px-1.5 py-0.5 shadow-2xs bg-white/5 text-verify"
                         >
                           absent: {elem.role} &quot;{elem.name}&quot;
                         </span>
@@ -249,12 +249,12 @@ export function VerificationFailureCard({
 
                 {expected?.field_values && expected.field_values.length > 0 && (
                   <div data-testid="expected-field-values" className="flex flex-col gap-0.5">
-                    <span className="text-[10px] font-semibold text-zinc-500 uppercase dark:text-zinc-400">Field Values:</span>
+                    <span className="text-[10px] font-semibold uppercase text-ink-400">Field Values:</span>
                     <div className="flex flex-col gap-1">
                       {expected.field_values.map((field, idx) => (
                         <span
                           key={`${field.role}-${field.name}-${idx}`}
-                          className="rounded bg-white/80 px-2 py-0.5 text-emerald-900 shadow-2xs dark:bg-zinc-800 dark:text-emerald-300"
+                          className="rounded px-2 py-0.5 shadow-2xs bg-white/5 text-verify"
                         >
                           {field.name} = &quot;{field.value}&quot;
                         </span>
@@ -267,7 +267,7 @@ export function VerificationFailureCard({
                   !expected?.title_contains &&
                   (!expected?.visible || expected.visible.length === 0) &&
                   (!expected?.field_values || expected.field_values.length === 0) && (
-                    <span className="text-zinc-500 italic">Precondition state not explicitly specified.</span>
+                    <span className="text-ink-400 italic">Precondition state not explicitly specified.</span>
                   )}
               </div>
             </div>
@@ -275,10 +275,10 @@ export function VerificationFailureCard({
             {/* Observed Box (Y) */}
             <div
               data-testid="observed-state-box"
-              className="flex flex-col gap-2.5 rounded-xl border border-rose-200/90 bg-rose-50/30 p-3.5 text-xs dark:border-rose-900/60 dark:bg-rose-950/20"
+              className="kr-danger kr-tone-card flex flex-col gap-2.5 rounded-2xl p-3.5 text-xs"
             >
-              <div className="flex items-center gap-1.5 font-semibold text-rose-900 dark:text-rose-200">
-                <span className="flex size-4 items-center justify-center rounded-full bg-rose-600 text-[10px] font-bold text-white">
+              <div className="flex items-center gap-1.5 font-semibold text-danger">
+                <span className="flex size-4 items-center justify-center rounded-full bg-danger text-[10px] font-bold text-ink-950">
                   ✕
                 </span>
                 <span className="text-xs font-bold uppercase tracking-wider">Observed State (Y)</span>
@@ -286,16 +286,16 @@ export function VerificationFailureCard({
 
               <div className="flex flex-col gap-1.5 font-mono text-[11px]">
                 <div data-testid="observed-url" className="flex flex-col gap-0.5">
-                  <span className="text-[10px] font-semibold text-zinc-500 uppercase dark:text-zinc-400">Landed URL:</span>
-                  <span className="rounded bg-white/80 px-2 py-1 font-semibold text-rose-900 shadow-2xs dark:bg-zinc-800 dark:text-rose-300">
+                  <span className="text-[10px] font-semibold uppercase text-ink-400">Landed URL:</span>
+                  <span className="rounded px-2 py-1 font-semibold shadow-2xs bg-white/5 text-danger">
                     {observed?.url || "URL state unavailable or unchanged"}
                   </span>
                 </div>
 
                 {observed?.title && (
                   <div data-testid="observed-title" className="flex flex-col gap-0.5">
-                    <span className="text-[10px] font-semibold text-zinc-500 uppercase dark:text-zinc-400">Landed Page Title:</span>
-                    <span className="rounded bg-white/80 px-2 py-1 text-rose-900 shadow-2xs dark:bg-zinc-800 dark:text-rose-300">
+                    <span className="text-[10px] font-semibold uppercase text-ink-400">Landed Page Title:</span>
+                    <span className="rounded px-2 py-1 shadow-2xs bg-white/5 text-danger">
                       {observed.title}
                     </span>
                   </div>
@@ -303,8 +303,8 @@ export function VerificationFailureCard({
 
                 {observerFinding && (
                   <div data-testid="observed-error" className="flex flex-col gap-0.5">
-                    <span className="text-[10px] font-semibold text-zinc-500 uppercase dark:text-zinc-400">Observer Finding:</span>
-                    <span className="rounded bg-white/80 px-2 py-1 text-rose-900 shadow-2xs dark:bg-zinc-800 dark:text-rose-300">
+                    <span className="text-[10px] font-semibold uppercase text-ink-400">Observer Finding:</span>
+                    <span className="rounded px-2 py-1 shadow-2xs bg-white/5 text-danger">
                       {observerFinding}
                     </span>
                   </div>
@@ -312,8 +312,8 @@ export function VerificationFailureCard({
 
                 {missingSelector && (
                   <div data-testid="observed-missing-selector" className="flex flex-col gap-0.5">
-                    <span className="text-[10px] font-semibold text-zinc-500 uppercase dark:text-zinc-400">Missing Selector:</span>
-                    <span className="rounded bg-white/80 px-2 py-1 text-rose-900 shadow-2xs dark:bg-zinc-800 dark:text-rose-300">
+                    <span className="text-[10px] font-semibold uppercase text-ink-400">Missing Selector:</span>
+                    <span className="rounded px-2 py-1 shadow-2xs bg-white/5 text-danger">
                       {missingSelector}
                     </span>
                   </div>
@@ -326,10 +326,10 @@ export function VerificationFailureCard({
         {/* 3. Side-by-Side Screenshot Comparison (ScreenshotDiff) */}
         <div data-testid="screenshot-comparison-section" className="flex flex-col gap-3">
           <div className="flex items-center justify-between">
-            <h4 className="text-xs font-bold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
+            <h4 className="text-xs font-bold tracking-wider uppercase text-ink-400">
               Screenshots: Before vs. After This Step
             </h4>
-            <span className="text-xs text-zinc-500 dark:text-zinc-400">
+            <span className="text-xs text-ink-400">
               Expected state is listed above
             </span>
           </div>
@@ -338,17 +338,17 @@ export function VerificationFailureCard({
             {/* Column 1: the page before this step (previous step's screenshot) */}
             <div
               data-testid="previous-screenshot-col"
-              className="flex flex-col overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50/50 shadow-2xs dark:border-zinc-800 dark:bg-zinc-900/50"
+              className="flex flex-col overflow-hidden rounded-xl border shadow-2xs border-white/10 bg-ink-900/50"
             >
-              <div className="flex items-center justify-between border-b border-zinc-200 bg-zinc-100/70 px-3 py-2 text-xs font-medium text-zinc-700 dark:border-zinc-800 dark:bg-zinc-800/60 dark:text-zinc-300">
+              <div className="flex items-center justify-between border-b px-3 py-2 text-xs font-medium border-white/10 bg-white/5 text-ink-300">
                 <span className="flex items-center gap-1.5 font-semibold">
-                  <span className="size-2 rounded-full bg-emerald-500" />
+                  <span className="size-2 rounded-full bg-verify" />
                   Before This Step
                 </span>
-                <span className="font-mono text-[10px] text-zinc-400">Previous Step</span>
+                <span className="font-mono text-[10px] text-ink-400">Previous Step</span>
               </div>
 
-              <div className="relative flex aspect-16/10 w-full items-center justify-center bg-zinc-100 dark:bg-zinc-950/60">
+              <div className="relative flex aspect-16/10 w-full items-center justify-center bg-ink-950/60">
                 {hasPreviousScreenshot ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -361,7 +361,7 @@ export function VerificationFailureCard({
                 ) : (
                   <div
                     data-testid="previous-screenshot-placeholder"
-                    className="flex flex-col items-center justify-center gap-2 p-6 text-center text-zinc-400 dark:text-zinc-500"
+                    className="flex flex-col items-center justify-center gap-2 p-6 text-center text-ink-400"
                   >
                     <svg className="size-8 opacity-60" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                       <path
@@ -380,17 +380,17 @@ export function VerificationFailureCard({
             {/* Column 2: Observed State Snapshot */}
             <div
               data-testid="observed-screenshot-col"
-              className="flex flex-col overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50/50 shadow-2xs dark:border-zinc-800 dark:bg-zinc-900/50"
+              className="flex flex-col overflow-hidden rounded-xl border shadow-2xs border-white/10 bg-ink-900/50"
             >
-              <div className="flex items-center justify-between border-b border-zinc-200 bg-zinc-100/70 px-3 py-2 text-xs font-medium text-zinc-700 dark:border-zinc-800 dark:bg-zinc-800/60 dark:text-zinc-300">
+              <div className="flex items-center justify-between border-b px-3 py-2 text-xs font-medium border-white/10 bg-white/5 text-ink-300">
                 <span className="flex items-center gap-1.5 font-semibold">
-                  <span className="size-2 rounded-full bg-rose-500" />
+                  <span className="size-2 rounded-full bg-danger" />
                   Observed State (Actual)
                 </span>
-                <span className="font-mono text-[10px] text-zinc-400">Captured at Failure</span>
+                <span className="font-mono text-[10px] text-ink-400">Captured at Failure</span>
               </div>
 
-              <div className="relative flex aspect-16/10 w-full items-center justify-center bg-zinc-100 dark:bg-zinc-950/60">
+              <div className="relative flex aspect-16/10 w-full items-center justify-center bg-ink-950/60">
                 {hasObservedScreenshot ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -403,7 +403,7 @@ export function VerificationFailureCard({
                 ) : (
                   <div
                     data-testid="observed-screenshot-placeholder"
-                    className="flex flex-col items-center justify-center gap-2 p-6 text-center text-zinc-400 dark:text-zinc-500"
+                    className="flex flex-col items-center justify-center gap-2 p-6 text-center text-ink-400"
                   >
                     <svg className="size-8 opacity-60" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                       <path

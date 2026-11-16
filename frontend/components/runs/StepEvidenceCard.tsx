@@ -19,25 +19,25 @@ const METHOD_CONFIG: Record<
     label: "Page address",
     description: "Krama checked the page it landed on after this step.",
     className:
-      "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800",
+      "bg-run/15 text-run border-run/40",
   },
   aria: {
     label: "Page content",
     description: "Krama checked that the page shows the expected button, field or text.",
     className:
-      "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-400 dark:border-purple-800",
+      "bg-approve/15 text-approve border-approve/40",
   },
   network: {
     label: "Site's answer",
     description: "The website confirmed the change.",
     className:
-      "bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-950/40 dark:text-teal-400 dark:border-teal-800",
+      "bg-plan/15 text-plan border-plan/40",
   },
   vision: {
     label: "Screenshot",
     description: "A look at the screenshot confirmed the step.",
     className:
-      "bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-400 dark:border-indigo-800",
+      "bg-ask/15 text-ask border-ask/40",
   },
 };
 
@@ -52,7 +52,7 @@ export function getConfidenceDetails(confidence: number): {
       percentage,
       label: "Sure",
       badgeClass:
-        "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800",
+        "bg-verify/15 text-verify border-verify/40",
     };
   }
   if (percentage >= 70) {
@@ -60,14 +60,14 @@ export function getConfidenceDetails(confidence: number): {
       percentage,
       label: "Fairly sure",
       badgeClass:
-        "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800",
+        "bg-plan/15 text-plan border-plan/40",
     };
   }
   return {
     percentage,
     label: "Unsure",
     badgeClass:
-      "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-800",
+      "bg-danger/15 text-danger border-danger/40",
   };
 }
 
@@ -95,31 +95,30 @@ export function StepEvidenceCard({
   return (
     <div
       data-testid={`step-evidence-card-${step.seq}`}
-      className={`border rounded-xl bg-white dark:bg-zinc-900 overflow-hidden shadow-sm transition-all ${
-        isFailed
-          ? "border-rose-300 dark:border-rose-800/80"
-          : "border-zinc-200 dark:border-zinc-800"
+      className={`kr-tone-card overflow-hidden rounded-3xl ${
+        isFailed ? "kr-danger" : isVerified ? "kr-verify" : "kr-run"
       } ${className}`}
     >
       {/* Top Header */}
-      <div className="p-4 sm:p-5 border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-850/50 flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 bg-white/[0.03] p-4 sm:p-5">
         <div className="flex items-center gap-3">
           <span
             data-testid="step-seq-badge"
-            className="flex items-center justify-center size-7 rounded-lg bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 font-mono text-xs font-bold"
+            className="flex size-9 items-center justify-center rounded-xl font-mono text-sm font-extrabold text-ink-950"
+            style={{ background: "var(--kr-tone)", boxShadow: "0 0 18px -2px var(--kr-tone)" }}
           >
             {step.seq ?? (index !== undefined ? index + 1 : 1)}
           </span>
           <div>
             <h4
               data-testid="step-instruction"
-              className="text-sm font-semibold text-zinc-900 dark:text-zinc-100"
+              className="text-[15px] font-bold text-white"
             >
               {step.instructionText}
             </h4>
             <div
               data-testid="step-action-target"
-              className="text-xs text-zinc-500 dark:text-zinc-400 flex items-center gap-2 mt-0.5"
+              className="text-xs text-ink-400 flex items-center gap-2 mt-0.5"
             >
               <span>{describeAction(step.actionType, step.targetRole, step.targetName)}</span>
             </div>
@@ -133,10 +132,10 @@ export function StepEvidenceCard({
             data-status={step.status}
             className={`inline-flex items-center gap-1 px-2.5 py-0.5 text-xs font-semibold rounded-full border ${
               isVerified
-                ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800"
+                ? "bg-verify/15 text-verify border-verify/40"
                 : isFailed
-                  ? "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-800"
-                  : "bg-zinc-100 text-zinc-700 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-300"
+                  ? "bg-danger/15 text-danger border-danger/40"
+                  : "border-white/10 bg-white/[0.06] text-ink-300"
             }`}
           >
             {isVerified ? (
@@ -164,8 +163,8 @@ export function StepEvidenceCard({
       <div className="p-4 sm:p-5 space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {/* Method badge */}
-          <div className="p-3 rounded-lg border border-zinc-100 dark:border-zinc-800 bg-zinc-50/60 dark:bg-zinc-850/40">
-            <span className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 block mb-1">
+          <div className="rounded-2xl border border-white/10 bg-ink-950/50 p-3">
+            <span className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.16em] text-ink-400">
               How it was checked
             </span>
             <div className="flex items-center gap-2">
@@ -180,14 +179,14 @@ export function StepEvidenceCard({
                 {methodConfig.label}
               </span>
             </div>
-            <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-1">
+            <p className="text-[11px] text-ink-400 mt-1">
               {methodConfig.description}
             </p>
           </div>
 
           {/* Confidence Score */}
-          <div className="p-3 rounded-lg border border-zinc-100 dark:border-zinc-800 bg-zinc-50/60 dark:bg-zinc-850/40">
-            <span className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 block mb-1">
+          <div className="rounded-2xl border border-white/10 bg-ink-950/50 p-3">
+            <span className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.16em] text-ink-400">
               How sure
             </span>
             <div className="flex items-center gap-2">
@@ -196,24 +195,24 @@ export function StepEvidenceCard({
                 data-confidence={confidence ?? ""}
                 className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold rounded-md border ${
                   confidence === null
-                    ? "bg-zinc-100 text-zinc-600 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700"
+                    ? "bg-white/[0.06] text-ink-300 border-white/10"
                     : confidenceDetails.badgeClass
                 }`}
               >
                 {confidence === null ? "n/a" : `${confidenceDetails.percentage}%`}
               </span>
-              <span className="text-xs text-zinc-600 dark:text-zinc-400">
+              <span className="text-xs text-ink-400">
                 {confidence === null ? "Not verified yet" : confidenceDetails.label}
               </span>
             </div>
-            <div className="w-full bg-zinc-200 dark:bg-zinc-700 h-1.5 rounded-full mt-2 overflow-hidden">
+            <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-white/[0.07]">
               <div
-                className={`h-full rounded-full ${
+                className={`h-full rounded-full transition-all duration-700 ${
                   confidenceDetails.percentage >= 90
-                    ? "bg-emerald-500"
+                    ? "bg-verify shadow-[0_0_12px_var(--verify)]"
                     : confidenceDetails.percentage >= 70
-                      ? "bg-amber-500"
-                      : "bg-rose-500"
+                      ? "bg-plan"
+                      : "bg-danger"
                 }`}
                 style={{
                   width: confidence === null ? "0%" : `${Math.min(100, Math.max(5, confidenceDetails.percentage))}%`,
@@ -225,18 +224,18 @@ export function StepEvidenceCard({
 
         {/* Screenshot Viewer */}
         <div className="space-y-1.5">
-          <div className="flex items-center justify-between text-xs text-zinc-600 dark:text-zinc-400">
-            <span className="font-semibold text-zinc-800 dark:text-zinc-200">
+          <div className="flex items-center justify-between text-xs text-ink-400">
+            <span className="font-semibold text-ink-300">
               Screenshot after this step
             </span>
             {step.timing?.durationMs && (
-              <span className="text-zinc-500 text-[11px]">
+              <span className="text-ink-400 text-[11px]">
                 Duration: {step.timing.durationMs}ms
               </span>
             )}
           </div>
 
-          <div className="relative rounded-lg border border-zinc-200 dark:border-zinc-750 bg-zinc-950 overflow-hidden flex items-center justify-center min-h-[180px]">
+          <div className="relative flex min-h-[180px] items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-ink-950 shadow-[inset_0_0_60px_rgba(0,0,0,0.5)]">
             {hasScreenshot && !imageError && effectiveScreenshotUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
@@ -249,10 +248,10 @@ export function StepEvidenceCard({
             ) : (
               <div
                 data-testid="step-screenshot-placeholder"
-                className="flex flex-col items-center justify-center p-8 text-center text-zinc-400"
+                className="flex flex-col items-center justify-center p-8 text-center text-ink-400"
               >
                 <svg
-                  className="size-10 text-zinc-500 mb-2"
+                  className="size-10 text-ink-400 mb-2"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -265,12 +264,12 @@ export function StepEvidenceCard({
                     d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
                   />
                 </svg>
-                <span className="text-xs font-medium text-zinc-300">
+                <span className="text-xs font-medium text-ink-300">
                   {imageError
                     ? "Screenshot failed to load from artifact store"
                     : "No screenshot captured for this step"}
                 </span>
-                <span className="text-[11px] text-zinc-500 mt-0.5">
+                <span className="text-[11px] text-ink-400 mt-0.5">
                   Verification was recorded via {methodConfig.label}
                 </span>
               </div>
@@ -280,12 +279,12 @@ export function StepEvidenceCard({
 
         {/* Expandable Expected vs Observed State */}
         {(step.expectedState || step.observedState) && (
-          <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800">
+          <div className="pt-2 border-t border-white/10">
             <button
               type="button"
               data-testid="toggle-state-details-button"
               onClick={() => setShowStateDetails((prev) => !prev)}
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white transition-colors"
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-run transition-colors hover:text-white"
             >
               <svg
                 className={`size-3.5 transition-transform ${showStateDetails ? "rotate-90" : ""}`}
@@ -304,23 +303,23 @@ export function StepEvidenceCard({
                 className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3 text-xs"
               >
                 {/* Expected */}
-                <div className="p-3 rounded-lg bg-zinc-50 dark:bg-zinc-850 border border-zinc-200 dark:border-zinc-800">
-                  <span className="font-semibold text-zinc-900 dark:text-zinc-100 block mb-1">
+                <div className="rounded-2xl border border-white/10 bg-ink-950/50 p-3">
+                  <span className="font-semibold text-white block mb-1">
                     Expected State
                   </span>
                   {step.expectedState?.url_matches && (
                     <div className="mb-1">
-                      <span className="text-zinc-500">URL matches: </span>
-                      <code className="font-mono text-[11px] bg-zinc-200/60 dark:bg-zinc-800 px-1 py-0.5 rounded">
+                      <span className="text-ink-400">URL matches: </span>
+                      <code className="font-mono text-[11px] bg-white/5 px-1 py-0.5 rounded">
                         {step.expectedState.url_matches}
                       </code>
                     </div>
                   )}
                   {step.expectedState?.visible && step.expectedState.visible.length > 0 && (
                     <div>
-                      <span className="text-zinc-500">Visible: </span>
+                      <span className="text-ink-400">Visible: </span>
                       {step.expectedState.visible.map((el, i) => (
-                        <span key={i} className="font-mono text-[11px] text-zinc-700 dark:text-zinc-300">
+                        <span key={i} className="font-mono text-[11px] text-ink-300">
                           [{el.role}: &quot;{el.name}&quot;]
                         </span>
                       ))}
@@ -329,22 +328,22 @@ export function StepEvidenceCard({
                 </div>
 
                 {/* Observed */}
-                <div className="p-3 rounded-lg bg-zinc-50 dark:bg-zinc-850 border border-zinc-200 dark:border-zinc-800">
-                  <span className="font-semibold text-zinc-900 dark:text-zinc-100 block mb-1">
+                <div className="rounded-2xl border border-white/10 bg-ink-950/50 p-3">
+                  <span className="font-semibold text-white block mb-1">
                     Observed State
                   </span>
                   {step.observedState?.url && (
                     <div className="mb-1">
-                      <span className="text-zinc-500">URL: </span>
-                      <code className="font-mono text-[11px] bg-zinc-200/60 dark:bg-zinc-800 px-1 py-0.5 rounded">
+                      <span className="text-ink-400">URL: </span>
+                      <code className="font-mono text-[11px] bg-white/5 px-1 py-0.5 rounded">
                         {step.observedState.url}
                       </code>
                     </div>
                   )}
                   {step.observedState?.title && (
                     <div>
-                      <span className="text-zinc-500">Title: </span>
-                      <span className="text-zinc-700 dark:text-zinc-300">{step.observedState.title}</span>
+                      <span className="text-ink-400">Title: </span>
+                      <span className="text-ink-300">{step.observedState.title}</span>
                     </div>
                   )}
                 </div>
