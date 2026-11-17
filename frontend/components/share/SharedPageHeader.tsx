@@ -1,12 +1,15 @@
 import Link from "next/link";
 import { Eye, Share2 } from "lucide-react";
 import { Logo, ThemeToggle } from "@/components/ui";
+import type { TutorialFreshnessStatus } from "@/types/tutorial";
+import { TutorialStatusBadge } from "@/components/tutorials/TutorialStatusBadge";
 
 export interface SharedPageHeaderProps {
   title?: string;
+  status?: TutorialFreshnessStatus;
 }
 
-export function SharedPageHeader({ title }: SharedPageHeaderProps) {
+export function SharedPageHeader({ title, status }: SharedPageHeaderProps) {
   return (
     <header
       data-testid="shared-page-header"
@@ -35,6 +38,9 @@ export function SharedPageHeader({ title }: SharedPageHeaderProps) {
 
         {/* Note: NO profile management, NO dashboard links, NO edit or delete controls */}
         <div className="flex shrink-0 items-center gap-2">
+          {status ? (
+            <TutorialStatusBadge status={status} size="sm" />
+          ) : null}
           <span className="kr-chip kr-run hidden sm:inline-flex">
             <Eye aria-hidden="true" className="size-3" />
             Read-only preview

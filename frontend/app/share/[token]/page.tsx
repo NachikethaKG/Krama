@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { compileWorkflow, type TutorialSpec } from "@krama/tutorial-compiler";
 import type { Workflow } from "@krama/contracts-ts";
+import type { TutorialFreshnessStatus } from "@/types/tutorial";
 import { TutorialPlayer } from "@/components/player";
-import { RevokedLinkNotice, SharedPageHeader } from "@/components/share";
+import { OutdatedSiteBanner, RevokedLinkNotice, SharedPageHeader } from "@/components/share";
 import { giteaTutorialSpecFixture, tutorialSpecFixtures } from "@/lib/fixtures";
 
 export interface SharePageProps {
@@ -70,18 +71,23 @@ export default async function SharePage({ params }: SharePageProps) {
     return (
       <div className="flex min-h-screen flex-col">
         <SharedPageHeader />
-        <main className="flex-1 container mx-auto p-4 flex items-center justify-center">
+        <main className="container mx-auto flex flex-1 items-center justify-center p-4">
           <RevokedLinkNotice status={status} />
         </main>
       </div>
     );
   }
 
+  const freshnessStatus: TutorialFreshnessStatus =
+    (spec as unknown as { status?: TutorialFreshnessStatus }).status ??
+    (token.includes("outdated") ? "outdated" : "verified");
+
   return (
     <div className="flex min-h-screen flex-col">
-      <SharedPageHeader title={spec.title} />
-      <main className="container mx-auto flex-1 p-4 pt-6">
-        <TutorialPlayer readOnly={true} spec={spec} />
+      <SharedPageHeader title={spec.title} status={freshnessStatus} />
+      <main className="container mx-auto flex flex-1 flex-col gap-4 p-4 pt-6">
+        {freshnessStatus === "outdated" ? <OutdatedSiteBanner /> : null}
+        <TutorialPlayer readOnly={true} spec={spec} status={freshnessStatus} />
       </main>
     </div>
   );
