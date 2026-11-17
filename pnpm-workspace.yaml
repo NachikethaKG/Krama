@@ -4,5 +4,6 @@ packages:
 
 # Native build scripts we don't need (from create-next-app)
 allowBuilds:
+  esbuild: true
   sharp: false
   unrs-resolver: false
