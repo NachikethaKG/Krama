@@ -10,6 +10,9 @@ import type {
   Run,
   RunEvent,
   RunPage,
+  ShareLink,
+  ShareLinkCreated,
+  ShareLinkList,
   Task,
   TaskMetrics,
   User,
@@ -217,6 +220,12 @@ export interface ApiClient {
   getWorkflows(limit?: number, status?: WorkflowStatus | "all"): Promise<WorkflowPage>;
   /** GET /workflows/{id}/versions: every version of the workflow, newest first, with step diffs against its parent. */
   getWorkflowVersions(workflowId: string): Promise<WorkflowVersionList>;
+  /** POST /workflows/{workflowId}/shares with X-Krama: 1. Creates a public read-only share link. */
+  createShareLink(workflowId: string): Promise<ShareLinkCreated>;
+  /** GET /workflows/{workflowId}/shares: list share links for this workflow. */
+  listShareLinks(workflowId: string): Promise<ShareLinkList>;
+  /** DELETE /workflows/{workflowId}/shares/{shareId} with X-Krama: 1. Revokes the share link. */
+  revokeShareLink(workflowId: string, shareId: string): Promise<ShareLink>;
   /** GET /tutorials (or stored workflows mapped to tutorial summaries). */
   getTutorials(options?: { limit?: number; status?: "all" | TutorialStatus }): Promise<TutorialSummary[]>;
   /** Run + plan + task + workflow, shaped for the run detail / evidence page. */
@@ -582,6 +591,41 @@ export class HttpApiClient implements ApiClient {
 
   getWorkflowVersions(workflowId: string): Promise<WorkflowVersionList> {
     return this.request<WorkflowVersionList>(`/workflows/${encodeURIComponent(workflowId)}/versions`);
+  }
+
+  async createShareLink(workflowId: string): Promise<ShareLinkCreated> {
+    const path = this.baseUrl.endsWith("/api/v1")
+      ? `/workflows/${encodeURIComponent(workflowId)}/shares`
+      : `/api/v1/workflows/${encodeURIComponent(workflowId)}/shares`;
+    return this.request<ShareLinkCreated>(path, {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "X-Krama": "1",
+      },
+    });
+  }
+
+  async listShareLinks(workflowId: string): Promise<ShareLinkList> {
+    const path = this.baseUrl.endsWith("/api/v1")
+      ? `/workflows/${encodeURIComponent(workflowId)}/shares`
+      : `/api/v1/workflows/${encodeURIComponent(workflowId)}/shares`;
+    return this.request<ShareLinkList>(path, {
+      credentials: "include",
+    });
+  }
+
+  async revokeShareLink(workflowId: string, shareId: string): Promise<ShareLink> {
+    const path = this.baseUrl.endsWith("/api/v1")
+      ? `/workflows/${encodeURIComponent(workflowId)}/shares/${encodeURIComponent(shareId)}`
+      : `/api/v1/workflows/${encodeURIComponent(workflowId)}/shares/${encodeURIComponent(shareId)}`;
+    return this.request<ShareLink>(path, {
+      method: "DELETE",
+      credentials: "include",
+      headers: {
+        "X-Krama": "1",
+      },
+    });
   }
 
   async getTutorials(options?: { limit?: number; status?: "all" | TutorialStatus }): Promise<TutorialSummary[]> {
@@ -959,6 +1003,7 @@ export class MockApiClient implements ApiClient {
   private readonly sessionStatuses = new Map<string, SessionStatus>();
   private readonly manualLoginPending = new Set<string>();
   private readonly mockReviewQueue: ReviewQueueItem[] = mockReviewQueueItems.map((item) => ({ ...item }));
+  private static readonly globalShares = new Map<string, ShareLink[]>();
   mockAutoActivateSession = true;
 
   constructor(
@@ -1516,6 +1561,44 @@ export class MockApiClient implements ApiClient {
       throw mockError(429, "rate_limited", "Daily AI fix quota reached (5/day). Please regenerate the workflow or retry tomorrow.");
     }
     return { success: true, status: "checking" };
+  }
+
+  async createShareLink(workflowId: string): Promise<ShareLinkCreated> {
+    const token = `mock-token-${Math.random().toString(36).substring(2, 10)}`;
+    const id = `share-${Math.random().toString(36).substring(2, 10)}`;
+    const link: ShareLink = {
+      id,
+      workflow_id: workflowId,
+      created_at: nowTs(),
+      expires_at: null,
+      revoked_at: null,
+      last_used_at: null,
+    };
+    const list = MockApiClient.globalShares.get(workflowId) ?? [];
+    list.unshift(link);
+    MockApiClient.globalShares.set(workflowId, list);
+    const origin = typeof window !== "undefined" ? window.location.origin : "http://localhost:3000";
+    return {
+      link,
+      url: `${origin}/share/${token}`,
+    };
+  }
+
+  async listShareLinks(workflowId: string): Promise<ShareLinkList> {
+    const items = MockApiClient.globalShares.get(workflowId) ?? [];
+    return { items: [...items] };
+  }
+
+  async revokeShareLink(workflowId: string, shareId: string): Promise<ShareLink> {
+    const list = MockApiClient.globalShares.get(workflowId) ?? [];
+    const link = list.find((item) => item.id === shareId);
+    if (!link) {
+      throw mockError(404, "not_found", "Share link not found");
+    }
+    if (!link.revoked_at) {
+      link.revoked_at = nowTs();
+    }
+    return { ...link };
   }
 }
 

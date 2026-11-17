@@ -604,4 +604,26 @@ describe("MockApiClient", () => {
     expect(summary.tasks).toHaveLength(12);
     expect(summary.overall_success_rate).toBeGreaterThanOrEqual(0.8);
   });
+
+  it("creates, lists, and revokes share links", async () => {
+    const client = new MockApiClient();
+    const wid = "wf-api-test";
+    const initial = await client.listShareLinks(wid);
+    expect(initial.items).toHaveLength(0);
+
+    const created = await client.createShareLink(wid);
+    expect(created.url).toContain("/share/mock-token-");
+    expect(created.link.workflow_id).toBe(wid);
+    expect(created.link.revoked_at).toBeNull();
+
+    const afterCreate = await client.listShareLinks(wid);
+    expect(afterCreate.items).toHaveLength(1);
+    expect(afterCreate.items[0].id).toBe(created.link.id);
+
+    const revoked = await client.revokeShareLink(wid, created.link.id);
+    expect(revoked.revoked_at).toBeTruthy();
+
+    const afterRevoke = await client.listShareLinks(wid);
+    expect(afterRevoke.items[0].revoked_at).toBeTruthy();
+  });
 });
