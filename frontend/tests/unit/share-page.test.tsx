@@ -3,6 +3,18 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import SharePage from "@/app/share/[token]/page";
 import { giteaTutorialSpecFixture } from "@/lib/fixtures";
 
+// rrweb needs a real browser; in jsdom tests we mock Replayer to avoid snapshot rebuild errors
+vi.mock("rrweb", () => ({
+  Replayer: vi.fn().mockImplementation(function () {
+    return {
+      wrapper: { style: {} },
+      iframe: { style: {}, contentWindow: { scrollTo: vi.fn() } },
+      pause: vi.fn(),
+      destroy: vi.fn(),
+    };
+  }),
+}));
+
 describe("Public Share Page (/share/[token])", () => {
   const originalFetch = globalThis.fetch;
 
