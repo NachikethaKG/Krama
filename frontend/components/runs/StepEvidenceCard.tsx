@@ -382,6 +382,21 @@ const ROLE_NAMES: Record<string, string> = {
 export function describeAction(action: string, role?: string | null, name?: string | null): string {
   const verb = ACTION_VERBS[action] ?? action;
   if (!name) return verb;
+  const cleanName = name.replace(/\s*\*+\s*$/, "").trim();
   const what = role ? (ROLE_NAMES[role] ?? `the ${role}`) : "";
-  return `${verb} ${what} \u201c${name}\u201d`.replace(/\s+/g, " ");
+  return `${verb} ${what} \u201c${cleanName || name}\u201d`.replace(/\s+/g, " ");
+}
+
+const METHOD_LABELS: Record<string, string> = {
+  url: "page address",
+  url_dom: "page address",
+  dom: "page content",
+  aria: "page content",
+  network: "site's answer",
+  vision: "screenshot",
+};
+
+export function getMethodLabel(method: string): string {
+  const normalized = method.toLowerCase();
+  return METHOD_LABELS[normalized] ?? normalized.replace(/_/g, " ");
 }
