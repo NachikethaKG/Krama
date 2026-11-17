@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { History, LibraryBig, LogOut, Sparkles } from "lucide-react";
+import { History, LibraryBig, LogOut, ShieldAlert, Sparkles } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { User } from "@krama/contracts-ts";
 import { Logo, ThemeToggle } from "@/components/ui";
@@ -29,6 +29,14 @@ const NAV: {
     match: (p) => p.startsWith("/tutorials"),
   },
   {
+    href: "/dashboard/reviews",
+    label: "Review Queue",
+    short: "Reviews",
+    color: "var(--plan)",
+    icon: ShieldAlert,
+    match: (p) => p.startsWith("/dashboard/reviews"),
+  },
+  {
     href: "/runs",
     label: "Runs",
     short: "Runs",
@@ -45,6 +53,7 @@ export function AppHeader({ client }: { client?: ApiClient }) {
   const [apiClient] = useState<ApiClient>(() => client ?? getApiClient());
   const [user, setUser] = useState<User | null>(null);
   const [signingOut, setSigningOut] = useState(false);
+  const [reviewCount, setReviewCount] = useState<number | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -52,8 +61,27 @@ export function AppHeader({ client }: { client?: ApiClient }) {
       .getMe()
       .then((me) => !cancelled && setUser(me))
       .catch(() => undefined); // the page itself handles a missing session
+
+    apiClient
+      .getReviewQueueCount()
+      .then((res) => {
+        if (!cancelled) setReviewCount(res.count);
+      })
+      .catch(() => undefined);
+
+    const handleCountChange = (e: Event) => {
+      const customEvent = e as CustomEvent<{ count: number }>;
+      if (customEvent.detail && typeof customEvent.detail.count === "number") {
+        setReviewCount(customEvent.detail.count);
+      } else {
+        apiClient.getReviewQueueCount().then((res) => !cancelled && setReviewCount(res.count)).catch(() => undefined);
+      }
+    };
+
+    window.addEventListener("krama:review-count-changed", handleCountChange);
     return () => {
       cancelled = true;
+      window.removeEventListener("krama:review-count-changed", handleCountChange);
     };
   }, [apiClient]);
 
@@ -90,6 +118,7 @@ export function AppHeader({ client }: { client?: ApiClient }) {
               <Link
                 key={item.href}
                 href={item.href}
+                data-testid={item.href === "/dashboard/reviews" ? "review-queue-nav-link" : undefined}
                 aria-current={active ? "page" : undefined}
                 className={`group relative flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1.5 font-semibold transition-all sm:px-3.5 ${
                   active ? "text-oncolor" : "text-ink-300 hover:text-white"
@@ -107,6 +136,19 @@ export function AppHeader({ client }: { client?: ApiClient }) {
                 />
                 <span className="sm:hidden">{item.short}</span>
                 <span className="hidden sm:inline">{item.label}</span>
+                {item.href === "/dashboard/reviews" && reviewCount !== null && (
+                  reviewCount > 0 ? (
+                    <span
+                      data-testid="review-queue-badge"
+                      aria-label={`${reviewCount} pending reviews`}
+                      className="ml-1 inline-flex size-5 items-center justify-center rounded-full bg-rose-500 text-[10px] font-extrabold text-white shadow-xs"
+                    >
+                      {reviewCount}
+                    </span>
+                  ) : (
+                    <span data-testid="review-queue-badge" className="hidden">0</span>
+                  )
+                )}
               </Link>
             );
           })}

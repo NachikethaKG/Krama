@@ -10,6 +10,7 @@ import type {
 } from "@krama/contracts-ts";
 import type { TutorialSpec } from "@krama/tutorial-compiler";
 import type { TutorialSummary } from "@/types/tutorial";
+import type { ReviewQueueItem } from "@/types/review";
 import giteaTutorialSpecJson from "../../contracts/fixtures/tutorial-spec/gitea-create-repo.json";
 import giteaWorkflowJson from "../../contracts/fixtures/gitea-create-repo-workflow.json";
 import validWorkflowJson from "../../contracts/fixtures/valid_workflow.json";
@@ -1218,3 +1219,63 @@ export const mockMetricsSummary: MetricsSummary = {
     },
   ],
 };
+
+export const mockReviewQueueItems: ReviewQueueItem[] = [
+  {
+    id: "rev-1",
+    workflowId: "gitea-workflow-healed",
+    workflowTitle: "Create repository in local Gitea (Auto-healed)",
+    targetPlatform: "gitea",
+    category: "heal_pending",
+    reason: "Step 3 button locator healed via fallback heuristic",
+    failedStepIndex: 3,
+    createdAt: "2026-11-17T10:00:00Z",
+    pendingVersion: "v1.1",
+    canRetryAiFix: false,
+    stepDiffs: [
+      {
+        stepIndex: 3,
+        stepTitle: "Click Create Repository button",
+        changeType: "locator_healed",
+        oldSelector: "button[type='submit']",
+        newSelector: "button.primary:has-text('Create Repository')",
+        oldLabel: "Submit",
+        newLabel: "Create Repository",
+        oldCaption: "Click Submit to create the repository",
+        newCaption: "Click Create Repository to finalize creation",
+      },
+    ],
+  },
+  {
+    id: "rev-2",
+    workflowId: "github-repo-settings",
+    workflowTitle: "Configure GitHub Repository Branch Rules",
+    targetPlatform: "github",
+    category: "outdated",
+    reason: "Step 2 button missing: Navigation changed to Settings > Branches",
+    failedStepIndex: 2,
+    createdAt: "2026-11-16T15:30:00Z",
+    canRetryAiFix: true,
+  },
+  {
+    id: "rev-3",
+    workflowId: "gitea-ssh-keys",
+    workflowTitle: "Add SSH Keys to Gitea Profile",
+    targetPlatform: "gitea",
+    category: "unstable",
+    reason: "2 flakes in 7 days (timing drift on modal animation)",
+    failedStepIndex: 4,
+    createdAt: "2026-11-15T09:15:00Z",
+    canRetryAiFix: true,
+  },
+  {
+    id: "rev-4",
+    workflowId: "github-pull-request",
+    workflowTitle: "Create Pull Request with GitHub Actions",
+    targetPlatform: "github",
+    category: "cant_check",
+    reason: "GitHub session expired",
+    createdAt: "2026-11-14T11:45:00Z",
+    canRetryAiFix: false,
+  },
+];

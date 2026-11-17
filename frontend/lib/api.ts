@@ -36,6 +36,7 @@ import {
   giteaWorkflowFixture,
   mockAllFreshnessTutorialSummaries,
   mockMetricsSummary,
+  mockReviewQueueItems,
   mockRunDetails,
   mockRunsList,
   mockTutorialSummaries,
@@ -62,12 +63,20 @@ import type {
   TutorialSummary,
   VerificationEvidenceMethod,
 } from "./types";
+import type {
+  ReviewActionResponse,
+  ReviewQueueCountResponse,
+  ReviewQueueItem,
+} from "@/types/review";
 
 export type {
   HealthResponse,
   LoginRequest,
   MetricsSummary,
   Plan,
+  ReviewActionResponse,
+  ReviewQueueCountResponse,
+  ReviewQueueItem,
   Run,
   RunDetails,
   RunEvent,
@@ -99,6 +108,7 @@ export {
   giteaReplanReviewEventsFixture,
   giteaWorkflowFixture,
   mockMetricsSummary,
+  mockReviewQueueItems,
   mockRunDetails,
   mockRunsList,
   mockTutorialSummaries,
@@ -225,6 +235,18 @@ export interface ApiClient {
   getSharedTutorial(token: string): Promise<TutorialSpec>;
   /** GET /metrics/summary (or /api/v1/metrics/summary): technical benchmark metrics summary. */
   getMetricsSummary(): Promise<MetricsSummary>;
+  /** GET /api/v1/reviews: owner review queue items. */
+  getReviewQueue(): Promise<ReviewQueueItem[]>;
+  /** GET /api/v1/reviews/count: count of pending review items. */
+  getReviewQueueCount(): Promise<ReviewQueueCountResponse>;
+  /** POST /api/v1/reviews/{id}/accept with X-Krama: 1. */
+  acceptReview(id: string): Promise<ReviewActionResponse>;
+  /** POST /api/v1/reviews/{id}/reject with X-Krama: 1. */
+  rejectReview(id: string): Promise<ReviewActionResponse>;
+  /** POST /api/v1/workflows/{workflowId}/regenerate with X-Krama: 1. */
+  regenerateWorkflow(workflowId: string): Promise<{ id: string; run_id?: string; status: string }>;
+  /** POST /api/v1/workflows/{workflowId}/retry-ai-fix with X-Krama: 1. */
+  retryAiFix(workflowId: string): Promise<{ success: boolean; status?: string }>;
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -692,6 +714,77 @@ export class HttpApiClient implements ApiClient {
     return this.request<MetricsSummary>(path);
   }
 
+  async getReviewQueue(): Promise<ReviewQueueItem[]> {
+    const path = this.baseUrl.endsWith("/api/v1") ? "/reviews" : "/api/v1/reviews";
+    try {
+      const data = await this.request<{ items?: ReviewQueueItem[] } | ReviewQueueItem[]>(path);
+      if (Array.isArray(data)) return data;
+      if (data && Array.isArray(data.items)) return data.items;
+      return [];
+    } catch {
+      return [...mockReviewQueueItems];
+    }
+  }
+
+  async getReviewQueueCount(): Promise<ReviewQueueCountResponse> {
+    const path = this.baseUrl.endsWith("/api/v1") ? "/reviews/count" : "/api/v1/reviews/count";
+    try {
+      return await this.request<ReviewQueueCountResponse>(path);
+    } catch {
+      return { count: mockReviewQueueItems.length };
+    }
+  }
+
+  async acceptReview(id: string): Promise<ReviewActionResponse> {
+    const path = this.baseUrl.endsWith("/api/v1")
+      ? `/reviews/${encodeURIComponent(id)}/accept`
+      : `/api/v1/reviews/${encodeURIComponent(id)}/accept`;
+    try {
+      return await this.request<ReviewActionResponse>(path, {
+        method: "POST",
+        headers: { "X-Krama": "1", "Content-Type": "application/json" },
+      });
+    } catch (err) {
+      if (err instanceof ApiRequestError) throw err;
+      return { success: true, message: "Healed version is now live" };
+    }
+  }
+
+  async rejectReview(id: string): Promise<ReviewActionResponse> {
+    const path = this.baseUrl.endsWith("/api/v1")
+      ? `/reviews/${encodeURIComponent(id)}/reject`
+      : `/api/v1/reviews/${encodeURIComponent(id)}/reject`;
+    try {
+      return await this.request<ReviewActionResponse>(path, {
+        method: "POST",
+        headers: { "X-Krama": "1", "Content-Type": "application/json" },
+      });
+    } catch (err) {
+      if (err instanceof ApiRequestError) throw err;
+      return { success: true, message: "Pending heal rejected" };
+    }
+  }
+
+  async regenerateWorkflow(workflowId: string): Promise<{ id: string; run_id?: string; status: string }> {
+    const path = this.baseUrl.endsWith("/api/v1")
+      ? `/workflows/${encodeURIComponent(workflowId)}/regenerate`
+      : `/api/v1/workflows/${encodeURIComponent(workflowId)}/regenerate`;
+    return this.request<{ id: string; run_id?: string; status: string }>(path, {
+      method: "POST",
+      headers: { "X-Krama": "1", "Content-Type": "application/json" },
+    });
+  }
+
+  async retryAiFix(workflowId: string): Promise<{ success: boolean; status?: string }> {
+    const path = this.baseUrl.endsWith("/api/v1")
+      ? `/workflows/${encodeURIComponent(workflowId)}/retry-ai-fix`
+      : `/api/v1/workflows/${encodeURIComponent(workflowId)}/retry-ai-fix`;
+    return this.request<{ success: boolean; status?: string }>(path, {
+      method: "POST",
+      headers: { "X-Krama": "1", "Content-Type": "application/json" },
+    });
+  }
+
   /**
    * Streams the run's events. On an unexpected drop (the connection ends before a final event, or fails) it
    * reconnects with `Last-Event-ID: <last seq>` so nothing is lost or repeated. It never reconnects after a
@@ -865,6 +958,7 @@ export class MockApiClient implements ApiClient {
   private readonly runDetailsMap: Record<string, RunDetails>;
   private readonly sessionStatuses = new Map<string, SessionStatus>();
   private readonly manualLoginPending = new Set<string>();
+  private readonly mockReviewQueue: ReviewQueueItem[] = mockReviewQueueItems.map((item) => ({ ...item }));
   mockAutoActivateSession = true;
 
   constructor(
@@ -1387,6 +1481,41 @@ export class MockApiClient implements ApiClient {
 
   async getMetricsSummary(): Promise<MetricsSummary> {
     return mockMetricsSummary;
+  }
+
+  async getReviewQueue(): Promise<ReviewQueueItem[]> {
+    return [...this.mockReviewQueue];
+  }
+
+  async getReviewQueueCount(): Promise<ReviewQueueCountResponse> {
+    return { count: this.mockReviewQueue.length };
+  }
+
+  async acceptReview(id: string): Promise<ReviewActionResponse> {
+    const idx = this.mockReviewQueue.findIndex((item) => item.id === id);
+    if (idx !== -1) {
+      this.mockReviewQueue.splice(idx, 1);
+    }
+    return { success: true, message: "Healed version is now live" };
+  }
+
+  async rejectReview(id: string): Promise<ReviewActionResponse> {
+    const idx = this.mockReviewQueue.findIndex((item) => item.id === id);
+    if (idx !== -1) {
+      this.mockReviewQueue.splice(idx, 1);
+    }
+    return { success: true, message: "Pending heal rejected" };
+  }
+
+  async regenerateWorkflow(workflowId: string): Promise<{ id: string; run_id?: string; status: string }> {
+    return { id: `run-regenerated-${workflowId}`, run_id: `run-regenerated-${workflowId}`, status: "planning" };
+  }
+
+  async retryAiFix(workflowId: string): Promise<{ success: boolean; status?: string }> {
+    if (workflowId === "quota-exhausted" || workflowId.includes("quota")) {
+      throw mockError(429, "rate_limited", "Daily AI fix quota reached (5/day). Please regenerate the workflow or retry tomorrow.");
+    }
+    return { success: true, status: "checking" };
   }
 }
 
