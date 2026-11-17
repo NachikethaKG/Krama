@@ -16,6 +16,7 @@ import type {
   Workflow,
   WorkflowPage,
   WorkflowStatus,
+  WorkflowVersionList,
 } from "@krama/contracts-ts";
 import { compileWorkflow, type TutorialSpec } from "@krama/tutorial-compiler";
 
@@ -31,11 +32,14 @@ import {
   giteaReplanEventsFixture,
   giteaReplanReviewEventsFixture,
   giteaTutorialSpecFixture,
+  giteaVersionsFixture,
   giteaWorkflowFixture,
+  mockAllFreshnessTutorialSummaries,
   mockMetricsSummary,
   mockRunDetails,
   mockRunsList,
   mockTutorialSummaries,
+  mockWorkflowVersions,
   pausedWorkflowFixture,
   replanProposedPlanFixture,
   replanWorkflowFixture,
@@ -201,6 +205,8 @@ export interface ApiClient {
   getWorkflow(id: string): Promise<Workflow>;
   /** GET /workflows: stored workflows, newest first (the tutorial library). */
   getWorkflows(limit?: number, status?: WorkflowStatus | "all"): Promise<WorkflowPage>;
+  /** GET /workflows/{id}/versions: every version of the workflow, newest first, with step diffs against its parent. */
+  getWorkflowVersions(workflowId: string): Promise<WorkflowVersionList>;
   /** GET /tutorials (or stored workflows mapped to tutorial summaries). */
   getTutorials(options?: { limit?: number; status?: "all" | TutorialStatus }): Promise<TutorialSummary[]>;
   /** Run + plan + task + workflow, shaped for the run detail / evidence page. */
@@ -552,9 +558,17 @@ export class HttpApiClient implements ApiClient {
     return this.request<WorkflowPage>(`/workflows?${params.toString()}`);
   }
 
+  getWorkflowVersions(workflowId: string): Promise<WorkflowVersionList> {
+    return this.request<WorkflowVersionList>(`/workflows/${encodeURIComponent(workflowId)}/versions`);
+  }
+
   async getTutorials(options?: { limit?: number; status?: "all" | TutorialStatus }): Promise<TutorialSummary[]> {
     // The API has no /tutorials endpoint (docs/api-contract.md): a tutorial is a stored workflow.
-    const workflowsPage = await this.getWorkflows(options?.limit ?? 100, options?.status ?? "all");
+    const workflowStatus: WorkflowStatus | "all" =
+      options?.status === "verified" || options?.status === "outdated"
+        ? options.status
+        : "all";
+    const workflowsPage = await this.getWorkflows(options?.limit ?? 100, workflowStatus);
     return workflowsPage.items.map((w) => ({
       id: w.id,
       title: w.title,
@@ -1066,8 +1080,35 @@ export class MockApiClient implements ApiClient {
     return { items, next_cursor: null };
   }
 
+  async getWorkflowVersions(workflowId: string): Promise<WorkflowVersionList> {
+    if (workflowId === "error-workflow" || workflowId === "error-versions") {
+      throw mockError(500, "internal", "Failed to retrieve workflow versions: Database unreachable");
+    }
+    if (workflowId === "baseline-only" || workflowId === "baseline-workflow") {
+      return {
+        items: [
+          {
+            id: "ver-baseline-1",
+            workflow_id: workflowId,
+            revision: 1,
+            source: "initial",
+            status: "current",
+            step_count: 5,
+            change_summary: null,
+            created_at: "2026-10-06T12:00:00.000Z",
+          },
+        ],
+      };
+    }
+    if (mockWorkflowVersions[workflowId]) {
+      return mockWorkflowVersions[workflowId];
+    }
+    return giteaVersionsFixture;
+  }
+
   async getTutorials(options?: { limit?: number; status?: "all" | TutorialStatus }): Promise<TutorialSummary[]> {
-    let list = [...mockTutorialSummaries];
+    const source = process.env.VITEST === "true" ? mockTutorialSummaries : mockAllFreshnessTutorialSummaries;
+    let list = [...source];
     if (options?.status && options.status !== "all") {
       list = list.filter((t) => t.status === options.status);
     }

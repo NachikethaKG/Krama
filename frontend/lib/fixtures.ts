@@ -1,9 +1,19 @@
-import type { MetricsSummary, Plan, PlannedStep, RunEvent, Step, User, Workflow } from "@krama/contracts-ts";
+import type {
+  MetricsSummary,
+  Plan,
+  PlannedStep,
+  RunEvent,
+  Step,
+  User,
+  Workflow,
+  WorkflowVersionList,
+} from "@krama/contracts-ts";
 import type { TutorialSpec } from "@krama/tutorial-compiler";
 import type { TutorialSummary } from "@/types/tutorial";
 import giteaTutorialSpecJson from "../../contracts/fixtures/tutorial-spec/gitea-create-repo.json";
 import giteaWorkflowJson from "../../contracts/fixtures/gitea-create-repo-workflow.json";
 import validWorkflowJson from "../../contracts/fixtures/valid_workflow.json";
+import giteaVersionsJson from "../../contracts/fixtures/workflow-versions/gitea-create-repo-versions.json";
 
 export const demoUserFixture: User = {
   id: "e1b2c3d4-0000-4000-8000-000000000001",
@@ -15,6 +25,134 @@ export const demoUserFixture: User = {
 export const giteaWorkflowFixture = giteaWorkflowJson as unknown as Workflow;
 export const validWorkflowFixture = validWorkflowJson as unknown as Workflow;
 export const giteaTutorialSpecFixture = giteaTutorialSpecJson as unknown as TutorialSpec;
+export const giteaVersionsFixture = giteaVersionsJson as unknown as WorkflowVersionList;
+
+export const mockMultiVersionWorkflow: WorkflowVersionList = {
+  items: [
+    {
+      id: "ver-4-pending",
+      workflow_id: "auto-updated-workflow",
+      revision: 4,
+      source: "heal",
+      status: "pending_review",
+      parent_version_id: "ver-3-wording",
+      run_id: "run-4",
+      confidence: 0.85,
+      step_count: 5,
+      change_summary: {
+        from_revision: 3,
+        to_revision: 4,
+        steps: [
+          {
+            kind: "changed",
+            old_seq: 3,
+            new_seq: 3,
+            category: "behaviour",
+            summary: "Heuristic locator heal awaiting review",
+            fields: [
+              { field: "target.name", from: { name: "Submit" }, to: { name: "Submit Form" } },
+              { field: "target.selector", from: { selector: "button#submit" }, to: { selector: "button.submit-btn" } },
+            ],
+          },
+        ],
+      },
+      created_at: "2026-11-04T12:00:00Z",
+    },
+    {
+      id: "ver-3-wording",
+      workflow_id: "auto-updated-workflow",
+      revision: 3,
+      source: "edit",
+      status: "current",
+      parent_version_id: "ver-2-healed",
+      run_id: "run-3",
+      confidence: 0.99,
+      step_count: 5,
+      change_summary: {
+        from_revision: 2,
+        to_revision: 3,
+        steps: [
+          {
+            kind: "changed",
+            old_seq: 1,
+            new_seq: 1,
+            category: "wording",
+            summary: "Clarified introductory instruction",
+            fields: [
+              {
+                field: "instruction_text",
+                from: { text: "Navigate to repository settings page." },
+                to: { text: "Open repository settings from top navigation." },
+              },
+            ],
+          },
+        ],
+      },
+      created_at: "2026-11-03T10:00:00Z",
+    },
+    {
+      id: "ver-2-healed",
+      workflow_id: "auto-updated-workflow",
+      revision: 2,
+      source: "heal",
+      status: "superseded",
+      parent_version_id: "ver-1-initial",
+      run_id: "run-2",
+      confidence: 0.95,
+      step_count: 5,
+      change_summary: {
+        from_revision: 1,
+        to_revision: 2,
+        steps: [
+          { kind: "same", old_seq: 1, new_seq: 1 },
+          {
+            kind: "changed",
+            old_seq: 2,
+            new_seq: 2,
+            category: "behaviour",
+            summary: "Deterministic heal: updated primary button locator",
+            fields: [
+              { field: "target.name", from: { name: "Create Repository" }, to: { name: "Make repo" } },
+              { field: "target.selector", from: { selector: "button#old-repo-btn" }, to: { selector: "button#new-create-repo-btn" } },
+              {
+                field: "instruction_text",
+                from: { text: "Click Create Repository button to submit the form." },
+                to: { text: "Click Make repo button to submit the form." },
+              },
+            ],
+          },
+          { kind: "same", old_seq: 3, new_seq: 3 },
+          { kind: "same", old_seq: 4, new_seq: 4 },
+          { kind: "same", old_seq: 5, new_seq: 5 },
+        ],
+      },
+      created_at: "2026-11-02T09:15:00Z",
+    },
+    {
+      id: "ver-1-initial",
+      workflow_id: "auto-updated-workflow",
+      revision: 1,
+      source: "initial",
+      status: "superseded",
+      parent_version_id: null,
+      run_id: "run-1",
+      confidence: 1.0,
+      step_count: 5,
+      change_summary: null,
+      created_at: "2026-10-11T08:00:00Z",
+    },
+  ],
+};
+
+export const mockWorkflowVersions: Record<string, WorkflowVersionList> = {
+  [giteaWorkflowFixture.id]: giteaVersionsFixture,
+  [giteaTutorialSpecFixture.workflow_id]: giteaVersionsFixture,
+  "gitea": giteaVersionsFixture,
+  "default": giteaVersionsFixture,
+  "mock": giteaVersionsFixture,
+  "auto-updated-workflow": mockMultiVersionWorkflow,
+  "auto-updated-tutorial": mockMultiVersionWorkflow,
+};
 
 export const tutorialSpecFixtures: Record<string, TutorialSpec> = {
   [giteaTutorialSpecFixture.workflow_id]: giteaTutorialSpecFixture,
@@ -24,11 +162,36 @@ export const tutorialSpecFixtures: Record<string, TutorialSpec> = {
   "mock": giteaTutorialSpecFixture,
   "gitea-create-repo": giteaTutorialSpecFixture,
   "github-star-repo": { ...giteaTutorialSpecFixture, title: "Star a repository on GitHub" },
-  "github-create-issue-outdated": { ...giteaTutorialSpecFixture, title: "Create an issue with template on GitHub" },
-  "gitea-deploy-key-outdated": { ...giteaTutorialSpecFixture, title: "Add deploy key in Gitea repository" },
+  "github-create-issue-outdated": {
+    ...giteaTutorialSpecFixture,
+    title: "Create an issue with template on GitHub",
+    status: "outdated",
+  } as unknown as TutorialSpec,
+  "gitea-deploy-key-outdated": {
+    ...giteaTutorialSpecFixture,
+    title: "Add deploy key in Gitea repository",
+    status: "outdated",
+  } as unknown as TutorialSpec,
   "custom-dashboard-export": { ...giteaTutorialSpecFixture, title: "Export analytics report in Custom Portal" },
+  "auto-updated-tutorial": {
+    ...giteaTutorialSpecFixture,
+    workflow_id: "auto-updated-workflow",
+    title: "Healed Repository Settings in Gitea",
+    status: "auto-updated",
+  } as unknown as TutorialSpec,
+  "not-checked-tutorial": {
+    ...giteaTutorialSpecFixture,
+    workflow_id: "not-checked-workflow",
+    title: "High Risk Deployment Walkthrough",
+    status: "not_auto_checked",
+  } as unknown as TutorialSpec,
   "valid-token": giteaTutorialSpecFixture,
   "test-sample-token": giteaTutorialSpecFixture,
+  "outdated-token": {
+    ...giteaTutorialSpecFixture,
+    title: "Outdated Shared Tutorial on GitHub",
+    status: "outdated",
+  } as unknown as TutorialSpec,
 };
 
 /** The plan-shaped part of a workflow step (what /plans/{id} returns). */
@@ -137,6 +300,32 @@ export const mockTutorialSummaries: TutorialSummary[] = [
     stepCount: 5,
     durationMs: 85000,
     createdAt: "2026-10-18T16:45:00.000Z",
+  },
+];
+
+export const mockAllFreshnessTutorialSummaries: TutorialSummary[] = [
+  ...mockTutorialSummaries,
+  {
+    id: "auto-updated-tutorial",
+    title: "Healed Repository Settings in Gitea",
+    description: "Automatic self-healing restored broken primary button locator and verified all steps.",
+    taskPrompt: "Update repository settings after Gitea button redesign",
+    target: "gitea",
+    status: "auto-updated",
+    stepCount: 5,
+    durationMs: 75000,
+    createdAt: "2026-11-02T09:15:00.000Z",
+  },
+  {
+    id: "not-checked-tutorial",
+    title: "High Risk Deployment Walkthrough",
+    description: "Contains destructive action steps that require human execution; skipped by auto-verification.",
+    taskPrompt: "Deploy release tag and prune orphan branches",
+    target: "custom",
+    status: "not_auto_checked",
+    stepCount: 4,
+    durationMs: 50000,
+    createdAt: "2026-10-25T11:20:00.000Z",
   },
 ];
 
