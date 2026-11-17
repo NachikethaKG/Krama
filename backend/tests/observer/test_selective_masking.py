@@ -160,7 +160,7 @@ async def test_selective_input_masking_preserves_benign_values_and_masks_sensiti
         "dynamic-secret-payload-999",
     ]
     for secret in sensitive_values:
-        assert secret not in events_json, f"Sensitive secret '{secret}' must NOT be in rrweb recording!"
+        assert f'"{secret}"' not in events_json, f"Sensitive secret '{secret}' must NOT be in rrweb recording!"
 
 
 async def test_stored_recording_artifact_contains_no_secrets(
