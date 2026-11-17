@@ -22,28 +22,27 @@ export function DashboardNav({
 }: DashboardNavProps) {
   const pathname = usePathname() ?? "/dashboard";
   const [apiClient] = useState<ApiClient>(() => client ?? getApiClient());
-  const [count, setCount] = useState<number>(initialCount ?? 0);
+  const [fetchedCount, setFetchedCount] = useState<number>(0);
+
+  const count = initialCount !== undefined ? initialCount : fetchedCount;
 
   useEffect(() => {
-    if (initialCount !== undefined) {
-      setCount(initialCount);
-      return;
-    }
+    if (initialCount !== undefined) return;
 
     let isMounted = true;
     apiClient
       .getReviewQueueCount()
       .then((res) => {
-        if (isMounted) setCount(res.count);
+        if (isMounted) setFetchedCount(res.count);
       })
       .catch(() => undefined);
 
     const handleCountChange = (e: Event) => {
       const customEvent = e as CustomEvent<{ count: number }>;
       if (customEvent.detail && typeof customEvent.detail.count === "number") {
-        setCount(customEvent.detail.count);
+        setFetchedCount(customEvent.detail.count);
       } else {
-        apiClient.getReviewQueueCount().then((res) => isMounted && setCount(res.count)).catch(() => undefined);
+        apiClient.getReviewQueueCount().then((res) => isMounted && setFetchedCount(res.count)).catch(() => undefined);
       }
     };
 
