@@ -151,8 +151,31 @@ Each sprint ends with an integration PR merged to `main` and a demo **run on Nac
 | [2: Interactive tutorial](phase-2-interactive-tutorial.md) | Workflow → interactive tutorial player | ✅ completed (tag: `v0.2`) |
 | [3: MVP](phase-3-mvp.md) | Real GitHub, accounts, sharing, polish | ✅ completed (tag: `v1.0-mvp`) |
 | [4: Reliability](phase-4-reliability.md) | UI drift detection, self-healing, versioning | ✅ completed (tag: `v1.1`) |
-| [5: Video export](phase-5-video-export.md) | MP4 export with narration | — |
+| [5: Video export](phase-5-video-export.md) | MP4 export with narration | ✅ completed (tag: `v1.2`) |
 | [6: Later](phase-6-later.md) | Backlog | — |
+
+### Phase 5: Video Export — Exit Gate (#128)
+
+**Status: passed on 2026-11-17; tag `v1.2`, release
+https://github.com/NachikethaKG/Krama/releases/tag/v1.2 (demo GIF attached).**
+Demoed and verified on Nachiketha's laptop (Windows 11, 16 GB RAM, CPU-only; Docker Postgres/Redis/Gitea, API on :8000, `next dev` on :3000, Gemini free tier). Evidence: `data/gate-v1.2/` (captured UI frames and `krama-v1.2-video-export.gif`).
+
+- [x] **6-step tutorial exported as MP4 with narration and chapters on Nachiketha's laptop (#122, #126, #127).**
+  - Remotion composition (`@krama/video-exporter`) drives high-definition MP4 rendering from `TutorialSpec`.
+  - Piper TTS generates clear spoken narration per step using public-domain `en_US-ljspeech-medium` voice (ADR 0004).
+  - Synchronized burned-in karaoke captions highlight words in real time with audio playback.
+  - Standard FFmpeg chapter markers embedded into MP4 container for all steps.
+- [x] **16:9 and 9:16 both keep the highlighted element in frame (#122).**
+  - Landscape (1920×1080) for desktop/YouTube/docs and Portrait (1080×1920) for mobile/Shorts.
+  - Framing calculation (`calculateFraming`) clamps coordinates and scales viewport preserving step targets in frame without clipping.
+- [x] **Render times documented for both laptops.**
+  - Nachiketha's laptop (Win 11, Core i7, 16GB RAM): 15.4s video rendered in 8.8s (13.6 fps CPU, peak RSS 1.15GB).
+  - Vishwas's laptop (Linux, Ryzen 7, 16GB RAM): 15.4s video rendered in 7.2s (16.5 fps CPU, peak RSS 1.08GB).
+  - Single-worker concurrency (`MAX_CONCURRENT_EXPORTS=1`) prevents memory spikes on 16GB machines.
+- [x] **Exports past retention rule are cleaned up (#125).**
+  - Cleanup sweep prunes exports older than 30 days (`EXPORTS_RETENTION_DAYS`) or when disk exceeds 5GB (`EXPORTS_MAX_GB`).
+  - Failed partial files removed immediately; daily arq cron (`03:30`) and CLI `krama exports cleanup`.
+- [x] **Test suites:** Backend 13 export tests + core tests passed, frontend 466 tests passed, video-exporter 9 tests passed; `tsc`, `eslint`, `ruff`, `mypy`, and `python scripts/check_ownership.py` 100% clean.
 
 ### Phase 4: Reliability — Exit Gate (#116)
 
@@ -499,3 +522,7 @@ https://github.com/NachikethaKG/Krama/releases/tag/v1.0-mvp · notes: [`docs/rel
 ### Release `v1.1` (Phase 4 Reliability)
 
 https://github.com/NachikethaKG/Krama/releases/tag/v1.1 · notes: [`docs/release-notes/v1.1.md`](../release-notes/v1.1.md).
+
+### Release `v1.2` (Phase 5 Video Export)
+
+https://github.com/NachikethaKG/Krama/releases/tag/v1.2 · notes: [`docs/release-notes/v1.2.md`](../release-notes/v1.2.md).

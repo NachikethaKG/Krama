@@ -51,8 +51,8 @@
 | `storage/`: video artifacts, cleanup (30 days, `EXPORTS_MAX_GB`) | Frontend: Export MP4 dialog (preset, aspect ratio), progress, download; chapter markers in the file |
 
 ## Exit criteria
-- Export an MP4 of a 6-step tutorial with narration and chapters on Nachiketha's laptop.
-- 16:9 and 9:16 both keep the highlighted element in frame.
-- Rendering time is documented for both laptops.
-- The narration uses the public-domain voice from ADR 0004.
-- Exports past the retention rule are cleaned up (#125).
+- [x] Export an MP4 of a 6-step tutorial with narration and chapters on Nachiketha's laptop.
+- [x] 16:9 and 9:16 both keep the highlighted element in frame.
+- [x] Rendering time is documented for both laptops.
+- [x] The narration uses the public-domain voice from ADR 0004.
+- [x] Exports past the retention rule are cleaned up (#125).
