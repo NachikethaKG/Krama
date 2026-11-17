@@ -150,9 +150,33 @@ Each sprint ends with an integration PR merged to `main` and a demo **run on Nac
 | [1: Verified workflow](phase-1-verified-workflow.md) | Plan → approve → execute → verify → store, safely | ✅ completed (tag: `v0.1`) |
 | [2: Interactive tutorial](phase-2-interactive-tutorial.md) | Workflow → interactive tutorial player | ✅ completed (tag: `v0.2`) |
 | [3: MVP](phase-3-mvp.md) | Real GitHub, accounts, sharing, polish | ✅ completed (tag: `v1.0-mvp`) |
-| [4: Reliability](phase-4-reliability.md) | UI drift detection, self-healing, versioning | — |
+| [4: Reliability](phase-4-reliability.md) | UI drift detection, self-healing, versioning | ✅ completed (tag: `v1.1`) |
 | [5: Video export](phase-5-video-export.md) | MP4 export with narration | — |
 | [6: Later](phase-6-later.md) | Backlog | — |
+
+### Phase 4: Reliability — Exit Gate (#116)
+
+**Status: passed on 2026-11-17; tag `v1.1`, release
+https://github.com/NachikethaKG/Krama/releases/tag/v1.1 (demo GIF attached).**
+Demoed and verified on Nachiketha's laptop (Windows 11, 16 GB RAM, CPU-only; Docker Postgres/Redis/Gitea, API on :8000, `next dev` on :3000, Gemini free tier). Evidence: `data/gate-v1.1/` (captured UI frames and `krama-v1.1-reliability.gif`).
+
+- [x] **A renamed Gitea button is detected, self-healed, and saved as a new version (#112).**
+  Fingerprinted locators record role, accessible name, box, container, form, and element ID/name. When re-verification misses a renamed element, `healer.heal` scores same-role candidates; at $\ge 0.75$ and a $0.15$ margin over second-best, it heals deterministically. The step executes, verifier validates, and `store.complete_heal` atomically writes a new version (`WorkflowVersionRow`) with `source="heal"`, `change_summary` (`StepDiff`), and publishes as `current`. Verified by `test_a_renamed_button_heals_onto_itself` and `test_a_renamed_link_heals_and_its_new_version_is_published`.
+- [x] **A removed page or broken flow ends up OUTDATED in the review queue (#111, #113, #115).**
+  When a step's target element is missing and cannot heal, or post-condition state verification fails (`target_not_found`, `state_mismatch`), the drift classifier labels the workflow `outdated`. The workflow is flagged for owner attention and routed to the Owner Review Queue (`/dashboard/reviews`). Verified by `test_a_step_whose_element_is_gone_fails_as_a_locator_miss`, `test_the_drift_class`, and frontend review queue tests.
+- [x] **Freshness badges, version history, step diffs, and outdated share warning (#114).**
+  - All tutorial surfaces (Library cards, Dashboard list, Player header, Share header) render accessible color-coded badges for `verified`, `auto-updated`, `outdated`, and `not_auto_checked`.
+  - The Version History drawer displays change summaries, collapsing wording-only revisions behind a toggle and highlighting candidate heals.
+  - The Step-by-Step Diff viewer modal inspects selector and label deltas (rose strikethrough vs emerald healed).
+  - Outdated tutorials opened via public `/share/[token]` display the prominent `"Site Changed"` warning banner above the stage.
+- [x] **Owner Review Queue and triage actions (#115).**
+  - Owner-only in-app review queue at `/dashboard/reviews` (protected by `middleware.ts`).
+  - Category tabs for `All`, `Outdated`, `Pending Heal`, `Unstable`, and `Can't Check`.
+  - Live navigation count badge in `AppHeader` and `DashboardNav` decrementing immediately on resolution.
+  - Triage actions: `Accept` (promotes version to live active version per D8), `Reject` (discards candidate heal, marks outdated), `Regenerate` (`POST /api/v1/workflows/{id}/regenerate`), and `Retry AI Fix` (with inline 429 quota notice on 5/day cap).
+- [x] **Validation runs on Nachiketha's laptop without slowing normal use.**
+  Headless Chromium executes one browser worker at a time (`MAX_CONCURRENT_RUNS=1`), CPU visual diff with Pillow runs lightweight screenshot comparisons, and `ScheduledValidator` enforces back-off schedules for blocked or failing sites.
+- [x] **Test suites:** backend passed, `ruff` + `mypy` clean; frontend 448 unit passed, 5 E2E passed (Playwright chromium), `tsc` + `eslint` clean; `scripts/check_ownership.py` 100% clean.
 
 ### Phase 3: MVP — Exit Gate (#104)
 
@@ -471,3 +495,7 @@ independent success checks, and ADR 0003 (no local model). Exit-gate results: §
 ### Release `v1.0-mvp` (Phase 3 MVP)
 
 https://github.com/NachikethaKG/Krama/releases/tag/v1.0-mvp · notes: [`docs/release-notes/v1.0-mvp.md`](../release-notes/v1.0-mvp.md).
+
+### Release `v1.1` (Phase 4 Reliability)
+
+https://github.com/NachikethaKG/Krama/releases/tag/v1.1 · notes: [`docs/release-notes/v1.1.md`](../release-notes/v1.1.md).
