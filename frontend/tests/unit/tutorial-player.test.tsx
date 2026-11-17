@@ -614,5 +614,23 @@ describe("TutorialPlayer & Accessibility Suite", () => {
       expect(mockSpeechSynthesis.speak).not.toHaveBeenCalled();
       expect(screen.getByTestId("instruction-text")).not.toHaveTextContent(FIRST);
     });
+
+    it("renders export video button and opens export modal on click", () => {
+      render(
+        <TutorialPlayer
+          spec={giteaTutorialSpecFixture}
+          workflowId="wf-export-btn-test"
+          readOnly={false}
+        />
+      );
+
+      const exportBtn = screen.getByTestId("export-video-button");
+      expect(exportBtn).toBeInTheDocument();
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+
+      fireEvent.click(exportBtn);
+      expect(screen.getByRole("dialog")).toBeInTheDocument();
+      expect(screen.getByText("Export Tutorial as Video")).toBeInTheDocument();
+    });
   });
 });
