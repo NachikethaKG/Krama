@@ -1,14 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowUpRight, Box, Clock, Globe, Layers, TriangleAlert } from "lucide-react";
+import { ArrowUpRight, Box, Clock, Globe, Layers } from "lucide-react";
 import { TiltCard } from "@/components/ui";
-import type { TargetPlatform, TutorialStatus, TutorialSummary } from "@/types/tutorial";
+import type { TargetPlatform, TutorialSummary } from "@/types/tutorial";
+import { TutorialStatusBadge } from "./TutorialStatusBadge";
 
 export interface TutorialCardProps {
   tutorial: TutorialSummary;
   /** Position in its grid: picks the card's spectrum colour. Without it the colour comes from the id. */
   index?: number;
+  onInspectDiff?: (tutorial: TutorialSummary) => void;
 }
 
 /** Every card wears a different spectrum colour, so a grid of tutorials reads like the Krama spectrum. */
@@ -89,32 +91,7 @@ function TargetBadge({ target }: { target: TargetPlatform }) {
   }
 }
 
-function StatusBadge({ status }: { status: TutorialStatus }) {
-  if (status === "verified") {
-    return (
-      <span
-        data-testid="tutorial-card-status"
-        data-status="verified"
-        className={`${BADGE} border-verify/50 bg-verify/15 text-verify`}
-      >
-        <span className="kr-verify kr-dot kr-dot-live !size-1.5" />
-        Verified
-      </span>
-    );
-  }
-  return (
-    <span
-      data-testid="tutorial-card-status"
-      data-status="outdated"
-      className={`${BADGE} border-plan/50 bg-plan/15 text-plan`}
-    >
-      <TriangleAlert className="size-3" aria-hidden="true" />
-      Outdated
-    </span>
-  );
-}
-
-export function TutorialCard({ tutorial, index }: TutorialCardProps) {
+export function TutorialCard({ tutorial, index, onInspectDiff }: TutorialCardProps) {
   const durationLabel = formatDuration(tutorial.durationMs);
   const dateLabel = formatDate(tutorial.createdAt);
   const tone = toneFor(tutorial, index);
@@ -135,7 +112,17 @@ export function TutorialCard({ tutorial, index }: TutorialCardProps) {
         <div className="relative">
           <div className="mb-4 flex items-center justify-between gap-2">
             <TargetBadge target={tutorial.target} />
-            <StatusBadge status={tutorial.status} />
+            <div data-testid="tutorial-card-status" data-status={tutorial.status}>
+              <TutorialStatusBadge
+                status={tutorial.status}
+                onInspectDiff={onInspectDiff ? () => onInspectDiff(tutorial) : undefined}
+                diffHref={
+                  tutorial.status === "auto-updated"
+                    ? `/tutorials/${encodeURIComponent(tutorial.id)}?view=diff`
+                    : undefined
+                }
+              />
+            </div>
           </div>
 
           <h3 className="kr-display line-clamp-2 text-lg font-bold leading-snug text-white transition-colors">

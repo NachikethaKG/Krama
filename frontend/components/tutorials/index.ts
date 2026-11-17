@@ -7,4 +7,9 @@ export {
 export {
   TutorialLibraryView,
   type TutorialLibraryViewProps,
+  PAGE_SIZE,
 } from "./TutorialLibraryView";
+export {
+  TutorialStatusBadge,
+  type TutorialStatusBadgeProps,
+} from "./TutorialStatusBadge";
