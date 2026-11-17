@@ -1,6 +1,7 @@
 import type { VerificationMethod } from "@krama/contracts-ts";
 
 import { RiskBadge } from "@/components/risk-badge";
+import { describeAction, getMethodLabel } from "@/components/runs/StepEvidenceCard";
 
 export type StepExecutionStatus = "pending" | "started" | "verified" | "failed";
 
@@ -29,14 +30,11 @@ export function StepProgressItem({
   risk = "low",
   status = "pending",
   methods,
-  confidence,
   error,
   observedUrl,
   observedTitle,
   className = "",
 }: StepProgressItemProps) {
-  const hasTarget = Boolean(targetRole || targetName);
-
   return (
     <li
       data-testid="step-progress-item"
@@ -106,18 +104,12 @@ export function StepProgressItem({
         {/* Step details */}
         <div className="flex flex-1 flex-col gap-2">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="font-mono text-xs font-bold text-ink-400">
-              #{seq}
+            <span
+              data-testid="step-action-target"
+              className="text-xs text-ink-400"
+            >
+              {describeAction(actionType, targetRole, targetName)}
             </span>
-            <span className="rounded-md bg-approve/15 px-2 py-0.5 font-mono text-xs font-bold text-approve">
-              {actionType}
-            </span>
-            {hasTarget && (
-              <span className="text-xs text-ink-400">
-                on {targetRole && <span className="font-semibold text-ink-300">{targetRole}</span>}
-                {targetName && <span> &quot;{targetName}&quot;</span>}
-              </span>
-            )}
 
             {/* Status pills */}
             {status === "started" && (
@@ -136,9 +128,6 @@ export function StepProgressItem({
                 className="kr-chip kr-verify"
               >
                 Verified
-                {typeof confidence === "number" && (
-                  <span className="text-[10px] opacity-80">({Math.round(confidence * 100)}%)</span>
-                )}
               </span>
             )}
 
@@ -162,13 +151,13 @@ export function StepProgressItem({
           {/* Verification methods badges */}
           {status === "verified" && methods && methods.length > 0 && (
             <div data-testid="step-methods" className="flex flex-wrap items-center gap-1.5 pt-1">
-              <span className="text-xs text-ink-400">Verified via:</span>
-              {methods.map((method) => (
+              <span className="text-xs text-ink-400">Checked:</span>
+              {Array.from(new Set(methods.map(getMethodLabel))).map((label) => (
                 <span
-                  key={method}
-                  className="rounded-md border border-verify/40 bg-verify/10 px-1.5 py-0.5 font-mono text-[11px] font-bold text-verify"
+                  key={label}
+                  className="rounded-md border border-verify/40 bg-verify/10 px-1.5 py-0.5 text-[11px] font-medium text-verify"
                 >
-                  {method}
+                  {label}
                 </span>
               ))}
             </div>

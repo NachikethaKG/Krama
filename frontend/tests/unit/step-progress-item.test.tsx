@@ -22,7 +22,7 @@ describe("StepProgressItem", () => {
     expect(item).toHaveAttribute("data-step-status", "pending");
     expect(screen.getByTestId("step-pending-icon")).toBeInTheDocument();
     expect(screen.getByTestId("step-instruction")).toHaveTextContent("Open the + menu at the top right.");
-    expect(screen.getByText("click")).toBeInTheDocument();
+    expect(screen.getByTestId("step-action-target")).toHaveTextContent("Clicked the button \u201cCreate\u201d");
   });
 
   it("renders started state with spinner and executing badge", () => {
@@ -31,6 +31,8 @@ describe("StepProgressItem", () => {
         seq={2}
         instructionText="Click New Repository in the menu."
         actionType="click"
+        targetRole="menuitem"
+        targetName="New Repository"
         status="started"
         risk="medium"
       />
@@ -39,15 +41,18 @@ describe("StepProgressItem", () => {
     const item = screen.getByTestId("step-progress-item");
     expect(item).toHaveAttribute("data-step-status", "started");
     expect(screen.getByTestId("step-spinner")).toBeInTheDocument();
+    expect(screen.getByTestId("step-action-target")).toHaveTextContent("Clicked the menu item \u201cNew Repository\u201d");
     expect(screen.getByTestId("step-running-badge")).toHaveTextContent("Executing…");
   });
 
-  it("renders verified state with checkmark icon and verification methods", () => {
+  it("renders verified state with checkmark icon and friendly verification methods", () => {
     render(
       <StepProgressItem
         seq={3}
         instructionText="Enter demo-repo as repository name."
         actionType="fill"
+        targetRole="textbox"
+        targetName="Repository name *"
         status="verified"
         methods={["dom", "aria"]}
         confidence={1.0}
@@ -58,9 +63,26 @@ describe("StepProgressItem", () => {
     const item = screen.getByTestId("step-progress-item");
     expect(item).toHaveAttribute("data-step-status", "verified");
     expect(screen.getByTestId("step-verified-icon")).toBeInTheDocument();
-    expect(screen.getByTestId("step-verified-badge")).toHaveTextContent("Verified(100%)");
-    expect(screen.getByText("dom")).toBeInTheDocument();
-    expect(screen.getByText("aria")).toBeInTheDocument();
+    expect(screen.getByTestId("step-verified-badge")).toHaveTextContent("Verified");
+    expect(screen.getByTestId("step-action-target")).toHaveTextContent("Typed into the field \u201cRepository name\u201d");
+    expect(screen.getByTestId("step-methods")).toHaveTextContent("Checked:page content");
+    expect(screen.getByText("page content")).toBeInTheDocument();
+  });
+
+  it("renders multiple verification methods with plain labels", () => {
+    render(
+      <StepProgressItem
+        seq={3}
+        instructionText="Save changes."
+        actionType="click"
+        status="verified"
+        methods={["url", "network"]}
+        confidence={1.0}
+      />
+    );
+
+    expect(screen.getByText("page address")).toBeInTheDocument();
+    expect(screen.getByText("site's answer")).toBeInTheDocument();
   });
 
   it("renders failed state with error callout and observed details", () => {
