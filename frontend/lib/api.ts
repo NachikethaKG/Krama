@@ -2,6 +2,10 @@
 // waits on the backend; `http` mode talks to the real backend (docs/api-contract.md, contracts/openapi.json).
 import type {
   ApiError,
+  Export,
+  ExportErrorCode,
+  ExportPreset,
+  ExportStatus,
   HealthResponse,
   LoginRequest,
   MetricsSummary,
@@ -73,6 +77,10 @@ import type {
 } from "@/types/review";
 
 export type {
+  Export,
+  ExportErrorCode,
+  ExportPreset,
+  ExportStatus,
   HealthResponse,
   LoginRequest,
   MetricsSummary,
@@ -256,6 +264,14 @@ export interface ApiClient {
   regenerateWorkflow(workflowId: string): Promise<{ id: string; run_id?: string; status: string }>;
   /** POST /api/v1/workflows/{workflowId}/retry-ai-fix with X-Krama: 1. */
   retryAiFix(workflowId: string): Promise<{ success: boolean; status?: string }>;
+  /** POST /workflows/{workflowId}/exports with preset ("landscape" | "portrait"). */
+  createExport(workflowId: string, preset: ExportPreset): Promise<Export>;
+  /** GET /exports/{exportId}. */
+  getExport(exportId: string): Promise<Export>;
+  /** URL for downloading exported MP4. */
+  getExportDownloadUrl(exportId: string): string;
+  /** URL for downloading exported WebVTT captions. */
+  getExportCaptionsUrl(exportId: string): string;
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -827,6 +843,36 @@ export class HttpApiClient implements ApiClient {
       method: "POST",
       headers: { "X-Krama": "1", "Content-Type": "application/json" },
     });
+  }
+
+  async createExport(workflowId: string, preset: ExportPreset): Promise<Export> {
+    const path = this.baseUrl.endsWith("/api/v1")
+      ? `/workflows/${encodeURIComponent(workflowId)}/exports`
+      : `/api/v1/workflows/${encodeURIComponent(workflowId)}/exports`;
+    return this.request<Export>(path, {
+      method: "POST",
+      headers: { "X-Krama": "1", "Content-Type": "application/json" },
+      body: JSON.stringify({ preset }),
+    });
+  }
+
+  async getExport(exportId: string): Promise<Export> {
+    const path = this.baseUrl.endsWith("/api/v1")
+      ? `/exports/${encodeURIComponent(exportId)}`
+      : `/api/v1/exports/${encodeURIComponent(exportId)}`;
+    return this.request<Export>(path, {
+      headers: { "X-Krama": "1" },
+    });
+  }
+
+  getExportDownloadUrl(exportId: string): string {
+    const base = this.baseUrl.endsWith("/api/v1") ? this.baseUrl : `${this.baseUrl}/api/v1`;
+    return `${base}/exports/${encodeURIComponent(exportId)}/download`;
+  }
+
+  getExportCaptionsUrl(exportId: string): string {
+    const base = this.baseUrl.endsWith("/api/v1") ? this.baseUrl : `${this.baseUrl}/api/v1`;
+    return `${base}/exports/${encodeURIComponent(exportId)}/captions.vtt`;
   }
 
   /**
@@ -1599,6 +1645,55 @@ export class MockApiClient implements ApiClient {
       link.revoked_at = nowTs();
     }
     return { ...link };
+  }
+
+  private static readonly globalExports = new Map<string, Export>();
+
+  async createExport(workflowId: string, preset: ExportPreset): Promise<Export> {
+    const id = `mock-export-${Math.random().toString(36).substring(2, 10)}`;
+    const mockExport: Export = {
+      id,
+      workflow_id: workflowId,
+      revision: 1,
+      title: "Exported Tutorial",
+      preset,
+      voice: "en_US-ljspeech-medium",
+      status: "queued",
+      progress: 0,
+      created_at: nowTs(),
+      download_url: `/api/v1/exports/${id}/download`,
+      captions_url: `/api/v1/exports/${id}/captions.vtt`,
+    };
+    MockApiClient.globalExports.set(id, mockExport);
+    return { ...mockExport };
+  }
+
+  async getExport(exportId: string): Promise<Export> {
+    const existing = MockApiClient.globalExports.get(exportId);
+    if (!existing) {
+      throw mockError(404, "not_found", "Export not found");
+    }
+    if (existing.status === "queued") {
+      existing.status = "rendering";
+      existing.progress = 30;
+    } else if (existing.status === "rendering") {
+      existing.progress = Math.min(100, existing.progress + 40);
+      if (existing.progress >= 100) {
+        existing.status = "ready";
+        existing.duration_ms = 12000;
+        existing.size_bytes = 2450000;
+        existing.finished_at = nowTs();
+      }
+    }
+    return { ...existing };
+  }
+
+  getExportDownloadUrl(exportId: string): string {
+    return `/api/v1/exports/${exportId}/download`;
+  }
+
+  getExportCaptionsUrl(exportId: string): string {
+    return `/api/v1/exports/${exportId}/captions.vtt`;
   }
 }
 

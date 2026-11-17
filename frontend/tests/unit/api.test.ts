@@ -626,4 +626,37 @@ describe("MockApiClient", () => {
     const afterRevoke = await client.listShareLinks(wid);
     expect(afterRevoke.items[0].revoked_at).toBeTruthy();
   });
+
+  it("handles exports in MockApiClient across progression", async () => {
+    const client = new MockApiClient();
+    const wid = "wf-export-test";
+
+    const created = await client.createExport(wid, "portrait");
+    expect(created.workflow_id).toBe(wid);
+    expect(created.preset).toBe("portrait");
+    expect(created.status).toBe("queued");
+    expect(created.progress).toBe(0);
+
+    const downloadUrl = client.getExportDownloadUrl(created.id);
+    const captionsUrl = client.getExportCaptionsUrl(created.id);
+    expect(downloadUrl).toContain(`/exports/${created.id}/download`);
+    expect(captionsUrl).toContain(`/exports/${created.id}/captions.vtt`);
+
+    // Poll 1: transitions queued -> rendering (30%)
+    const poll1 = await client.getExport(created.id);
+    expect(poll1.status).toBe("rendering");
+    expect(poll1.progress).toBe(30);
+
+    // Poll 2: rendering (70%)
+    const poll2 = await client.getExport(created.id);
+    expect(poll2.status).toBe("rendering");
+    expect(poll2.progress).toBe(70);
+
+    // Poll 3: ready (100%)
+    const poll3 = await client.getExport(created.id);
+    expect(poll3.status).toBe("ready");
+    expect(poll3.progress).toBe(100);
+    expect(poll3.duration_ms).toBeGreaterThan(0);
+    expect(poll3.size_bytes).toBeGreaterThan(0);
+  });
 });

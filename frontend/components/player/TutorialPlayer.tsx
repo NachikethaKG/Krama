@@ -5,10 +5,11 @@ import type { TutorialSpec } from "@krama/tutorial-compiler";
 import type { eventWithTime } from "@rrweb/types";
 import type { TutorialFreshnessStatus } from "@/types/tutorial";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
-import { Clapperboard, Eye, History, Share2, Timer } from "lucide-react";
+import { Clapperboard, Eye, Film, History, Share2, Timer } from "lucide-react";
 import { TutorialStatusBadge } from "@/components/tutorials/TutorialStatusBadge";
 import { VersionHistoryPanel } from "@/components/versions/VersionHistoryPanel";
 import { ShareTutorialModal } from "@/components/share";
+import { ExportVideoModal } from "@/components/export";
 import { CopyableText } from "./CopyableText";
 import { stepColor } from "./spectrum";
 import { TutorialControls } from "./TutorialControls";
@@ -55,6 +56,7 @@ export function TutorialPlayer({
   const narratingRef = useRef(false);
   const [isVersionHistoryOpen, setIsVersionHistoryOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const freshnessStatus: TutorialFreshnessStatus =
     status ?? (spec as unknown as { status?: TutorialFreshnessStatus }).status ?? "verified";
   const effectiveWorkflowId = workflowId ?? spec.workflow_id;
@@ -144,6 +146,18 @@ export function TutorialPlayer({
               </span>
             ) : null}
           </div>
+
+          {!readOnly && effectiveWorkflowId && (
+            <button
+              type="button"
+              data-testid="export-video-button"
+              onClick={() => setIsExportModalOpen(true)}
+              className="kr-chip cursor-pointer transition-colors hover:text-white"
+            >
+              <Film className="size-3.5 text-accent" aria-hidden="true" />
+              <span>Export MP4</span>
+            </button>
+          )}
 
           {!readOnly && effectiveWorkflowId && (
             <button
@@ -383,6 +397,16 @@ export function TutorialPlayer({
           onClose={() => setIsShareModalOpen(false)}
           workflowId={effectiveWorkflowId}
           tutorialTitle={spec.title}
+        />
+      )}
+
+      {!readOnly && effectiveWorkflowId && (
+        <ExportVideoModal
+          isOpen={isExportModalOpen}
+          onClose={() => setIsExportModalOpen(false)}
+          workflowId={effectiveWorkflowId}
+          tutorialTitle={spec.title}
+          stepCount={spec.scenes.length}
         />
       )}
     </section>
