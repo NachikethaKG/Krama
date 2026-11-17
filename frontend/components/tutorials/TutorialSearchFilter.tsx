@@ -7,6 +7,8 @@ export interface StatusCounts {
   all: number;
   verified: number;
   outdated: number;
+  autoUpdated?: number;
+  notAutoChecked?: number;
 }
 
 export interface TutorialSearchFilterProps {
@@ -127,6 +129,26 @@ export function TutorialSearchFilter({
           count={counts.outdated}
           onClick={() => onStatusFilterChange("outdated")}
         />
+        {counts.autoUpdated !== undefined && counts.autoUpdated > 0 ? (
+          <FilterTab
+            testId="filter-status-auto-updated"
+            selected={statusFilter === "auto-updated"}
+            color="#0284c7"
+            label="Auto-Updated"
+            count={counts.autoUpdated}
+            onClick={() => onStatusFilterChange("auto-updated")}
+          />
+        ) : null}
+        {counts.notAutoChecked !== undefined && counts.notAutoChecked > 0 ? (
+          <FilterTab
+            testId="filter-status-not-auto-checked"
+            selected={statusFilter === "not_auto_checked"}
+            color="#71717a"
+            label="Not Checked"
+            count={counts.notAutoChecked}
+            onClick={() => onStatusFilterChange("not_auto_checked")}
+          />
+        ) : null}
       </div>
     </div>
   );

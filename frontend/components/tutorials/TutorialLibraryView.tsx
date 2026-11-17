@@ -84,6 +84,8 @@ export function TutorialLibraryView({
       all: list.length,
       verified: list.filter((t) => t.status === "verified").length,
       outdated: list.filter((t) => t.status === "outdated").length,
+      autoUpdated: list.filter((t) => t.status === "auto-updated").length,
+      notAutoChecked: list.filter((t) => t.status === "not_auto_checked").length,
     };
   }, [tutorials]);
 

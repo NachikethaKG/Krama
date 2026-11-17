@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { GraduationCap, Loader2 } from "lucide-react";
 import { TaskInput } from "@/components/task-input";
-import { TutorialCard } from "@/components/tutorials";
+import { MyTutorialsList } from "@/components/dashboard/MyTutorialsList";
 import { STAGES } from "@/components/ui";
 import { type ApiClient, getApiClient } from "@/lib/api";
 import type { TutorialSummary } from "@/types/tutorial";
@@ -101,13 +101,7 @@ export function HomeScreen({ client }: { client?: ApiClient }) {
             No tutorials yet. Your first one will show up here.
           </p>
         ) : (
-          <div data-testid="home-recent-tutorials" className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {recent.map((tutorial, i) => (
-              <div key={tutorial.id} className="kr-rise" style={{ animationDelay: `${i * 70}ms` }}>
-                <TutorialCard tutorial={tutorial} index={i} />
-              </div>
-            ))}
-          </div>
+          <MyTutorialsList tutorials={recent} />
         )}
       </section>
     </main>
