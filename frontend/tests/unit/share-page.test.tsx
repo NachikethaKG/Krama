@@ -102,4 +102,50 @@ describe("Public Share Page (/share/[token])", () => {
     expect(screen.getByTestId("revoked-link-notice")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /Tutorial Link Unavailable/i })).toBeInTheDocument();
   });
+
+  it("loads and replays the real recording when served under /shared/{token}/artifacts/", async () => {
+    const mockWorkflow = {
+      id: "wf-shared-123",
+      title: "Shared Workflow Demo",
+      status: "verified",
+      recording_path: "/api/v1/shared/valid-token/artifacts/runs/run-1/recording.json",
+      steps: [
+        {
+          id: "step-1",
+          seq: 1,
+          instruction_text: "Click New",
+          action: { type: "click" },
+          timing: { start_ms: 1000, end_ms: 2000 },
+        },
+      ],
+    };
+
+    const mockRecordingEvents = [
+      { type: 4, timestamp: 1000, data: { href: "http://localhost:3000/", width: 1280, height: 720 } },
+      { type: 2, timestamp: 1050, data: {} },
+    ];
+
+    globalThis.fetch = vi.fn().mockImplementation(async (url: string) => {
+      if (url.includes("/shared/valid-token/artifacts/")) {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => mockRecordingEvents,
+        };
+      }
+      return {
+        ok: true,
+        status: 200,
+        json: async () => mockWorkflow,
+      };
+    });
+
+    const page = await SharePage({
+      params: Promise.resolve({ token: "valid-token" }),
+    });
+
+    render(page);
+
+    expect(screen.getByTestId("share-page-container")).toHaveAttribute("data-real-ui", "true");
+  });
 });

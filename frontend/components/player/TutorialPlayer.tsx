@@ -5,9 +5,10 @@ import type { TutorialSpec } from "@krama/tutorial-compiler";
 import type { eventWithTime } from "@rrweb/types";
 import type { TutorialFreshnessStatus } from "@/types/tutorial";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
-import { Clapperboard, Eye, History, Timer } from "lucide-react";
+import { Clapperboard, Eye, History, Share2, Timer } from "lucide-react";
 import { TutorialStatusBadge } from "@/components/tutorials/TutorialStatusBadge";
 import { VersionHistoryPanel } from "@/components/versions/VersionHistoryPanel";
+import { ShareTutorialModal } from "@/components/share";
 import { CopyableText } from "./CopyableText";
 import { stepColor } from "./spectrum";
 import { TutorialControls } from "./TutorialControls";
@@ -53,6 +54,7 @@ export function TutorialPlayer({
   // The narration sets this while it talks; the player holds the step's end until it's done (#83).
   const narratingRef = useRef(false);
   const [isVersionHistoryOpen, setIsVersionHistoryOpen] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const freshnessStatus: TutorialFreshnessStatus =
     status ?? (spec as unknown as { status?: TutorialFreshnessStatus }).status ?? "verified";
   const effectiveWorkflowId = workflowId ?? spec.workflow_id;
@@ -142,6 +144,18 @@ export function TutorialPlayer({
               </span>
             ) : null}
           </div>
+
+          {!readOnly && effectiveWorkflowId && (
+            <button
+              type="button"
+              data-testid="share-tutorial-button"
+              onClick={() => setIsShareModalOpen(true)}
+              className="kr-chip cursor-pointer transition-colors hover:text-white"
+            >
+              <Share2 className="size-3.5 text-approve" aria-hidden="true" />
+              <span>Share</span>
+            </button>
+          )}
 
           {effectiveWorkflowId && (
             <button
@@ -361,6 +375,15 @@ export function TutorialPlayer({
             </div>
           </div>
         </div>
+      )}
+
+      {!readOnly && effectiveWorkflowId && (
+        <ShareTutorialModal
+          isOpen={isShareModalOpen}
+          onClose={() => setIsShareModalOpen(false)}
+          workflowId={effectiveWorkflowId}
+          tutorialTitle={spec.title}
+        />
       )}
     </section>
   );

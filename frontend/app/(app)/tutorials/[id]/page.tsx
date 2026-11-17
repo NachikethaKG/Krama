@@ -42,7 +42,7 @@ function TutorialDetailInner({ params }: TutorialDetailPageProps) {
   return (
     <div>
       <main className="py-6">
-        {stored ? <WorkflowTutorial workflowId={id} /> : <TutorialPlayer spec={spec} />}
+        {stored ? <WorkflowTutorial workflowId={id} /> : <TutorialPlayer spec={spec} workflowId={id} />}
       </main>
     </div>
   );

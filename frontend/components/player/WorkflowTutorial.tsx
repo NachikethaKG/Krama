@@ -86,7 +86,7 @@ export function WorkflowTutorial({ workflowId }: { workflowId: string }) {
           Read as text
         </a>
       </div>
-      <TutorialPlayer spec={loaded.spec} recording={loaded.recording} />
+      <TutorialPlayer spec={loaded.spec} recording={loaded.recording} workflowId={loaded.workflow.id} />
     </div>
   );
 }
