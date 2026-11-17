@@ -45,6 +45,6 @@
 | `runs/`: "regenerate" flow for workflows that can't heal | Frontend: review queue for tutorials that failed self-healing; "regenerate" action |
 
 ## Exit criteria
-- A deliberately modified Gitea template (renamed button) is detected, self-healed, and saved as a new tutorial version.
-- A deliberately broken flow (removed page) ends up OUTDATED in the review queue.
-- Validation runs on Nachiketha's laptop without slowing normal use (one browser at a time).
+- [x] A deliberately modified Gitea template (renamed button) is detected, self-healed, and saved as a new tutorial version.
+- [x] A deliberately broken flow (removed page) ends up OUTDATED in the review queue.
+- [x] Validation runs on Nachiketha's laptop without slowing normal use (one browser at a time).
