@@ -3,8 +3,11 @@
 import { useRef, useState } from "react";
 import type { TutorialSpec } from "@krama/tutorial-compiler";
 import type { eventWithTime } from "@rrweb/types";
+import type { TutorialFreshnessStatus } from "@/types/tutorial";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
-import { Clapperboard, Eye, Timer } from "lucide-react";
+import { Clapperboard, Eye, History, Timer } from "lucide-react";
+import { TutorialStatusBadge } from "@/components/tutorials/TutorialStatusBadge";
+import { VersionHistoryPanel } from "@/components/versions/VersionHistoryPanel";
 import { CopyableText } from "./CopyableText";
 import { stepColor } from "./spectrum";
 import { TutorialControls } from "./TutorialControls";
@@ -16,6 +19,8 @@ import { useTutorialPlayer } from "./useTutorialPlayer";
 
 export interface TutorialPlayerProps {
   spec: TutorialSpec;
+  status?: TutorialFreshnessStatus;
+  workflowId?: string;
   autoPlay?: boolean;
   initialStep?: number;
   initialZoom?: boolean;
@@ -32,6 +37,8 @@ export interface TutorialPlayerProps {
 
 export function TutorialPlayer({
   spec,
+  status,
+  workflowId,
   autoPlay = false,
   initialStep = 0,
   initialZoom = false,
@@ -45,6 +52,10 @@ export function TutorialPlayer({
 }: TutorialPlayerProps) {
   // The narration sets this while it talks; the player holds the step's end until it's done (#83).
   const narratingRef = useRef(false);
+  const [isVersionHistoryOpen, setIsVersionHistoryOpen] = useState(false);
+  const freshnessStatus: TutorialFreshnessStatus =
+    status ?? (spec as unknown as { status?: TutorialFreshnessStatus }).status ?? "verified";
+  const effectiveWorkflowId = workflowId ?? spec.workflow_id;
   const player = useTutorialPlayer({
     spec,
     autoPlay,
@@ -114,17 +125,35 @@ export function TutorialPlayer({
 
       {/* Tutorial Header: one title, then what the learner needs to know (#318) */}
       <header className="kr-learn relative flex flex-col gap-2 pb-5">
-        <div className="flex items-center gap-2">
-          <span className="kr-chip">
-            <Clapperboard aria-hidden="true" className="size-3.5" />
-            Learn
-          </span>
-          {readOnly ? (
-            <span data-testid="readonly-badge" className="kr-chip kr-run">
-              <Eye aria-hidden="true" className="size-3.5" />
-              Read-Only
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <span className="kr-chip">
+              <Clapperboard aria-hidden="true" className="size-3.5" />
+              Learn
             </span>
-          ) : null}
+            <TutorialStatusBadge
+              status={freshnessStatus}
+              onInspectDiff={() => setIsVersionHistoryOpen(true)}
+            />
+            {readOnly ? (
+              <span data-testid="readonly-badge" className="kr-chip kr-run">
+                <Eye aria-hidden="true" className="size-3.5" />
+                Read-Only
+              </span>
+            ) : null}
+          </div>
+
+          {effectiveWorkflowId && (
+            <button
+              type="button"
+              data-testid="open-version-history-btn"
+              onClick={() => setIsVersionHistoryOpen(true)}
+              className="kr-chip cursor-pointer transition-colors hover:text-white"
+            >
+              <History className="size-3.5 text-learn" aria-hidden="true" />
+              <span>Version History</span>
+            </button>
+          )}
         </div>
         <h1 className="kr-display text-3xl font-extrabold leading-tight text-white sm:text-4xl">
           {spec.title}
@@ -297,6 +326,39 @@ export function TutorialPlayer({
               onClose={() => setIsMobileDrawerOpen(false)}
               className="border-none shadow-none"
             />
+          </div>
+        </div>
+      )}
+
+      {/* Version History Drawer / Modal */}
+      {isVersionHistoryOpen && (
+        <div
+          data-testid="version-history-drawer"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs"
+        >
+          <div className="flex max-h-[85vh] w-full max-w-2xl flex-col rounded-2xl bg-white shadow-2xl dark:bg-zinc-950 overflow-hidden border border-zinc-200 dark:border-zinc-800">
+            <div className="flex items-center justify-between border-b border-zinc-200 px-5 py-4 dark:border-zinc-800">
+              <h4 className="text-base font-bold text-zinc-900 dark:text-zinc-100">
+                Workflow Version History & Step Diffs
+              </h4>
+              <button
+                type="button"
+                data-testid="close-version-history-btn"
+                onClick={() => setIsVersionHistoryOpen(false)}
+                className="rounded-lg p-1 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+                aria-label="Close version history"
+              >
+                <svg className="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-5">
+              <VersionHistoryPanel
+                workflowId={effectiveWorkflowId}
+                readOnly={readOnly}
+              />
+            </div>
           </div>
         </div>
       )}
