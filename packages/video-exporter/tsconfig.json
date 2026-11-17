@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "paths": {
+      "@krama/contracts-ts": ["../contracts-ts/src/index.ts"],
+      "@krama/tutorial-compiler": ["../tutorial-compiler/src/index.ts"]
+    }
+  },
+  "include": ["src", "tests"]
+}
