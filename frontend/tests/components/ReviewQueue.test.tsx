@@ -5,7 +5,6 @@ import { ReviewQueueItemCard } from "@/components/reviews/ReviewQueueItemCard";
 import { DashboardNav } from "@/components/dashboard/DashboardNav";
 import { mockReviewQueueItems } from "@/lib/fixtures";
 import type { ApiClient } from "@/lib/api";
-import type { ReviewQueueItem } from "@/types/review";
 
 const mockPush = vi.fn();
 vi.mock("next/navigation", () => ({
