@@ -1,5 +1,5 @@
 import React from "react";
-import { Sequence, useVideoConfig } from "remotion";
+import { Sequence, staticFile, useVideoConfig } from "remotion";
 import type { VideoExportProps } from "../types.js";
 import { IntroCard } from "./IntroCard.js";
 import { OutroCard } from "./OutroCard.js";
@@ -61,8 +61,8 @@ export const TutorialComposition: React.FC<VideoExportProps> = ({
         const sceneStart = currentFrameOffset;
         currentFrameOffset += sceneDurationFrames;
 
-        const screenshotUrl = screenshots?.[stepSeq];
-        const audioUrl = audioUrls?.[stepSeq];
+        const screenshotUrl = assetSrc(screenshots?.[stepSeq]);
+        const audioUrl = assetSrc(audioUrls?.[stepSeq]);
 
         return (
           <Sequence
@@ -88,3 +88,9 @@ export const TutorialComposition: React.FC<VideoExportProps> = ({
     </div>
   );
 };
+
+/** A URL as is; a bare file name from the bundle's public folder (see renderer/render.ts) via staticFile. */
+function assetSrc(value: string | undefined): string | undefined {
+  if (!value) return undefined;
+  return /^(https?:|data:|blob:|\/)/.test(value) ? value : staticFile(value);
+}
