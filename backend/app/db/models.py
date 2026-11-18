@@ -201,6 +201,14 @@ class WorkflowRow(Timestamps, Base):
     )
     """The current version's steps. Read-only: steps are written through `WorkflowVersionRow.steps`."""
 
+    current_version: Mapped["WorkflowVersionRow | None"] = relationship(
+        primaryjoin="WorkflowRow.current_version_id == WorkflowVersionRow.id",
+        foreign_keys=[current_version_id],
+        lazy="selectin",
+        viewonly=True,
+    )
+    """The current version (read-only): its `source` tells whether a self-heal made it (#382)."""
+
 
 class WorkflowVersionRow(Timestamps, Base):
     """One version of a workflow, with its own step rows and recording. Immutable once written except for
