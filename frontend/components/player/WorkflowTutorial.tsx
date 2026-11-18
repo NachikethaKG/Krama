@@ -7,6 +7,7 @@ import type { Workflow } from "@krama/contracts-ts";
 import type { eventWithTime } from "@rrweb/types";
 import { errorMessage, getApiClient, isApiError } from "@/lib/api";
 import { apiBaseUrl, artifactUrl } from "@/lib/artifacts";
+import type { TutorialFreshnessStatus } from "@/types/tutorial";
 import { TutorialPlayer } from "./TutorialPlayer";
 
 type Loaded =
@@ -86,7 +87,17 @@ export function WorkflowTutorial({ workflowId }: { workflowId: string }) {
           Read as text
         </a>
       </div>
-      <TutorialPlayer spec={loaded.spec} recording={loaded.recording} workflowId={loaded.workflow.id} />
+      <TutorialPlayer
+        spec={loaded.spec}
+        recording={loaded.recording}
+        workflowId={loaded.workflow.id}
+        status={freshness(loaded.workflow)}
+      />
     </div>
   );
+}
+
+/** The stored workflow's status as the player's badge (without it the badge always said "Verified"). */
+export function freshness(workflow: Pick<Workflow, "status">): TutorialFreshnessStatus {
+  return workflow.status === "outdated" ? "outdated" : "verified";
 }
