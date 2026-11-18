@@ -106,6 +106,37 @@ export type Ratio1 = number;
  */
 export type PlanStatus = "proposed" | "approved" | "rejected";
 /**
+ * outdated: the workflow no longer works and nothing waits for review. heal_pending: an AI-chosen fix waits for the owner (D8). unstable: 2+ flaky validations in 7 days. cant_check: the last 3 validations were blocked (sign-in, CAPTCHA, site down, ...).
+ *
+ * This interface was referenced by `Review`'s JSON-Schema
+ * via the `definition` "ReviewCategory".
+ */
+export type ReviewCategory = "outdated" | "heal_pending" | "unstable" | "cant_check";
+/**
+ * accept / reject: POST /reviews/{id}/accept|reject (heal_pending only). regenerate: POST /workflows/{id}/regenerate. retry_ai_fix: POST /workflows/{id}/retry-ai-fix. retry_check: POST /workflows/{id}/reverify.
+ *
+ * This interface was referenced by `Review`'s JSON-Schema
+ * via the `definition` "ReviewAction".
+ */
+export type ReviewAction = "accept" | "reject" | "regenerate" | "retry_ai_fix" | "retry_check";
+/**
+ * This interface was referenced by `Workflow`'s JSON-Schema
+ * via the `definition` "StepChangeKind".
+ */
+export type StepChangeKind = "same" | "changed" | "added" | "removed";
+/**
+ * behaviour: what the step does or acts on. check: its expected state. wording: only its instruction text (the UI may collapse these). risk: its risk level.
+ *
+ * This interface was referenced by `Workflow`'s JSON-Schema
+ * via the `definition` "StepChangeCategory".
+ */
+export type StepChangeCategory = "behaviour" | "check" | "wording" | "risk";
+/**
+ * This interface was referenced by `Workflow`'s JSON-Schema
+ * via the `definition` "WorkflowStatus".
+ */
+export type WorkflowStatus = "draft" | "approved" | "running" | "verified" | "failed" | "outdated";
+/**
  * This interface was referenced by `Run`'s JSON-Schema
  * via the `definition` "RunStatus".
  */
@@ -140,11 +171,6 @@ export type ClickType = "single" | "double" | "none";
  */
 export type HighlightStyle = "pulsing_ring" | "solid_box" | "spotlight";
 /**
- * This interface was referenced by `Workflow`'s JSON-Schema
- * via the `definition` "WorkflowStatus".
- */
-export type WorkflowStatus = "draft" | "approved" | "running" | "verified" | "failed" | "outdated";
-/**
  * What made the version: the first verified run, a self-heal, a regenerated plan, or a human edit.
  *
  * This interface was referenced by `Workflow`'s JSON-Schema
@@ -158,18 +184,6 @@ export type WorkflowVersionSource = "initial" | "heal" | "regenerate" | "edit";
  * via the `definition` "WorkflowVersionStatus".
  */
 export type WorkflowVersionStatus = "current" | "pending_review" | "superseded" | "rejected";
-/**
- * This interface was referenced by `Workflow`'s JSON-Schema
- * via the `definition` "StepChangeKind".
- */
-export type StepChangeKind = "same" | "changed" | "added" | "removed";
-/**
- * behaviour: what the step does or acts on. check: its expected state. wording: only its instruction text (the UI may collapse these). risk: its risk level.
- *
- * This interface was referenced by `Workflow`'s JSON-Schema
- * via the `definition` "StepChangeCategory".
- */
-export type StepChangeCategory = "behaviour" | "check" | "wording" | "risk";
 /**
  * Result of one validation of a stored workflow (docs/research/phase-4-decisions-alignment.md): passed, healed (a new current version), heal_pending (a new version waits for review), outdated, blocked (the environment stopped it; the workflow's status is unchanged), skipped (not replayable).
  *
@@ -186,6 +200,7 @@ export interface KramaContracts {
   health?: HealthResponse;
   "metrics-summary"?: MetricsSummary;
   plan?: Plan;
+  review?: Review;
   run?: Run;
   share?: ShareLink;
   step?: Step;
@@ -594,6 +609,149 @@ export interface PlanApproveRequest {
  */
 export interface PlanRejectRequest {
   reason?: string | null;
+}
+export interface Review {
+  [k: string]: unknown;
+}
+/**
+ * One thing in the owner's review queue. Derived from the workflow, its versions and its validations; nothing is stored for the item itself.
+ *
+ * This interface was referenced by `Review`'s JSON-Schema
+ * via the `definition` "ReviewItem".
+ */
+export interface ReviewItem {
+  /**
+   * Stable item id, `<category>:<uuid>`: the pending version's id for heal_pending, else the workflow's id.
+   */
+  id: string;
+  workflow_id: string;
+  workflow_title: string;
+  /**
+   * gitea, github or custom.
+   */
+  target_app: string;
+  category: ReviewCategory;
+  /**
+   * Short, plain words for the owner, e.g. 'Step 3: the "Create Repository" button is gone'.
+   */
+  reason: string;
+  /**
+   * The step that failed, when one did.
+   */
+  step_seq?: number | null;
+  /**
+   * When this started: the version's creation, or the validation that put it here.
+   */
+  since: string;
+  /**
+   * heal_pending: the number of the version waiting for review.
+   */
+  pending_revision?: number | null;
+  /**
+   * The workflow's current version.
+   */
+  current_revision?: number;
+  /**
+   * heal_pending: how the waiting version differs from the current one.
+   */
+  step_diff?: StepDiff | null;
+  /**
+   * What the owner can do with this item now (e.g. retry_ai_fix only while the daily AI budget lasts).
+   */
+  actions: ReviewAction[];
+}
+/**
+ * This interface was referenced by `Workflow`'s JSON-Schema
+ * via the `definition` "StepDiff".
+ */
+export interface StepDiff {
+  from_revision: number;
+  to_revision: number;
+  /**
+   * Every step of both versions, aligned by meaning, in the new version's order.
+   */
+  steps: StepChange[];
+}
+/**
+ * This interface was referenced by `Workflow`'s JSON-Schema
+ * via the `definition` "StepChange".
+ */
+export interface StepChange {
+  kind: StepChangeKind;
+  /**
+   * Null for an added step.
+   */
+  old_seq?: number | null;
+  /**
+   * Null for a removed step.
+   */
+  new_seq?: number | null;
+  /**
+   * The most important category among the changes; null for a same step.
+   */
+  category?: StepChangeCategory | null;
+  fields?: FieldChange[];
+  /**
+   * Short text for an added or removed step, e.g. 'click button “Confirm”'.
+   */
+  summary?: string | null;
+}
+/**
+ * This interface was referenced by `Workflow`'s JSON-Schema
+ * via the `definition` "FieldChange".
+ */
+export interface FieldChange {
+  /**
+   * Dotted path in the step, e.g. target.name, action.value, expected_state.
+   */
+  field: string;
+  /**
+   * The old value (any JSON); absent or null if there was none.
+   */
+  from?: {
+    [k: string]: unknown;
+  };
+  /**
+   * The new value (any JSON); absent or null if there is none.
+   */
+  to?: {
+    [k: string]: unknown;
+  };
+}
+/**
+ * This interface was referenced by `Review`'s JSON-Schema
+ * via the `definition` "ReviewItemList".
+ */
+export interface ReviewItemList {
+  /**
+   * Newest first.
+   */
+  items: ReviewItem[];
+}
+/**
+ * This interface was referenced by `Review`'s JSON-Schema
+ * via the `definition` "ReviewCount".
+ */
+export interface ReviewCount {
+  /**
+   * Number of items in the queue (the nav badge).
+   */
+  count: number;
+}
+/**
+ * After accept / reject: the workflow as it is now.
+ *
+ * This interface was referenced by `Review`'s JSON-Schema
+ * via the `definition` "ReviewActionResult".
+ */
+export interface ReviewActionResult {
+  workflow_id: string;
+  workflow_status: WorkflowStatus;
+  /**
+   * The workflow's current version now.
+   */
+  revision: number;
+  message: string;
 }
 export interface Run {
   id: string;
@@ -1109,64 +1267,6 @@ export interface WorkflowVersion {
    */
   change_summary?: StepDiff | null;
   created_at: string;
-}
-/**
- * This interface was referenced by `Workflow`'s JSON-Schema
- * via the `definition` "StepDiff".
- */
-export interface StepDiff {
-  from_revision: number;
-  to_revision: number;
-  /**
-   * Every step of both versions, aligned by meaning, in the new version's order.
-   */
-  steps: StepChange[];
-}
-/**
- * This interface was referenced by `Workflow`'s JSON-Schema
- * via the `definition` "StepChange".
- */
-export interface StepChange {
-  kind: StepChangeKind;
-  /**
-   * Null for an added step.
-   */
-  old_seq?: number | null;
-  /**
-   * Null for a removed step.
-   */
-  new_seq?: number | null;
-  /**
-   * The most important category among the changes; null for a same step.
-   */
-  category?: StepChangeCategory | null;
-  fields?: FieldChange[];
-  /**
-   * Short text for an added or removed step, e.g. 'click button “Confirm”'.
-   */
-  summary?: string | null;
-}
-/**
- * This interface was referenced by `Workflow`'s JSON-Schema
- * via the `definition` "FieldChange".
- */
-export interface FieldChange {
-  /**
-   * Dotted path in the step, e.g. target.name, action.value, expected_state.
-   */
-  field: string;
-  /**
-   * The old value (any JSON); absent or null if there was none.
-   */
-  from?: {
-    [k: string]: unknown;
-  };
-  /**
-   * The new value (any JSON); absent or null if there is none.
-   */
-  to?: {
-    [k: string]: unknown;
-  };
 }
 /**
  * This interface was referenced by `Workflow`'s JSON-Schema
