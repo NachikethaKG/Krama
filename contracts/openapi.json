@@ -1005,6 +1005,203 @@
         "title": "Ratio",
         "type": "number"
       },
+      "ReviewAction": {
+        "description": "accept / reject: POST /reviews/{id}/accept|reject (heal_pending only). regenerate: POST /workflows/{id}/regenerate. retry_ai_fix: POST /workflows/{id}/retry-ai-fix. retry_check: POST /workflows/{id}/reverify.",
+        "enum": [
+          "accept",
+          "reject",
+          "regenerate",
+          "retry_ai_fix",
+          "retry_check"
+        ],
+        "title": "ReviewAction",
+        "type": "string"
+      },
+      "ReviewActionResult": {
+        "additionalProperties": false,
+        "properties": {
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "revision": {
+            "description": "The workflow's current version now.",
+            "minimum": 1.0,
+            "title": "Revision",
+            "type": "integer"
+          },
+          "workflow_id": {
+            "format": "uuid",
+            "title": "Workflow Id",
+            "type": "string"
+          },
+          "workflow_status": {
+            "$ref": "#/components/schemas/WorkflowStatus"
+          }
+        },
+        "required": [
+          "workflow_id",
+          "workflow_status",
+          "revision",
+          "message"
+        ],
+        "title": "ReviewActionResult",
+        "type": "object"
+      },
+      "ReviewCategory": {
+        "description": "outdated: the workflow no longer works and nothing waits for review. heal_pending: an AI-chosen fix waits for the owner (D8). unstable: 2+ flaky validations in 7 days. cant_check: the last 3 validations were blocked (sign-in, CAPTCHA, site down, ...).",
+        "enum": [
+          "outdated",
+          "heal_pending",
+          "unstable",
+          "cant_check"
+        ],
+        "title": "ReviewCategory",
+        "type": "string"
+      },
+      "ReviewCount": {
+        "additionalProperties": false,
+        "properties": {
+          "count": {
+            "description": "Number of items in the queue (the nav badge).",
+            "minimum": 0.0,
+            "title": "Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "count"
+        ],
+        "title": "ReviewCount",
+        "type": "object"
+      },
+      "ReviewItem": {
+        "additionalProperties": false,
+        "properties": {
+          "actions": {
+            "description": "What the owner can do with this item now (e.g. retry_ai_fix only while the daily AI budget lasts).",
+            "items": {
+              "$ref": "#/components/schemas/ReviewAction"
+            },
+            "title": "Actions",
+            "type": "array"
+          },
+          "category": {
+            "$ref": "#/components/schemas/ReviewCategory"
+          },
+          "current_revision": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The workflow's current version.",
+            "title": "Current Revision"
+          },
+          "id": {
+            "description": "Stable item id, `<category>:<uuid>`: the pending version's id for heal_pending, else the workflow's id.",
+            "minLength": 1,
+            "title": "Id",
+            "type": "string"
+          },
+          "pending_revision": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "heal_pending: the number of the version waiting for review.",
+            "title": "Pending Revision"
+          },
+          "reason": {
+            "description": "Short, plain words for the owner, e.g. 'Step 3: the \"Create Repository\" button is gone'.",
+            "title": "Reason",
+            "type": "string"
+          },
+          "since": {
+            "description": "When this started: the version's creation, or the validation that put it here.",
+            "format": "date-time",
+            "title": "Since",
+            "type": "string"
+          },
+          "step_diff": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StepDiff"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "heal_pending: how the waiting version differs from the current one."
+          },
+          "step_seq": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The step that failed, when one did.",
+            "title": "Step Seq"
+          },
+          "target_app": {
+            "description": "gitea, github or custom.",
+            "title": "Target App",
+            "type": "string"
+          },
+          "workflow_id": {
+            "format": "uuid",
+            "title": "Workflow Id",
+            "type": "string"
+          },
+          "workflow_title": {
+            "title": "Workflow Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "workflow_id",
+          "workflow_title",
+          "target_app",
+          "category",
+          "reason",
+          "since",
+          "actions"
+        ],
+        "title": "ReviewItem",
+        "type": "object"
+      },
+      "ReviewItemList": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "description": "Newest first.",
+            "items": {
+              "$ref": "#/components/schemas/ReviewItem"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "ReviewItemList",
+        "type": "object"
+      },
       "Risk": {
         "enum": [
           "low",
@@ -3471,6 +3668,234 @@
         ]
       }
     },
+    "/api/v1/reviews": {
+      "get": {
+        "operationId": "get_reviews_api_v1_reviews_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewItemList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal error"
+          }
+        },
+        "summary": "Get Reviews",
+        "tags": [
+          "reviews"
+        ]
+      }
+    },
+    "/api/v1/reviews/count": {
+      "get": {
+        "operationId": "get_review_count_api_v1_reviews_count_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewCount"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal error"
+          }
+        },
+        "summary": "Get Review Count",
+        "tags": [
+          "reviews"
+        ]
+      }
+    },
+    "/api/v1/reviews/{item_id}/accept": {
+      "post": {
+        "description": "D8: the waiting version becomes the live one.",
+        "operationId": "accept_review_api_v1_reviews__item_id__accept_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "title": "Item Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewActionResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The fix no longer waits for review, or isn't a fix"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal error"
+          }
+        },
+        "summary": "Accept Review",
+        "tags": [
+          "reviews"
+        ]
+      }
+    },
+    "/api/v1/reviews/{item_id}/reject": {
+      "post": {
+        "description": "D8: the waiting version is thrown away; the workflow stays outdated.",
+        "operationId": "reject_review_api_v1_reviews__item_id__reject_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "title": "Item Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewActionResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The fix no longer waits for review, or isn't a fix"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal error"
+          }
+        },
+        "summary": "Reject Review",
+        "tags": [
+          "reviews"
+        ]
+      }
+    },
     "/api/v1/runs": {
       "get": {
         "description": "Run history, newest first.",
@@ -4553,6 +4978,90 @@
         "summary": "Regenerate Workflow",
         "tags": [
           "workflows"
+        ]
+      }
+    },
+    "/api/v1/workflows/{workflow_id}/retry-ai-fix": {
+      "post": {
+        "description": "Replay the workflow with the Gemini heal allowed (D12): a reverify run whose heal may ask Gemini to\nchoose among the candidates. A new version it saves shows up in the queue as `heal_pending`.",
+        "operationId": "retry_ai_fix_api_v1_workflows__workflow_id__retry_ai_fix_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workflow_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workflow Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Run"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The workflow can't be replayed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Today's AI fix budget is used up"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal error"
+          }
+        },
+        "summary": "Retry Ai Fix",
+        "tags": [
+          "reviews"
         ]
       }
     },
