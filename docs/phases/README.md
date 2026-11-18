@@ -211,7 +211,8 @@ workflow "Create a new repository named heal-demo-…" (3 steps, fingerprinted),
 - [x] **Validation runs one browser at a time** (`ScheduledValidator` validates one workflow at a time on the
   worker's single executor).
 - [ ] **Demo on Nachiketha's laptop from a fresh `git pull`**: still to do (this re-check ran on Vishwas's laptop).
-- Follow-up: the "auto-updated" badge can't show in real mode yet (#382).
+- The "auto-updated" badge now shows in real mode too (#382: #384, #385, #386), checked live on the same workflow
+  after it verified again with its healed version.
 
 ### Phase 3: MVP — Exit Gate (#104)
 
