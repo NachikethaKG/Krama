@@ -32,3 +32,12 @@ class RedisHealBudget:
                 return used <= self._limit
         except (RedisError, OSError):
             return False
+
+    async def remaining(self) -> int:
+        """Calls left today, without using one (the review queue's "retry AI fix"). 0 if Redis is down."""
+        try:
+            async with Redis.from_url(self._url, socket_connect_timeout=2) as redis:
+                used = int(await redis.get(budget_key()) or 0)
+                return max(0, self._limit - used)
+        except (RedisError, OSError):
+            return 0
