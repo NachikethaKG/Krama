@@ -179,8 +179,8 @@ export function ReviewQueueItemCard({
               >
                 <StepDiffViewer
                   diffs={item.stepDiffs ?? []}
-                  fromVersion="v1.0"
-                  toVersion={item.pendingVersion ?? "v1.1"}
+                  fromVersion={item.currentVersion ?? "current"}
+                  toVersion={item.pendingVersion ?? "pending"}
                   changeSummary={item.reason}
                 />
               </div>

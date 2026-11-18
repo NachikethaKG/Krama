@@ -180,7 +180,8 @@ export function ReviewQueueView({
   const handleRetryCheck = async (workflowId: string) => {
     setInFlightIds((prev) => new Set(prev).add(workflowId));
     try {
-      setToastMessage("Verification run scheduled for workflow.");
+      const run = await apiClient.reverifyWorkflow(workflowId);
+      router.push(`/runs/${encodeURIComponent(run.id)}`);
     } catch (err) {
       setError(errorMessage(err, "Failed to trigger retry check."));
     } finally {
