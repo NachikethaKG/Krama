@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "workflow.schema.json",
   "title": "Workflow",
-  "$comment": "v1.1. The verified workflow, the core object of Krama (docs/phases/README.md §3.1, docs/database-schema.md).",
+  "$comment": "v1.2. The verified workflow, the core object of Krama (docs/phases/README.md §3.1, docs/database-schema.md).",
   "type": "object",
   "required": [
     "id",
@@ -22,6 +22,10 @@
       "type": ["integer", "null"],
       "minimum": 1,
       "description": "Number of the workflow version whose steps and recording this is (1 = as first recorded). Not the format `version` above."
+    },
+    "current_version_source": {
+      "description": "How the current version was made. With status `verified`, `heal` means a self-heal updated it: the `auto-updated` badge (#114, #382). Null for workflows from before versions.",
+      "oneOf": [{ "$ref": "#/$defs/WorkflowVersionSource" }, { "type": "null" }]
     },
     "task_id": { "type": ["string", "null"], "format": "uuid" },
     "run_id": { "type": ["string", "null"], "format": "uuid" },
@@ -118,6 +122,10 @@
         "id": { "type": "string", "format": "uuid" },
         "title": { "type": "string", "minLength": 1 },
         "status": { "$ref": "#/$defs/WorkflowStatus" },
+        "current_version_source": {
+          "description": "How the current version was made. With status `verified`, `heal` means a self-heal updated it: the `auto-updated` badge (#114, #382). Null for workflows from before versions.",
+          "oneOf": [{ "$ref": "#/$defs/WorkflowVersionSource" }, { "type": "null" }]
+        },
         "target_app": { "type": ["string", "null"] },
         "step_count": { "type": "integer", "minimum": 0 },
         "confidence": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
