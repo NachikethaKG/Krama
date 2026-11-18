@@ -11,6 +11,10 @@ import type {
   MetricsSummary,
   Plan,
   PlannedStep,
+  ReviewActionResult,
+  ReviewCount,
+  ReviewItem,
+  ReviewItemList,
   Run,
   RunEvent,
   RunPage,
@@ -28,6 +32,7 @@ import type {
 import { compileWorkflow, type TutorialSpec } from "@krama/tutorial-compiler";
 
 import { apiBaseUrl, artifactUrl, normalizeBaseUrl } from "./artifacts";
+import { parseStepDiffs } from "@/components/versions/version-utils";
 import {
   blockedWorkflowFixture,
   demoUserFixture,
@@ -264,6 +269,8 @@ export interface ApiClient {
   regenerateWorkflow(workflowId: string): Promise<{ id: string; run_id?: string; status: string }>;
   /** POST /api/v1/workflows/{workflowId}/retry-ai-fix with X-Krama: 1. */
   retryAiFix(workflowId: string): Promise<{ success: boolean; status?: string }>;
+  /** POST /api/v1/workflows/{workflowId}/reverify with X-Krama: 1: check the workflow again now. */
+  reverifyWorkflow(workflowId: string): Promise<Run>;
   /** POST /workflows/{workflowId}/exports with preset ("landscape" | "portrait"). */
   createExport(workflowId: string, preset: ExportPreset): Promise<Export>;
   /** GET /exports/{exportId}. */
@@ -775,54 +782,38 @@ export class HttpApiClient implements ApiClient {
   }
 
   async getReviewQueue(): Promise<ReviewQueueItem[]> {
+    // Errors propagate: the real client never shows mock items (#377).
     const path = this.baseUrl.endsWith("/api/v1") ? "/reviews" : "/api/v1/reviews";
-    try {
-      const data = await this.request<{ items?: ReviewQueueItem[] } | ReviewQueueItem[]>(path);
-      if (Array.isArray(data)) return data;
-      if (data && Array.isArray(data.items)) return data.items;
-      return [];
-    } catch {
-      return [...mockReviewQueueItems];
-    }
+    const data = await this.request<ReviewItemList>(path);
+    return data.items.map(toReviewQueueItem);
   }
 
   async getReviewQueueCount(): Promise<ReviewQueueCountResponse> {
     const path = this.baseUrl.endsWith("/api/v1") ? "/reviews/count" : "/api/v1/reviews/count";
-    try {
-      return await this.request<ReviewQueueCountResponse>(path);
-    } catch {
-      return { count: mockReviewQueueItems.length };
-    }
+    const data = await this.request<ReviewCount>(path);
+    return { count: data.count };
   }
 
   async acceptReview(id: string): Promise<ReviewActionResponse> {
     const path = this.baseUrl.endsWith("/api/v1")
       ? `/reviews/${encodeURIComponent(id)}/accept`
       : `/api/v1/reviews/${encodeURIComponent(id)}/accept`;
-    try {
-      return await this.request<ReviewActionResponse>(path, {
-        method: "POST",
-        headers: { "X-Krama": "1", "Content-Type": "application/json" },
-      });
-    } catch (err) {
-      if (err instanceof ApiRequestError) throw err;
-      return { success: true, message: "Healed version is now live" };
-    }
+    const result = await this.request<ReviewActionResult>(path, {
+      method: "POST",
+      headers: { "X-Krama": "1", "Content-Type": "application/json" },
+    });
+    return { success: true, message: result.message, workflow_id: result.workflow_id };
   }
 
   async rejectReview(id: string): Promise<ReviewActionResponse> {
     const path = this.baseUrl.endsWith("/api/v1")
       ? `/reviews/${encodeURIComponent(id)}/reject`
       : `/api/v1/reviews/${encodeURIComponent(id)}/reject`;
-    try {
-      return await this.request<ReviewActionResponse>(path, {
-        method: "POST",
-        headers: { "X-Krama": "1", "Content-Type": "application/json" },
-      });
-    } catch (err) {
-      if (err instanceof ApiRequestError) throw err;
-      return { success: true, message: "Pending heal rejected" };
-    }
+    const result = await this.request<ReviewActionResult>(path, {
+      method: "POST",
+      headers: { "X-Krama": "1", "Content-Type": "application/json" },
+    });
+    return { success: true, message: result.message, workflow_id: result.workflow_id };
   }
 
   async regenerateWorkflow(workflowId: string): Promise<{ id: string; run_id?: string; status: string }> {
@@ -839,7 +830,19 @@ export class HttpApiClient implements ApiClient {
     const path = this.baseUrl.endsWith("/api/v1")
       ? `/workflows/${encodeURIComponent(workflowId)}/retry-ai-fix`
       : `/api/v1/workflows/${encodeURIComponent(workflowId)}/retry-ai-fix`;
-    return this.request<{ success: boolean; status?: string }>(path, {
+    // 202 Run (a reverify run that may ask Gemini to heal); 429 rate_limited when today's budget is used up.
+    const run = await this.request<Run>(path, {
+      method: "POST",
+      headers: { "X-Krama": "1", "Content-Type": "application/json" },
+    });
+    return { success: true, status: run.status };
+  }
+
+  async reverifyWorkflow(workflowId: string): Promise<Run> {
+    const path = this.baseUrl.endsWith("/api/v1")
+      ? `/workflows/${encodeURIComponent(workflowId)}/reverify`
+      : `/api/v1/workflows/${encodeURIComponent(workflowId)}/reverify`;
+    return this.request<Run>(path, {
       method: "POST",
       headers: { "X-Krama": "1", "Content-Type": "application/json" },
     });
@@ -1609,6 +1612,20 @@ export class MockApiClient implements ApiClient {
     return { success: true, status: "checking" };
   }
 
+  async reverifyWorkflow(workflowId: string): Promise<Run> {
+    const now = nowTs();
+    return {
+      id: `run-reverify-${workflowId}`,
+      plan_id: `plan-reverify-${workflowId}`,
+      plan_revision: 1,
+      kind: "reverify",
+      source_workflow_id: workflowId,
+      status: "queued",
+      retry_count: 0,
+      created_at: now,
+    };
+  }
+
   async createShareLink(workflowId: string): Promise<ShareLinkCreated> {
     const token = `mock-token-${Math.random().toString(36).substring(2, 10)}`;
     const id = `share-${Math.random().toString(36).substring(2, 10)}`;
@@ -1709,4 +1726,23 @@ export function createApiClient(
   baseUrl: string = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1",
 ): ApiClient {
   return mode === "http" ? new HttpApiClient(normalizeBaseUrl(baseUrl)) : new MockApiClient();
+}
+
+/** Contract `ReviewItem` (snake_case, review.schema.json) -> the review UI's `ReviewQueueItem`. */
+export function toReviewQueueItem(item: ReviewItem): ReviewQueueItem {
+  const platform = item.target_app === "gitea" || item.target_app === "github" ? item.target_app : "custom";
+  return {
+    id: item.id,
+    workflowId: item.workflow_id,
+    workflowTitle: item.workflow_title,
+    targetPlatform: platform,
+    category: item.category,
+    reason: item.reason,
+    failedStepIndex: item.step_seq ?? undefined,
+    createdAt: item.since,
+    pendingVersion: item.pending_revision ? `v${item.pending_revision}` : undefined,
+    currentVersion: item.current_revision ? `v${item.current_revision}` : undefined,
+    stepDiffs: item.step_diff ? parseStepDiffs(item.step_diff) : undefined,
+    canRetryAiFix: item.actions.includes("retry_ai_fix"),
+  };
 }

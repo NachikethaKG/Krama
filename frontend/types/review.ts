@@ -17,7 +17,8 @@ export interface ReviewQueueItem {
   reason: string; // e.g., "GitHub session expired", "2 flakes in 7 days", "Step 3 button missing"
   failedStepIndex?: number;
   createdAt: string;
-  pendingVersion?: string; // e.g., "v1.1"
+  pendingVersion?: string; // e.g., "v2": the version waiting for review
+  currentVersion?: string; // e.g., "v1": the live version it would replace
   stepDiffs?: StepDiffItem[];
   canRetryAiFix?: boolean;
 }
