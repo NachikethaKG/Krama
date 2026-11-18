@@ -2289,6 +2289,17 @@
             ],
             "title": "Created At"
           },
+          "current_version_source": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WorkflowVersionSource"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "How the current version was made. With status `verified`, `heal` means a self-heal updated it: the `auto-updated` badge (#114, #382). Null for workflows from before versions."
+          },
           "id": {
             "format": "uuid",
             "title": "Id",
@@ -2607,6 +2618,17 @@
               }
             ],
             "title": "Created At"
+          },
+          "current_version_source": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WorkflowVersionSource"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "How the current version was made. With status `verified`, `heal` means a self-heal updated it: the `auto-updated` badge (#114, #382). Null for workflows from before versions."
           },
           "id": {
             "format": "uuid",
