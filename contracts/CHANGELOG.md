@@ -2,6 +2,14 @@
 
 Every change to `contracts/` is listed here. Additive change = minor version bump; breaking change = major bump + ADR.
 
+## 1.13 (#382)
+
+The `auto-updated` badge in real mode (D11, #114). Additive.
+
+- `workflow.schema.json` v1.2: `Workflow.current_version_source` and `WorkflowSummary.current_version_source`
+  (`WorkflowVersionSource`, nullable): how the current version was made. With status `verified`, `heal` means a
+  self-heal updated it, which the frontend shows as `auto-updated`.
+
 ## 1.12 (#377)
 
 The owner's review queue (Phase 4, #115; decisions D8, D11, D12 in `docs/research/phase-4-decisions-alignment.md`).
