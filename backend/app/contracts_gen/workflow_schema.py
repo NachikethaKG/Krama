@@ -43,27 +43,6 @@ class WorkflowRecording(BaseModel):
     ended_at: AwareDatetime | None = None
 
 
-class WorkflowSummary(BaseModel):
-    model_config = ConfigDict(
-        extra="forbid",
-    )
-    id: UUID
-    title: Annotated[str, Field(min_length=1)]
-    status: WorkflowStatus
-    target_app: str | None = None
-    step_count: Annotated[int, Field(ge=0)]
-    confidence: Annotated[float | None, Field(ge=0.0, le=1.0)] = None
-    created_at: AwareDatetime | None = None
-
-
-class WorkflowPage(BaseModel):
-    model_config = ConfigDict(
-        extra="forbid",
-    )
-    items: list[WorkflowSummary]
-    next_cursor: str | None = None
-
-
 type WorkflowVersionSource = Annotated[
     Literal["initial", "heal", "regenerate", "edit"],
     Field(
@@ -136,6 +115,12 @@ class Workflow(BaseModel):
             ge=1,
         ),
     ] = None
+    current_version_source: Annotated[
+        WorkflowVersionSource | None,
+        Field(
+            description="How the current version was made. With status `verified`, `heal` means a self-heal updated it: the `auto-updated` badge (#114, #382). Null for workflows from before versions."
+        ),
+    ] = None
     task_id: UUID | None = None
     run_id: UUID | None = None
     title: Annotated[str, Field(description="Human-readable title describing the workflow.", min_length=1)]
@@ -159,6 +144,33 @@ class Workflow(BaseModel):
     steps: Annotated[list[step_schema.Step], Field(description="The ordered sequence of verified steps.")]
     created_at: AwareDatetime | None = None
     updated_at: AwareDatetime | None = None
+
+
+class WorkflowSummary(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+    id: UUID
+    title: Annotated[str, Field(min_length=1)]
+    status: WorkflowStatus
+    current_version_source: Annotated[
+        WorkflowVersionSource | None,
+        Field(
+            description="How the current version was made. With status `verified`, `heal` means a self-heal updated it: the `auto-updated` badge (#114, #382). Null for workflows from before versions."
+        ),
+    ] = None
+    target_app: str | None = None
+    step_count: Annotated[int, Field(ge=0)]
+    confidence: Annotated[float | None, Field(ge=0.0, le=1.0)] = None
+    created_at: AwareDatetime | None = None
+
+
+class WorkflowPage(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+    items: list[WorkflowSummary]
+    next_cursor: str | None = None
 
 
 class StepChange(BaseModel):

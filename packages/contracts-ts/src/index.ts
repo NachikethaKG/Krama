@@ -1155,6 +1155,10 @@ export interface Workflow {
    * Number of the workflow version whose steps and recording this is (1 = as first recorded). Not the format `version` above.
    */
   revision?: number | null;
+  /**
+   * How the current version was made. With status `verified`, `heal` means a self-heal updated it: the `auto-updated` badge (#114, #382). Null for workflows from before versions.
+   */
+  current_version_source?: WorkflowVersionSource | null;
   task_id?: string | null;
   run_id?: string | null;
   /**
@@ -1229,6 +1233,10 @@ export interface WorkflowSummary {
   id: string;
   title: string;
   status: WorkflowStatus;
+  /**
+   * How the current version was made. With status `verified`, `heal` means a self-heal updated it: the `auto-updated` badge (#114, #382). Null for workflows from before versions.
+   */
+  current_version_source?: WorkflowVersionSource | null;
   target_app?: string | null;
   step_count: number;
   confidence?: number | null;
