@@ -11,15 +11,18 @@ Flow (decision D14 in docs/research/phase-5-decisions-alignment.md):
 """
 
 import asyncio
+import contextlib
 import logging
 import tempfile
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
 from uuid import UUID
 
+from app.contracts_gen.export_schema import ExportErrorCode
 from app.ports.artifacts import ArtifactFiles
-from app.ports.exports import ExportStore
-from app.ports.narration import NarrationError, NarrationLine, Narrator
+from app.ports.exports import ExportNotFoundError, ExportStateError, ExportStore
+from app.ports.narration import NarrationError, NarrationLine, Narrator, plan_scenes
 from app.runs.exports import DbExportStore
 from app.tts import get_narrator
 
@@ -105,7 +108,17 @@ async def render_export(
             scaled = min(98, 10 + int(p * 0.88))
             await store.mark_rendering(export_id, scaled)
 
-        site = workflow.target_app or "git.local"
+        # Scene lengths follow the narration (D4): max(recorded action, lead-in + clip + hold), whole frames.
+        actions = {
+            s.seq: max(0, s.end_ms - s.start_ms)
+            for s in workflow.steps
+            if s.start_ms is not None and s.end_ms is not None
+        }
+        scenes = plan_scenes(manifest, actions)
+        # Outro (D9): "Verified on <site>, <date of the version's run>".
+        site = urlparse(str(workflow.target_url or "")).hostname or workflow.target_app or "git.local"
+        when = workflow.updated_at or workflow.created_at
+        verified = when.date().isoformat() if when else None
         try:
             result = await rend.render(
                 output_path=tmp_mp4,
@@ -117,6 +130,8 @@ async def render_export(
                 vtt_path=tmp_vtt,
                 metadata_path=tmp_meta,
                 site=site,
+                verified_date=verified,
+                scenes=scenes,
                 on_progress=on_progress,
             )
         except TimeoutError:
@@ -155,12 +170,47 @@ async def render_export(
         return "ready"
 
 
+async def run_export(
+    export_id: UUID,
+    *,
+    store: ExportStore,
+    files: ArtifactFiles,
+    narrator: Narrator,
+    renderer: VideoRenderer | None = None,
+    timeout_s: float,
+) -> str:
+    """`render_export` within EXPORT_TIMEOUT_SECONDS. Whatever happens, the export doesn't stay `rendering`:
+    a timeout fails it as `timeout`, a cancel (worker stop) as `interrupted`, a crash as `internal`."""
+    try:
+        return await asyncio.wait_for(
+            render_export(export_id, store=store, files=files, narrator=narrator, renderer=renderer),
+            timeout=timeout_s,
+        )
+    except TimeoutError:
+        await _fail_if_running(store, export_id, "timeout", f"The export took longer than {timeout_s:g} s.")
+        return "timeout"
+    except asyncio.CancelledError:
+        await _fail_if_running(store, export_id, "interrupted", "The export was stopped. Export again.")
+        raise
+    except Exception:
+        logger.exception("Export %s crashed", export_id)
+        await _fail_if_running(store, export_id, "internal", "The export failed unexpectedly.")
+        return "internal"
+
+
+async def _fail_if_running(store: ExportStore, export_id: UUID, code: ExportErrorCode, message: str) -> None:
+    with contextlib.suppress(ExportStateError, ExportNotFoundError):  # already finished, or gone
+        await store.mark_failed(export_id, code, message)
+
+
 async def export_job(ctx: Ctx, export_id: str) -> str:
-    """The arq job on queue `krama:exports`."""
+    """The arq job on queue `krama:exports` (one at a time, no retry; see app/worker.py)."""
     eid = UUID(export_id)
     store: ExportStore = ctx.get("export_store") or DbExportStore(ctx["sessions"])
     files: ArtifactFiles = ctx["files"]
     narrator: Narrator = ctx.get("narrator") or get_narrator()
     renderer: VideoRenderer | None = ctx.get("video_renderer")
-
-    return await render_export(eid, store=store, files=files, narrator=narrator, renderer=renderer)
+    timeout_s: float = ctx.get("export_timeout_s", 1800.0)
+    return await run_export(
+        eid, store=store, files=files, narrator=narrator, renderer=renderer, timeout_s=timeout_s
+    )

@@ -132,3 +132,25 @@ async def _get(s: AsyncSession, export_id: UUID) -> ExportRow:
 
 def _conforms(store: DbExportStore) -> ExportStore:
     return store  # strict mypy fails here if DbExportStore drifts from the port
+
+
+async def recover_exports(sessions: async_sessionmaker[AsyncSession]) -> list[UUID]:
+    """At export-worker start.
+
+    An export still `rendering` lost its renderer with the last process: it fails as `interrupted` (no retry,
+    like runs). Returns the `queued` ones, to queue again (their jobs may be gone).
+    """
+    async with sessions.begin() as s:
+        await s.execute(
+            update(ExportRow)
+            .where(ExportRow.status == "rendering")
+            .values(
+                status="failed",
+                error_code="interrupted",
+                error_message="The export was interrupted by a restart. Export again.",
+                finished_at=func.now(),
+                updated_at=func.now(),
+            )
+        )
+        queued = await s.scalars(select(ExportRow.id).where(ExportRow.status == "queued"))
+        return list(queued.all())

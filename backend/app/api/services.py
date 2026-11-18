@@ -16,11 +16,13 @@ from app.agent.quota import RedisHealBudget
 from app.agent.vision import GeminiVisionLocator
 from app.config import Settings
 from app.db import create_engine, create_sessionmaker
+from app.export import ArqExportQueue, InProcessExportQueue
 from app.llm import create_provider
 from app.observer import PageObserver
 from app.planner import LLMPlanner
 from app.planner.service import PlanningService
 from app.policy import LLMClassifier, PolicyService
+from app.ports import ExportQueue
 from app.runs import InProcessExecutor, RunEnvironment, RunStore
 from app.runs.events import EventHub, RedisEventRelay
 from app.runs.queue import ArqExecutor
@@ -43,6 +45,9 @@ class Services:
     """What we know about a target URL: hints, sign-in, and its reset for reverify (#77)."""
     relay: "RedisEventRelay | None" = None
     """With the arq worker: wakes the live-view streams when the worker commits an event."""
+    exports: ExportQueue | None = None
+    """Where `POST /workflows/{id}/exports` sends exports: the arq worker, or the API itself. None in tests
+    that override the queue dependency."""
 
     async def start(self) -> None:
         # In-process: a restart leaves queued/running runs without a browser, so they fail honestly. With the
@@ -50,12 +55,16 @@ class Services:
         await self.executor.recover()
         if self.relay is not None:
             await self.relay.start()
+        if isinstance(self.exports, InProcessExportQueue):
+            await self.exports.recover()  # with the worker, the worker recovers its own exports
 
     async def close(self) -> None:
         await self.planning.shutdown()
         await self.executor.shutdown()
         if self.relay is not None:
             await self.relay.stop()
+        if isinstance(self.exports, (InProcessExportQueue, ArqExportQueue)):
+            await self.exports.shutdown()
         if self.engine is not None:
             await self.engine.dispose()
 
@@ -100,6 +109,14 @@ def build_services(settings: Settings) -> Services:
     policy = PolicyService(classifier=LLMClassifier(llm))
     executor: InProcessExecutor | ArqExecutor
     relay: RedisEventRelay | None = None
+    exports: ExportQueue
+    if settings.run_executor == "arq":
+        # Exports render in the worker too, on their own queue, one at a time (D14).
+        exports = ArqExportQueue(settings.redis_url)
+    else:
+        exports = InProcessExportQueue(
+            sessions, LocalFsStore(settings.artifacts_dir), timeout_s=settings.export_timeout_seconds
+        )
     if settings.run_executor == "arq":
         # Runs execute in the worker (`just backend worker`); its events come back over Redis (#95).
         executor = ArqExecutor(store, settings.redis_url, artifacts_dir=settings.artifacts_dir)
@@ -119,6 +136,7 @@ def build_services(settings: Settings) -> Services:
         engine=engine,
         target=lambda url: target_setup(url, settings),
         relay=relay,
+        exports=exports,
     )
 
 

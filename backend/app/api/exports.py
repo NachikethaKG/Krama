@@ -24,7 +24,6 @@ from app.contracts_gen.common_schema import ErrorResponse
 from app.contracts_gen.export_schema import CreateExportRequest, Export
 from app.db import ExportRow, WorkflowRow, WorkflowVersionRow
 from app.ports import ArtifactFiles, ArtifactNotFoundError, ExportQueue
-from app.ports.fakes import FakeExportQueue
 from app.runs.exports import DbExportStore, export_view, find_reusable
 from app.storage import get_artifact_files
 
@@ -35,11 +34,11 @@ _404: dict[int | str, dict[str, Any]] = {404: {"model": ErrorResponse, "descript
 _FILE_HEADERS = {"X-Content-Type-Options": "nosniff", "Cache-Control": "private, no-cache"}
 
 
-def get_export_queue(
-    services: ServicesDep, files: Annotated[ArtifactFiles, Depends(get_artifact_files)]
-) -> ExportQueue:
-    """The mock queue until the arq export job exists (#126). TODO(vishwas): switch to the real queue then."""
-    return FakeExportQueue(DbExportStore(services.sessions), files)
+def get_export_queue(services: ServicesDep) -> ExportQueue:
+    """The real export queue from the composition root: the worker's `krama:exports` queue, or in-process."""
+    if services.exports is None:
+        raise ApiException(503, "internal", "Video export isn't set up on this server.")
+    return services.exports
 
 
 @router.post(
