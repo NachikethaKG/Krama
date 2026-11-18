@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "review.schema.json",
+  "title": "Review",
+  "$comment": "v1.0. The owner's review queue (Phase 4, #115/#377; decisions D8, D11, D12 in docs/research/phase-4-decisions-alignment.md).",
+  "$defs": {
+    "ReviewCategory": {
+      "title": "ReviewCategory",
+      "description": "outdated: the workflow no longer works and nothing waits for review. heal_pending: an AI-chosen fix waits for the owner (D8). unstable: 2+ flaky validations in 7 days. cant_check: the last 3 validations were blocked (sign-in, CAPTCHA, site down, ...).",
+      "enum": ["outdated", "heal_pending", "unstable", "cant_check"]
+    },
+    "ReviewAction": {
+      "title": "ReviewAction",
+      "description": "accept / reject: POST /reviews/{id}/accept|reject (heal_pending only). regenerate: POST /workflows/{id}/regenerate. retry_ai_fix: POST /workflows/{id}/retry-ai-fix. retry_check: POST /workflows/{id}/reverify.",
+      "enum": ["accept", "reject", "regenerate", "retry_ai_fix", "retry_check"]
+    },
+    "ReviewItem": {
+      "title": "ReviewItem",
+      "type": "object",
+      "description": "One thing in the owner's review queue. Derived from the workflow, its versions and its validations; nothing is stored for the item itself.",
+      "required": ["id", "workflow_id", "workflow_title", "target_app", "category", "reason", "since", "actions"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Stable item id, `<category>:<uuid>`: the pending version's id for heal_pending, else the workflow's id."
+        },
+        "workflow_id": { "type": "string", "format": "uuid" },
+        "workflow_title": { "type": "string" },
+        "target_app": { "type": "string", "description": "gitea, github or custom." },
+        "category": { "$ref": "#/$defs/ReviewCategory" },
+        "reason": { "type": "string", "description": "Short, plain words for the owner, e.g. 'Step 3: the \"Create Repository\" button is gone'." },
+        "step_seq": { "type": ["integer", "null"], "minimum": 1, "description": "The step that failed, when one did." },
+        "since": { "type": "string", "format": "date-time", "description": "When this started: the version's creation, or the validation that put it here." },
+        "pending_revision": {
+          "type": ["integer", "null"],
+          "minimum": 1,
+          "description": "heal_pending: the number of the version waiting for review."
+        },
+        "current_revision": { "type": "integer", "minimum": 1, "description": "The workflow's current version." },
+        "step_diff": {
+          "description": "heal_pending: how the waiting version differs from the current one.",
+          "oneOf": [{ "$ref": "workflow.schema.json#/$defs/StepDiff" }, { "type": "null" }]
+        },
+        "actions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/ReviewAction" },
+          "description": "What the owner can do with this item now (e.g. retry_ai_fix only while the daily AI budget lasts)."
+        }
+      }
+    },
+    "ReviewItemList": {
+      "title": "ReviewItemList",
+      "type": "object",
+      "required": ["items"],
+      "additionalProperties": false,
+      "properties": {
+        "items": { "type": "array", "items": { "$ref": "#/$defs/ReviewItem" }, "description": "Newest first." }
+      }
+    },
+    "ReviewCount": {
+      "title": "ReviewCount",
+      "type": "object",
+      "required": ["count"],
+      "additionalProperties": false,
+      "properties": {
+        "count": { "type": "integer", "minimum": 0, "description": "Number of items in the queue (the nav badge)." }
+      }
+    },
+    "ReviewActionResult": {
+      "title": "ReviewActionResult",
+      "type": "object",
+      "description": "After accept / reject: the workflow as it is now.",
+      "required": ["workflow_id", "workflow_status", "revision", "message"],
+      "additionalProperties": false,
+      "properties": {
+        "workflow_id": { "type": "string", "format": "uuid" },
+        "workflow_status": { "$ref": "workflow.schema.json#/$defs/WorkflowStatus" },
+        "revision": { "type": "integer", "minimum": 1, "description": "The workflow's current version now." },
+        "message": { "type": "string" }
+      }
+    }
+  }
+}
