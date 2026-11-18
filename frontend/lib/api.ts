@@ -33,6 +33,7 @@ import { compileWorkflow, type TutorialSpec } from "@krama/tutorial-compiler";
 
 import { apiBaseUrl, artifactUrl, normalizeBaseUrl } from "./artifacts";
 import { parseStepDiffs } from "@/components/versions/version-utils";
+import { workflowFreshness } from "./freshness";
 import {
   blockedWorkflowFixture,
   demoUserFixture,
@@ -664,7 +665,7 @@ export class HttpApiClient implements ApiClient {
       description: undefined,
       taskPrompt: w.title,
       target: (w.target_app === "github" ? "github" : w.target_app === "custom" ? "custom" : "gitea") as TargetPlatform,
-      status: (w.status === "verified" ? "verified" : "outdated") as TutorialStatus,
+      status: workflowFreshness(w) as TutorialStatus,
       stepCount: w.step_count,
       durationMs: w.step_count * 18000,
       createdAt: w.created_at ?? new Date().toISOString(),

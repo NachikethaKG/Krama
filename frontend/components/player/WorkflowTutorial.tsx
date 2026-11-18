@@ -7,6 +7,7 @@ import type { Workflow } from "@krama/contracts-ts";
 import type { eventWithTime } from "@rrweb/types";
 import { errorMessage, getApiClient, isApiError } from "@/lib/api";
 import { apiBaseUrl, artifactUrl } from "@/lib/artifacts";
+import { workflowFreshness } from "@/lib/freshness";
 import type { TutorialFreshnessStatus } from "@/types/tutorial";
 import { TutorialPlayer } from "./TutorialPlayer";
 
@@ -98,6 +99,6 @@ export function WorkflowTutorial({ workflowId }: { workflowId: string }) {
 }
 
 /** The stored workflow's status as the player's badge (without it the badge always said "Verified"). */
-export function freshness(workflow: Pick<Workflow, "status">): TutorialFreshnessStatus {
-  return workflow.status === "outdated" ? "outdated" : "verified";
+export function freshness(workflow: Pick<Workflow, "status" | "current_version_source">): TutorialFreshnessStatus {
+  return workflowFreshness(workflow);
 }
