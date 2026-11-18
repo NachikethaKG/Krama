@@ -1,0 +1,96 @@
+{
+  "items": [
+    {
+      "id": "heal_pending:7a1c0de0-0000-4000-8000-000000000002",
+      "workflow_id": "6f1c2a4e-1111-4b8a-9a1b-123456789abc",
+      "workflow_title": "Create a repository in local Gitea",
+      "target_app": "gitea",
+      "category": "heal_pending",
+      "reason": "An AI-chosen fix for step 4 waits for your review.",
+      "step_seq": 4,
+      "since": "2026-11-18T09:30:00Z",
+      "pending_revision": 2,
+      "current_revision": 1,
+      "step_diff": {
+        "from_revision": 1,
+        "to_revision": 2,
+        "steps": [
+          {
+            "kind": "same",
+            "old_seq": 1,
+            "new_seq": 1,
+            "category": null,
+            "fields": []
+          },
+          {
+            "kind": "changed",
+            "old_seq": 4,
+            "new_seq": 4,
+            "category": "behaviour",
+            "fields": [
+              {
+                "field": "target.name",
+                "from": "Create Repository",
+                "to": "Make Repository"
+              }
+            ]
+          }
+        ]
+      },
+      "actions": [
+        "accept",
+        "reject",
+        "regenerate"
+      ]
+    },
+    {
+      "id": "outdated:2b8d0de0-0000-4000-8000-000000000003",
+      "workflow_id": "2b8d0de0-0000-4000-8000-000000000003",
+      "workflow_title": "Open an issue",
+      "target_app": "gitea",
+      "category": "outdated",
+      "reason": "Step 2: the page or element is gone (locator_miss).",
+      "step_seq": 2,
+      "since": "2026-11-18T09:00:00Z",
+      "pending_revision": null,
+      "current_revision": 1,
+      "step_diff": null,
+      "actions": [
+        "regenerate",
+        "retry_ai_fix"
+      ]
+    },
+    {
+      "id": "cant_check:3c9e0de0-0000-4000-8000-000000000004",
+      "workflow_id": "3c9e0de0-0000-4000-8000-000000000004",
+      "workflow_title": "Create a label",
+      "target_app": "github",
+      "category": "cant_check",
+      "reason": "The last 3 checks were blocked: sign-in required.",
+      "step_seq": null,
+      "since": "2026-11-17T12:00:00Z",
+      "pending_revision": null,
+      "current_revision": 1,
+      "step_diff": null,
+      "actions": [
+        "retry_check"
+      ]
+    },
+    {
+      "id": "unstable:4dae0de0-0000-4000-8000-000000000005",
+      "workflow_id": "4dae0de0-0000-4000-8000-000000000005",
+      "workflow_title": "Add a file",
+      "target_app": "gitea",
+      "category": "unstable",
+      "reason": "2 checks in the last 7 days failed once and passed on the re-run.",
+      "step_seq": 3,
+      "since": "2026-11-16T08:00:00Z",
+      "pending_revision": null,
+      "current_revision": 1,
+      "step_diff": null,
+      "actions": [
+        "retry_check"
+      ]
+    }
+  ]
+}
