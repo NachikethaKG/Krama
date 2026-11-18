@@ -88,6 +88,7 @@ def workflow_version_out(
         task_prompt,
         _steps_out(row.id, steps),
         revision=version.revision,
+        current_version_source=version.source,
         confidence=version.confidence,
         recording_path=version.recording_path,
         viewport=version.viewport,
@@ -125,6 +126,7 @@ def _workflow(row: WorkflowRow, task_prompt: str | None, steps: list[Step], **ve
         {
             "id": row.id,
             "revision": row.revision,  # the contract's `version` is the format version
+            "current_version_source": row.current_version.source if row.current_version else None,
             "task_id": row.task_id,
             "run_id": row.run_id,
             "title": row.title,
@@ -151,6 +153,7 @@ def workflow_summary(row: WorkflowRow) -> WorkflowSummary:
             "id": row.id,
             "title": row.title,
             "status": row.status,
+            "current_version_source": row.current_version.source if row.current_version else None,
             "target_app": row.target_app,
             "step_count": len(row.steps),
             "confidence": row.confidence,
