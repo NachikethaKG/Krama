@@ -2,6 +2,18 @@
 
 Every change to `contracts/` is listed here. Additive change = minor version bump; breaking change = major bump + ADR.
 
+## 1.12 (#377)
+
+The owner's review queue (Phase 4, #115; decisions D8, D11, D12 in `docs/research/phase-4-decisions-alignment.md`).
+The frontend called these routes, but they existed nowhere. Additive.
+
+- New `review.schema.json` v1.0: `ReviewItem` (`category`: `outdated|heal_pending|unstable|cant_check`, `reason`,
+  `step_seq`, `pending_revision`, `current_revision`, `step_diff`, `actions`), `ReviewItemList`, `ReviewCount`,
+  `ReviewActionResult`, `ReviewCategory`, `ReviewAction`.
+- New fixture `fixtures/reviews/review-queue.json`: one item per category, for the frontend's mock API.
+- `docs/api-contract.md`: `GET /reviews`, `GET /reviews/count`, `POST /reviews/{id}/accept|reject`,
+  `POST /workflows/{id}/retry-ai-fix`.
+
 ## 1.11 (#354)
 
 MP4 export (Phase 5, #124; decisions D6, D13–D20 in `docs/research/phase-5-decisions-alignment.md`). Additive.
