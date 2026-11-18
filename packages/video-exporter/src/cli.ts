@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import type { TutorialSpec } from "@krama/contracts-ts";
+import type { TutorialSpec, WordTiming } from "@krama/contracts-ts";
 import { compileWorkflow } from "@krama/tutorial-compiler";
 import type { NarrationManifestData, VideoPreset } from "./types.js";
 import { renderTutorialVideo } from "./renderer/render.js";
@@ -24,6 +24,39 @@ function parseArgs(): Record<string, string> {
   }
 
   return result;
+}
+
+/** Per step: scene length and caption word timings (relative to the scene start), from `--scenes`. */
+type SceneTimings = Record<string, { duration_ms: number; words?: WordTiming[] }>;
+
+const FPS = 30;
+const LEAD_IN_MS = 300; // the voice starts 300 ms into the scene (VideoScene plays the clip from there)
+const HOLD_MS = 400; // silence after the voice before the next scene (same as the player, #267)
+
+/**
+ * Decision D4 when the backend sent no `--scenes` (it normally does, from `plan_scenes` in the Narrator port):
+ * scene = max(recorded action, lead-in + clip + hold), rounded up to whole frames; words move by the lead-in.
+ */
+function scenesFromManifest(
+  workflow: { steps?: { seq: number; start_ms?: number | null; end_ms?: number | null }[] },
+  manifest: NarrationManifestData | undefined,
+): SceneTimings {
+  const scenes: SceneTimings = {};
+  for (const clip of manifest?.clips ?? []) {
+    const step = workflow.steps?.find((s) => s.seq === clip.step_seq);
+    const action = step?.start_ms != null && step?.end_ms != null ? step.end_ms - step.start_ms : 0;
+    const wantMs = Math.max(action, LEAD_IN_MS + clip.duration_ms + HOLD_MS, 1);
+    const frames = Math.ceil((wantMs * FPS) / 1000);
+    scenes[String(clip.step_seq)] = {
+      duration_ms: Math.round((frames * 1000) / FPS),
+      words: (clip.words ?? []).map((w) => ({
+        word: w.word,
+        start_ms: w.start_ms + LEAD_IN_MS,
+        end_ms: w.end_ms + LEAD_IN_MS,
+      })),
+    };
+  }
+  return scenes;
 }
 
 async function main() {
@@ -62,15 +95,19 @@ async function main() {
   } else {
     const workflowContent = await fs.readFile(path.resolve(workflowPath!), "utf-8");
     const workflow = JSON.parse(workflowContent);
+    const scenes = args.scenes
+      ? (JSON.parse(await fs.readFile(path.resolve(args.scenes), "utf-8")) as SceneTimings)
+      : scenesFromManifest(workflow, manifest);
     const stepDurations: Record<number, number> = {};
-    if (manifest?.clips) {
-      for (const clip of manifest.clips) {
-        stepDurations[clip.step_seq] = clip.duration_ms;
-      }
+    const wordTimings: Record<number, WordTiming[]> = {};
+    for (const [seq, scene] of Object.entries(scenes)) {
+      stepDurations[Number(seq)] = scene.duration_ms;
+      if (scene.words?.length) wordTimings[Number(seq)] = scene.words;
     }
     spec = compileWorkflow(workflow, {
       fps: 30,
       stepDurations: Object.keys(stepDurations).length > 0 ? stepDurations : undefined,
+      wordTimings: Object.keys(wordTimings).length > 0 ? wordTimings : undefined,
     });
   }
 

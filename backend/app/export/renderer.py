@@ -12,14 +12,14 @@ import os
 import shutil
 import tempfile
 from collections import deque
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol
 
 from app.contracts_gen.tutorial_spec_schema import TutorialSpec
 from app.contracts_gen.workflow_schema import Workflow
-from app.ports.narration import NarrationManifest
+from app.ports.narration import NarrationManifest, SceneTiming
 
 logger = logging.getLogger(__name__)
 
@@ -52,6 +52,8 @@ class VideoRenderer(Protocol):
         vtt_path: Path | None = None,
         metadata_path: Path | None = None,
         site: str = "git.local",
+        verified_date: str | None = None,
+        scenes: Sequence[SceneTiming] | None = None,
         on_progress: Callable[[int], Awaitable[None]] | None = None,
         timeout_s: float = 600.0,
     ) -> RenderResult: ...
@@ -86,6 +88,8 @@ class RemotionRenderer(VideoRenderer):
         vtt_path: Path | None = None,
         metadata_path: Path | None = None,
         site: str = "git.local",
+        verified_date: str | None = None,
+        scenes: Sequence[SceneTiming] | None = None,
         on_progress: Callable[[int], Awaitable[None]] | None = None,
         timeout_s: float = 600.0,
     ) -> RenderResult:
@@ -121,6 +125,24 @@ class RemotionRenderer(VideoRenderer):
                     str(self.concurrency),
                 ]
             )
+
+            if verified_date:
+                cmd.extend(["--date", verified_date])
+
+            if scenes:
+                # Scene lengths and caption word timings from `plan_scenes` (decision D4), per step_seq.
+                scenes_path = tmp / "scenes.json"
+                scenes_data = json.dumps(
+                    {
+                        str(sc.step_seq): {
+                            "duration_ms": sc.duration_ms,
+                            "words": [w.model_dump() for w in sc.words],
+                        }
+                        for sc in scenes
+                    }
+                )
+                await asyncio.to_thread(scenes_path.write_text, scenes_data, encoding="utf-8")
+                cmd.extend(["--scenes", str(scenes_path)])
 
             if manifest is not None:
                 manifest_path = tmp / "manifest.json"
