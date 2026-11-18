@@ -3,6 +3,7 @@ import { compileWorkflow, type TutorialSpec } from "@krama/tutorial-compiler";
 import type { Workflow } from "@krama/contracts-ts";
 import type { eventWithTime } from "@rrweb/types";
 import type { TutorialFreshnessStatus } from "@/types/tutorial";
+import { workflowFreshness } from "@/lib/freshness";
 import { TutorialPlayer } from "@/components/player";
 import { SAMPLE_RRWEB_EVENTS } from "@/components/replay/sampleSession";
 import { OutdatedSiteBanner, RevokedLinkNotice, SharedPageHeader } from "@/components/share";
@@ -28,6 +29,8 @@ async function loadSharedTutorial(token: string): Promise<{
   spec: TutorialSpec | null;
   recording: eventWithTime[] | null;
   status: number;
+  /** From the shared Workflow (real mode); undefined for mock fixtures. */
+  freshness?: TutorialFreshnessStatus;
 }> {
   // Explicitly invalid or revoked test tokens
   if (token === "revoked-token" || token === "invalid-token" || token === "404") {
@@ -102,7 +105,9 @@ async function loadSharedTutorial(token: string): Promise<{
       }
     }
 
-    return { spec, recording, status: 200 };
+    // A real share returns the Workflow: its status decides the badge and the "site changed" banner (D11, #382).
+    const freshness = "steps" in data ? workflowFreshness(data as Workflow) : undefined;
+    return { spec, recording, status: 200, freshness };
   } catch {
     return { spec: null, recording: null, status: 503 };
   }
@@ -110,7 +115,7 @@ async function loadSharedTutorial(token: string): Promise<{
 
 export default async function SharePage({ params }: SharePageProps) {
   const { token } = await params;
-  const { spec, recording, status } = await loadSharedTutorial(token);
+  const { spec, recording, status, freshness } = await loadSharedTutorial(token);
 
   if (!spec) {
     return (
@@ -124,6 +129,7 @@ export default async function SharePage({ params }: SharePageProps) {
   }
 
   const freshnessStatus: TutorialFreshnessStatus =
+    freshness ??
     (spec as unknown as { status?: TutorialFreshnessStatus }).status ??
     (token.includes("outdated") ? "outdated" : "verified");
 
