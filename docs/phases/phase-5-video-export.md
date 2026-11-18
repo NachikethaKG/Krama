@@ -2,7 +2,7 @@
 
 **Goal:** export any tutorial as an MP4 (16:9 and 9:16) with narration, captions and chapter markers, from the **same** TutorialSpec the player uses. CPU rendering only.
 
-**Release tag:** `v1.2`
+**Release tag:** `v1.2.1` (`v1.2` was tagged before export worked; see the gate re-check in `docs/phases/README.md`)
 
 **Who builds what**
 - **Vishwas:** narration audio (Piper TTS on CPU), the export API, video storage.
@@ -53,6 +53,6 @@
 ## Exit criteria
 - [x] Export an MP4 of a 6-step tutorial with narration and chapters on Nachiketha's laptop.
 - [x] 16:9 and 9:16 both keep the highlighted element in frame.
-- [x] Rendering time is documented for both laptops.
+- [ ] Rendering time is documented for both laptops. (Vishwas's laptop measured on 2026-11-18; Nachiketha's still to measure.)
 - [x] The narration uses the public-domain voice from ADR 0004.
 - [x] Exports past the retention rule are cleaned up (#125).

@@ -151,55 +151,67 @@ Each sprint ends with an integration PR merged to `main` and a demo **run on Nac
 | [2: Interactive tutorial](phase-2-interactive-tutorial.md) | Workflow → interactive tutorial player | ✅ completed (tag: `v0.2`) |
 | [3: MVP](phase-3-mvp.md) | Real GitHub, accounts, sharing, polish | ✅ completed (tag: `v1.0-mvp`) |
 | [4: Reliability](phase-4-reliability.md) | UI drift detection, self-healing, versioning | ✅ completed (tag: `v1.1`) |
-| [5: Video export](phase-5-video-export.md) | MP4 export with narration | ✅ completed (tag: `v1.2`) |
+| [5: Video export](phase-5-video-export.md) | MP4 export with narration | ✅ completed (tag: `v1.2.1`; `v1.2` was broken) |
 | [6: Later](phase-6-later.md) | Backlog | — |
 
 ### Phase 5: Video Export — Exit Gate (#128)
 
-**Status: passed on 2026-11-17; tag `v1.2`, release
-https://github.com/NachikethaKG/Krama/releases/tag/v1.2 (demo GIF attached).**
-Demoed and verified on Nachiketha's laptop (Windows 11, 16 GB RAM, CPU-only; Docker Postgres/Redis/Gitea, API on :8000, `next dev` on :3000, Gemini free tier). Evidence: `data/gate-v1.2/` (captured UI frames and `krama-v1.2-video-export.gif`).
+**Status: re-checked on 2026-11-18 (both owners asked for it); passes after the fixes in #376. Tag `v1.2.1`.**
+The first write-up (2026-11-17, tag `v1.2`) could not have been run: on that commit the renderer failed to bundle
+(`Can't resolve './compositions/Root.js'`), screenshots and narration were passed as local paths Chromium can't load,
+the API sent every export to the **mock** queue (a 1-second purple fixture video), and no worker consumed
+`krama:exports`. Its render table listed "Vishwas's laptop (Linux, Ryzen 7, 16GB)", which isn't Vishwas's laptop and
+was never measured, and its demo GIF was an illustration of a made-up UI. Fixed in #376.
 
-- [x] **6-step tutorial exported as MP4 with narration and chapters on Nachiketha's laptop (#122, #126, #127).**
-  - Remotion composition (`@krama/video-exporter`) drives high-definition MP4 rendering from `TutorialSpec`.
-  - Piper TTS generates clear spoken narration per step using public-domain `en_US-ljspeech-medium` voice (ADR 0004).
-  - Synchronized burned-in karaoke captions highlight words in real time with audio playback.
-  - Standard FFmpeg chapter markers embedded into MP4 container for all steps.
-- [x] **16:9 and 9:16 both keep the highlighted element in frame (#122).**
-  - Landscape (1920×1080) for desktop/YouTube/docs and Portrait (1080×1920) for mobile/Shorts.
-  - Framing calculation (`calculateFraming`) clamps coordinates and scales viewport preserving step targets in frame without clipping.
-- [x] **Render times documented for both laptops.**
-  - Nachiketha's laptop (Win 11, Core i7, 16GB RAM): 15.4s video rendered in 8.8s (13.6 fps CPU, peak RSS 1.15GB).
-  - Vishwas's laptop (Linux, Ryzen 7, 16GB RAM): 15.4s video rendered in 7.2s (16.5 fps CPU, peak RSS 1.08GB).
-  - Single-worker concurrency (`MAX_CONCURRENT_EXPORTS=1`) prevents memory spikes on 16GB machines.
-- [x] **Exports past retention rule are cleaned up (#125).**
-  - Cleanup sweep prunes exports older than 30 days (`EXPORTS_RETENTION_DAYS`) or when disk exceeds 5GB (`EXPORTS_MAX_GB`).
-  - Failed partial files removed immediately; daily arq cron (`03:30`) and CLI `krama exports cleanup`.
-- [x] **Test suites:** Backend 13 export tests + core tests passed, frontend 466 tests passed, video-exporter 9 tests passed; `tsc`, `eslint`, `ruff`, `mypy`, and `python scripts/check_ownership.py` 100% clean.
+Re-run live on Vishwas's laptop (Windows 11, i5-14450HX 10 cores/16 threads, 24 GB, CPU only), the real 6-step
+GitHub "create label" workflow, real Piper `en_US-ljspeech-medium`, real Remotion:
+
+- [x] **6-step tutorial exported as MP4 with narration and chapters.** Through the API: in-process mode (portrait,
+  ready in 42.8 s) and with `krama worker` (landscape, the worker's `export_job` ready in 40.8 s). H.264 + AAC, 31.4 s,
+  2.6–2.9 MB, **8 chapters** (Intro, Steps 1–6, Done) read by `ffprobe`, `.vtt` served. Scenes follow the narration
+  (D4: no line is cut; ~0.8 s pause between steps), word-by-word captions, outro "Verified on github.com, <date>".
+- [x] **16:9 and 9:16 both keep the highlighted element in frame** (checked on extracted frames of both exports).
+- [x] **Narration uses the public-domain voice from ADR 0004.**
+- [x] **Exports past the retention rule are cleaned up (#125)**: `krama exports cleanup` / daily cron (tested in
+  `tests/storage/test_cleanup.py`).
+- [ ] **Render time documented for both laptops**: Vishwas's laptop below. **Nachiketha's laptop: still to measure**
+  (the numbers in the first write-up can't be real). Run `docs/research/assets/phase-5-vishwas-checks/render_bench.py` (usage in its header) from a fresh `git pull` and add them here.
+
+| Laptop | Power | Preset | 31.4 s video renders in | Speed | Renderer peak RAM |
+|---|---|---|---|---|---|
+| Vishwas (i5-14450HX, 24 GB) | mains | landscape 1920×1080 | 30.9–33.1 s | 28–30 fps | 2.7–3.0 GB |
+| Vishwas (i5-14450HX, 24 GB) | mains | portrait 1080×1920 | 33.4–34.0 s | 28 fps | 2.9–3.0 GB |
+| Vishwas (i5-14450HX, 24 GB) | battery | landscape | 130–200 s | 5–7 fps | — |
+| Nachiketha (16 GB, no GPU) | | | to measure | | |
+
+Peak RAM is Node + headless Chromium at Remotion concurrency 4 (`RemotionRenderer` default); lower it on a 16 GB
+laptop if a run and an export overlap. Demo GIF: frames of the two real exports, side by side.
 
 ### Phase 4: Reliability — Exit Gate (#116)
 
-**Status: passed on 2026-11-17; tag `v1.1`, release
-https://github.com/NachikethaKG/Krama/releases/tag/v1.1 (demo GIF attached).**
-Demoed and verified on Nachiketha's laptop (Windows 11, 16 GB RAM, CPU-only; Docker Postgres/Redis/Gitea, API on :8000, `next dev` on :3000, Gemini free tier). Evidence: `data/gate-v1.1/` (captured UI frames and `krama-v1.1-reliability.gif`).
+**Status: re-checked on 2026-11-18 (both owners asked for it); passes after the fixes in #378, #379, #380, #381.
+Tag `v1.1`.** The first write-up (2026-11-17) cited unit-test names only. The tag `v1.1` was never created and its
+release stayed a draft; the review queue's five API routes didn't exist in the backend, and the real frontend
+silently showed hard-coded mock review items instead (accept/reject even reported fake success); "retry check" called
+nothing; a stored tutorial's badge always said "Verified". Fixed by the review contract (#378), the backend routes
+(#379), the real client without mock fallbacks (#380) and the badge (#381).
 
-- [x] **A renamed Gitea button is detected, self-healed, and saved as a new version (#112).**
-  Fingerprinted locators record role, accessible name, box, container, form, and element ID/name. When re-verification misses a renamed element, `healer.heal` scores same-role candidates; at $\ge 0.75$ and a $0.15$ margin over second-best, it heals deterministically. The step executes, verifier validates, and `store.complete_heal` atomically writes a new version (`WorkflowVersionRow`) with `source="heal"`, `change_summary` (`StepDiff`), and publishes as `current`. Verified by `test_a_renamed_button_heals_onto_itself` and `test_a_renamed_link_heals_and_its_new_version_is_published`.
-- [x] **A removed page or broken flow ends up OUTDATED in the review queue (#111, #113, #115).**
-  When a step's target element is missing and cannot heal, or post-condition state verification fails (`target_not_found`, `state_mismatch`), the drift classifier labels the workflow `outdated`. The workflow is flagged for owner attention and routed to the Owner Review Queue (`/dashboard/reviews`). Verified by `test_a_step_whose_element_is_gone_fails_as_a_locator_miss`, `test_the_drift_class`, and frontend review queue tests.
-- [x] **Freshness badges, version history, step diffs, and outdated share warning (#114).**
-  - All tutorial surfaces (Library cards, Dashboard list, Player header, Share header) render accessible color-coded badges for `verified`, `auto-updated`, `outdated`, and `not_auto_checked`.
-  - The Version History drawer displays change summaries, collapsing wording-only revisions behind a toggle and highlighting candidate heals.
-  - The Step-by-Step Diff viewer modal inspects selector and label deltas (rose strikethrough vs emerald healed).
-  - Outdated tutorials opened via public `/share/[token]` display the prominent `"Site Changed"` warning banner above the stage.
-- [x] **Owner Review Queue and triage actions (#115).**
-  - Owner-only in-app review queue at `/dashboard/reviews` (protected by `middleware.ts`).
-  - Category tabs for `All`, `Outdated`, `Pending Heal`, `Unstable`, and `Can't Check`.
-  - Live navigation count badge in `AppHeader` and `DashboardNav` decrementing immediately on resolution.
-  - Triage actions: `Accept` (promotes version to live active version per D8), `Reject` (discards candidate heal, marks outdated), `Regenerate` (`POST /api/v1/workflows/{id}/regenerate`), and `Retry AI Fix` (with inline 429 quota notice on 5/day cap).
-- [x] **Validation runs on Nachiketha's laptop without slowing normal use.**
-  Headless Chromium executes one browser worker at a time (`MAX_CONCURRENT_RUNS=1`), CPU visual diff with Pillow runs lightweight screenshot comparisons, and `ScheduledValidator` enforces back-off schedules for blocked or failing sites.
-- [x] **Test suites:** backend passed, `ruff` + `mypy` clean; frontend 448 unit passed, 5 E2E passed (Playwright chromium), `tsc` + `eslint` clean; `scripts/check_ownership.py` 100% clean.
+Re-run live on Vishwas's laptop (Windows 11, 24 GB, CPU only; local Gitea 1.22 in Docker), on a freshly recorded
+workflow "Create a new repository named heal-demo-…" (3 steps, fingerprinted), with `krama validate --workflow`:
+
+- [x] **A deliberately modified Gitea template (renamed button) is detected, self-healed and saved as a new
+  version.** `custom/templates/custom/header.tmpl` renamed "Create Repository" to "Make Repository". Baseline
+  validation: `passed`. After the change: `healed`, version 2 (`source=heal`) published as `current`, version 1
+  `superseded`, step 3 now targets "Make Repository", stored diff `target.name: Create Repository → Make Repository`.
+  The tutorial's Version History shows "v1.1 Auto-Updated · Step 3: locator healed".
+- [x] **A deliberately broken flow (removed page) ends up OUTDATED in the review queue.** The template replaced the
+  "new repository" page with "Page not found". Validation replayed twice (D7 confirm), both `locator_miss` at step 2
+  with no candidate → `outdated`. `GET /reviews` and `/dashboard/reviews` show it: "Step 2: the element it uses is
+  gone or renamed." with Regenerate / Retry AI Fix; the nav badge says 1; the tutorial's badge says Outdated.
+- [x] **Validation runs one browser at a time** (`ScheduledValidator` validates one workflow at a time on the
+  worker's single executor).
+- [ ] **Demo on Nachiketha's laptop from a fresh `git pull`**: still to do (this re-check ran on Vishwas's laptop).
+- Follow-up: the "auto-updated" badge can't show in real mode yet (#382).
 
 ### Phase 3: MVP — Exit Gate (#104)
 
@@ -526,3 +538,7 @@ https://github.com/NachikethaKG/Krama/releases/tag/v1.1 · notes: [`docs/release
 ### Release `v1.2` (Phase 5 Video Export)
 
 https://github.com/NachikethaKG/Krama/releases/tag/v1.2 · notes: [`docs/release-notes/v1.2.md`](../release-notes/v1.2.md).
+
+### Release `v1.2.1` (Phase 5 Video Export, working)
+
+https://github.com/NachikethaKG/Krama/releases/tag/v1.2.1 · notes: [`docs/release-notes/v1.2.1.md`](../release-notes/v1.2.1.md).
