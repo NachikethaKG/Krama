@@ -1,4 +1,5 @@
 import fs from "node:fs/promises";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { bundle } from "@remotion/bundler";
@@ -6,6 +7,7 @@ import { renderMedia, selectComposition } from "@remotion/renderer";
 import type { RenderVideoOptions, RenderVideoResult, VideoExportProps } from "../types.js";
 import { buildTutorialChapters, formatFFMetadata } from "../metadata/chapters.js";
 import { generateWebVTT } from "../metadata/webvtt.js";
+import { addMp4Chapters } from "../metadata/mp4-chapters.js";
 import { calculateTotalFrames } from "../compositions/TutorialComposition.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -60,11 +62,23 @@ export async function renderTutorialVideo(options: RenderVideoOptions): Promise<
   // 3. Ensure destination directory exists
   await fs.mkdir(path.dirname(outputPath), { recursive: true });
 
-  // 4. Bundle Remotion entry
+  // 4. Bundle Remotion entry. Chromium can't load local paths (C:\..., file://), so local screenshots and
+  // narration clips are copied into the bundle's public folder and referenced by name (staticFile).
+  const publicDir = await fs.mkdtemp(path.join(os.tmpdir(), "krama-remotion-public-"));
+  const servedScreenshots = await copyIntoPublic(screenshots, publicDir, "shot");
+  const servedAudio = await copyIntoPublic(audioUrls, publicDir, "audio");
   const entryFile = path.resolve(__dirname, "../entry.ts");
   const bundleLocation = await bundle({
     entryPoint: entryFile,
-    webpackOverride: (config) => config,
+    publicDir,
+    // The sources use TypeScript's ESM import style (`./Root.js` for `Root.tsx`); webpack needs the mapping.
+    webpackOverride: (config) => ({
+      ...config,
+      resolve: {
+        ...config.resolve,
+        extensionAlias: { ".js": [".tsx", ".ts", ".js"] },
+      },
+    }),
   });
 
   const compositionId = preset === "portrait" ? "TutorialPortrait" : "TutorialLandscape";
@@ -73,8 +87,8 @@ export async function renderTutorialVideo(options: RenderVideoOptions): Promise<
     spec,
     preset,
     manifest,
-    audioUrls,
-    screenshots,
+    audioUrls: servedAudio,
+    screenshots: servedScreenshots,
     site,
     verifiedDate,
     fps,
@@ -106,6 +120,13 @@ export async function renderTutorialVideo(options: RenderVideoOptions): Promise<
     },
   });
 
+  await fs.rm(publicDir, { recursive: true, force: true });
+
+  // 7. Chapter markers inside the MP4 (D12). Remotion doesn't write chapters, and its bundled ffmpeg can't read
+  // FFMETADATA, so they go in as a Nero chapter box (the metadata file above stays for other tools).
+  const rendered = await fs.readFile(outputPath);
+  await fs.writeFile(outputPath, addMp4Chapters(rendered, chapters));
+
   return {
     outputPath,
     durationMs,
@@ -114,4 +135,26 @@ export async function renderTutorialVideo(options: RenderVideoOptions): Promise<
     vttPath,
     metadataPath,
   };
+}
+
+/**
+ * Copies local files into the bundle's public folder and returns their names there (for `staticFile`).
+ * URLs (http, https, data) are passed through unchanged.
+ */
+async function copyIntoPublic(
+  files: Record<number, string>,
+  publicDir: string,
+  prefix: string,
+): Promise<Record<number, string>> {
+  const served: Record<number, string> = {};
+  for (const [seq, source] of Object.entries(files)) {
+    if (/^(https?:|data:)/.test(source)) {
+      served[Number(seq)] = source;
+      continue;
+    }
+    const name = `${prefix}-${seq}${path.extname(source)}`;
+    await fs.copyFile(source, path.join(publicDir, name));
+    served[Number(seq)] = name;
+  }
+  return served;
 }
