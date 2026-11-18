@@ -25,8 +25,10 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from app.api.services import build_run_environment
 from app.config import Settings
 from app.db import create_engine, create_sessionmaker
+from app.export import EXPORT_JOB, EXPORT_QUEUE, ArqExportQueue, export_job
 from app.runs import InProcessExecutor, RunEnvironment, RunStore
 from app.runs.events import EVENTS
+from app.runs.exports import recover_exports
 from app.runs.queue import CONTROL, JOB, job_id, redis_settings
 from app.runs.states import RunStatus
 from app.runs.validation_backend import RunValidationBackend
@@ -193,9 +195,64 @@ def worker_settings(
     }
 
 
+def export_worker_settings(
+    settings: Settings, *, sessions: async_sessionmaker[AsyncSession] | None = None
+) -> dict[str, Any]:
+    """Keyword arguments for the second `Worker`: video exports on their own queue (D14), one at a time, no
+    retry. A render that outlives EXPORT_TIMEOUT_SECONDS fails as `timeout` (run_export), before arq's own
+    timeout. At start, exports a stopped worker left `rendering` fail as interrupted; `queued` ones go
+    again."""
+    state: dict[str, Any] = {}
+
+    async def startup(ctx: Ctx) -> None:
+        own_sessions = sessions
+        if own_sessions is None:
+            state["engine"] = create_engine(settings.database_url)
+            own_sessions = create_sessionmaker(state["engine"])
+        ctx.update(
+            sessions=own_sessions,
+            files=LocalFsStore(settings.artifacts_dir),
+            export_timeout_s=settings.export_timeout_seconds,
+        )
+        queue = ArqExportQueue(settings.redis_url)
+        try:
+            for export_id in await recover_exports(own_sessions):
+                await queue.enqueue(export_id)  # same job id: no-op if its job is still waiting
+        finally:
+            await queue.shutdown()
+        logger.info("export worker ready: 1 export at a time")
+
+    async def shutdown(ctx: Ctx) -> None:
+        if state.get("engine") is not None:
+            await state["engine"].dispose()
+
+    return {
+        "functions": [
+            func(export_job, name=EXPORT_JOB, timeout=settings.export_timeout_seconds + 120, max_tries=1)
+        ],
+        "queue_name": EXPORT_QUEUE,
+        "redis_settings": redis_settings(settings.redis_url),
+        "on_startup": startup,
+        "on_shutdown": shutdown,
+        "max_jobs": 1,
+        "keep_result": 60,
+        "poll_delay": 0.5,
+        "handle_signals": True,
+    }
+
+
 def run_worker(settings: Settings) -> None:
-    """The `krama worker` command. Ctrl+C stops it; running runs then end as interrupted on the next start."""
+    """The `krama worker` command: runs (and the crons) on the run queue, exports on `krama:exports`, both in
+    this process. Ctrl+C stops it; running runs and exports then end as interrupted on the next start."""
     # arq's job log (one line per job), as its own CLI sets it up
     logging.config.dictConfig(default_log_config(verbose=False))
-    worker = Worker(**worker_settings(settings))
-    worker.run()
+
+    async def both() -> None:
+        workers = [Worker(**worker_settings(settings)), Worker(**export_worker_settings(settings))]
+        try:
+            await asyncio.gather(*(w.async_run() for w in workers))
+        finally:
+            await asyncio.gather(*(w.close() for w in workers), return_exceptions=True)
+
+    with contextlib.suppress(KeyboardInterrupt):
+        asyncio.run(both())

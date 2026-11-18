@@ -72,6 +72,9 @@ class Settings(BaseSettings):
     # onnxruntime threads in the worker. The default (one per core) stalls while Chromium or Remotion run.
     tts_threads: int = Field(default=2, ge=1, le=16)
 
+    # One export at most this long (narration + render), then it fails as `timeout` (#126, D14).
+    export_timeout_seconds: float = Field(default=1800.0, gt=0)
+
     # Export cleanup (#125, D18): a daily cron in `just backend worker`, or `krama exports cleanup`.
     # Exports and unused narration clips older than this go; the newest export per version and preset stays.
     exports_retention_days: int = Field(default=30, ge=1)

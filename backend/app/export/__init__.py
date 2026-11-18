@@ -1,13 +1,14 @@
 """Export package (#126): arq job and Remotion renderer integration."""
 
-from .job import export_job, render_export
-from .queue import EXPORT_JOB, EXPORT_QUEUE, ArqExportQueue, export_job_id
+from .job import export_job, render_export, run_export
+from .queue import EXPORT_JOB, EXPORT_QUEUE, ArqExportQueue, InProcessExportQueue, export_job_id
 from .renderer import RemotionRenderer, RenderError, RenderResult, VideoRenderer
 
 __all__ = [
     "EXPORT_JOB",
     "EXPORT_QUEUE",
     "ArqExportQueue",
+    "InProcessExportQueue",
     "RemotionRenderer",
     "RenderError",
     "RenderResult",
@@ -15,4 +16,5 @@ __all__ = [
     "export_job",
     "export_job_id",
     "render_export",
+    "run_export",
 ]
