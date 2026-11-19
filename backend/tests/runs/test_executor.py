@@ -58,12 +58,15 @@ async def queued_run(
     steps: list[dict[str, Any]],
     status: str = "queued",
     prompt: str = "Create the item demo-item",
+    title: str | None = None,
 ) -> UUID:
     async with sessions.begin() as s:
         task = TaskRow(prompt=prompt, target_url=site, status="planned")
         s.add(task)
         await s.flush()
-        plan = PlanRow(task_id=task.id, status="approved", risk="low", expected_result="done", steps=steps)
+        plan = PlanRow(
+            task_id=task.id, status="approved", risk="low", expected_result="done", steps=steps, title=title
+        )
         s.add(plan)
         await s.flush()
         run = RunRow(plan_id=plan.id, plan_revision=1, status=status)
@@ -577,3 +580,19 @@ async def test_each_targeted_step_keeps_a_screenshot_from_before_its_action(
             assert row.screenshot_path != focus
         else:
             assert focus is None
+
+
+@pytest.mark.parametrize(
+    ("title", "expected"), [("Create an item", "Create an item"), (None, "Create the item demo-item")]
+)
+async def test_the_workflow_is_named_by_the_plans_title(
+    sessions: Sessions, site: str, tmp_path: Path, title: str | None, expected: str
+) -> None:
+    """#390: the planner's general title, not the raw request with our names; older plans keep the request."""
+    run_id = await queued_run(sessions, site, PLAN, title=title)
+
+    await run_to_end(InProcessExecutor(RunStore(sessions), environment(tmp_path)), run_id)
+
+    async with sessions() as s:
+        workflow = await s.scalar(select(WorkflowRow).where(WorkflowRow.run_id == run_id))
+    assert workflow is not None and workflow.title == expected

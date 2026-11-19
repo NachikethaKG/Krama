@@ -39,6 +39,8 @@ class RunJob:
     target_url: str
     status: RunStatus
     steps: list[PlannedStep]
+    title: str | None = None
+    """The plan's general name for the tutorial (#390). None (older plans): the workflow takes `prompt`."""
     plan_revision: int = 1
     """The approved revision. Above 1, a human edited the plan, so their step texts are kept as written."""
     kind: str = "task"
@@ -90,6 +92,7 @@ class RunStore:
                 target_url=task.target_url,
                 status=RunStatus(run.status),
                 steps=[PlannedStep.model_validate(step) for step in plan.steps],
+                title=plan.title,
                 plan_revision=run.plan_revision,
                 kind=run.kind,
                 source_workflow_id=run.source_workflow_id,
@@ -201,7 +204,7 @@ class RunStore:
                         task_id=job.task_id,
                         run_id=job.run_id,
                         user_id=task.user_id if task else None,
-                        title=job.prompt,
+                        title=job.title or job.prompt,
                         target_app=_app_of(job.target_url),
                         target_url=job.target_url,
                         status="verified",
@@ -356,6 +359,7 @@ class RunStore:
                 status="proposed",
                 risk=risk,
                 expected_result=expected_result,
+                title=job.title,
                 steps=[step.model_dump(mode="json", exclude_none=True) for step in steps],
             )
             s.add(plan)
