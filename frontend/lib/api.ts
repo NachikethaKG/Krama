@@ -27,6 +27,8 @@ import type {
   Workflow,
   WorkflowPage,
   WorkflowStatus,
+  WorkflowInput,
+  WorkflowInputList,
   WorkflowVersionList,
 } from "@krama/contracts-ts";
 import { compileWorkflow, type TutorialSpec } from "@krama/tutorial-compiler";
@@ -47,6 +49,7 @@ import {
   giteaTutorialSpecFixture,
   giteaVersionsFixture,
   giteaWorkflowFixture,
+  giteaWorkflowInputsFixture,
   mockAllFreshnessTutorialSummaries,
   mockMetricsSummary,
   mockReviewQueueItems,
@@ -176,6 +179,8 @@ export class ApiRequestError extends Error {
   readonly status: number;
   readonly code?: ApiError["code"];
   readonly details?: Record<string, unknown>;
+  /** The server's own `error.message`, without the request path (for showing next to a form field). */
+  readonly apiMessage?: string;
 
   constructor(message: string, status: number, error?: Partial<ApiError>) {
     super(message);
@@ -183,6 +188,7 @@ export class ApiRequestError extends Error {
     this.status = status;
     this.code = error?.code;
     this.details = error?.details as Record<string, unknown> | undefined;
+    this.apiMessage = error?.message;
   }
 }
 
@@ -272,6 +278,16 @@ export interface ApiClient {
   retryAiFix(workflowId: string): Promise<{ success: boolean; status?: string }>;
   /** POST /api/v1/workflows/{workflowId}/reverify with X-Krama: 1: check the workflow again now. */
   reverifyWorkflow(workflowId: string): Promise<Run>;
+  /**
+   * GET /workflows/{id}/inputs: the values the owner chooses before "Do it for me" runs the workflow (#129).
+   * 409 `conflict` with `details.reason` `not_verified`, `pending_review` or `secret_not_stored`.
+   */
+  getWorkflowInputs(workflowId: string): Promise<WorkflowInputList>;
+  /**
+   * POST /workflows/{id}/run → 202 Run (`kind: "do_it"`). 409 as above plus `stale_revision`; 422
+   * `validation_error` with `details.reason = "input_unsafe"` and `details.key` for a bad value.
+   */
+  runWorkflow(workflowId: string, revision: number, inputs: Record<string, string>): Promise<Run>;
   /** POST /workflows/{workflowId}/exports with preset ("landscape" | "portrait"). */
   createExport(workflowId: string, preset: ExportPreset): Promise<Export>;
   /** GET /exports/{exportId}. */
@@ -849,6 +865,17 @@ export class HttpApiClient implements ApiClient {
     });
   }
 
+  getWorkflowInputs(workflowId: string): Promise<WorkflowInputList> {
+    return this.request<WorkflowInputList>(`/workflows/${encodeURIComponent(workflowId)}/inputs`);
+  }
+
+  runWorkflow(workflowId: string, revision: number, inputs: Record<string, string>): Promise<Run> {
+    return this.request<Run>(
+      `/workflows/${encodeURIComponent(workflowId)}/run`,
+      this.json("POST", { revision, inputs }),
+    );
+  }
+
   async createExport(workflowId: string, preset: ExportPreset): Promise<Export> {
     const path = this.baseUrl.endsWith("/api/v1")
       ? `/workflows/${encodeURIComponent(workflowId)}/exports`
@@ -1040,8 +1067,48 @@ function nowTs(): string {
   return new Date().toISOString();
 }
 
-function mockError(status: number, code: ApiError["code"], message: string): ApiRequestError {
-  return new ApiRequestError(`Request failed with status ${status}: ${message}`, status, { code, message });
+function mockError(
+  status: number,
+  code: ApiError["code"],
+  message: string,
+  details?: Record<string, unknown>,
+): ApiRequestError {
+  return new ApiRequestError(`Request failed with status ${status}: ${message}`, status, { code, message, details });
+}
+
+/** Why a "Do it for me" value can't be used (the server's input_unsafe rules), or null when it can. */
+export function inputProblem(input: WorkflowInput, value: string | undefined): string | null {
+  if (value === undefined || value === "") return `${input.label} is missing`;
+  if (value !== value.trim() || /[\r\n]/.test(value)) {
+    return `${input.label} must be one line without leading or trailing spaces`;
+  }
+  if (value.length < input.min_length) return `${input.label} needs at least ${input.min_length} characters`;
+  if (input.pattern && !new RegExp(input.pattern).test(value)) {
+    return `${input.label} may only use the same kind of characters as the example`;
+  }
+  return null;
+}
+
+/** Mock-mode inputs for a fixture workflow: its non-sensitive single-line fills. */
+function mockInputs(workflow: Workflow): WorkflowInput[] {
+  const seen = new Set<string>();
+  const inputs: WorkflowInput[] = [];
+  for (const step of workflow.steps) {
+    const value = step.action.value;
+    if (step.action.type !== "fill" || step.sensitive || !value || /\n/.test(value) || seen.has(value)) continue;
+    seen.add(value);
+    const label = (step.target.name ?? "").replace(/\s*\*$/, "").trim() || `Value for step ${step.seq}`;
+    inputs.push({
+      key: label.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "") || `step_${step.seq}_value`,
+      label: label[0].toUpperCase() + label.slice(1).toLowerCase(),
+      example: value,
+      kind: "text",
+      pattern: /\s/.test(value) ? null : "^[A-Za-z0-9._-]+$",
+      min_length: Math.min(3, value.length),
+      steps: [step.seq],
+    });
+  }
+  return inputs;
 }
 
 export class MockApiClient implements ApiClient {
@@ -1611,6 +1678,39 @@ export class MockApiClient implements ApiClient {
       throw mockError(429, "rate_limited", "Daily AI fix quota reached (5/day). Please regenerate the workflow or retry tomorrow.");
     }
     return { success: true, status: "checking" };
+  }
+
+  async getWorkflowInputs(workflowId: string): Promise<WorkflowInputList> {
+    const workflow = this.workflows[workflowId];
+    if (!workflow) throw mockError(404, "not_found", "Workflow not found");
+    if (workflow.status !== "verified") {
+      throw mockError(409, "conflict", "Only a verified workflow can run for you", { reason: "not_verified" });
+    }
+    if (workflowId === giteaWorkflowInputsFixture.workflow_id) return structuredClone(giteaWorkflowInputsFixture);
+    return { workflow_id: workflowId, revision: workflow.revision ?? 1, inputs: mockInputs(workflow), account: "demo" };
+  }
+
+  async runWorkflow(workflowId: string, revision: number, inputs: Record<string, string>): Promise<Run> {
+    const list = await this.getWorkflowInputs(workflowId);
+    if (revision !== list.revision) {
+      throw mockError(409, "conflict", "A newer version of this workflow exists", { reason: "stale_revision" });
+    }
+    for (const input of list.inputs) {
+      const problem = inputProblem(input, inputs[input.key]);
+      if (problem) {
+        throw mockError(422, "validation_error", problem, { reason: "input_unsafe", key: input.key });
+      }
+    }
+    return {
+      id: `run-do-it-${workflowId}`,
+      plan_id: `plan-do-it-${workflowId}`,
+      plan_revision: 1,
+      kind: "do_it",
+      source_workflow_id: workflowId,
+      status: "queued",
+      retry_count: 0,
+      created_at: nowTs(),
+    };
   }
 
   async reverifyWorkflow(workflowId: string): Promise<Run> {

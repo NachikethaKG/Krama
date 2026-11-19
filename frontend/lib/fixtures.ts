@@ -7,6 +7,7 @@ import type {
   User,
   Workflow,
   WorkflowVersionList,
+  WorkflowInputList,
 } from "@krama/contracts-ts";
 import type { TutorialSpec } from "@krama/tutorial-compiler";
 import type { TutorialSummary } from "@/types/tutorial";
@@ -15,6 +16,7 @@ import giteaTutorialSpecJson from "../../contracts/fixtures/tutorial-spec/gitea-
 import giteaWorkflowJson from "../../contracts/fixtures/gitea-create-repo-workflow.json";
 import validWorkflowJson from "../../contracts/fixtures/valid_workflow.json";
 import giteaVersionsJson from "../../contracts/fixtures/workflow-versions/gitea-create-repo-versions.json";
+import giteaInputsJson from "../../contracts/fixtures/workflow-inputs/gitea-create-repo-inputs.json";
 
 export const demoUserFixture: User = {
   id: "e1b2c3d4-0000-4000-8000-000000000001",
@@ -24,6 +26,8 @@ export const demoUserFixture: User = {
 };
 
 export const giteaWorkflowFixture = giteaWorkflowJson as unknown as Workflow;
+/** GET /workflows/{id}/inputs for the Gitea create-repository workflow ("Do it for me", #402). */
+export const giteaWorkflowInputsFixture = giteaInputsJson as unknown as WorkflowInputList;
 export const validWorkflowFixture = validWorkflowJson as unknown as Workflow;
 export const giteaTutorialSpecFixture = giteaTutorialSpecJson as unknown as TutorialSpec;
 export const giteaVersionsFixture = giteaVersionsJson as unknown as WorkflowVersionList;
