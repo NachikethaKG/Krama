@@ -565,6 +565,10 @@ export interface Plan {
   risk: Risk;
   expected_result: string;
   /**
+   * A short, general name for the tutorial, written by the planner: no account, organization, repository or other names from the request ("Create a private repository in an organization"). The workflow takes its title from it; null for older plans, which use the request.
+   */
+  title?: string | null;
+  /**
    * @minItems 1
    */
   steps: [PlannedStep, ...PlannedStep[]];
