@@ -113,6 +113,8 @@ class PlanRow(Timestamps, Base):
     status: Mapped[str] = mapped_column(Text, default="proposed", server_default="proposed")
     risk: Mapped[str] = mapped_column(Text)
     expected_result: Mapped[str] = mapped_column(Text)
+    title: Mapped[str | None] = mapped_column(Text, default=None)
+    """The planner's general name for the tutorial (#390); the workflow's title. None: use the request."""
     steps: Mapped[list[Any]] = mapped_column()  # an editable document, so jsonb rather than rows
     approved_at: Mapped[datetime | None] = mapped_column(default=None)
 
