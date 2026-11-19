@@ -73,13 +73,20 @@ def _example(label: str, value: str) -> str:
     "Enter your new branch name, for example “feature-docs-4821”" (a label that names the thing), "Enter a
     title in “Add a title”, for example …" (a one-word label), else "Enter your own text in “Color”, …".
     """
-    noun = _LEADING_VERB.sub("", label).strip().lower()
+    noun = field_noun(label)
     example = f"for example {_q(value)}"
     if len(noun.split()) == 1 and noun:
         return f"enter a {noun} in {_q(label)}, {example}"
     if noun.endswith(_NOUNS):
         return f"enter your {noun}, {example}"
     return f"enter your own text in {_q(label)}, {example}"
+
+
+def field_noun(label: str) -> str:
+    """What a field asks for, in lower case.
+
+    "Repository Name *" → "repository name", "Add a title" → "title"."""
+    return _LEADING_VERB.sub("", _clean(label) or "").strip().lower()
 
 
 def _where(context: ElementContext | None, label: str, page_title: str | None) -> str:
