@@ -1,7 +1,7 @@
 """plan title
 
-#390 (contract #389): the planner's general name for the tutorial, which becomes the workflow's title instead of
-the raw request. Nullable: older plans have none and keep using the request.
+#390 (contract #389): the planner's general name for the tutorial, which becomes the workflow's title
+instead of the raw request. Nullable: older plans have none and keep using the request.
 
 Revision ID: 5b1c0e7d9a42
 Revises: ac684ed69930
