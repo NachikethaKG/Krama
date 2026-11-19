@@ -38,7 +38,7 @@ def text(
         ),
         (
             "Enter my-test-1 into the repository name input.",
-            "Enter “my-test-1” in “Repository Name”.",
+            "Enter your repository name, for example “my-test-1”.",
             text("fill", "my-test-1", role="textbox", name="Repository Name *"),
         ),
         (
@@ -127,7 +127,7 @@ def test_without_enough_facts_the_planner_text_is_kept(got: str | None) -> None:
     assert got is None
 
 
-# #325: values the planner made up are examples; values the user asked for are written as they are.
+# #325, #390: a typed value is always an example; the learner types their own.
 @pytest.mark.parametrize(
     ("value", "name", "expected"),
     [
@@ -139,28 +139,27 @@ def test_without_enough_facts_the_planner_text_is_kept(got: str | None) -> None:
         ("demo", "Pick something here", "Enter your own text in “Pick something here”, for example “demo”."),
     ],
 )
-def test_a_made_up_value_is_offered_as_an_example(value: str, name: str, expected: str) -> None:
+def test_a_typed_value_is_offered_as_an_example(value: str, name: str, expected: str) -> None:
     got = tutorial_text(
         Action(type="fill", value=value),
         Target(role="textbox", name=name),
         None,
         page_title=None,
         sensitive=False,
-        task="Create a new branch on GitHub",
     )
     assert got == expected
 
 
-def test_a_value_the_user_asked_for_is_written_as_is() -> None:
+def test_a_value_the_user_asked_for_is_an_example_too() -> None:
+    """#390: "create a repository called my-blog" teaches creating any repository, not this one."""
     got = tutorial_text(
         Action(type="fill", value="my-blog"),
         Target(role="textbox", name="Repository name *"),
         None,
         page_title=None,
         sensitive=False,
-        task="Show me how to create a GitHub repository called My-Blog",
     )
-    assert got == "Enter “my-blog” in “Repository name”."
+    assert got == "Enter your repository name, for example “my-blog”."
 
 
 def test_an_example_in_a_dialog_says_where() -> None:
@@ -170,7 +169,6 @@ def test_an_example_in_a_dialog_says_where() -> None:
         ElementContext(container="dialog", name="Create a branch"),
         page_title=None,
         sensitive=False,
-        task="Create a new branch on GitHub",
     )
     expected = "In the “Create a branch” dialog, enter your new branch name, for example “feature-docs-4821”."
     assert got == expected

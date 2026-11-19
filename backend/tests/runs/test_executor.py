@@ -168,7 +168,7 @@ async def test_approved_plan_runs_to_a_stored_verified_workflow(
         # Step text rewritten from what ran (#73); the password's value is never written out.
         assert [st.instruction_text for st in workflow.steps] == [
             "Click “New item”.",
-            "Enter “demo-item” in “Item name”.",
+            "Enter your item name, for example “demo-item”.",
             "Fill in “Password”.",
             "Select the “Add a README” checkbox.",
             "Click “Create item”.",

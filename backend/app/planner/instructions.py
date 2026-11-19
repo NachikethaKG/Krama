@@ -27,12 +27,12 @@ def tutorial_text(
     *,
     page_title: str | None,
     sensitive: bool,
-    task: str | None = None,
 ) -> str | None:
     """One imperative sentence for the step, or None when the facts aren't enough (keep the planner's text).
 
-    `page_title` is the title of the page the step started on. `task` is what the user asked for: a typed
-    value it doesn't contain was made up by the planner (#325), so the step offers it as an example.
+    `page_title` is the title of the page the step started on. A typed name or text is always the learner's
+    own choice, shown with the value the recording used as an example (#325, #390): the tutorial teaches the
+    site, not our test account, even when the request named the value.
     """
     label = _clean(target.name) if target is not None else None
     match action.type:
@@ -56,10 +56,8 @@ def tutorial_text(
             sentence = f"fill in {_q(label)}"
         case "fill" if "\n" in value or len(value.split()) > _MAX_WORDS:
             sentence = f"enter the text in {_q(label)}"
-        case "fill" if task is not None and value.casefold() not in task.casefold():
-            sentence = _example(label, value)
         case "fill":
-            sentence = f"enter {_q(value)} in {_q(label)}"
+            sentence = _example(label, value)
         case "select":
             sentence = f"select {_q(value)} in {_q(label)}"
         case "press":
@@ -70,7 +68,7 @@ def tutorial_text(
 
 
 def _example(label: str, value: str) -> str:
-    """A made-up value as an example (#325): learners type their own, the tutorial shows one that worked.
+    """A typed value as an example (#325, #390): learners type their own, the tutorial shows one that worked.
 
     "Enter your new branch name, for example “feature-docs-4821”" (a label that names the thing), "Enter a
     title in “Add a title”, for example …" (a one-word label), else "Enter your own text in “Color”, …".
