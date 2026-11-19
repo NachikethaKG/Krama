@@ -142,14 +142,14 @@ export type WorkflowStatus = "draft" | "approved" | "running" | "verified" | "fa
  */
 export type RunStatus = "queued" | "running" | "paused" | "verified" | "failed" | "cancelled";
 /**
- * task: a run of a newly approved plan, which stores a new workflow when verified. reverify: a replay of a stored workflow's steps (POST /workflows/{id}/reverify), which stores none.
+ * task: a run of a newly approved plan, which stores a new workflow when verified. reverify: a replay of a stored workflow's steps (POST /workflows/{id}/reverify), which stores none. do_it: a stored verified workflow run for its owner with the owner's own values (POST /workflows/{id}/run); it never resets the site, pauses at every risky step and stores no workflow.
  */
-export type RunKind = "task" | "reverify";
+export type RunKind = "task" | "reverify" | "do_it";
 /**
  * This interface was referenced by `Run`'s JSON-Schema
  * via the `definition` "RunKind".
  */
-export type RunKind1 = "task" | "reverify";
+export type RunKind1 = "task" | "reverify" | "do_it";
 /**
  * This interface was referenced by `Step`'s JSON-Schema
  * via the `definition` "VerificationResult".
@@ -403,7 +403,7 @@ export interface RunCompletedEvent {
   seq: number;
   ts: string;
   /**
-   * The workflow the run stored; for a reverify run, the stored workflow it re-verified.
+   * The workflow the run stored; for a reverify run, the stored workflow it re-verified; for a do_it run, the stored workflow it ran (nothing is stored).
    */
   workflow_id: string;
   verified_steps: number;
@@ -769,11 +769,11 @@ export interface Run {
   retry_count: number;
   kind?: RunKind;
   /**
-   * reverify only: the stored workflow this run replays.
+   * reverify and do_it only: the stored workflow this run replays.
    */
   source_workflow_id?: string | null;
   /**
-   * The workflow this run stored. Null until a task run is verified, and always null for a reverify run (see source_workflow_id).
+   * The workflow this run stored. Null until a task run is verified, and always null for a reverify or do_it run (see source_workflow_id).
    */
   workflow_id?: string | null;
   error?: ApiError | null;
@@ -1253,6 +1253,80 @@ export interface WorkflowSummary {
 export interface WorkflowPage {
   items: WorkflowSummary[];
   next_cursor?: string | null;
+}
+/**
+ * A value the user chooses when Krama runs the workflow for them (#129, P3): one non-sensitive single-line value the recorded run typed. The recorded value is only an example; the user's value replaces it in every step where it reappears.
+ *
+ * This interface was referenced by `Workflow`'s JSON-Schema
+ * via the `definition` "WorkflowInput".
+ */
+export interface WorkflowInput {
+  /**
+   * Stable name of the input in RunWorkflowRequest.inputs (e.g. repository_name).
+   */
+  key: string;
+  /**
+   * What to ask for, from the field's label (e.g. "Repository name").
+   */
+  label: string;
+  /**
+   * The value the recorded run typed, shown as a placeholder, never as the default.
+   */
+  example: string;
+  /**
+   * text only in v1; dropdowns replay the recorded option (P15).
+   */
+  kind: "text";
+  /**
+   * A regular expression a value must match: the example's character class (P5), e.g. ^[A-Za-z0-9._-]+$. Null when any single-line text is accepted.
+   */
+  pattern?: string | null;
+  /**
+   * Shortest value accepted (3 in v1, P5).
+   */
+  min_length: number;
+  /**
+   * Seq of every step the value is typed in or reappears in (URL checks, headings, later targets, step text).
+   *
+   * @minItems 1
+   */
+  steps: [number, ...number[]];
+}
+/**
+ * GET /workflows/{id}/inputs: what the owner fills in before "Do it for me" runs the current version.
+ *
+ * This interface was referenced by `Workflow`'s JSON-Schema
+ * via the `definition` "WorkflowInputList".
+ */
+export interface WorkflowInputList {
+  workflow_id: string;
+  /**
+   * The version the inputs belong to; send it back in RunWorkflowRequest.
+   */
+  revision: number;
+  inputs: WorkflowInput[];
+  /**
+   * The site account the run will act in. v1: the account Krama is signed in to on that site, not the user's own (P11). Null when unknown.
+   */
+  account?: string | null;
+}
+/**
+ * POST /workflows/{id}/run: run the workflow's current version for its owner with these values ("Do it for me", #129). Starting it approves the steps; risky steps still pause for confirmation.
+ *
+ * This interface was referenced by `Workflow`'s JSON-Schema
+ * via the `definition` "RunWorkflowRequest".
+ */
+export interface RunWorkflowRequest {
+  /**
+   * The version the user previewed (from WorkflowInputList); a newer current version gives 409 stale_revision.
+   */
+  revision: number;
+  /**
+   * One value per WorkflowInput.key; every input is required (the server checks min_length and pattern).
+   */
+  inputs: {
+    [k: string]: string;
+  };
 }
 /**
  * This interface was referenced by `Workflow`'s JSON-Schema

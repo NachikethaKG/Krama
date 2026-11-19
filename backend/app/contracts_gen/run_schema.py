@@ -10,7 +10,7 @@ from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
 
 from . import common_schema
 
-type RunKind = Annotated[Literal["task", "reverify"], Field(title="RunKind")]
+type RunKind = Annotated[Literal["task", "reverify", "do_it"], Field(title="RunKind")]
 
 
 type RunStatus = Annotated[
@@ -39,16 +39,16 @@ class Run(BaseModel):
     kind: Annotated[
         RunKind | None,
         Field(
-            description="task: a run of a newly approved plan, which stores a new workflow when verified. reverify: a replay of a stored workflow's steps (POST /workflows/{id}/reverify), which stores none."
+            description="task: a run of a newly approved plan, which stores a new workflow when verified. reverify: a replay of a stored workflow's steps (POST /workflows/{id}/reverify), which stores none. do_it: a stored verified workflow run for its owner with the owner's own values (POST /workflows/{id}/run); it never resets the site, pauses at every risky step and stores no workflow."
         ),
     ] = "task"
     source_workflow_id: Annotated[
-        UUID | None, Field(description="reverify only: the stored workflow this run replays.")
+        UUID | None, Field(description="reverify and do_it only: the stored workflow this run replays.")
     ] = None
     workflow_id: Annotated[
         UUID | None,
         Field(
-            description="The workflow this run stored. Null until a task run is verified, and always null for a reverify run (see source_workflow_id)."
+            description="The workflow this run stored. Null until a task run is verified, and always null for a reverify or do_it run (see source_workflow_id)."
         ),
     ] = None
     error: common_schema.ApiError | None = None

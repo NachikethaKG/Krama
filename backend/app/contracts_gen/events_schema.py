@@ -84,7 +84,7 @@ class RunCompletedEvent(BaseModel):
     workflow_id: Annotated[
         UUID,
         Field(
-            description="The workflow the run stored; for a reverify run, the stored workflow it re-verified."
+            description="The workflow the run stored; for a reverify run, the stored workflow it re-verified; for a do_it run, the stored workflow it ran (nothing is stored)."
         ),
     ]
     verified_steps: Annotated[int, Field(ge=0)]
