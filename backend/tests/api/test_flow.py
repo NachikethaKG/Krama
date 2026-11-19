@@ -55,7 +55,7 @@ def services(
     hub = EventHub()
     store = RunStore(sessions, on_event=hub.notify)
     env = RunEnvironment(
-        verifier=LayeredVerifier(),
+        verifier=env_changes.pop("verifier", LayeredVerifier()),
         observer_for=lambda run_id: PageObserver(artifacts_dir=tmp_path / "runs" / str(run_id)),
         artifacts_dir=tmp_path,
         **env_changes,
