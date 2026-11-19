@@ -5,6 +5,7 @@ the stored workflows, replays one as a reverify run (healing included, #112) and
 """
 
 from collections.abc import Callable
+from datetime import datetime
 from typing import Any
 from urllib.parse import urlsplit
 from uuid import UUID
@@ -51,6 +52,9 @@ class RunValidationBackend:
                         .limit(_RECENT)
                     )
                 ).all()
+                last = recent[0].ran_at if recent else None
+                if last is not None and await _do_it_failed_since(s, w.id, last):
+                    last = None  # a user's run just failed on it: check it at the next pass (#129, P9)
                 out.append(
                     WorkflowCandidate(
                         workflow_id=w.id,
@@ -58,7 +62,7 @@ class RunValidationBackend:
                         target_app=w.target_app,
                         status=w.status,
                         revision=w.revision,
-                        last_validated_at=recent[0].ran_at if recent else None,
+                        last_validated_at=last,
                         recent=tuple(r.status for r in recent),
                     )
                 )
@@ -134,6 +138,21 @@ class RunValidationBackend:
                 )
                 if waiting is None:
                     workflow.status = "verified"  # the site works again with the current version
+
+
+async def _do_it_failed_since(s: AsyncSession, workflow_id: UUID, since: datetime) -> bool:
+    """Whether a "Do it for me" run of the workflow failed after its last validation."""
+    found = await s.scalar(
+        select(RunRow.id)
+        .where(
+            RunRow.source_workflow_id == workflow_id,
+            RunRow.kind == "do_it",
+            RunRow.status == "failed",
+            RunRow.finished_at > since,
+        )
+        .limit(1)
+    )
+    return found is not None
 
 
 def _evidence(stored: dict[int, Any], events: list[dict[str, Any]]) -> tuple[StepEvidence, ...]:
