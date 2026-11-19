@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "run.schema.json",
   "title": "Run",
-  "$comment": "v1.1. One execution of an approved plan (docs/api-contract.md: /runs).",
+  "$comment": "v1.2. One execution of an approved plan (docs/api-contract.md: /runs).",
   "type": "object",
   "required": ["id", "plan_id", "plan_revision", "status", "retry_count", "created_at"],
   "additionalProperties": false,
@@ -16,17 +16,17 @@
     "kind": {
       "$ref": "#/$defs/RunKind",
       "default": "task",
-      "description": "task: a run of a newly approved plan, which stores a new workflow when verified. reverify: a replay of a stored workflow's steps (POST /workflows/{id}/reverify), which stores none."
+      "description": "task: a run of a newly approved plan, which stores a new workflow when verified. reverify: a replay of a stored workflow's steps (POST /workflows/{id}/reverify), which stores none. do_it: a stored verified workflow run for its owner with the owner's own values (POST /workflows/{id}/run); it never resets the site, pauses at every risky step and stores no workflow."
     },
     "source_workflow_id": {
       "type": ["string", "null"],
       "format": "uuid",
-      "description": "reverify only: the stored workflow this run replays."
+      "description": "reverify and do_it only: the stored workflow this run replays."
     },
     "workflow_id": {
       "type": ["string", "null"],
       "format": "uuid",
-      "description": "The workflow this run stored. Null until a task run is verified, and always null for a reverify run (see source_workflow_id)."
+      "description": "The workflow this run stored. Null until a task run is verified, and always null for a reverify or do_it run (see source_workflow_id)."
     },
     "error": {
       "oneOf": [{ "$ref": "common.schema.json#/$defs/ApiError" }, { "type": "null" }]
@@ -38,7 +38,7 @@
   "$defs": {
     "RunKind": {
       "title": "RunKind",
-      "enum": ["task", "reverify"]
+      "enum": ["task", "reverify", "do_it"]
     },
     "RunStatus": {
       "title": "RunStatus",
