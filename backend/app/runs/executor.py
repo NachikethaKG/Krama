@@ -22,7 +22,7 @@ from playwright.async_api import Page
 from app.agent import ActionExecutor, PlaywrightSession, SessionConfig, open_start_page, page_snapshot
 from app.agent.healer import HealBudget, HealChooser, HealOutcome, heal, stored_element
 from app.agent.runlog import MASK, ScriptedStep, looks_sensitive, mask_expected, run_script
-from app.agent.vision import VisionLocator
+from app.agent.vision import VisionLocator, masked_screenshot
 from app.contracts_gen.events_schema import PauseReason
 from app.contracts_gen.plan_schema import PlannedStep
 from app.db import WorkflowStepRow
@@ -30,6 +30,7 @@ from app.db.base import literal_values
 from app.llm import LLMError
 from app.planner.instructions import tutorial_text
 from app.planner.planner import Planner, PlannerError, PlanRequest
+from app.ports.artifacts import ArtifactStore
 from app.ports.models import (
     InvalidArtifactKeyError,
     ObservedState,
@@ -80,6 +81,8 @@ class RunEnvironment:
     """The Observer for one run (the composition root picks the concrete one behind the port)."""
     artifacts_dir: Path
     """Where the observer's files live; paths under it become /api/v1/artifacts/... URLs."""
+    artifacts: ArtifactStore | None = None
+    """Where the screenshot taken right before each action goes (#388). None: no such screenshot."""
     preconditions: Callable[[RunJob], Sequence[ScriptedStep]] = lambda _job: ()
     """Setup before step 1, e.g. signing in. Not part of the plan or the recording."""
     session_config: Callable[[RunJob], SessionConfig] = field(
@@ -411,6 +414,7 @@ class InProcessExecutor:
             verify_timeout_s=verify_timeout_s,
             verify_interval_s=self._env.verify_interval_s,
             before=before,
+            focus_shot=lambda: self._focus_shot(job, seq, page),
         )
         shot = self._artifact_url(out.observed.screenshot_path)
         bbox = list(out.result.bbox) if out.result.bbox else None
@@ -663,7 +667,7 @@ class InProcessExecutor:
             },
             instruction_text=self._step_text(job, step, out, sensitive=sensitive),
             expected_state=mask_expected(step.expected_state).model_dump(mode="json", exclude_none=True),
-            before_state=_summary(out.before) if out.before else None,
+            before_state=_before_state(out),
             observed_state={
                 "url": out.observed.url,
                 "title": out.observed.title,
@@ -722,6 +726,21 @@ class InProcessExecutor:
         )
         return rewritten or step.instruction_text
 
+    async def _focus_shot(self, job: RunJob, seq: int, page: Page) -> str | None:
+        """The page right before the action, target scrolled into view, sensitive fields masked (#388). The
+        video shows it for a click: the observer's screenshot is taken after the action, often on the next
+        page. A failure here only costs the video its better frame, never the step."""
+        if self._env.artifacts is None:
+            return None
+        try:
+            ref = await self._env.artifacts.put(
+                f"runs/{job.run_id}/steps/{seq}_focus.png", await masked_screenshot(page), "image/png"
+            )
+        except Exception:
+            logger.warning("Step %d: no screenshot before the action", seq, exc_info=True)
+            return None
+        return ref.key
+
     def _artifact_key(self, path: str | None) -> str | None:
         """The key the API serves an observer artifact by (`/api/v1/artifacts/<key>`).
 
@@ -743,6 +762,16 @@ class InProcessExecutor:
     def _artifact_url(self, path: str | None) -> str | None:
         key = self._artifact_key(path)
         return f"{ARTIFACTS_URL}/{key}" if key else None
+
+
+def _before_state(out: StepOutcome) -> dict[str, Any] | None:
+    """The page before the action. Its screenshot is the one taken with the target in view (#388)."""
+    if out.before is None:
+        return None
+    state = _summary(out.before)
+    if out.focus_screenshot:
+        state["screenshot_path"] = out.focus_screenshot
+    return state
 
 
 def _summary(state: ObservedState) -> dict[str, Any]:

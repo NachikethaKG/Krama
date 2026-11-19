@@ -82,6 +82,7 @@ def build_run_environment(settings: Settings) -> RunEnvironment:
         # Screenshots and the rrweb recording go through the ArtifactStore port (#50), keyed by run.
         observer_for=lambda run_id: PageObserver(artifact_store=store_, run_id=str(run_id)),
         artifacts_dir=settings.artifacts_dir,
+        artifacts=store_,
         preconditions=lambda job: target_setup(job.target_url, settings).preconditions,
         vision=GeminiVisionLocator(llm) if gemini else None,
         # Checked before every step (#59): denylist + LLM classifier for unclear cases, CAPTCHA / bot-wall /
