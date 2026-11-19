@@ -549,3 +549,31 @@ async def test_a_slow_target_gets_longer_to_show_a_steps_effect(
 
     run = await run_row(sessions, run_id)
     assert run.status == "verified", run.error
+
+
+async def test_each_targeted_step_keeps_a_screenshot_from_before_its_action(
+    sessions: Sessions, site: str, tmp_path: Path
+) -> None:
+    """#388: the video shows a click on the page where the click happened; the step's own screenshot (taken
+    after the action, used by drift checks and evidence) stays what it was."""
+    from app.storage.local import LocalFsStore
+
+    run_id = await queued_run(sessions, site, PLAN)
+    env = environment(tmp_path, artifacts=LocalFsStore(tmp_path))
+    await run_to_end(InProcessExecutor(RunStore(sessions), env), run_id)
+
+    assert (await run_row(sessions, run_id)).status == "verified"
+    async with sessions() as s:
+        rows = (
+            await s.scalars(select(WorkflowStepRow).join(WorkflowRow).where(WorkflowRow.run_id == run_id))
+        ).all()
+    targeted = [r for r in rows if r.target.get("role")]
+    assert targeted
+    for row in rows:
+        focus = (row.before_state or {}).get("screenshot_path")
+        if row in targeted:
+            assert focus == f"runs/{run_id}/steps/{row.seq}_focus.png"
+            assert (tmp_path / focus).read_bytes().startswith(b"\x89PNG")
+            assert row.screenshot_path != focus
+        else:
+            assert focus is None

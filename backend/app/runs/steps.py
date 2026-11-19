@@ -8,6 +8,7 @@ something that was already true before can't prove the click worked (phase-1-tog
 
 import asyncio
 import time
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from urllib.parse import urlsplit
 
@@ -31,6 +32,9 @@ class StepOutcome:
     """None if the action itself failed (nothing to verify)."""
     verify_attempts: int
     network: list[NetworkCall] = field(default_factory=list)
+    focus_screenshot: str | None = None
+    """Artifact key of the page right before the action, with the target scrolled into view: where `bbox` and
+    `scroll` were measured, and what a click step's video scene shows (#388). None without a target."""
 
     @property
     def verified(self) -> bool:
@@ -56,13 +60,23 @@ async def act_and_verify(
     verify_timeout_s: float,
     verify_interval_s: float,
     before: ObservedState | None = None,
+    focus_shot: Callable[[], Awaitable[str | None]] | None = None,
 ) -> StepOutcome:
-    """`before`: the page right before the action, if the caller already captured it (policy check)."""
+    """`before`: the page right before the action, if the caller already captured it (policy check).
+    `focus_shot`: stores a screenshot once the target is scrolled into view and returns its key (#388)."""
     ref = step_ref(step)
     if before is None:
         before = await observer.capture(page, ref)
+    focus: list[str] = []
+
+    async def on_ready() -> None:
+        if focus_shot is not None and (key := await focus_shot()):
+            focus.append(key)
+
     with _NetworkRecorder(page) as network:
-        result = await executor.execute(step.action, step.target, instruction=step.instruction_text)
+        result = await executor.execute(
+            step.action, step.target, instruction=step.instruction_text, on_ready=on_ready
+        )
         observed = await observer.capture(page, ref)
         outcome: VerificationOutcome | None = None
         attempts = 0
@@ -89,6 +103,7 @@ async def act_and_verify(
         verification=outcome,
         verify_attempts=attempts,
         network=list(network.calls),
+        focus_screenshot=focus[0] if focus else None,
     )
 
 
