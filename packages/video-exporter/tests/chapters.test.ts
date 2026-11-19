@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { TutorialSpec } from "@krama/contracts-ts";
-import { buildTutorialChapters, formatFFMetadata } from "../src/metadata/chapters.js";
+import { buildTutorialChapters, chapterTitle, formatFFMetadata } from "../src/metadata/chapters.js";
 
 const MOCK_SPEC: TutorialSpec = {
   version: "1.0",
@@ -47,14 +47,14 @@ describe("Chapters and FFMETADATA (Decision D12)", () => {
 
     // Step 1
     expect(chapters[1]).toEqual({
-      title: "Step 1: Click New Repo",
+      title: "Step 1: Click the New Repository button",
       startMs: 2000,
       endMs: 5500,
     });
 
     // Step 2
     expect(chapters[2]).toEqual({
-      title: "Step 2: Fill Repo Name",
+      title: "Step 2: Type the repository name",
       startMs: 5500,
       endMs: 9500,
     });
@@ -85,5 +85,32 @@ describe("Chapters and FFMETADATA (Decision D12)", () => {
     expect(metadata).toContain("START=2000");
     expect(metadata).toContain("END=5000");
     expect(metadata).toContain("title=Step 1\\: Type name\\=repo\\; fast \\#1");
+  });
+
+  it("names a step by its text, not the target's raw field name (#395)", () => {
+    const spec: TutorialSpec = {
+      ...MOCK_SPEC,
+      scenes: [
+        { ...MOCK_SPEC.scenes[0]!, title: "Repository name *", caption: { text: "Click “Create repository”." } },
+        { ...MOCK_SPEC.scenes[1]!, title: "Repository name *", caption: { text: "" } },
+      ],
+    };
+
+    const titles = buildTutorialChapters(spec).map((c) => c.title);
+
+    expect(titles[1]).toBe("Step 1: Click “Create repository”");
+    // without a caption the target name is the fallback, without its required-field star
+    expect(titles[2]).toBe("Step 2: Repository name");
+  });
+
+  it("shortens a long step text at a word boundary", () => {
+    const long = "Under “General”, enter your repository name, for example “krama-new-repo-79518”.";
+
+    const title = chapterTitle(long)!;
+
+    expect(title.length).toBeLessThanOrEqual(61);
+    expect(title).toBe("Under “General”, enter your repository name, for example…");
+    expect(chapterTitle("  ")).toBeNull();
+    expect(chapterTitle("Go to the “New repository” page.")).toBe("Go to the “New repository” page");
   });
 });
