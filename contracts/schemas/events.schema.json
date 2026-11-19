@@ -146,7 +146,7 @@
         "workflow_id": {
           "type": "string",
           "format": "uuid",
-          "description": "The workflow the run stored; for a reverify run, the stored workflow it re-verified."
+          "description": "The workflow the run stored; for a reverify run, the stored workflow it re-verified; for a do_it run, the stored workflow it ran (nothing is stored)."
         },
         "verified_steps": { "type": "integer", "minimum": 0 },
         "failed_actions": { "type": "integer", "minimum": 0 }
