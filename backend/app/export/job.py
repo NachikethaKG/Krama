@@ -20,6 +20,7 @@ from urllib.parse import urlparse
 from uuid import UUID
 
 from app.contracts_gen.export_schema import ExportErrorCode
+from app.contracts_gen.step_schema import Step
 from app.ports.artifacts import ArtifactFiles
 from app.ports.exports import ExportNotFoundError, ExportStateError, ExportStore
 from app.ports.narration import NarrationError, NarrationLine, Narrator, plan_scenes
@@ -79,13 +80,14 @@ async def render_export(
     # 2. Collect local screenshots and audio files
     screenshots: dict[int, str] = {}
     for s in workflow.steps:
-        if s.screenshot_path:
+        for key in _scene_screenshots(s):
             try:
-                shot_path = await files.local_path(s.screenshot_path)
+                shot_path = await files.local_path(key)
                 if await asyncio.to_thread(shot_path.is_file):
                     screenshots[s.seq] = str(shot_path)
+                    break
             except Exception:
-                logger.debug("Screenshot %s not found locally for step %d", s.screenshot_path, s.seq)
+                logger.debug("Screenshot %s not found locally for step %d", key, s.seq)
 
     audio_urls: dict[int, str] = {}
     for clip in manifest.clips:
@@ -196,6 +198,23 @@ async def run_export(
         logger.exception("Export %s crashed", export_id)
         await _fail_if_running(store, export_id, "internal", "The export failed unexpectedly.")
         return "internal"
+
+
+_SHOW_BEFORE = frozenset({"click", "select", "press"})
+
+
+def _scene_screenshots(step: Step) -> list[str]:
+    """The screenshots a step's scene can use, best first (#388).
+
+    A click, select or key press shows the page right before the action, with the target in view: the
+    step's own screenshot is taken after it, often on the next page, where the element is gone and the box
+    and scroll measured before the action point at nothing. A fill shows the page after typing (the value is
+    visible); a navigate shows the page reached. Older steps have only the after-screenshot.
+    """
+    before = step.before_state.screenshot_path if step.before_state is not None else None
+    after = step.screenshot_path
+    keys = [before, after] if step.action.type in _SHOW_BEFORE else [after]
+    return [k for k in keys if k]
 
 
 async def _fail_if_running(store: ExportStore, export_id: UUID, code: ExportErrorCode, message: str) -> None:
