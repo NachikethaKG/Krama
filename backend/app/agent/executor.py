@@ -1,5 +1,6 @@
 import re
 import time
+from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime
 from typing import Literal
 from urllib.parse import urlsplit
@@ -107,9 +108,18 @@ class ActionExecutor:
         "Update Settings") are told apart by which one belongs to that field's form (#83)."""
 
     async def execute(
-        self, action: Action, target: Target | None = None, *, instruction: str | None = None
+        self,
+        action: Action,
+        target: Target | None = None,
+        *,
+        instruction: str | None = None,
+        on_ready: Callable[[], Awaitable[None]] | None = None,
     ) -> ActionResult:
-        """`instruction` (the step's instruction_text) helps the vision fallback tell candidates apart."""
+        """`instruction` (the step's instruction_text) helps the vision fallback tell candidates apart.
+
+        `on_ready` runs once the target is found and scrolled into view, right before acting: the page as it
+        looks when `bbox` and `scroll` are measured (the video's screenshot for a click, #388). Not called
+        without a target."""
         started_at = datetime.now(UTC)
         t0 = time.perf_counter()
         bbox: BoundingBox | None = None
@@ -129,6 +139,8 @@ class ActionExecutor:
                 context = await element_context(locator)
                 bbox, scroll = await self._page_bbox(locator)
                 element = await self._describe(locator, target)
+                if on_ready is not None:
+                    await on_ready()
             if action.type == "click" and target is not None and target.role == "button":
                 refilled = await self._refill_lost_values()
             await self._perform(action, locator)
