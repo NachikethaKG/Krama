@@ -23,6 +23,11 @@ SENSITIVE_FIELDS = ", ".join(
         "input[name*=token i]",
         "input[name*=secret i]",
         "input[name*=password i]",
+        "input[name*=passwd i]",
+        # Marked sensitive by the page or by us, like the observer's masking (app/observer/observer.py).
+        "[data-sensitive]",
+        ".krama-mask-text",
+        ".krama-block",
     ]
 )
 
