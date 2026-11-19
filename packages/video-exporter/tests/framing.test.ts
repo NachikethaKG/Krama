@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Scene } from "@krama/contracts-ts";
-import { computeLandscapeFraming } from "../src/framing/landscape.js";
-import { computePortraitFraming } from "../src/framing/portrait.js";
+import { VIDEO_MAX_ZOOM, computeLandscapeFraming } from "../src/framing/landscape.js";
+import { PORTRAIT_ZOOM, computePortraitFraming } from "../src/framing/portrait.js";
 
 const VIEWPORT = { width: 1280, height: 800 };
 
@@ -55,13 +55,22 @@ describe("Framing Calculators (Decision D7, D8)", () => {
       expect(framing.panY).toBe(0);
     });
 
-    it("zooms into the target element when camera zoom is specified", () => {
+    it("zooms gently towards the target, even when the spec's camera asks for more (#394)", () => {
       const framing = computeLandscapeFraming(MOCK_SCENE_WITH_TARGET, VIEWPORT, { width: 1920, height: 1080 });
 
-      // totalScale = 1.35 * 1.5 = 2.025
-      expect(framing.scale).toBeCloseTo(2.025, 2);
-      // pan should shift the canvas to focus near (660, 220)
+      // The spec asks for 1.5x; the video caps it: 1.35 * 1.15
+      expect(framing.scale).toBeCloseTo(1.35 * VIDEO_MAX_ZOOM, 4);
       expect(framing.panX).toBeLessThan(96);
+      // nearly the whole page stays in frame
+      expect(1920 / framing.scale / VIEWPORT.width).toBeGreaterThan(0.95);
+      expect(1080 / framing.scale / VIEWPORT.height).toBeGreaterThan(0.85);
+      // and the target (660, 320 - scroll 100) is in it
+      const x = 660 * framing.scale + framing.panX;
+      const y = (320 - 100) * framing.scale + framing.panY;
+      expect(x).toBeGreaterThan(0);
+      expect(x).toBeLessThan(1920);
+      expect(y).toBeGreaterThan(0);
+      expect(y).toBeLessThan(1080);
     });
   });
 
@@ -76,17 +85,31 @@ describe("Framing Calculators (Decision D7, D8)", () => {
       expect(framing.panY).toBeCloseTo(622.5, 1);
     });
 
-    it("follows the highlight by zooming with scale >= 1.6x and centering on the target element", () => {
+    it("follows the highlight with a gentle zoom, the whole page height in frame (#394)", () => {
       const framing = computePortraitFraming(MOCK_SCENE_WITH_TARGET, VIEWPORT, { width: 1080, height: 1920 });
 
-      // Scale must be at least 1.6x for mobile readability
-      expect(framing.scale).toBeGreaterThanOrEqual(1.6);
-      expect(framing.scale).toBeLessThanOrEqual(2.5);
+      expect(framing.scale).toBeCloseTo(PORTRAIT_ZOOM, 4);
+      // ~73% of the page's width is shown, never past its edges
+      expect(1080 / framing.scale / VIEWPORT.width).toBeGreaterThan(0.7);
+      expect(framing.panX).toBeLessThanOrEqual(0);
+      expect(framing.panX).toBeGreaterThanOrEqual(1080 - VIEWPORT.width * framing.scale);
+      // the page's full height fits, above the captions in the bottom third
+      expect(framing.panY).toBeGreaterThanOrEqual(0);
+      expect(framing.panY + VIEWPORT.height * framing.scale).toBeLessThan(1920 * 0.7);
+      // the target is in frame
+      const x = 660 * framing.scale + framing.panX;
+      expect(x).toBeGreaterThan(0);
+      expect(x).toBeLessThan(1080);
+    });
 
-      // Target center is placed roughly at 40% height of 1920 (~768px)
-      // canvas height is 1920, target element is centered
-      expect(framing.panX).toBeDefined();
-      expect(framing.panY).toBeDefined();
+    it("keeps a target at the page's right edge in frame", () => {
+      const right: Scene = {
+        ...MOCK_SCENE_WITH_TARGET,
+        highlight: { ...MOCK_SCENE_WITH_TARGET.highlight!, bbox: [1150, 300, 120, 40] },
+      };
+      const framing = computePortraitFraming(right, VIEWPORT, { width: 1080, height: 1920 });
+
+      expect((1150 + 120) * framing.scale + framing.panX).toBeLessThanOrEqual(1080);
     });
   });
 });
