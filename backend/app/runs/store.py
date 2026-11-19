@@ -219,7 +219,7 @@ class RunStore:
         return workflow_id
 
     async def complete_reverify(self, job: RunJob, *, verified_steps: int, **changes: Any) -> bool:
-        """End a reverify run as verified. No workflow is stored; run.completed names the re-verified one."""
+        """End a reverify or do-it run as verified. No workflow is stored; run.completed names it."""
         assert job.source_workflow_id is not None
         async with self._sessions.begin() as s:
             row = await transition_run(

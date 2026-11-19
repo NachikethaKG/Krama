@@ -61,9 +61,11 @@ async def act_and_verify(
     verify_interval_s: float,
     before: ObservedState | None = None,
     focus_shot: Callable[[], Awaitable[str | None]] | None = None,
+    vision: bool = True,
 ) -> StepOutcome:
     """`before`: the page right before the action, if the caller already captured it (policy check).
-    `focus_shot`: stores a screenshot once the target is scrolled into view and returns its key (#388)."""
+    `focus_shot`: stores a screenshot once the target is scrolled into view and returns its key (#388).
+    `vision`: False never asks the vision judge; an undecided step stays `skipped` (a do-it run, P10)."""
     ref = step_ref(step)
     if before is None:
         before = await observer.capture(page, ref)
@@ -92,7 +94,7 @@ async def act_and_verify(
                     break
                 await asyncio.sleep(verify_interval_s)
                 observed = await observer.capture(page, ref)
-            if outcome.verification.result == "skipped":
+            if vision and outcome.verification.result == "skipped":
                 # The cheap layers couldn't decide: one look with vision, as evidence for the human.
                 evidence = _evidence(step, before, observed, network)
                 outcome = await verifier.verify(step.expected_state, evidence, page=page, use_vision=True)
