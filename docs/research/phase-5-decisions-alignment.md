@@ -56,9 +56,9 @@ new target.
 | D5 | **Narration is generated inside the export job**, through a `Narrator` port implemented by `tts/`; not when a workflow is saved. | #120, #126 | both |
 | D6 | **[N] Two presets:** `landscape` 1920×1080 (16:9) and `portrait` 1080×1920 (9:16). Both 30 fps, H.264 CRF 18, AAC, `+faststart`. No 720p option. | #122, #124, #127 | both |
 | D7 | **[N] 16:9 framing of 1280×800 (16:10) recordings: fit + side bars.** The whole viewport (1728×1080) is centred on a plain background when the camera isn't zoomed; nothing is cropped. | #122 | Nachiketha |
-| D8 | **[N] 9:16 follows the highlight:** each scene crops a 9:16 window around the highlight bbox (zoom ≥ 1.6× so text is readable), panning with the scene's camera easing; steps without a highlight show a fitted overview; captions in the bottom third. (A centre crop of a real GitHub page cut off the labels.) | #122 | Nachiketha |
+| D8 | **[N] 9:16 follows the highlight:** each scene crops a 9:16 window around the highlight bbox (zoom ≥ 1.6× so text is readable), panning with the scene's camera easing; steps without a highlight show a fitted overview; captions in the bottom third. (A centre crop of a real GitHub page cut off the labels.) **Updated 2026-11-19 (#394, Vishwas): zoom 1.15×, the whole page height in a band above the captions; 1.6× and more cut off too much of the page.** | #122 | Nachiketha |
 | D9 | **[N] Intro 2 s + outro 2 s.** Intro: tutorial title + site. Outro: "Verified on <site>, <date of the version's run>" + "Made with Krama". | #122 | Nachiketha |
-| D10 | **[N] Cursor, click ripple and highlight as in the spec; camera zoom ON in 16:9** (the TutorialSpec `camera`, scale ≤ 3, 450 ms pan), although the player's zoom defaults to off: a video can't be paused to squint. | #122 | Nachiketha |
+| D10 | **[N] Cursor, click ripple and highlight as in the spec; camera zoom ON in 16:9** (the TutorialSpec `camera`, scale ≤ 3, 450 ms pan), although the player's zoom defaults to off: a video can't be paused to squint. **Updated 2026-11-19 (#394, Vishwas): the video caps the camera at 1.15×; stronger zoom cut off the page's edges, and a video can't be paused to see them either.** | #122 | Nachiketha |
 | D11 | **[N] Captions burned in + a WebVTT sidecar**, both from the Piper word timings. | #122, #124, #126 | both |
 | D12 | **[N] Chapters:** `Intro`, `Step N: <scene title or caption>` per step, `Done`. A 6-step tutorial has 8 chapters. | #122, #126 | Nachiketha |
 | D13 | **Export statuses:** `queued → rendering → ready \| failed`, and `ready → expired` when cleanup deletes the file (the row stays). | #124, #125, #126 | both (contract) |
@@ -76,7 +76,7 @@ new target.
 |---|---|---|
 | Size | 1920×1080, 30 fps | 1080×1920, 30 fps |
 | Codec | H.264 CRF 18, AAC, `+faststart` | same |
-| Framing | whole 16:10 viewport with side bars; camera zoom from the spec | 9:16 window that follows the highlight, zoom ≥ 1.6× |
+| Framing | whole 16:10 viewport with side bars; camera zoom from the spec, at most 1.15× (#394) | 9:16 window that follows the highlight, zoom 1.15× (#394) |
 | Cursor / ripple / highlight | on, as in the spec | on, as in the spec |
 | Captions | burned in + `.vtt` | burned in (bottom third) + `.vtt` |
 | Intro / outro | 2 s / 2 s | 2 s / 2 s |
