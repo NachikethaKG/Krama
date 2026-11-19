@@ -39,6 +39,8 @@ SYSTEM_PROMPT = "\n".join(
         "- risk: low for navigation and form filling; medium for creating something; high for",
         "  deleting, transferring, publishing, sending, paying or changing security settings.",
         "- Number steps from 1. Set expected_result to one sentence describing the final state.",
+        "- Set title to the tutorial's name: at most 8 words, starting with a verb, general like the step",
+        "  text (no names from the task): Create a private repository in an organization.",
         "- The learner wants to SEE how a task is done, not to do it on their own data (#325). Never",
         "  ask for names or values that are only examples (repository, branch, label, issue or file",
         "  names, titles, descriptions): make up short, realistic ones yourself that end with the",

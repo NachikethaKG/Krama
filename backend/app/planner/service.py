@@ -154,6 +154,7 @@ class PlanningService:
                     status=plan.status,
                     risk=plan.risk,
                     expected_result=plan.expected_result,
+                    title=plan.title,
                     steps=[step.model_dump(mode="json", exclude_none=True) for step in plan.steps],
                 )
             )

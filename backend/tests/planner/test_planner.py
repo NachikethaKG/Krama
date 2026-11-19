@@ -288,3 +288,27 @@ async def test_live_gemini_ignores_instructions_in_page_text() -> None:
     assert "delete" not in text and "settings" not in text, text
     assert all(s.risk != "high" for s in steps)
     assert any(s.action.type == "fill" and s.action.value == "live-inject" for s in steps)
+
+
+@pytest.mark.parametrize(
+    ("title", "expected"), [(" Create a repository ", "Create a repository"), ("  ", None)]
+)
+async def test_the_planners_title_names_the_plan(title: str, expected: str | None) -> None:
+    """#390: a general name for the tutorial; a blank one is no title (the workflow then uses the request)."""
+    reply = recorded()
+    reply["title"] = title
+
+    result = await LLMPlanner(fake(reply)).plan(request())
+
+    assert result.plan.title == expected
+
+
+async def test_an_older_reply_without_a_title_is_still_a_plan() -> None:
+    reply = recorded()
+    reply.pop("title", None)
+
+    assert (await LLMPlanner(fake(reply)).plan(request())).plan.title is None
+
+
+def test_the_prompt_asks_for_general_text_without_our_names() -> None:
+    assert "your organization" in SYSTEM_PROMPT and "Set title" in SYSTEM_PROMPT
