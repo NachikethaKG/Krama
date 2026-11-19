@@ -2,6 +2,17 @@
 
 Every change to `contracts/` is listed here. Additive change = minor version bump; breaking change = major bump + ADR.
 
+## 1.15 (#399)
+
+"Do it for me" (#129): run a stored verified workflow for its owner with their own values. Additive.
+
+- `run.schema.json` v1.2: `RunKind` gains `do_it`; `source_workflow_id` is set for reverify and do_it runs.
+- `workflow.schema.json` v1.3: `WorkflowInput` (key, label, example, kind `text`, pattern, min_length, steps),
+  `WorkflowInputList` (workflow_id, revision, inputs, account) and `RunWorkflowRequest` (revision, inputs).
+- `events.schema.json`: `run.completed.workflow_id` names the workflow a do_it run ran.
+- `docs/api-contract.md`: `GET /workflows/{id}/inputs`, `POST /workflows/{id}/run`.
+- Fixtures: `fixtures/workflow-inputs/` (the Gitea create-repository inputs and a run request).
+
 ## 1.14 (#389)
 
 Universal tutorials (#390): a general title instead of the raw request. Additive.
