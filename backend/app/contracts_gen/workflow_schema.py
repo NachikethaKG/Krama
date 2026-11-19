@@ -43,6 +43,86 @@ class WorkflowRecording(BaseModel):
     ended_at: AwareDatetime | None = None
 
 
+type Step = Annotated[int, Field(ge=1)]
+
+
+class WorkflowInput(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+    key: Annotated[
+        str,
+        Field(
+            description="Stable name of the input in RunWorkflowRequest.inputs (e.g. repository_name).",
+            pattern="^[a-z][a-z0-9_]*$",
+        ),
+    ]
+    label: Annotated[
+        str,
+        Field(description='What to ask for, from the field\'s label (e.g. "Repository name").', min_length=1),
+    ]
+    example: Annotated[
+        str,
+        Field(
+            description="The value the recorded run typed, shown as a placeholder, never as the default.",
+            min_length=1,
+        ),
+    ]
+    kind: Annotated[
+        Literal["text"], Field(description="text only in v1; dropdowns replay the recorded option (P15).")
+    ]
+    pattern: Annotated[
+        str | None,
+        Field(
+            description="A regular expression a value must match: the example's character class (P5), e.g. ^[A-Za-z0-9._-]+$. Null when any single-line text is accepted."
+        ),
+    ] = None
+    min_length: Annotated[int, Field(description="Shortest value accepted (3 in v1, P5).", ge=1)]
+    steps: Annotated[
+        list[Step],
+        Field(
+            description="Seq of every step the value is typed in or reappears in (URL checks, headings, later targets, step text).",
+            min_length=1,
+        ),
+    ]
+
+
+class WorkflowInputList(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+    workflow_id: UUID
+    revision: Annotated[
+        int, Field(description="The version the inputs belong to; send it back in RunWorkflowRequest.", ge=1)
+    ]
+    inputs: list[WorkflowInput]
+    account: Annotated[
+        str | None,
+        Field(
+            description="The site account the run will act in. v1: the account Krama is signed in to on that site, not the user's own (P11). Null when unknown."
+        ),
+    ] = None
+
+
+class RunWorkflowRequest(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+    revision: Annotated[
+        int,
+        Field(
+            description="The version the user previewed (from WorkflowInputList); a newer current version gives 409 stale_revision.",
+            ge=1,
+        ),
+    ]
+    inputs: Annotated[
+        dict[str, str],
+        Field(
+            description="One value per WorkflowInput.key; every input is required (the server checks min_length and pattern)."
+        ),
+    ]
+
+
 type WorkflowVersionSource = Annotated[
     Literal["initial", "heal", "regenerate", "edit"],
     Field(

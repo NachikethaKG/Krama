@@ -1281,7 +1281,7 @@
               }
             ],
             "default": "task",
-            "description": "task: a run of a newly approved plan, which stores a new workflow when verified. reverify: a replay of a stored workflow's steps (POST /workflows/{id}/reverify), which stores none."
+            "description": "task: a run of a newly approved plan, which stores a new workflow when verified. reverify: a replay of a stored workflow's steps (POST /workflows/{id}/reverify), which stores none. do_it: a stored verified workflow run for its owner with the owner's own values (POST /workflows/{id}/run); it never resets the site, pauses at every risky step and stores no workflow."
           },
           "plan_id": {
             "format": "uuid",
@@ -1309,7 +1309,7 @@
                 "type": "null"
               }
             ],
-            "description": "reverify only: the stored workflow this run replays.",
+            "description": "reverify and do_it only: the stored workflow this run replays.",
             "title": "Source Workflow Id"
           },
           "started_at": {
@@ -1337,7 +1337,7 @@
                 "type": "null"
               }
             ],
-            "description": "The workflow this run stored. Null until a task run is verified, and always null for a reverify run (see source_workflow_id).",
+            "description": "The workflow this run stored. Null until a task run is verified, and always null for a reverify or do_it run (see source_workflow_id).",
             "title": "Workflow Id"
           }
         },
@@ -1379,7 +1379,8 @@
       "RunKind": {
         "enum": [
           "task",
-          "reverify"
+          "reverify",
+          "do_it"
         ],
         "title": "RunKind",
         "type": "string"
