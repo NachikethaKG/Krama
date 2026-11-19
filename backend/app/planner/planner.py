@@ -21,6 +21,8 @@ class LLMPlan(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     expected_result: str
+    title: str | None = None
+    """A short, general name for the tutorial (#390). Optional: a plan without one is still a plan."""
     steps: list[PlannedStep]
     clarification_question: str | None = None
 
@@ -175,6 +177,7 @@ def to_plan(draft: LLMPlan, task_id: UUID) -> Plan:
         status="proposed",
         risk=risk,
         expected_result=draft.expected_result,
+        title=(draft.title or "").strip() or None,
         steps=steps,
         created_at=datetime.now(UTC),
     )
