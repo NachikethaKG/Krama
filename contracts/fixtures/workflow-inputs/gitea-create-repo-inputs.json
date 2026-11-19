@@ -1,0 +1,16 @@
+{
+  "workflow_id": "6f1c2a4e-1111-4b8a-9a1b-123456789abc",
+  "revision": 1,
+  "inputs": [
+    {
+      "key": "repository_name",
+      "label": "Repository name",
+      "example": "demo-repo",
+      "kind": "text",
+      "pattern": "^[A-Za-z0-9._-]+$",
+      "min_length": 3,
+      "steps": [3, 5]
+    }
+  ],
+  "account": "demo"
+}
