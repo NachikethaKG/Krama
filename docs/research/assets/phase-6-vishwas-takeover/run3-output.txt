@@ -1,0 +1,388 @@
+{
+  "cpu": "see note",
+  "logical_cpus": 16,
+  "browser_version": "153.0.8010.12",
+  "baseline_idle_no_screencast": {
+    "seconds": 5.4,
+    "browser_cpu_pct_of_one_core": 0.6,
+    "python_cpu_pct_of_one_core": 6.1,
+    "machine_cpu_pct_all_cores": 14.0,
+    "browser_processes": 4,
+    "browser_mem_peak": {
+      "rss_mb": 201,
+      "private_mb": 109
+    }
+  },
+  "baseline_anim_no_screencast": {
+    "seconds": 5.5,
+    "browser_cpu_pct_of_one_core": 7.7,
+    "python_cpu_pct_of_one_core": 6.9,
+    "machine_cpu_pct_all_cores": 19.8,
+    "browser_processes": 4,
+    "browser_mem_peak": {
+      "rss_mb": 205,
+      "private_mb": 110
+    }
+  },
+  "idle": {
+    "frames_in_4s_idle_page": 0,
+    "frames_in_4s_with_blinking_caret": 8
+  },
+  "frame_example": {
+    "size": [
+      1280,
+      800
+    ],
+    "metadata": {
+      "offsetTop": 0,
+      "pageScaleFactor": 1,
+      "deviceWidth": 1280,
+      "deviceHeight": 800,
+      "scrollOffsetX": 0,
+      "scrollOffsetY": 0,
+      "timestamp": 1795104499.842607
+    }
+  },
+  "no_ack_frames_in_3s_animating": 3,
+  "settings_animating": [
+    {
+      "opts": {
+        "quality": 80,
+        "maxWidth": 1280,
+        "maxHeight": 800,
+        "everyNthFrame": 1
+      },
+      "seconds": 5.1,
+      "browser_cpu_pct_of_one_core": 216.0,
+      "python_cpu_pct_of_one_core": 23.8,
+      "machine_cpu_pct_all_cores": 31.1,
+      "browser_processes": 4,
+      "browser_mem_peak": {
+        "rss_mb": 234,
+        "private_mb": 128
+      },
+      "frames": 185,
+      "fps": 36.1,
+      "frame_kb_avg": 19.1,
+      "frame_kb_max": 19.3,
+      "kbit_per_s": 5512
+    },
+    {
+      "opts": {
+        "quality": 60,
+        "maxWidth": 1280,
+        "maxHeight": 800,
+        "everyNthFrame": 1
+      },
+      "seconds": 5.5,
+      "browser_cpu_pct_of_one_core": 212.0,
+      "python_cpu_pct_of_one_core": 27.6,
+      "machine_cpu_pct_all_cores": 31.1,
+      "browser_processes": 4,
+      "browser_mem_peak": {
+        "rss_mb": 236,
+        "private_mb": 124
+      },
+      "frames": 219,
+      "fps": 39.8,
+      "frame_kb_avg": 16.0,
+      "frame_kb_max": 16.1,
+      "kbit_per_s": 5089
+    },
+    {
+      "opts": {
+        "quality": 40,
+        "maxWidth": 1280,
+        "maxHeight": 800,
+        "everyNthFrame": 1
+      },
+      "seconds": 5.4,
+      "browser_cpu_pct_of_one_core": 232.7,
+      "python_cpu_pct_of_one_core": 33.2,
+      "machine_cpu_pct_all_cores": 33.9,
+      "browser_processes": 4,
+      "browser_mem_peak": {
+        "rss_mb": 233,
+        "private_mb": 133
+      },
+      "frames": 269,
+      "fps": 49.6,
+      "frame_kb_avg": 14.0,
+      "frame_kb_max": 14.1,
+      "kbit_per_s": 5564
+    },
+    {
+      "opts": {
+        "quality": 60,
+        "maxWidth": 960,
+        "maxHeight": 600,
+        "everyNthFrame": 1
+      },
+      "seconds": 5.1,
+      "browser_cpu_pct_of_one_core": 93.7,
+      "python_cpu_pct_of_one_core": 15.1,
+      "machine_cpu_pct_all_cores": 26.1,
+      "browser_processes": 4,
+      "browser_mem_peak": {
+        "rss_mb": 225,
+        "private_mb": 125
+      },
+      "frames": 287,
+      "fps": 56.6,
+      "frame_kb_avg": 9.8,
+      "frame_kb_max": 9.9,
+      "kbit_per_s": 4453
+    },
+    {
+      "opts": {
+        "quality": 60,
+        "maxWidth": 1280,
+        "maxHeight": 800,
+        "everyNthFrame": 2
+      },
+      "seconds": 5.0,
+      "browser_cpu_pct_of_one_core": 46.8,
+      "python_cpu_pct_of_one_core": 3.7,
+      "machine_cpu_pct_all_cores": 22.9,
+      "browser_processes": 4,
+      "browser_mem_peak": {
+        "rss_mb": 230,
+        "private_mb": 126
+      },
+      "frames": 150,
+      "fps": 30.0,
+      "frame_kb_avg": 16.0,
+      "frame_kb_max": 16.1,
+      "kbit_per_s": 3829
+    },
+    {
+      "opts": {
+        "quality": 60,
+        "maxWidth": 1280,
+        "maxHeight": 800,
+        "everyNthFrame": 4
+      },
+      "seconds": 5.0,
+      "browser_cpu_pct_of_one_core": 34.5,
+      "python_cpu_pct_of_one_core": 3.1,
+      "machine_cpu_pct_all_cores": 19.9,
+      "browser_processes": 4,
+      "browser_mem_peak": {
+        "rss_mb": 228,
+        "private_mb": 126
+      },
+      "frames": 75,
+      "fps": 14.9,
+      "frame_kb_avg": 16.0,
+      "frame_kb_max": 16.1,
+      "kbit_per_s": 1907
+    },
+    {
+      "opts": {
+        "quality": 80,
+        "maxWidth": 1280,
+        "maxHeight": 800,
+        "everyNthFrame": 1
+      },
+      "seconds": 5.5,
+      "browser_cpu_pct_of_one_core": 60.0,
+      "python_cpu_pct_of_one_core": 9.1,
+      "machine_cpu_pct_all_cores": 20.3,
+      "browser_processes": 4,
+      "browser_mem_peak": {
+        "rss_mb": 230,
+        "private_mb": 126
+      },
+      "frames": 330,
+      "fps": 60.0,
+      "frame_kb_avg": 19.1,
+      "frame_kb_max": 19.3,
+      "kbit_per_s": 9169
+    },
+    {
+      "opts": {
+        "quality": 60,
+        "maxWidth": 1280,
+        "maxHeight": 800,
+        "everyNthFrame": 1
+      },
+      "seconds": 5.0,
+      "browser_cpu_pct_of_one_core": 69.5,
+      "python_cpu_pct_of_one_core": 5.9,
+      "machine_cpu_pct_all_cores": 34.3,
+      "browser_processes": 4,
+      "browser_mem_peak": {
+        "rss_mb": 231,
+        "private_mb": 127
+      },
+      "frames": 301,
+      "fps": 60.0,
+      "frame_kb_avg": 16.0,
+      "frame_kb_max": 16.1,
+      "kbit_per_s": 7671
+    },
+    {
+      "opts": {
+        "quality": 40,
+        "maxWidth": 1280,
+        "maxHeight": 800,
+        "everyNthFrame": 1
+      },
+      "seconds": 5.5,
+      "browser_cpu_pct_of_one_core": 62.0,
+      "python_cpu_pct_of_one_core": 6.3,
+      "machine_cpu_pct_all_cores": 33.4,
+      "browser_processes": 4,
+      "browser_mem_peak": {
+        "rss_mb": 230,
+        "private_mb": 126
+      },
+      "frames": 330,
+      "fps": 60.0,
+      "frame_kb_avg": 14.0,
+      "frame_kb_max": 14.1,
+      "kbit_per_s": 6730
+    },
+    {
+      "opts": {
+        "quality": 60,
+        "maxWidth": 960,
+        "maxHeight": 600,
+        "everyNthFrame": 1
+      },
+      "seconds": 5.0,
+      "browser_cpu_pct_of_one_core": 59.7,
+      "python_cpu_pct_of_one_core": 9.3,
+      "machine_cpu_pct_all_cores": 31.1,
+      "browser_processes": 4,
+      "browser_mem_peak": {
+        "rss_mb": 224,
+        "private_mb": 124
+      },
+      "frames": 303,
+      "fps": 60.0,
+      "frame_kb_avg": 9.8,
+      "frame_kb_max": 9.9,
+      "kbit_per_s": 4715
+    },
+    {
+      "opts": {
+        "quality": 60,
+        "maxWidth": 1280,
+        "maxHeight": 800,
+        "everyNthFrame": 2
+      },
+      "seconds": 5.0,
+      "browser_cpu_pct_of_one_core": 43.5,
+      "python_cpu_pct_of_one_core": 5.3,
+      "machine_cpu_pct_all_cores": 20.4,
+      "browser_processes": 4,
+      "browser_mem_peak": {
+        "rss_mb": 230,
+        "private_mb": 128
+      },
+      "frames": 152,
+      "fps": 30.2,
+      "frame_kb_avg": 16.0,
+      "frame_kb_max": 16.1,
+      "kbit_per_s": 3863
+    },
+    {
+      "opts": {
+        "quality": 60,
+        "maxWidth": 1280,
+        "maxHeight": 800,
+        "everyNthFrame": 4
+      },
+      "seconds": 5.2,
+      "browser_cpu_pct_of_one_core": 32.9,
+      "python_cpu_pct_of_one_core": 4.5,
+      "machine_cpu_pct_all_cores": 21.6,
+      "browser_processes": 4,
+      "browser_mem_peak": {
+        "rss_mb": 229,
+        "private_mb": 125
+      },
+      "frames": 78,
+      "fps": 15.0,
+      "frame_kb_avg": 16.0,
+      "frame_kb_max": 16.1,
+      "kbit_per_s": 1923
+    }
+  ],
+  "cdp_input_dom": {
+    "name": "alic pasted \u2713 \u00e9",
+    "pw_len": 6,
+    "notes": "replaced\n",
+    "clicks": "1",
+    "keys": "[a][l][i][c][e][Backspace][s][e][c][r][e][t][Tab][a][b][a][Enter]",
+    "active": "go"
+  },
+  "playwright_input_dom": {
+    "name": "carol",
+    "clicks": "2"
+  },
+  "latency_key_to_frame": {
+    "raw_cdp": {
+      "n": 20,
+      "p50_ms": 12.4,
+      "p95_ms": 16.7,
+      "max_ms": 18.9
+    },
+    "playwright_keyboard": {
+      "n": 20,
+      "p50_ms": 14.4,
+      "p95_ms": 22.9,
+      "max_ms": 23.0
+    }
+  },
+  "session_15s_typing_animating_no_screencast": {
+    "seconds": 15.5,
+    "browser_cpu_pct_of_one_core": 8.0,
+    "python_cpu_pct_of_one_core": 3.0,
+    "machine_cpu_pct_all_cores": 12.6,
+    "browser_processes": 4,
+    "browser_mem_peak": {
+      "rss_mb": 234,
+      "private_mb": 121
+    }
+  },
+  "session_15s_typing_animating_q60": {
+    "seconds": 15.3,
+    "browser_cpu_pct_of_one_core": 170.1,
+    "python_cpu_pct_of_one_core": 19.1,
+    "machine_cpu_pct_all_cores": 35.0,
+    "browser_processes": 4,
+    "browser_mem_peak": {
+      "rss_mb": 270,
+      "private_mb": 140
+    },
+    "frames": 340,
+    "fps": 22.3,
+    "frame_kb_avg": 24.6,
+    "frame_kb_max": 34.6,
+    "kbit_per_s": 4376
+  },
+  "session_15s_typing_static_page_q60": {
+    "seconds": 15.3,
+    "browser_cpu_pct_of_one_core": 30.2,
+    "python_cpu_pct_of_one_core": 10.6,
+    "machine_cpu_pct_all_cores": 36.1,
+    "browser_processes": 4,
+    "browser_mem_peak": {
+      "rss_mb": 256,
+      "private_mb": 134
+    },
+    "frames": 84,
+    "fps": 5.5,
+    "frame_kb_avg": 27.5,
+    "frame_kb_max": 37.6,
+    "kbit_per_s": 1205
+  },
+  "busy_page_frame_kb": {
+    "q40": 88.1,
+    "q60": 115.3,
+    "q80": 156.9
+  },
+  "browser_processes_left_after_close": 0
+}
