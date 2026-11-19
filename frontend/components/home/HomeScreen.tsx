@@ -10,7 +10,7 @@ import { type ApiClient, getApiClient } from "@/lib/api";
 import type { TutorialSummary } from "@/types/tutorial";
 
 /** The signed-in home (#318): ask for a tutorial in plain words, and get back to recent ones. PRD §41. */
-export function HomeScreen({ client }: { client?: ApiClient }) {
+export function HomeScreen({ client, initialPrompt }: { client?: ApiClient; initialPrompt?: string }) {
   const [apiClient] = useState<ApiClient>(() => client ?? getApiClient());
   const [recent, setRecent] = useState<TutorialSummary[] | null>(null);
 
@@ -66,7 +66,11 @@ export function HomeScreen({ client }: { client?: ApiClient }) {
             })}
           </div>
         </div>
-        <TaskInput client={apiClient} className="kr-rise mt-2 [animation-delay:120ms]" />
+        <TaskInput
+          client={apiClient}
+          initialPrompt={initialPrompt}
+          className="kr-rise mt-2 [animation-delay:120ms]"
+        />
       </section>
 
       <section aria-labelledby="recent-heading" className="kr-learn flex flex-col gap-5">

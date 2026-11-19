@@ -21,6 +21,8 @@ export interface TaskInputProps {
   initialTargetUrl?: string;
   /** Show the developer target picker (local Gitea, custom URL). Default: NEXT_PUBLIC_DEV_TARGETS=1. */
   devTargets?: boolean;
+  /** Text to start with, e.g. "Plan it fresh" after a failed "Do it for me" run (#402). */
+  initialPrompt?: string;
 }
 
 const EXAMPLES = [
@@ -43,10 +45,11 @@ export function TaskInput({
   initialTarget,
   initialTargetUrl,
   devTargets = process.env.NEXT_PUBLIC_DEV_TARGETS === "1",
+  initialPrompt = "",
 }: TaskInputProps) {
   const router = useRouter();
   const [apiClient] = useState<ApiClient>(() => client ?? getApiClient());
-  const [prompt, setPrompt] = useState("");
+  const [prompt, setPrompt] = useState(initialPrompt);
   const targetSelection = useTargetSelection({
     initialTarget,
     initialCustomUrl: initialTargetUrl,
