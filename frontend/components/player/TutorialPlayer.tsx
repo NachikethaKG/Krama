@@ -5,11 +5,12 @@ import type { TutorialSpec } from "@krama/tutorial-compiler";
 import type { eventWithTime } from "@rrweb/types";
 import type { TutorialFreshnessStatus } from "@/types/tutorial";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
-import { Clapperboard, Eye, Film, History, Share2, Timer } from "lucide-react";
+import { Clapperboard, Eye, Film, History, Share2, Timer, Zap } from "lucide-react";
 import { TutorialStatusBadge } from "@/components/tutorials/TutorialStatusBadge";
 import { VersionHistoryPanel } from "@/components/versions/VersionHistoryPanel";
 import { ShareTutorialModal } from "@/components/share";
 import { ExportVideoModal } from "@/components/export";
+import { DoItForMeModal } from "@/components/do-it";
 import { CopyableText } from "./CopyableText";
 import { stepColor } from "./spectrum";
 import { TutorialControls } from "./TutorialControls";
@@ -57,9 +58,12 @@ export function TutorialPlayer({
   const [isVersionHistoryOpen, setIsVersionHistoryOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [isDoItModalOpen, setIsDoItModalOpen] = useState(false);
   const freshnessStatus: TutorialFreshnessStatus =
     status ?? (spec as unknown as { status?: TutorialFreshnessStatus }).status ?? "verified";
   const effectiveWorkflowId = workflowId ?? spec.workflow_id;
+  // Only a verified workflow can run for the user (P2); the dialog explains any other refusal.
+  const canDoIt = freshnessStatus === "verified" || freshnessStatus === "auto-updated";
   const player = useTutorialPlayer({
     spec,
     autoPlay,
@@ -146,6 +150,18 @@ export function TutorialPlayer({
               </span>
             ) : null}
           </div>
+
+          {!readOnly && effectiveWorkflowId && canDoIt && (
+            <button
+              type="button"
+              data-testid="do-it-for-me-button"
+              onClick={() => setIsDoItModalOpen(true)}
+              className="kr-chip cursor-pointer transition-colors hover:text-white"
+            >
+              <Zap className="size-3.5 text-approve" aria-hidden="true" />
+              <span>Do it for me</span>
+            </button>
+          )}
 
           {!readOnly && effectiveWorkflowId && (
             <button
@@ -395,6 +411,15 @@ export function TutorialPlayer({
         <ShareTutorialModal
           isOpen={isShareModalOpen}
           onClose={() => setIsShareModalOpen(false)}
+          workflowId={effectiveWorkflowId}
+          tutorialTitle={spec.title}
+        />
+      )}
+
+      {!readOnly && effectiveWorkflowId && canDoIt && (
+        <DoItForMeModal
+          isOpen={isDoItModalOpen}
+          onClose={() => setIsDoItModalOpen(false)}
           workflowId={effectiveWorkflowId}
           tutorialTitle={spec.title}
         />
