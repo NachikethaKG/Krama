@@ -1,0 +1,26 @@
+{
+  "idle_page": {
+    "fps": 0.0,
+    "kb_avg": null
+  },
+  "animating": {
+    "fps": 52.8,
+    "kb_avg": 9.8
+  },
+  "frame_size": [
+    1280,
+    800
+  ],
+  "viewport_in_frame_info": [
+    1280,
+    800
+  ],
+  "animating_slow_viewer_100ms": {
+    "fps": 19.5,
+    "kb_avg": 9.8
+  },
+  "default_size_frame": [
+    800,
+    500
+  ]
+}
