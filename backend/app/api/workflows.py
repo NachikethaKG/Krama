@@ -24,9 +24,17 @@ from app.api.services import ServicesDep
 from app.contracts_gen.common_schema import ErrorResponse
 from app.contracts_gen.run_schema import Run
 from app.contracts_gen.task_schema import Task
-from app.contracts_gen.workflow_schema import Workflow, WorkflowPage, WorkflowVersionList
+from app.contracts_gen.workflow_schema import (
+    RunWorkflowRequest,
+    Workflow,
+    WorkflowInputList,
+    WorkflowPage,
+    WorkflowVersionList,
+)
 from app.db import RunRow, TaskRow
 from app.db.repositories import list_versions, list_workflows
+from app.runs.do_it import create_do_it_run, workflow_inputs
+from app.runs.inputs import DoItRefusedError, InputUnsafeError
 from app.runs.reverify import ReverifyRefusedError, create_reverify_run
 
 router = APIRouter(tags=["workflows"])
@@ -127,6 +135,71 @@ async def reverify_workflow(workflow_id: UUID, user: CurrentUser, services: Serv
         if e.step_seq is not None:
             details["step_seq"] = e.step_seq
         raise ApiException(409, "conflict", str(e), details) from None
+    async with services.sessions() as s:
+        run = await s.get(RunRow, run_id)
+        assert run is not None
+        out = run_out(run, None)
+    await services.executor.submit(run_id)
+    return out
+
+
+_DO_IT_REFUSALS = "Not verified, a version waits for review, a step typed a secret, or the version is stale"
+
+
+def _refused(e: DoItRefusedError) -> ApiException:
+    details: dict[str, Any] = {"reason": e.reason}
+    if e.step_seq is not None:
+        details["step_seq"] = e.step_seq
+    return ApiException(409, "conflict", str(e), details)
+
+
+@router.get(
+    "/workflows/{workflow_id}/inputs",
+    responses={
+        404: {"model": ErrorResponse, "description": "Not found"},
+        409: {"model": ErrorResponse, "description": _DO_IT_REFUSALS},
+    },
+)
+async def get_workflow_inputs(
+    workflow_id: UUID, user: CurrentUser, services: ServicesDep
+) -> WorkflowInputList:
+    """The values the owner chooses before "Do it for me" runs the current version (#129), and the site
+    account the run acts in: in v1 the account Krama is signed in to there, not the user's own (P11)."""
+    async with services.sessions() as s:
+        workflow = await owned_workflow(s, workflow_id, user)
+        account = services.target(workflow.target_url).signed_in_as
+        try:
+            return await workflow_inputs(s, workflow, account)
+        except DoItRefusedError as e:
+            raise _refused(e) from None
+
+
+@router.post(
+    "/workflows/{workflow_id}/run",
+    status_code=202,
+    responses={
+        404: {"model": ErrorResponse, "description": "Not found"},
+        409: {"model": ErrorResponse, "description": _DO_IT_REFUSALS},
+        422: {
+            "model": ErrorResponse,
+            "description": "A value is missing, unknown or can't be used (input_unsafe)",
+        },
+    },
+)
+async def run_workflow(
+    workflow_id: UUID, body: RunWorkflowRequest, user: CurrentUser, services: ServicesDep
+) -> Run:
+    """ "Do it for me" (#129): run the stored steps for the owner with their values. Starting it approves the
+    steps; it never resets the site, risky steps pause for confirmation, and no workflow is stored."""
+    async with services.sessions() as s:
+        await owned_workflow(s, workflow_id, user)
+    try:
+        run_id = await create_do_it_run(services.sessions, workflow_id, body.revision, body.inputs)
+    except DoItRefusedError as e:
+        raise _refused(e) from None
+    except InputUnsafeError as e:
+        details = {"reason": "input_unsafe", "key": e.key}
+        raise ApiException(422, "validation_error", str(e), details) from None
     async with services.sessions() as s:
         run = await s.get(RunRow, run_id)
         assert run is not None
