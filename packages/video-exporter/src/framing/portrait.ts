@@ -1,11 +1,16 @@
 import type { Point, Scene, WorkflowViewport } from "@krama/contracts-ts";
-import type { FramingTransform } from "./landscape.js";
+import { VIDEO_MAX_ZOOM, type FramingTransform } from "./landscape.js";
+
+/** Page px -> canvas px around the highlight (#394): ~73% of a 1280px page's width, text still readable. */
+export const PORTRAIT_ZOOM = VIDEO_MAX_ZOOM;
 
 /**
  * Computes 9:16 portrait framing (1080x1920) for mobile.
- * Implements "Follow the Highlight":
- * - Focuses on the highlight bounding box center with scale >= 1.6x so UI text is crisp.
- * - Positions target element at ~40% canvas height, keeping the bottom third clear for subtitles.
+ * Implements "Follow the Highlight" (D8, gentler since #394):
+ * - Shows the page at PORTRAIT_ZOOM, panned sideways so the highlight is in frame and as central as the page
+ *   edges allow.
+ * - The page is a band across the middle of the tall canvas, a little above centre so the captions in the
+ *   bottom third don't cover it.
  * - Falls back to a horizontally fitted overview for steps without a target element.
  */
 export function computePortraitFraming(
@@ -39,27 +44,20 @@ export function computePortraitFraming(
     y: highlightBbox[1] + highlightBbox[3] / 2 - scrollY,
   };
 
-  // Zoom scale: minimum 1.6x for mobile readability, up to 2.2x
-  const zoomScale = Math.max(1.6, Math.min(2.2, (scene?.camera?.scale ?? 1.35) * 1.3));
-
-  // Desired position on canvas: horizontal center, 40% vertical height
-  const desiredX = canvas.width / 2;
-  const desiredY = canvas.height * 0.40;
-
-  const rawPanX = desiredX - targetCenter.x * zoomScale;
-  const rawPanY = desiredY - targetCenter.y * zoomScale;
-
-  // Soft clamping: ensure target remains fully in frame
+  const zoomScale = PORTRAIT_ZOOM;
   const scaledW = viewport.width * zoomScale;
   const scaledH = viewport.height * zoomScale;
 
-  const minPanX = canvas.width - scaledW - 40;
-  const maxPanX = 40;
-  const minPanY = canvas.height - scaledH - 80;
-  const maxPanY = 80;
+  // Sideways: the highlight as central as possible without showing past the page's edges.
+  const rawPanX = canvas.width / 2 - targetCenter.x * zoomScale;
+  const panX = Math.max(canvas.width - scaledW, Math.min(0, rawPanX));
 
-  const panX = Math.max(minPanX, Math.min(maxPanX, rawPanX));
-  const panY = Math.max(minPanY, Math.min(maxPanY, rawPanY));
+  // Up and down: the whole page height fits, so it isn't cropped. Centre it, shifted up by a tenth of the
+  // canvas to keep clear of the captions; a page taller than the canvas follows the highlight instead.
+  const panY =
+    scaledH <= canvas.height
+      ? (canvas.height - scaledH) / 2 - canvas.height * 0.1
+      : Math.max(canvas.height - scaledH, Math.min(0, canvas.height * 0.4 - targetCenter.y * zoomScale));
 
   return {
     scale: zoomScale,

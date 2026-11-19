@@ -1,5 +1,12 @@
 import type { Point, Scene, WorkflowViewport } from "@krama/contracts-ts";
 
+/**
+ * Most the video camera zooms in on a step (#394): enough to draw the eye to the element while nearly the whole
+ * page stays in frame. The spec's camera may ask for more (the web player's zoom); a video can't be paused to
+ * look at the parts a stronger zoom cuts off.
+ */
+export const VIDEO_MAX_ZOOM = 1.15;
+
 export interface FramingTransform {
   scale: number;
   panX: number;
@@ -38,7 +45,7 @@ export function computeLandscapeFraming(
     y: scene.camera.center.y - scrollY,
   };
 
-  const cameraScale = Math.max(1.0, Math.min(3.0, scene.camera.scale));
+  const cameraScale = Math.max(1.0, Math.min(VIDEO_MAX_ZOOM, scene.camera.scale));
   const totalScale = fitScale * cameraScale;
 
   // Aim to place target center at the center of the 1920x1080 canvas
