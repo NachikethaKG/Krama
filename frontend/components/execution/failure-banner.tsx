@@ -7,6 +7,8 @@ export interface FailureBannerProps {
   planId?: string;
   onRetry?: () => void;
   onBackToPlan?: () => void;
+  /** A failed "Do it for me" run (#402, P7): what ran, and a fresh plan instead of "Back to plan". */
+  doIt?: { done: number; total: number; planFreshHref: string };
   className?: string;
 }
 
@@ -16,6 +18,7 @@ export function FailureBanner({
   planId,
   onRetry,
   onBackToPlan,
+  doIt,
   className = "",
 }: FailureBannerProps) {
   const errorCode = error?.code || "validation_error";
@@ -76,6 +79,13 @@ export function FailureBanner({
               {errorMessage}
             </p>
 
+            {doIt ? (
+              <p data-testid="do-it-progress" className="text-xs font-medium text-white">
+                {doIt.done} of {doIt.total} {doIt.total === 1 ? "step" : "steps"} ran; Krama stopped and did not
+                run the rest. Anything those steps created is still there.
+              </p>
+            ) : null}
+
             <div className="mt-1 flex items-start gap-1.5 text-xs text-ink-400">
               <span className="font-bold text-plan">Remediation:</span>
               <span>
@@ -87,7 +97,15 @@ export function FailureBanner({
 
         {/* Post-failure action controls */}
         <div className="flex shrink-0 flex-wrap items-center gap-2 pl-12 sm:pl-0 sm:pt-0.5">
-          {onBackToPlan ? (
+          {doIt ? (
+            <a
+              href={doIt.planFreshHref}
+              data-testid="plan-it-fresh-btn"
+              className="kr-btn kr-btn-ghost kr-approve px-3.5 py-2 text-xs"
+            >
+              Plan it fresh
+            </a>
+          ) : onBackToPlan ? (
             <button
               type="button"
               data-testid="back-to-plan-btn"
