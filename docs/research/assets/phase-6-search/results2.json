@@ -1,0 +1,1520 @@
+{
+ "n30": {
+  "ranked_or": {
+   "top3_hits": "11/12",
+   "median_ms": 2.1399999999999997,
+   "max_ms": 3.74,
+   "per_query": [
+    {
+     "q": "how do I add a collaborator on GitHub?",
+     "hit": true,
+     "top3": [
+      "add_collab_gitea",
+      "add_collab_github",
+      "ssh_key"
+     ],
+     "median_ms": 3.33
+    },
+    {
+     "q": "add colaborator",
+     "hit": true,
+     "top3": [
+      "add_collab_gitea",
+      "add_collab_github",
+      "ssh_key"
+     ],
+     "median_ms": 2.05
+    },
+    {
+     "q": "make repo private",
+     "hit": true,
+     "top3": [
+      "visibility",
+      "create_repo",
+      "gh_token"
+     ],
+     "median_ms": 2.23
+    },
+    {
+     "q": "invite someone",
+     "hit": true,
+     "top3": [
+      "assign_issue",
+      "invite_org_gh",
+      "add_collab_github"
+     ],
+     "median_ms": 1.94
+    },
+    {
+     "q": "delete a repository",
+     "hit": true,
+     "top3": [
+      "delete_repo",
+      "create_repo",
+      "archive_repo"
+     ],
+     "median_ms": 2.42
+    },
+    {
+     "q": "protect main branch",
+     "hit": true,
+     "top3": [
+      "branch_protection",
+      "create_branch",
+      "branch_protection_gh"
+     ],
+     "median_ms": 1.85
+    },
+    {
+     "q": "webhook",
+     "hit": true,
+     "top3": [
+      "webhook"
+     ],
+     "median_ms": 1.49
+    },
+    {
+     "q": "open a new issue",
+     "hit": true,
+     "top3": [
+      "create_issue",
+      "close_issue",
+      "label_issue"
+     ],
+     "median_ms": 2.83
+    },
+    {
+     "q": "tag an issue as bug",
+     "hit": true,
+     "top3": [
+      "label_issue",
+      "create_issue",
+      "close_issue"
+     ],
+     "median_ms": 2.35
+    },
+    {
+     "q": "rename repo",
+     "hit": true,
+     "top3": [
+      "rename_repo",
+      "create_repo",
+      "archive_repo"
+     ],
+     "median_ms": 1.83
+    },
+    {
+     "q": "ssh key",
+     "hit": true,
+     "top3": [
+      "ssh_key",
+      "deploy_key"
+     ],
+     "median_ms": 1.6
+    },
+    {
+     "q": "give someone access to my repository",
+     "hit": false,
+     "top3": [
+      "delete_repo",
+      "create_repo",
+      "archive_repo"
+     ],
+     "median_ms": 3.74
+    }
+   ]
+  },
+  "ranked_and_then_or": {
+   "top3_hits": "11/12",
+   "median_ms": 3.21,
+   "max_ms": 4.79,
+   "per_query": [
+    {
+     "q": "how do I add a collaborator on GitHub?",
+     "hit": true,
+     "top3": [
+      "add_collab_github",
+      "add_collab_gitea",
+      "ssh_key"
+     ],
+     "median_ms": 4.79
+    },
+    {
+     "q": "add colaborator",
+     "hit": true,
+     "top3": [
+      "add_collab_gitea",
+      "add_collab_github",
+      "ssh_key"
+     ],
+     "median_ms": 3.66
+    },
+    {
+     "q": "make repo private",
+     "hit": true,
+     "top3": [
+      "visibility",
+      "create_repo",
+      "gh_token"
+     ],
+     "median_ms": 3.98
+    },
+    {
+     "q": "invite someone",
+     "hit": true,
+     "top3": [
+      "assign_issue",
+      "invite_org_gh",
+      "add_collab_github"
+     ],
+     "median_ms": 3.23
+    },
+    {
+     "q": "delete a repository",
+     "hit": true,
+     "top3": [
+      "delete_repo",
+      "rename_repo",
+      "add_collab_gitea"
+     ],
+     "median_ms": 1.96
+    },
+    {
+     "q": "protect main branch",
+     "hit": true,
+     "top3": [
+      "branch_protection",
+      "branch_protection_gh",
+      "create_branch"
+     ],
+     "median_ms": 3.19
+    },
+    {
+     "q": "webhook",
+     "hit": true,
+     "top3": [
+      "webhook"
+     ],
+     "median_ms": 2.75
+    },
+    {
+     "q": "open a new issue",
+     "hit": true,
+     "top3": [
+      "create_issue",
+      "create_label",
+      "milestone"
+     ],
+     "median_ms": 1.62
+    },
+    {
+     "q": "tag an issue as bug",
+     "hit": true,
+     "top3": [
+      "label_issue",
+      "create_issue",
+      "close_issue"
+     ],
+     "median_ms": 3.48
+    },
+    {
+     "q": "rename repo",
+     "hit": true,
+     "top3": [
+      "rename_repo",
+      "create_repo",
+      "archive_repo"
+     ],
+     "median_ms": 2.71
+    },
+    {
+     "q": "ssh key",
+     "hit": true,
+     "top3": [
+      "ssh_key",
+      "deploy_key"
+     ],
+     "median_ms": 2.39
+    },
+    {
+     "q": "give someone access to my repository",
+     "hit": false,
+     "top3": [
+      "delete_repo",
+      "create_repo",
+      "archive_repo"
+     ],
+     "median_ms": 4.5
+    }
+   ]
+  },
+  "ranked_or+synonyms": {
+   "top3_hits": "12/12",
+   "median_ms": 2.075,
+   "max_ms": 5.34,
+   "per_query": [
+    {
+     "q": "how do I add a collaborator on GitHub?",
+     "hit": true,
+     "top3": [
+      "add_collab_gitea",
+      "add_collab_github",
+      "ssh_key"
+     ],
+     "median_ms": 2.07
+    },
+    {
+     "q": "add colaborator",
+     "hit": true,
+     "top3": [
+      "add_collab_gitea",
+      "add_collab_github",
+      "ssh_key"
+     ],
+     "median_ms": 1.52
+    },
+    {
+     "q": "make repo private",
+     "hit": true,
+     "top3": [
+      "visibility_gh",
+      "visibility",
+      "delete_repo"
+     ],
+     "median_ms": 2.98
+    },
+    {
+     "q": "invite someone",
+     "hit": true,
+     "top3": [
+      "invite_org",
+      "add_collab_gitea",
+      "ssh_key"
+     ],
+     "median_ms": 2.85
+    },
+    {
+     "q": "delete a repository",
+     "hit": true,
+     "top3": [
+      "delete_repo",
+      "create_repo",
+      "archive_repo"
+     ],
+     "median_ms": 2.2
+    },
+    {
+     "q": "protect main branch",
+     "hit": true,
+     "top3": [
+      "branch_protection",
+      "create_branch",
+      "branch_protection_gh"
+     ],
+     "median_ms": 1.8
+    },
+    {
+     "q": "webhook",
+     "hit": true,
+     "top3": [
+      "webhook"
+     ],
+     "median_ms": 1.55
+    },
+    {
+     "q": "open a new issue",
+     "hit": true,
+     "top3": [
+      "create_issue",
+      "close_issue",
+      "label_issue"
+     ],
+     "median_ms": 2.87
+    },
+    {
+     "q": "tag an issue as bug",
+     "hit": true,
+     "top3": [
+      "label_issue",
+      "create_label",
+      "create_issue"
+     ],
+     "median_ms": 1.97
+    },
+    {
+     "q": "rename repo",
+     "hit": true,
+     "top3": [
+      "rename_repo",
+      "delete_repo",
+      "create_repo"
+     ],
+     "median_ms": 2.08
+    },
+    {
+     "q": "ssh key",
+     "hit": true,
+     "top3": [
+      "ssh_key",
+      "deploy_key"
+     ],
+     "median_ms": 1.49
+    },
+    {
+     "q": "give someone access to my repository",
+     "hit": true,
+     "top3": [
+      "add_collab_gitea",
+      "add_collab_github",
+      "gh_token"
+     ],
+     "median_ms": 5.34
+    }
+   ]
+  },
+  "ranked_and_then_or+synonyms": {
+   "top3_hits": "12/12",
+   "median_ms": 3.2199999999999998,
+   "max_ms": 7.95,
+   "per_query": [
+    {
+     "q": "how do I add a collaborator on GitHub?",
+     "hit": true,
+     "top3": [
+      "add_collab_github",
+      "add_collab_gitea",
+      "ssh_key"
+     ],
+     "median_ms": 3.96
+    },
+    {
+     "q": "add colaborator",
+     "hit": true,
+     "top3": [
+      "add_collab_gitea",
+      "add_collab_github",
+      "ssh_key"
+     ],
+     "median_ms": 3.29
+    },
+    {
+     "q": "make repo private",
+     "hit": true,
+     "top3": [
+      "visibility",
+      "visibility_gh",
+      "delete_repo"
+     ],
+     "median_ms": 5.19
+    },
+    {
+     "q": "invite someone",
+     "hit": true,
+     "top3": [
+      "invite_org_gh",
+      "invite_org",
+      "add_collab_gitea"
+     ],
+     "median_ms": 4.71
+    },
+    {
+     "q": "delete a repository",
+     "hit": true,
+     "top3": [
+      "delete_repo",
+      "rename_repo",
+      "add_collab_gitea"
+     ],
+     "median_ms": 1.94
+    },
+    {
+     "q": "protect main branch",
+     "hit": true,
+     "top3": [
+      "branch_protection",
+      "branch_protection_gh",
+      "create_branch"
+     ],
+     "median_ms": 3.15
+    },
+    {
+     "q": "webhook",
+     "hit": true,
+     "top3": [
+      "webhook"
+     ],
+     "median_ms": 2.46
+    },
+    {
+     "q": "open a new issue",
+     "hit": true,
+     "top3": [
+      "create_issue",
+      "create_label",
+      "milestone"
+     ],
+     "median_ms": 1.52
+    },
+    {
+     "q": "tag an issue as bug",
+     "hit": true,
+     "top3": [
+      "label_issue",
+      "create_label",
+      "create_issue"
+     ],
+     "median_ms": 3.3
+    },
+    {
+     "q": "rename repo",
+     "hit": true,
+     "top3": [
+      "rename_repo",
+      "delete_repo",
+      "create_repo"
+     ],
+     "median_ms": 2.66
+    },
+    {
+     "q": "ssh key",
+     "hit": true,
+     "top3": [
+      "ssh_key",
+      "deploy_key"
+     ],
+     "median_ms": 2.84
+    },
+    {
+     "q": "give someone access to my repository",
+     "hit": true,
+     "top3": [
+      "add_collab_gitea",
+      "add_collab_github",
+      "gh_token"
+     ],
+     "median_ms": 7.95
+    }
+   ]
+  }
+ },
+ "n1030": {
+  "ranked_or": {
+   "top3_hits": "10/12",
+   "median_ms": 5.5600000000000005,
+   "max_ms": 50.09,
+   "per_query": [
+    {
+     "q": "how do I add a collaborator on GitHub?",
+     "hit": true,
+     "top3": [
+      "add_collab_gitea",
+      "add_collab_github",
+      "Add a project in Gitlab"
+     ],
+     "median_ms": 8.99
+    },
+    {
+     "q": "add colaborator",
+     "hit": true,
+     "top3": [
+      "add_collab_gitea",
+      "add_collab_github",
+      "ssh_key"
+     ],
+     "median_ms": 6.72
+    },
+    {
+     "q": "make repo private",
+     "hit": true,
+     "top3": [
+      "visibility",
+      "create_repo",
+      "gh_token"
+     ],
+     "median_ms": 2.27
+    },
+    {
+     "q": "invite someone",
+     "hit": false,
+     "top3": [
+      "Invite a channel in Asana",
+      "Invite a comment in Notion",
+      "Invite a ticket in Linear"
+     ],
+     "median_ms": 8.05
+    },
+    {
+     "q": "delete a repository",
+     "hit": true,
+     "top3": [
+      "delete_repo",
+      "create_repo",
+      "archive_repo"
+     ],
+     "median_ms": 8.5
+    },
+    {
+     "q": "protect main branch",
+     "hit": true,
+     "top3": [
+      "branch_protection",
+      "create_branch",
+      "branch_protection_gh"
+     ],
+     "median_ms": 1.98
+    },
+    {
+     "q": "webhook",
+     "hit": true,
+     "top3": [
+      "webhook"
+     ],
+     "median_ms": 1.76
+    },
+    {
+     "q": "open a new issue",
+     "hit": true,
+     "top3": [
+      "create_issue",
+      "close_issue",
+      "label_issue"
+     ],
+     "median_ms": 50.09
+    },
+    {
+     "q": "tag an issue as bug",
+     "hit": true,
+     "top3": [
+      "label_issue",
+      "create_issue",
+      "close_issue"
+     ],
+     "median_ms": 2.04
+    },
+    {
+     "q": "rename repo",
+     "hit": true,
+     "top3": [
+      "Rename a team in Figma",
+      "rename_repo",
+      "Rename a view in Linear"
+     ],
+     "median_ms": 6.77
+    },
+    {
+     "q": "ssh key",
+     "hit": true,
+     "top3": [
+      "ssh_key",
+      "deploy_key"
+     ],
+     "median_ms": 1.44
+    },
+    {
+     "q": "give someone access to my repository",
+     "hit": false,
+     "top3": [
+      "delete_repo",
+      "create_repo",
+      "archive_repo"
+     ],
+     "median_ms": 4.4
+    }
+   ]
+  },
+  "ranked_and_then_or": {
+   "top3_hits": "10/12",
+   "median_ms": 3.095,
+   "max_ms": 12.44,
+   "per_query": [
+    {
+     "q": "how do I add a collaborator on GitHub?",
+     "hit": true,
+     "top3": [
+      "add_collab_github",
+      "add_collab_gitea",
+      "Add a project in Gitlab"
+     ],
+     "median_ms": 12.44
+    },
+    {
+     "q": "add colaborator",
+     "hit": true,
+     "top3": [
+      "add_collab_gitea",
+      "add_collab_github",
+      "ssh_key"
+     ],
+     "median_ms": 10.01
+    },
+    {
+     "q": "make repo private",
+     "hit": true,
+     "top3": [
+      "visibility",
+      "create_repo",
+      "gh_token"
+     ],
+     "median_ms": 2.99
+    },
+    {
+     "q": "invite someone",
+     "hit": false,
+     "top3": [
+      "Invite a channel in Asana",
+      "Invite a comment in Notion",
+      "Invite a ticket in Linear"
+     ],
+     "median_ms": 10.47
+    },
+    {
+     "q": "delete a repository",
+     "hit": true,
+     "top3": [
+      "delete_repo",
+      "rename_repo",
+      "add_collab_gitea"
+     ],
+     "median_ms": 2.89
+    },
+    {
+     "q": "protect main branch",
+     "hit": true,
+     "top3": [
+      "branch_protection",
+      "branch_protection_gh",
+      "create_branch"
+     ],
+     "median_ms": 2.51
+    },
+    {
+     "q": "webhook",
+     "hit": true,
+     "top3": [
+      "webhook"
+     ],
+     "median_ms": 1.96
+    },
+    {
+     "q": "open a new issue",
+     "hit": true,
+     "top3": [
+      "create_issue",
+      "create_label",
+      "milestone"
+     ],
+     "median_ms": 1.96
+    },
+    {
+     "q": "tag an issue as bug",
+     "hit": true,
+     "top3": [
+      "label_issue",
+      "create_issue",
+      "close_issue"
+     ],
+     "median_ms": 2.83
+    },
+    {
+     "q": "rename repo",
+     "hit": true,
+     "top3": [
+      "rename_repo",
+      "Rename a team in Figma",
+      "Rename a view in Asana"
+     ],
+     "median_ms": 10.5
+    },
+    {
+     "q": "ssh key",
+     "hit": true,
+     "top3": [
+      "ssh_key",
+      "deploy_key"
+     ],
+     "median_ms": 3.2
+    },
+    {
+     "q": "give someone access to my repository",
+     "hit": false,
+     "top3": [
+      "delete_repo",
+      "create_repo",
+      "archive_repo"
+     ],
+     "median_ms": 6.92
+    }
+   ]
+  },
+  "ranked_or+synonyms": {
+   "top3_hits": "11/12",
+   "median_ms": 7.1,
+   "max_ms": 71.45,
+   "per_query": [
+    {
+     "q": "how do I add a collaborator on GitHub?",
+     "hit": true,
+     "top3": [
+      "add_collab_gitea",
+      "add_collab_github",
+      "Add a project in Gitlab"
+     ],
+     "median_ms": 11.29
+    },
+    {
+     "q": "add colaborator",
+     "hit": true,
+     "top3": [
+      "add_collab_gitea",
+      "add_collab_github",
+      "ssh_key"
+     ],
+     "median_ms": 7.74
+    },
+    {
+     "q": "make repo private",
+     "hit": true,
+     "top3": [
+      "visibility_gh",
+      "visibility",
+      "delete_repo"
+     ],
+     "median_ms": 4.81
+    },
+    {
+     "q": "invite someone",
+     "hit": false,
+     "top3": [
+      "Add a member in Jira",
+      "Add a member in Slack",
+      "Add a member in Linear"
+     ],
+     "median_ms": 59.59
+    },
+    {
+     "q": "delete a repository",
+     "hit": true,
+     "top3": [
+      "delete_repo",
+      "create_repo",
+      "archive_repo"
+     ],
+     "median_ms": 7.39
+    },
+    {
+     "q": "protect main branch",
+     "hit": true,
+     "top3": [
+      "branch_protection",
+      "create_branch",
+      "branch_protection_gh"
+     ],
+     "median_ms": 2.03
+    },
+    {
+     "q": "webhook",
+     "hit": true,
+     "top3": [
+      "webhook"
+     ],
+     "median_ms": 1.58
+    },
+    {
+     "q": "open a new issue",
+     "hit": true,
+     "top3": [
+      "create_issue",
+      "close_issue",
+      "label_issue"
+     ],
+     "median_ms": 48.96
+    },
+    {
+     "q": "tag an issue as bug",
+     "hit": true,
+     "top3": [
+      "label_issue",
+      "create_label",
+      "create_issue"
+     ],
+     "median_ms": 5.78
+    },
+    {
+     "q": "rename repo",
+     "hit": true,
+     "top3": [
+      "rename_repo",
+      "delete_repo",
+      "create_repo"
+     ],
+     "median_ms": 6.81
+    },
+    {
+     "q": "ssh key",
+     "hit": true,
+     "top3": [
+      "ssh_key",
+      "deploy_key"
+     ],
+     "median_ms": 1.45
+    },
+    {
+     "q": "give someone access to my repository",
+     "hit": true,
+     "top3": [
+      "add_collab_gitea",
+      "add_collab_github",
+      "gh_token"
+     ],
+     "median_ms": 71.45
+    }
+   ]
+  },
+  "ranked_and_then_or+synonyms": {
+   "top3_hits": "12/12",
+   "median_ms": 5.3,
+   "max_ms": 78.33,
+   "per_query": [
+    {
+     "q": "how do I add a collaborator on GitHub?",
+     "hit": true,
+     "top3": [
+      "add_collab_github",
+      "add_collab_gitea",
+      "Add a project in Gitlab"
+     ],
+     "median_ms": 12.82
+    },
+    {
+     "q": "add colaborator",
+     "hit": true,
+     "top3": [
+      "add_collab_gitea",
+      "add_collab_github",
+      "ssh_key"
+     ],
+     "median_ms": 9.79
+    },
+    {
+     "q": "make repo private",
+     "hit": true,
+     "top3": [
+      "visibility",
+      "visibility_gh",
+      "delete_repo"
+     ],
+     "median_ms": 6.82
+    },
+    {
+     "q": "invite someone",
+     "hit": true,
+     "top3": [
+      "invite_org_gh",
+      "Add a member in Jira",
+      "Add a member in Slack"
+     ],
+     "median_ms": 62.17
+    },
+    {
+     "q": "delete a repository",
+     "hit": true,
+     "top3": [
+      "delete_repo",
+      "rename_repo",
+      "add_collab_gitea"
+     ],
+     "median_ms": 3.14
+    },
+    {
+     "q": "protect main branch",
+     "hit": true,
+     "top3": [
+      "branch_protection",
+      "branch_protection_gh",
+      "create_branch"
+     ],
+     "median_ms": 3.16
+    },
+    {
+     "q": "webhook",
+     "hit": true,
+     "top3": [
+      "webhook"
+     ],
+     "median_ms": 2.54
+    },
+    {
+     "q": "open a new issue",
+     "hit": true,
+     "top3": [
+      "create_issue",
+      "create_label",
+      "milestone"
+     ],
+     "median_ms": 2.0
+    },
+    {
+     "q": "tag an issue as bug",
+     "hit": true,
+     "top3": [
+      "label_issue",
+      "create_label",
+      "create_issue"
+     ],
+     "median_ms": 7.2
+    },
+    {
+     "q": "rename repo",
+     "hit": true,
+     "top3": [
+      "rename_repo",
+      "delete_repo",
+      "create_repo"
+     ],
+     "median_ms": 3.78
+    },
+    {
+     "q": "ssh key",
+     "hit": true,
+     "top3": [
+      "ssh_key",
+      "deploy_key"
+     ],
+     "median_ms": 2.37
+    },
+    {
+     "q": "give someone access to my repository",
+     "hit": true,
+     "top3": [
+      "add_collab_gitea",
+      "add_collab_github",
+      "gh_token"
+     ],
+     "median_ms": 78.33
+    }
+   ]
+  }
+ },
+ "prefix": [
+  {
+   "key": "add_collab_gitea",
+   "title": "Add a collaborator to a repository"
+  },
+  {
+   "key": "add_collab_github",
+   "title": "Add a collaborator to a repository"
+  }
+ ],
+ "n20k": {
+  "ranked_or": {
+   "top3_hits": "10/12",
+   "median_ms": 6.140000000000001,
+   "max_ms": 54.7,
+   "per_query": [
+    {
+     "q": "how do I add a collaborator on GitHub?",
+     "hit": true,
+     "top3": [
+      "add_collab_gitea",
+      "add_collab_github",
+      "Add a project in Gitlab"
+     ],
+     "median_ms": 10.43
+    },
+    {
+     "q": "add colaborator",
+     "hit": true,
+     "top3": [
+      "add_collab_gitea",
+      "add_collab_github",
+      "ssh_key"
+     ],
+     "median_ms": 7.64
+    },
+    {
+     "q": "make repo private",
+     "hit": true,
+     "top3": [
+      "visibility",
+      "create_repo",
+      "gh_token"
+     ],
+     "median_ms": 2.6
+    },
+    {
+     "q": "invite someone",
+     "hit": false,
+     "top3": [
+      "Invite a channel in Asana",
+      "Invite a comment in Notion",
+      "Invite a ticket in Linear"
+     ],
+     "median_ms": 7.07
+    },
+    {
+     "q": "delete a repository",
+     "hit": true,
+     "top3": [
+      "delete_repo",
+      "create_repo",
+      "archive_repo"
+     ],
+     "median_ms": 8.22
+    },
+    {
+     "q": "protect main branch",
+     "hit": true,
+     "top3": [
+      "branch_protection",
+      "create_branch",
+      "branch_protection_gh"
+     ],
+     "median_ms": 2.09
+    },
+    {
+     "q": "webhook",
+     "hit": true,
+     "top3": [
+      "webhook"
+     ],
+     "median_ms": 1.25
+    },
+    {
+     "q": "open a new issue",
+     "hit": true,
+     "top3": [
+      "create_issue",
+      "close_issue",
+      "label_issue"
+     ],
+     "median_ms": 54.7
+    },
+    {
+     "q": "tag an issue as bug",
+     "hit": true,
+     "top3": [
+      "label_issue",
+      "create_issue",
+      "close_issue"
+     ],
+     "median_ms": 2.36
+    },
+    {
+     "q": "rename repo",
+     "hit": true,
+     "top3": [
+      "Rename a team in Figma",
+      "rename_repo",
+      "Rename a view in Linear"
+     ],
+     "median_ms": 7.42
+    },
+    {
+     "q": "ssh key",
+     "hit": true,
+     "top3": [
+      "ssh_key",
+      "deploy_key"
+     ],
+     "median_ms": 1.43
+    },
+    {
+     "q": "give someone access to my repository",
+     "hit": false,
+     "top3": [
+      "delete_repo",
+      "create_repo",
+      "archive_repo"
+     ],
+     "median_ms": 5.21
+    }
+   ]
+  },
+  "ranked_and_then_or": {
+   "top3_hits": "10/12",
+   "median_ms": 4.28,
+   "max_ms": 15.65,
+   "per_query": [
+    {
+     "q": "how do I add a collaborator on GitHub?",
+     "hit": true,
+     "top3": [
+      "add_collab_github",
+      "add_collab_gitea",
+      "Add a project in Gitlab"
+     ],
+     "median_ms": 15.65
+    },
+    {
+     "q": "add colaborator",
+     "hit": true,
+     "top3": [
+      "add_collab_gitea",
+      "add_collab_github",
+      "ssh_key"
+     ],
+     "median_ms": 11.99
+    },
+    {
+     "q": "make repo private",
+     "hit": true,
+     "top3": [
+      "visibility",
+      "create_repo",
+      "gh_token"
+     ],
+     "median_ms": 4.32
+    },
+    {
+     "q": "invite someone",
+     "hit": false,
+     "top3": [
+      "Invite a channel in Asana",
+      "Invite a comment in Notion",
+      "Invite a ticket in Linear"
+     ],
+     "median_ms": 10.33
+    },
+    {
+     "q": "delete a repository",
+     "hit": true,
+     "top3": [
+      "delete_repo",
+      "rename_repo",
+      "add_collab_gitea"
+     ],
+     "median_ms": 3.61
+    },
+    {
+     "q": "protect main branch",
+     "hit": true,
+     "top3": [
+      "branch_protection",
+      "branch_protection_gh",
+      "create_branch"
+     ],
+     "median_ms": 4.24
+    },
+    {
+     "q": "webhook",
+     "hit": true,
+     "top3": [
+      "webhook"
+     ],
+     "median_ms": 3.17
+    },
+    {
+     "q": "open a new issue",
+     "hit": true,
+     "top3": [
+      "create_issue",
+      "create_label",
+      "milestone"
+     ],
+     "median_ms": 2.76
+    },
+    {
+     "q": "tag an issue as bug",
+     "hit": true,
+     "top3": [
+      "label_issue",
+      "create_issue",
+      "close_issue"
+     ],
+     "median_ms": 3.66
+    },
+    {
+     "q": "rename repo",
+     "hit": true,
+     "top3": [
+      "rename_repo",
+      "Rename a team in Figma",
+      "Rename a view in Asana"
+     ],
+     "median_ms": 10.78
+    },
+    {
+     "q": "ssh key",
+     "hit": true,
+     "top3": [
+      "ssh_key",
+      "deploy_key"
+     ],
+     "median_ms": 2.87
+    },
+    {
+     "q": "give someone access to my repository",
+     "hit": false,
+     "top3": [
+      "delete_repo",
+      "create_repo",
+      "archive_repo"
+     ],
+     "median_ms": 8.19
+    }
+   ]
+  },
+  "ranked_or+synonyms": {
+   "top3_hits": "11/12",
+   "median_ms": 8.0,
+   "max_ms": 75.65,
+   "per_query": [
+    {
+     "q": "how do I add a collaborator on GitHub?",
+     "hit": true,
+     "top3": [
+      "add_collab_gitea",
+      "add_collab_github",
+      "Add a project in Gitlab"
+     ],
+     "median_ms": 12.2
+    },
+    {
+     "q": "add colaborator",
+     "hit": true,
+     "top3": [
+      "add_collab_gitea",
+      "add_collab_github",
+      "ssh_key"
+     ],
+     "median_ms": 9.17
+    },
+    {
+     "q": "make repo private",
+     "hit": true,
+     "top3": [
+      "visibility_gh",
+      "visibility",
+      "delete_repo"
+     ],
+     "median_ms": 4.64
+    },
+    {
+     "q": "invite someone",
+     "hit": false,
+     "top3": [
+      "Add a member in Jira",
+      "Add a member in Slack",
+      "Add a member in Linear"
+     ],
+     "median_ms": 69.59
+    },
+    {
+     "q": "delete a repository",
+     "hit": true,
+     "top3": [
+      "delete_repo",
+      "create_repo",
+      "archive_repo"
+     ],
+     "median_ms": 8.62
+    },
+    {
+     "q": "protect main branch",
+     "hit": true,
+     "top3": [
+      "branch_protection",
+      "create_branch",
+      "branch_protection_gh"
+     ],
+     "median_ms": 2.01
+    },
+    {
+     "q": "webhook",
+     "hit": true,
+     "top3": [
+      "webhook"
+     ],
+     "median_ms": 2.23
+    },
+    {
+     "q": "open a new issue",
+     "hit": true,
+     "top3": [
+      "create_issue",
+      "close_issue",
+      "label_issue"
+     ],
+     "median_ms": 51.64
+    },
+    {
+     "q": "tag an issue as bug",
+     "hit": true,
+     "top3": [
+      "label_issue",
+      "create_label",
+      "create_issue"
+     ],
+     "median_ms": 5.33
+    },
+    {
+     "q": "rename repo",
+     "hit": true,
+     "top3": [
+      "rename_repo",
+      "delete_repo",
+      "create_repo"
+     ],
+     "median_ms": 7.38
+    },
+    {
+     "q": "ssh key",
+     "hit": true,
+     "top3": [
+      "ssh_key",
+      "deploy_key"
+     ],
+     "median_ms": 2.0
+    },
+    {
+     "q": "give someone access to my repository",
+     "hit": true,
+     "top3": [
+      "add_collab_gitea",
+      "add_collab_github",
+      "gh_token"
+     ],
+     "median_ms": 75.65
+    }
+   ]
+  },
+  "ranked_and_then_or+synonyms": {
+   "top3_hits": "12/12",
+   "median_ms": 5.375,
+   "max_ms": 71.97,
+   "per_query": [
+    {
+     "q": "how do I add a collaborator on GitHub?",
+     "hit": true,
+     "top3": [
+      "add_collab_github",
+      "add_collab_gitea",
+      "Add a project in Gitlab"
+     ],
+     "median_ms": 12.33
+    },
+    {
+     "q": "add colaborator",
+     "hit": true,
+     "top3": [
+      "add_collab_gitea",
+      "add_collab_github",
+      "ssh_key"
+     ],
+     "median_ms": 10.36
+    },
+    {
+     "q": "make repo private",
+     "hit": true,
+     "top3": [
+      "visibility",
+      "visibility_gh",
+      "delete_repo"
+     ],
+     "median_ms": 7.02
+    },
+    {
+     "q": "invite someone",
+     "hit": true,
+     "top3": [
+      "invite_org_gh",
+      "Add a member in Jira",
+      "Add a member in Slack"
+     ],
+     "median_ms": 64.91
+    },
+    {
+     "q": "delete a repository",
+     "hit": true,
+     "top3": [
+      "delete_repo",
+      "rename_repo",
+      "add_collab_gitea"
+     ],
+     "median_ms": 2.92
+    },
+    {
+     "q": "protect main branch",
+     "hit": true,
+     "top3": [
+      "branch_protection",
+      "branch_protection_gh",
+      "create_branch"
+     ],
+     "median_ms": 2.96
+    },
+    {
+     "q": "webhook",
+     "hit": true,
+     "top3": [
+      "webhook"
+     ],
+     "median_ms": 1.36
+    },
+    {
+     "q": "open a new issue",
+     "hit": true,
+     "top3": [
+      "create_issue",
+      "create_label",
+      "milestone"
+     ],
+     "median_ms": 2.09
+    },
+    {
+     "q": "tag an issue as bug",
+     "hit": true,
+     "top3": [
+      "label_issue",
+      "create_label",
+      "create_issue"
+     ],
+     "median_ms": 6.64
+    },
+    {
+     "q": "rename repo",
+     "hit": true,
+     "top3": [
+      "rename_repo",
+      "delete_repo",
+      "create_repo"
+     ],
+     "median_ms": 4.11
+    },
+    {
+     "q": "ssh key",
+     "hit": true,
+     "top3": [
+      "ssh_key",
+      "deploy_key"
+     ],
+     "median_ms": 3.59
+    },
+    {
+     "q": "give someone access to my repository",
+     "hit": true,
+     "top3": [
+      "add_collab_gitea",
+      "add_collab_github",
+      "gh_token"
+     ],
+     "median_ms": 71.97
+    }
+   ]
+  }
+ },
+ "or_match_counts_20k": {
+  "how do I add a collaborator on GitHub?": 113,
+  "add colaborator": 109,
+  "make repo private": 7,
+  "invite someone": 92,
+  "delete a repository": 109,
+  "protect main branch": 4,
+  "webhook": 1,
+  "open a new issue": 721,
+  "tag an issue as bug": 7,
+  "rename repo": 83,
+  "ssh key": 2,
+  "give someone access to my repository": 26
+ }
+}
