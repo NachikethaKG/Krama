@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "workflow.schema.json",
   "title": "Workflow",
-  "$comment": "v1.2. The verified workflow, the core object of Krama (docs/phases/README.md §3.1, docs/database-schema.md).",
+  "$comment": "v1.3. The verified workflow, the core object of Krama (docs/phases/README.md §3.1, docs/database-schema.md).",
   "type": "object",
   "required": [
     "id",
@@ -140,6 +140,65 @@
       "properties": {
         "items": { "type": "array", "items": { "$ref": "#/$defs/WorkflowSummary" } },
         "next_cursor": { "type": ["string", "null"] }
+      }
+    },
+    "WorkflowInput": {
+      "title": "WorkflowInput",
+      "type": "object",
+      "description": "A value the user chooses when Krama runs the workflow for them (#129, P3): one non-sensitive single-line value the recorded run typed. The recorded value is only an example; the user's value replaces it in every step where it reappears.",
+      "required": ["key", "label", "example", "kind", "min_length", "steps"],
+      "additionalProperties": false,
+      "properties": {
+        "key": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$",
+          "description": "Stable name of the input in RunWorkflowRequest.inputs (e.g. repository_name)."
+        },
+        "label": { "type": "string", "minLength": 1, "description": "What to ask for, from the field's label (e.g. \"Repository name\")." },
+        "example": { "type": "string", "minLength": 1, "description": "The value the recorded run typed, shown as a placeholder, never as the default." },
+        "kind": { "enum": ["text"], "description": "text only in v1; dropdowns replay the recorded option (P15)." },
+        "pattern": {
+          "type": ["string", "null"],
+          "description": "A regular expression a value must match: the example's character class (P5), e.g. ^[A-Za-z0-9._-]+$. Null when any single-line text is accepted."
+        },
+        "min_length": { "type": "integer", "minimum": 1, "description": "Shortest value accepted (3 in v1, P5)." },
+        "steps": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "integer", "minimum": 1 },
+          "description": "Seq of every step the value is typed in or reappears in (URL checks, headings, later targets, step text)."
+        }
+      }
+    },
+    "WorkflowInputList": {
+      "title": "WorkflowInputList",
+      "type": "object",
+      "description": "GET /workflows/{id}/inputs: what the owner fills in before \"Do it for me\" runs the current version.",
+      "required": ["workflow_id", "revision", "inputs"],
+      "additionalProperties": false,
+      "properties": {
+        "workflow_id": { "type": "string", "format": "uuid" },
+        "revision": { "type": "integer", "minimum": 1, "description": "The version the inputs belong to; send it back in RunWorkflowRequest." },
+        "inputs": { "type": "array", "items": { "$ref": "#/$defs/WorkflowInput" } },
+        "account": {
+          "type": ["string", "null"],
+          "description": "The site account the run will act in. v1: the account Krama is signed in to on that site, not the user's own (P11). Null when unknown."
+        }
+      }
+    },
+    "RunWorkflowRequest": {
+      "title": "RunWorkflowRequest",
+      "type": "object",
+      "description": "POST /workflows/{id}/run: run the workflow's current version for its owner with these values (\"Do it for me\", #129). Starting it approves the steps; risky steps still pause for confirmation.",
+      "required": ["revision", "inputs"],
+      "additionalProperties": false,
+      "properties": {
+        "revision": { "type": "integer", "minimum": 1, "description": "The version the user previewed (from WorkflowInputList); a newer current version gives 409 stale_revision." },
+        "inputs": {
+          "type": "object",
+          "description": "One value per WorkflowInput.key; every input is required (the server checks min_length and pattern).",
+          "additionalProperties": { "type": "string" }
+        }
       }
     },
     "WorkflowVersionSource": {
