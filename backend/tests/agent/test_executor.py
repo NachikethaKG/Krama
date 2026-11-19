@@ -268,3 +268,37 @@ async def test_the_resolved_target_is_described_for_healing(executor: ActionExec
         None,
     )
     assert result.element.bbox == result.bbox
+
+
+async def test_on_ready_sees_the_page_before_the_action_with_the_target_in_view(
+    executor: ActionExecutor, session: PlaywrightSession
+) -> None:
+    """#388: the video's frame for a click is taken here, not after the click (often on the next page)."""
+    seen: list[tuple[str, list[float]]] = []
+
+    async def on_ready() -> None:
+        seen.append((session.page.url, await session.page.evaluate("[scrollX, scrollY]")))
+
+    far = await executor.execute(
+        Action(type="click"), Target(role="button", name="Far away"), on_ready=on_ready
+    )
+    assert far.ok, far.error
+    assert far.scroll is not None and seen == [(seen[0][0], [far.scroll.x, far.scroll.y])]
+    assert far.scroll.y > 0
+
+    seen.clear()
+    link = await executor.execute(
+        Action(type="click"), Target(role="link", name="Go to form"), on_ready=on_ready
+    )
+    assert link.ok, link.error
+    assert len(seen) == 1 and not seen[0][0].endswith("/form") and link.url_after == "/form"
+
+
+async def test_on_ready_is_not_called_without_a_target(executor: ActionExecutor) -> None:
+    calls: list[int] = []
+
+    async def on_ready() -> None:
+        calls.append(1)
+
+    result = await executor.execute(Action(type="navigate", value="/form"), on_ready=on_ready)
+    assert result.ok and calls == []
