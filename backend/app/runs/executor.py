@@ -236,9 +236,11 @@ class InProcessExecutor:
             await self._fail_sign_in(run_id, target.sign_in_problem)
             return
         config = target.browser_config(env.session_config(job))
+        # A do-it run acts in a real account (P10, P16): no vision guesses, no heals, no LLM but the policy's.
+        do_it = job.kind == "do_it"
         async with PlaywrightSession(config) as session:
             page = session.page
-            executor = ActionExecutor(page, vision=env.vision, settle_ms=target.settle_ms)
+            executor = ActionExecutor(page, vision=None if do_it else env.vision, settle_ms=target.settle_ms)
             if not await open_start_page(page):
                 await self._store.fail(
                     run_id, from_=RunStatus.RUNNING, message=f"Couldn't open {job.target_url}",
@@ -260,12 +262,15 @@ class InProcessExecutor:
                     )  # fmt: skip
                     return
             observer = env.observer_for(run_id)
-            await observer.start_recording(page)
+            recording = None
+            if not do_it:  # a do-it run shows the user's own data: no rrweb recording is kept (P14)
+                await observer.start_recording(page)
             try:
                 verify_timeout_s = target.verify_timeout_s or env.verify_timeout_s
                 rows = await self._steps(job, executor, observer, page, verify_timeout_s)
             finally:
-                recording = await observer.stop_recording()
+                if not do_it:
+                    recording = await observer.stop_recording()
             missing = await self._missing_part(job, rows, page) if rows is not None else None
         if rows is None:
             return  # failed, paused out or cancelled; the store already says so
@@ -274,6 +279,10 @@ class InProcessExecutor:
                 run_id, from_=RunStatus.RUNNING, message=f"The steps didn't do the whole task: {missing}",
                 reason="task_incomplete", missing=missing,
             )  # fmt: skip
+            return
+        if recording is None:  # do_it: the run is the record; nothing is stored on the workflow (P9)
+            duration_ms = round((time.perf_counter() - t0) * 1000)
+            await self._store.complete_reverify(job, verified_steps=len(rows), duration_ms=duration_ms)
             return
         self._to_recording_offsets(rows, recording.path)
         if job.kind == "reverify":
@@ -351,6 +360,10 @@ class InProcessExecutor:
             move, why = budget.after_failure(step, out)
             if move == "retry":
                 continue  # same step again; budget.retry_count already counts it
+            if job.kind == "do_it":
+                # The user's real change: no replan, no "try once more", never the whole run again (P7).
+                await self._fail_reverify(job, step, out)
+                return None
             if job.kind == "reverify":
                 healed = await self._heal(job, step, out, stored.get(step.seq), executor, observer, page,
                                           budget.retry_count, verify_timeout_s)  # fmt: skip
@@ -415,6 +428,7 @@ class InProcessExecutor:
             verify_interval_s=self._env.verify_interval_s,
             before=before,
             focus_shot=lambda: self._focus_shot(job, seq, page),
+            vision=job.kind != "do_it",
         )
         shot = self._artifact_url(out.observed.screenshot_path)
         bbox = list(out.result.bbox) if out.result.bbox else None
@@ -591,8 +605,9 @@ class InProcessExecutor:
             reason, what = "action_failed", f"its action failed ({error.code})"
         else:
             reason, what = "state_mismatch", "it ran, but the expected state didn't hold"
+        lead = "failed" if job.kind == "do_it" else "no longer works"
         await self._store.fail(
-            job.run_id, from_=RunStatus.RUNNING, message=f"Step {step.seq} no longer works: {what}",
+            job.run_id, from_=RunStatus.RUNNING, message=f"Step {step.seq} {lead}: {what}",
             reason=reason, step_seq=step.seq, **failure_details(step, out, heal),
         )  # fmt: skip
 
