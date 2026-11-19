@@ -2,6 +2,14 @@
 
 Every change to `contracts/` is listed here. Additive change = minor version bump; breaking change = major bump + ADR.
 
+## 1.14 (#389)
+
+Universal tutorials (#390): a general title instead of the raw request. Additive.
+
+- `plan.schema.json` v1.1: `Plan.title` (string, nullable). The planner writes a short, general name for the
+  tutorial with no account, organization, repository or other names from the request. Workflows created from the
+  plan take it as their title; plans without one keep using the request.
+
 ## 1.13 (#382)
 
 The `auto-updated` badge in real mode (D11, #114). Additive.

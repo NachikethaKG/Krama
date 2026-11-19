@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "plan.schema.json",
   "title": "Plan",
-  "$comment": "v1.0. A proposed sequence of steps the user reviews, edits and approves (docs/api-contract.md: /plans).",
+  "$comment": "v1.1. A proposed sequence of steps the user reviews, edits and approves (docs/api-contract.md: /plans).",
   "type": "object",
   "required": ["id", "task_id", "revision", "status", "risk", "expected_result", "steps", "created_at"],
   "additionalProperties": false,
@@ -20,6 +20,11 @@
       "description": "Highest risk of any step."
     },
     "expected_result": { "type": "string", "minLength": 1 },
+    "title": {
+      "type": ["string", "null"],
+      "minLength": 1,
+      "description": "A short, general name for the tutorial, written by the planner: no account, organization, repository or other names from the request (\"Create a private repository in an organization\"). The workflow takes its title from it; null for older plans, which use the request."
+    },
     "steps": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/PlannedStep" } },
     "created_at": { "type": "string", "format": "date-time" },
     "approved_at": { "type": ["string", "null"], "format": "date-time" }
