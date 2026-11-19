@@ -63,6 +63,13 @@ class Plan(BaseModel):
     status: PlanStatus
     risk: Annotated[common_schema.Risk, Field(description="Highest risk of any step.")]
     expected_result: Annotated[str, Field(min_length=1)]
+    title: Annotated[
+        str | None,
+        Field(
+            description='A short, general name for the tutorial, written by the planner: no account, organization, repository or other names from the request ("Create a private repository in an organization"). The workflow takes its title from it; null for older plans, which use the request.',
+            min_length=1,
+        ),
+    ] = None
     steps: Annotated[list[PlannedStep], Field(min_length=1)]
     created_at: AwareDatetime
     approved_at: AwareDatetime | None = None
