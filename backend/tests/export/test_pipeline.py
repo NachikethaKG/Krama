@@ -187,3 +187,23 @@ def test_the_worker_has_an_export_queue_one_at_a_time() -> None:
     [job] = config["functions"]
     assert (config["queue_name"], config["max_jobs"]) == (EXPORT_QUEUE, 1)
     assert (job.name, job.max_tries, job.timeout_s) == (EXPORT_JOB, 1, 1020)
+
+
+def test_a_click_scene_uses_the_screenshot_from_before_the_click() -> None:
+    """#388: the step's own screenshot is taken after the action; for a click that is often the next page."""
+    from app.contracts_gen.common_schema import Action
+    from app.contracts_gen.step_schema import ObservedState
+    from app.export.job import _scene_screenshots
+
+    base = make_test_workflow(uuid4()).steps[0]
+    before = ObservedState(url="/new", title="New", headings=[], screenshot_path="runs/r/steps/1_focus.png")
+    click = base.model_copy(
+        update={"screenshot_path": "runs/r/steps/1_screenshot.png", "before_state": before}
+    )
+
+    assert _scene_screenshots(click) == ["runs/r/steps/1_focus.png", "runs/r/steps/1_screenshot.png"]
+    # A fill shows the typed value, after it; older steps without a before-screenshot keep their own.
+    fill = click.model_copy(update={"action": Action(type="fill", value="demo")})
+    assert _scene_screenshots(fill) == ["runs/r/steps/1_screenshot.png"]
+    old = click.model_copy(update={"before_state": None})
+    assert _scene_screenshots(old) == ["runs/r/steps/1_screenshot.png"]
