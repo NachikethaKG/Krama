@@ -1,6 +1,10 @@
 # Phase 6: Later (backlog)
 
-Not planned in detail. Each item becomes its own phase file once we decide to do it. Proposed owners follow the module split ([ADR 0001](../adr/0001-ownership-by-module.md)) and can change.
+Not planned in detail. Each item becomes its own phase file once we decide to do it.
+
+**Scoped 2026-11-19:** "Do it for me" (#129), human takeover (#131), workflow search (#135) and multiple languages
+(#132) are now Phase 6: [phase-6-assist.md](phase-6-assist.md). Desktop and mobile apps (#136) were closed as a
+separate product. The rest below stays in the backlog. Proposed owners follow the module split ([ADR 0001](../adr/0001-ownership-by-module.md)) and can change.
 
 | Idea | Proposed owner | Research to do first |
 |---|---|---|
