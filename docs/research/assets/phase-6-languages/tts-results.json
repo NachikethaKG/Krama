@@ -1,0 +1,512 @@
+{
+ "de_DE-thorsten-medium": {
+  "ready": {
+   "ready": true,
+   "voice": "de_DE-thorsten-medium",
+   "sample_rate": 22050
+  },
+  "load_s": 12.96,
+  "rows": [
+   {
+    "text": "Klicken Sie auf „New repository“.",
+    "duration_ms": 1973,
+    "synth_ms": 5500,
+    "sum_ok": true,
+    "phoneme_match": 1.0,
+    "words": [
+     [
+      "Klicken",
+      116,
+      476
+     ],
+     [
+      "Sie",
+      510,
+      580
+     ],
+     [
+      "auf",
+      661,
+      731
+     ],
+     [
+      "„New",
+      777,
+      975
+     ],
+     [
+      "repository“.",
+      1044,
+      1741
+     ]
+    ],
+    "spoken_phonemes": "^klˈɪkən ziː aʊf njˈuː rˈeːpoːzˌiːtoːrˌiː.$",
+    "word_phonemes": [
+     "klˈɪkən",
+     "ziː",
+     "ˈaʊf",
+     "njˈuː",
+     "rˈeːpoːzˌiːtoːrˌiː."
+    ]
+   },
+   {
+    "text": "Geben Sie im Feld „Repository name *“ einen Namen ein, zum Beispiel „my-app“.",
+    "duration_ms": 4179,
+    "synth_ms": 2065,
+    "sum_ok": true,
+    "phoneme_match": 1.0,
+    "words": [
+     [
+      "Geben",
+      185,
+      441
+     ],
+     [
+      "Sie",
+      476,
+      534
+     ],
+     [
+      "im",
+      615,
+      696
+     ],
+     [
+      "Feld",
+      743,
+      975
+     ],
+     [
+      "„Repository",
+      998,
+      1683
+     ],
+     [
+      "name",
+      1776,
+      2031
+     ],
+     [
+      "*“",
+      2031,
+      2101
+     ],
+     [
+      "einen",
+      2101,
+      2263
+     ],
+     [
+      "Namen",
+      2310,
+      2635
+     ],
+     [
+      "ein,",
+      2774,
+      2937
+     ],
+     [
+      "zum",
+      3134,
+      3239
+     ],
+     [
+      "Beispiel",
+      3285,
+      3680
+     ],
+     [
+      "„my-app“.",
+      3738,
+      4063
+     ]
+    ],
+    "spoken_phonemes": "^ɡˈeːbən ziː ɪm fˈɛlt rˈeːpoːzˌiːtoːrˌiː nˈɑːmə ˌaɪnən nˈɑːmən ˈaɪn, tsʊm bˈaɪʃpiːl maɪˈap.$",
+    "word_phonemes": [
+     "ɡˈeːbən",
+     "ziː",
+     "ˈɪm",
+     "fˈɛlt",
+     "rˈeːpoːzˌiːtoːrˌiː",
+     "nˈɑːmə",
+     "",
+     "ˌaɪnən",
+     "nˈɑːmən",
+     "ˈaɪn, ",
+     "tsˈʊm",
+     "bˈaɪʃpiːl",
+     "maɪˈap."
+    ]
+   },
+   {
+    "text": "Klicken Sie auf „Create repository“.",
+    "duration_ms": 2159,
+    "synth_ms": 845,
+    "sum_ok": true,
+    "phoneme_match": 1.0,
+    "words": [
+     [
+      "Klicken",
+      139,
+      499
+     ],
+     [
+      "Sie",
+      522,
+      603
+     ],
+     [
+      "auf",
+      684,
+      777
+     ],
+     [
+      "„Create",
+      801,
+      1207
+     ],
+     [
+      "repository“.",
+      1230,
+      1927
+     ]
+    ],
+    "spoken_phonemes": "^klˈɪkən ziː aʊf kreːˈɑːtə rˈeːpoːzˌiːtoːrˌiː.$",
+    "word_phonemes": [
+     "klˈɪkən",
+     "ziː",
+     "ˈaʊf",
+     "kreːˈɑːtə",
+     "rˈeːpoːzˌiːtoːrˌiː."
+    ]
+   }
+  ]
+ },
+ "mr_IN-google-medium": {
+  "ready": {
+   "ready": true,
+   "voice": "mr_IN-google-medium",
+   "sample_rate": 22050
+  },
+  "load_s": 2.59,
+  "rows": [
+   {
+    "text": "“New repository” वर क्लिक करा.",
+    "duration_ms": 2217,
+    "synth_ms": 190,
+    "sum_ok": true,
+    "phoneme_match": 1.0,
+    "words": [
+     [
+      "“New",
+      267,
+      464
+     ],
+     [
+      "repository”",
+      534,
+      1079
+     ],
+     [
+      "वर",
+      1137,
+      1323
+     ],
+     [
+      "क्लिक",
+      1393,
+      1602
+     ],
+     [
+      "करा.",
+      1660,
+      1892
+     ]
+    ],
+    "spoken_phonemes": "^njˈuː ɹɪpˈɒzɪtəɹi vˈʌɾ klˈɪk kˈʌɾaː.$",
+    "word_phonemes": [
+     "njˈuː",
+     "ɹɪpˈɒzɪtəɹi",
+     "vˈʌɾ",
+     "klˈɪk",
+     "kˈʌɾaː."
+    ]
+   },
+   {
+    "text": "“Repository name *” मध्ये नाव लिहा, उदाहरणार्थ “my-app”.",
+    "duration_ms": 4179,
+    "synth_ms": 229,
+    "sum_ok": true,
+    "phoneme_match": 1.0,
+    "words": [
+     [
+      "“Repository",
+      208,
+      859
+     ],
+     [
+      "name",
+      905,
+      1068
+     ],
+     [
+      "*”",
+      1114,
+      1544
+     ],
+     [
+      "मध्ये",
+      1567,
+      1787
+     ],
+     [
+      "नाव",
+      1857,
+      2054
+     ],
+     [
+      "लिहा,",
+      2124,
+      2380
+     ],
+     [
+      "उदाहरणार्थ",
+      2821,
+      3459
+     ],
+     [
+      "“my-app”.",
+      3529,
+      3889
+     ]
+    ],
+    "spoken_phonemes": "^ɹɪpˈɒzɪtəɹi nˈeɪm taːɾˈaːŋkən mˈʌdʰjeː nˈaːv lˈɪhaː, ˌʊdaːhˌəɾɳˈaːɾtʰ maɪʲˈap.$",
+    "word_phonemes": [
+     "ɹɪpˈɒzɪtəɹi",
+     "nˈeɪm",
+     "taːɾˈaːŋkən",
+     "mˈʌdʰjeː",
+     "nˈaːv",
+     "lˈɪhaː, ",
+     "ˌʊdaːhˌəɾɳˈaːɾtʰ",
+     "maɪʲˈap."
+    ]
+   },
+   {
+    "text": "नवीन रिपॉझिटरी तयार करण्यासाठी बटणावर क्लिक करा.",
+    "duration_ms": 3970,
+    "synth_ms": 1024,
+    "sum_ok": true,
+    "phoneme_match": 1.0,
+    "words": [
+     [
+      "नवीन",
+      267,
+      626
+     ],
+     [
+      "रिपॉझिटरी",
+      673,
+      1358
+     ],
+     [
+      "तयार",
+      1439,
+      1729
+     ],
+     [
+      "करण्यासाठी",
+      1787,
+      2380
+     ],
+     [
+      "बटणावर",
+      2414,
+      3018
+     ],
+     [
+      "क्लिक",
+      3099,
+      3366
+     ],
+     [
+      "करा.",
+      3424,
+      3645
+     ]
+    ],
+    "spoken_phonemes": "^nəvˈiːn ɾˈɪpɔɟʰˌɪʈɾˌi təjˈaːɾ kˌəɾɳjaːsˈaːʈʰi bˌəʈɳˈaːvəɾ klˈɪk kˈʌɾaː.$",
+    "word_phonemes": [
+     "nəvˈiːn",
+     "ɾˈɪpɔɟʰˌɪʈɾˌi",
+     "təjˈaːɾ",
+     "kˌəɾɳjaːsˈaːʈʰi",
+     "bˌəʈɳˈaːvəɾ",
+     "klˈɪk",
+     "kˈʌɾaː."
+    ]
+   }
+  ]
+ },
+ "te_IN-padmavathi-medium": {
+  "ready": {
+   "ready": true,
+   "voice": "te_IN-padmavathi-medium",
+   "sample_rate": 22050
+  },
+  "load_s": 4.34,
+  "rows": [
+   {
+    "text": "“New repository” పై క్లిక్ చేయండి.",
+    "duration_ms": 2798,
+    "synth_ms": 1232,
+    "sum_ok": true,
+    "phoneme_match": 1.0,
+    "words": [
+     [
+      "“New",
+      69,
+      313
+     ],
+     [
+      "repository”",
+      417,
+      1184
+     ],
+     [
+      "పై",
+      1520,
+      1741
+     ],
+     [
+      "క్లిక్",
+      1787,
+      2020
+     ],
+     [
+      "చేయండి.",
+      2054,
+      2681
+     ]
+    ],
+    "spoken_phonemes": "^njˈuː ɹɪpˈɒzɪtəɹi pˈaɪ klˈik cˈeːjanɖi.$",
+    "word_phonemes": [
+     "njˈuː",
+     "ɹɪpˈɒzɪtəɹi",
+     "pˈaɪ",
+     "klˈik",
+     "cˈeːjanɖi."
+    ]
+   },
+   {
+    "text": "“Repository name *” లో పేరు నమోదు చేయండి, ఉదాహరణకు “my-app”.",
+    "duration_ms": 6106,
+    "synth_ms": 1892,
+    "sum_ok": true,
+    "phoneme_match": 1.0,
+    "words": [
+     [
+      "“Repository",
+      34,
+      847
+     ],
+     [
+      "name",
+      963,
+      1277
+     ],
+     [
+      "*”",
+      1323,
+      1973
+     ],
+     [
+      "లో",
+      2345,
+      2519
+     ],
+     [
+      "పేరు",
+      2589,
+      2902
+     ],
+     [
+      "నమోదు",
+      2948,
+      3320
+     ],
+     [
+      "చేయండి,",
+      3366,
+      3993
+     ],
+     [
+      "ఉదాహరణకు",
+      4342,
+      5387
+     ],
+     [
+      "“my-app”.",
+      5514,
+      5932
+     ]
+    ],
+    "spoken_phonemes": "^ɹɪpˈɒzɪtəɹi nˈeɪm nˈakʂatra lˈoː pˈeːru nˈamoːdu cˈeːjanɖi, ˈudaːhˌaraɳˌaku maɪʲˈap.$",
+    "word_phonemes": [
+     "ɹɪpˈɒzɪtəɹi",
+     "nˈeɪm",
+     "nˈakʂatra",
+     "lˈoː",
+     "pˈeːru",
+     "nˈamoːdu",
+     "cˈeːjanɖi, ",
+     "ˈudaːhˌaraɳˌaku",
+     "maɪʲˈap."
+    ]
+   },
+   {
+    "text": "కొత్త రిపోజిటరీ సృష్టించడానికి బటన్ నొక్కండి.",
+    "duration_ms": 3796,
+    "synth_ms": 1383,
+    "sum_ok": true,
+    "phoneme_match": 1.0,
+    "words": [
+     [
+      "కొత్త",
+      58,
+      383
+     ],
+     [
+      "రిపోజిటరీ",
+      417,
+      1102
+     ],
+     [
+      "సృష్టించడానికి",
+      1172,
+      2530
+     ],
+     [
+      "బటన్",
+      2647,
+      2995
+     ],
+     [
+      "నొక్కండి.",
+      3041,
+      3633
+     ]
+    ],
+    "spoken_phonemes": "^kˈotta rˈipoːɟˌiʈariː srˈuʂʈincˌaɖaːnˌiki bˈaʈan nˈokkanɖi.$",
+    "word_phonemes": [
+     "kˈotta",
+     "rˈipoːɟˌiʈariː",
+     "srˈuʂʈincˌaɖaːnˌiki",
+     "bˈaʈan",
+     "nˈokkanɖi."
+    ]
+   }
+  ]
+ }
+}
