@@ -269,7 +269,20 @@ export function LiveExecutionView({ runId, speed, client, className = "" }: Live
       )}
 
       {runStatus === "failed" && !policyStop && (
-        <FailureBanner error={runError} failedStep={failedStep} planId={planId} />
+        <FailureBanner
+          error={runError}
+          failedStep={failedStep}
+          planId={planId}
+          doIt={
+            run?.kind === "do_it"
+              ? {
+                  done: steps.filter((s) => s.status === "verified").length,
+                  total: steps.length,
+                  planFreshHref: `/?prompt=${encodeURIComponent(plan?.expected_result ?? "")}`,
+                }
+              : undefined
+          }
+        />
       )}
 
       {failedStep && (
