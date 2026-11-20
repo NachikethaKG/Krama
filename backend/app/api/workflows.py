@@ -22,11 +22,12 @@ from app.api.errors import ApiException
 from app.api.guide import guide_markdown
 from app.api.owner import owned_workflow
 from app.api.services import Services, ServicesDep
-from app.contracts_gen.common_schema import ErrorResponse
+from app.contracts_gen.common_schema import ErrorResponse, Language
 from app.contracts_gen.run_schema import Run
 from app.contracts_gen.task_schema import Task
 from app.contracts_gen.workflow_schema import (
     RunWorkflowRequest,
+    Translation,
     Workflow,
     WorkflowInputList,
     WorkflowPage,
@@ -226,6 +227,29 @@ async def run_workflow(
         assert run is not None
         out = run_out(run, None)
     await services.executor.submit(run_id)
+    return out
+
+
+@router.get(
+    "/workflows/{workflow_id}/translations/{language}",
+    responses={
+        202: {"model": Translation, "description": "Translating: ask again"},
+        404: {"model": ErrorResponse, "description": "Not found"},
+        503: {"model": ErrorResponse, "description": "No translator configured"},
+    },
+)
+async def get_translation(
+    workflow_id: UUID, language: Language, response: Response, user: CurrentUser, services: ServicesDep
+) -> Translation:
+    """The current version's title and step texts in `language` (#132): made on first request, then cached.
+    UI labels stay the site's own; a step whose labels didn't survive keeps its English text."""
+    async with services.sessions() as s:
+        workflow = await owned_workflow(s, workflow_id, user)
+    if services.translations is None:
+        raise ApiException(503, "internal", "Translation isn't set up on this server")
+    out = await services.translations.get(workflow, language)
+    if out.status == "translating":
+        response.status_code = 202
     return out
 
 
