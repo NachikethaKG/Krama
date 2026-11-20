@@ -91,6 +91,27 @@ function TargetBadge({ target }: { target: TargetPlatform }) {
   }
 }
 
+/**
+ * A search snippet: plain text with `<mark>` around matched words (#135). Only the marks become elements; all
+ * other text, including anything that looks like HTML, is shown as text.
+ */
+export function MarkedText({ text }: { text: string }) {
+  const parts = text.split(/(<mark>[\s\S]*?<\/mark>)/g);
+  return (
+    <>
+      {parts.map((part, i) =>
+        part.startsWith("<mark>") && part.endsWith("</mark>") ? (
+          <mark key={i} className="rounded bg-learn/25 px-0.5 text-white">
+            {part.slice(6, -7)}
+          </mark>
+        ) : (
+          <span key={i}>{part}</span>
+        ),
+      )}
+    </>
+  );
+}
+
 export function TutorialCard({ tutorial, index, onInspectDiff }: TutorialCardProps) {
   const durationLabel = formatDuration(tutorial.durationMs);
   const dateLabel = formatDate(tutorial.createdAt);
@@ -129,7 +150,12 @@ export function TutorialCard({ tutorial, index, onInspectDiff }: TutorialCardPro
             {tutorial.title}
           </h3>
 
-          {tutorial.description ? (
+          {tutorial.snippet ? (
+            <p data-testid="tutorial-snippet" className="mt-2 line-clamp-2 text-sm leading-relaxed text-ink-300">
+              {tutorial.matchStep ? <span className="font-mono text-xs text-ink-400">Step {tutorial.matchStep}: </span> : null}
+              <MarkedText text={tutorial.snippet} />
+            </p>
+          ) : tutorial.description ? (
             <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-ink-300">{tutorial.description}</p>
           ) : tutorial.taskPrompt ? (
             <p className="mt-2 line-clamp-2 text-sm italic text-ink-400">&ldquo;{tutorial.taskPrompt}&rdquo;</p>
