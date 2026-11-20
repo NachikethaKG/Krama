@@ -16,12 +16,13 @@ The source of truth between `backend/` and `frontend/`. Changing anything here i
 | `common.schema.json` | Shared building blocks: `Action`, `Target`, `ElementRef`, `ExpectedState`, `Risk`, `VerificationMethod`, `BoundingBox`, `ApiError`, `ErrorResponse` | both |
 | `task.schema.json` | `Task` + request bodies | #14 |
 | `plan.schema.json` | `Plan`, `PlannedStep` + request bodies | #14 |
-| `run.schema.json` | `Run`, `RunPage`, `RunConfirmRequest` | #14 |
-| `events.schema.json` | `RunEvent`: union of the 11 live-view event types | #14 |
+| `run.schema.json` | `Run`, `RunPage`, `RunConfirmRequest`, `RunTakeover`, `RunHandBackRequest` | #14, #406 |
+| `events.schema.json` | `RunEvent`: union of the 13 live-view event types | #14, #406 |
 | `health.schema.json` | `HealthResponse` for `GET /health` | #22 |
 | `workflow.schema.json`, `step.schema.json` | Verified workflow and executed steps | #15 |
 | `tutorial-spec.schema.json` | `TutorialSpec`: the compiled tutorial (scenes, cursor, highlights, zoom, captions, timings) for the player and the video export | #71 |
 | `export.schema.json` | `Export`, `CreateExportRequest`, `ExportPreset`, `ExportStatus`, `ExportError`: MP4 exports (Phase 5) | #354 |
+| `takeover.schema.json` | `TakeoverInput` (mouse, key, text) and `TakeoverServerMessage`: messages on the screen WebSocket of a human takeover (ADR 0008) | #406 |
 | `review.schema.json` | `ReviewItem`, `ReviewItemList`, `ReviewCount`, `ReviewActionResult`: the owner's review queue (Phase 4) | #377 |
 
 ## Rules (each one came out of research; see `docs/research/phase-f-*`)
