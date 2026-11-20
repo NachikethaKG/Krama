@@ -456,7 +456,7 @@ export function useRunExecutionStream({
         case "run.completed": {
           finalRef.current = true;
           setRunStatus("completed");
-          setWorkflowId(event.workflow_id);
+          setWorkflowId(event.workflow_id ?? null); // null for a sign_in run (ADR 0007)
           activeSeqRef.current = null;
           setActiveStepSeq(null);
           setPause(null);
