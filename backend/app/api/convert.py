@@ -112,6 +112,7 @@ def _steps_out(workflow_id: UUID, rows: Sequence[WorkflowStepRow]) -> list[Step]
                 "verification": st.verification,
                 "risk": st.risk,
                 "sensitive": st.sensitive,
+                "performed_by": st.performed_by,
                 "screenshot_path": st.screenshot_path,
                 "start_ms": st.start_ms,
                 "end_ms": st.end_ms,

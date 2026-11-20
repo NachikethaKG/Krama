@@ -44,7 +44,16 @@ from app.runs.reverify import failure_details
 from app.runs.states import RunStatus
 from app.runs.steps import StepOutcome, act_and_verify, step_ref
 from app.runs.store import RunJob, RunNotFoundError, RunStore
-from app.runs.takeover import TAKEOVER_REASONS, FrameSink, Notice, TakeoverSession, host_of
+from app.runs.takeover import (
+    TAKEOVER_REASONS,
+    FrameSink,
+    Notice,
+    TakeoverError,
+    TakeoverSession,
+    host_of,
+)
+
+__all__ = ["TakeoverError"]
 from app.targets import TargetSetup
 from app.verifier import StepVerifier
 from app.verifier.task_check import TaskChecker
@@ -114,12 +123,17 @@ class RunEnvironment:
     """A takeover with no input for this long ends; the run stays paused (ADR 0008, T9)."""
 
 
-class TakeoverError(Exception):
-    """A takeover can't start. `reason`: not_available or active."""
+HUMAN_CAP = 0.7
+"""Confidence of a step a human did in a takeover (T8): below the 0.8 threshold, like an accepted unclear
+step."""
 
-    def __init__(self, reason: str, message: str) -> None:
-        super().__init__(message)
-        self.reason = reason
+
+def _verification(out: StepOutcome, *, by_hand: bool) -> dict[str, Any]:
+    assert out.verification is not None
+    stored = out.verification.verification.model_dump(mode="json")
+    if by_hand:
+        stored["confidence"] = min(stored["confidence"], HUMAN_CAP)
+    return stored
 
 
 @dataclass(frozen=True)
@@ -147,6 +161,8 @@ class InProcessExecutor:
         """Paused runs whose owner may take over the page (ADR 0008)."""
         self._takeovers: dict[UUID, TakeoverSession] = {}
         """Active takeovers: one controller per run."""
+        self._handbacks: dict[UUID, str] = {}
+        """What the owner said they did when handing back (barrier / step / rest), until the run uses it."""
 
     @property
     def artifacts_dir(self) -> Path:
@@ -211,7 +227,9 @@ class InProcessExecutor:
 
         async def ended(reason: str) -> None:
             self._takeovers.pop(run_id, None)
-            data = {"step_seq": pausable.step_seq, "reason": reason}
+            data: dict[str, Any] = {"step_seq": pausable.step_seq, "reason": reason}
+            if reason == "handed_back" and run_id in self._handbacks:
+                data["done"] = self._handbacks[run_id]
             await self._store.paused_event(run_id, "takeover.ended", data)
             if on_end is not None:
                 await on_end(reason)
@@ -222,6 +240,7 @@ class InProcessExecutor:
             on_end=ended,
             on_blocked=on_blocked,
             idle_s=self._env.takeover_idle_s,
+            step_seq=pausable.step_seq,
         )
         self._takeovers[run_id] = session
         if not await self._store.paused_event(run_id, "takeover.started", {"step_seq": pausable.step_seq}):
@@ -229,6 +248,22 @@ class InProcessExecutor:
             raise TakeoverError("not_available", "This run is no longer paused")
         await session.start(on_frame)
         return session
+
+    async def hand_back(self, run_id: UUID, step_seq: int, done: str) -> bool:
+        """End the owner's takeover and continue the run (ADR 0008, T7). `done`: barrier (act on the step
+        again), step (verify it without acting) or rest (verify the end state). False without an active
+        takeover at `step_seq`."""
+        session = self._takeovers.get(run_id)
+        pausable = self._takeover_pages.get(run_id)
+        if session is None or pausable is None or pausable.step_seq != step_seq:
+            return False
+        self._handbacks[run_id] = done
+        await session.end("handed_back")
+        resumed = {"step_seq": step_seq, "decision": "allow"}
+        if not await self._store.transition(run_id, RunStatus.RUNNING, resumed, from_=RunStatus.PAUSED):
+            self._handbacks.pop(run_id, None)
+            return False
+        return self.resume(run_id)
 
     async def end_takeover(self, run_id: UUID, reason: str) -> None:
         session = self._takeovers.get(run_id)
@@ -410,6 +445,16 @@ class InProcessExecutor:
             )
             if out is None:
                 return None  # stopped by the policy, or cancelled
+            if out.by_hand_pending:
+                by_hand = await self._by_hand(job, steps, i, rows, observer, page, verify_timeout_s)
+                if by_hand == "stopped":
+                    return None
+                if by_hand == "rest":
+                    return rows
+                if by_hand == "step":
+                    budget.succeeded()
+                    i += 1
+                continue  # retry / none: act on the step now
             if out.verified:
                 rows.append(self._row(job, step, out))
                 budget.succeeded()
@@ -421,7 +466,15 @@ class InProcessExecutor:
                 )
                 if not await self._pause(job, step.seq, "verification_unclear", message, page=page):
                     return None
-                rows.append(self._row(job, step, out))  # a human accepted it; its confidence stays below 0.8
+                by_hand = await self._by_hand(job, steps, i, rows, observer, page, verify_timeout_s)
+                if by_hand == "stopped":
+                    return None
+                if by_hand == "retry":
+                    continue  # the owner cleared what was in the way: act on the step again
+                if by_hand == "rest":
+                    return rows
+                if by_hand == "none":
+                    rows.append(self._row(job, step, out))  # a human accepted it; confidence stays below 0.8
                 budget.succeeded()
                 i += 1
                 continue
@@ -465,7 +518,16 @@ class InProcessExecutor:
                 page=page,
             ):
                 return None
-            budget.retry_count += 1  # the human asked for one more try
+            by_hand = await self._by_hand(job, steps, i, rows, observer, page, verify_timeout_s)
+            if by_hand == "stopped":
+                return None
+            if by_hand == "rest":
+                return rows
+            if by_hand == "step":
+                budget.succeeded()
+                i += 1
+                continue
+            budget.retry_count += 1  # the human asked for one more try (or cleared the way first)
         return rows
 
     async def _attempt(
@@ -488,6 +550,8 @@ class InProcessExecutor:
         before = await observer.capture(page, step_ref(step))
         if not await self._allowed(job, step, before, page):
             return None
+        if job.run_id in self._handbacks:  # the owner took over at the policy's pause (login wall, challenge)
+            return StepOutcome.pending_by_hand(before)
         out = await act_and_verify(
             step,
             executor,
@@ -517,6 +581,61 @@ class InProcessExecutor:
             "screenshot_url": shot,
         }
         return out if await store.event(job.run_id, "step.failed", failed) else None
+
+    async def _by_hand(
+        self,
+        job: RunJob,
+        steps: list[PlannedStep],
+        i: int,
+        rows: list[WorkflowStepRow],
+        observer: Observer,
+        page: Page,
+        verify_timeout_s: float,
+    ) -> str:
+        """After a pause: what the owner's hand-back means (ADR 0008, T7). `none`: no takeover happened;
+        `retry`: they cleared a barrier, act on the step again; `step`: steps[i] was done by hand and is in
+        `rows`; `rest`: every remaining step was done by hand and is in `rows`; `stopped`: the run ended.
+
+        What they did is checked on the page as it is, without acting. If that fails, the run pauses again;
+        allowing it then accepts their word for it (below the 0.8 threshold, like an accepted unclear
+        step)."""
+        done = self._handbacks.pop(job.run_id, None)
+        if done is None:
+            return "none"
+        if done == "barrier":
+            return "retry"
+        todo = steps[i : i + 1] if done == "step" else steps[i:]
+        while True:
+            out = await act_and_verify(
+                todo[-1], ActionExecutor(page), observer, self._env.verifier, page,
+                verify_timeout_s=verify_timeout_s, verify_interval_s=self._env.verify_interval_s,
+                vision=job.kind != "do_it", act=False,
+            )  # fmt: skip
+            if out.verified:
+                break
+            message = "Krama couldn't confirm what was done by hand. Take over again, or allow to accept it."
+            if not await self._pause(job, steps[i].seq, "verification_unclear", message, page=page):
+                return "stopped"
+            again = self._handbacks.pop(job.run_id, None)
+            if again is None:
+                break  # the owner allowed it: their word stands
+            if again == "barrier":
+                return "retry"
+            todo = steps[i : i + 1] if again == "step" else steps[i:]
+            done = again
+        for step in todo:
+            rows.append(self._row(job, step, out, by_hand=True))
+            assert out.verification is not None
+            v = out.verification.verification
+            data = {
+                "step_seq": step.seq,
+                "method": list(v.method),
+                "confidence": min(v.confidence, HUMAN_CAP),
+                "performed_by": "human",
+            }
+            if not await self._store.event(job.run_id, "step.verified", data):
+                return "stopped"
+        return "step" if done == "step" else "rest"
 
     async def _replan(
         self,
@@ -739,7 +858,9 @@ class InProcessExecutor:
             if job.run_id in self._paused_s:
                 self._paused_s[job.run_id] += time.perf_counter() - t0
 
-    def _row(self, job: RunJob, step: PlannedStep, out: StepOutcome) -> WorkflowStepRow:
+    def _row(
+        self, job: RunJob, step: PlannedStep, out: StepOutcome, *, by_hand: bool = False
+    ) -> WorkflowStepRow:
         """The stored step. Sensitive fill values are masked; the ARIA text stays out (it can hold typed
         values), the screenshot is referenced by its artifact key. The step text is rewritten from what ran
         (label, dialog/section, page reached); the plan keeps the text the human approved."""
@@ -769,8 +890,9 @@ class InProcessExecutor:
                 "screenshot_path": key,
                 "captured_at": out.observed.captured_at.isoformat(),
             },
-            verification=out.verification.verification.model_dump(mode="json"),
+            verification=_verification(out, by_hand=by_hand),
             risk=step.risk,
+            performed_by="human" if by_hand else "krama",
             sensitive=sensitive,
             screenshot_path=key,
             # Wall-clock epoch ms for now; _to_recording_offsets turns them into offsets into the recording.
