@@ -30,6 +30,8 @@ import type {
   WorkflowInput,
   WorkflowInputList,
   WorkflowVersionList,
+  HandBackDone,
+  TakeoverInput,
 } from "@krama/contracts-ts";
 import { compileWorkflow, type TutorialSpec } from "@krama/tutorial-compiler";
 
@@ -210,6 +212,107 @@ export function errorMessage(err: unknown, fallback = "Something went wrong"): s
  * API client interface for the Krama frontend (docs/architecture.md §4).
  * Decouples UI components and pages from whether the backend is live or mocked.
  */
+/** Text message from WS /runs/{id}/screen (contracts/schemas/takeover.schema.json `TakeoverServerMessage`; the
+ * TypeScript generator only emits types the root schema reaches, so it is written out here). */
+export interface TakeoverServerMessage {
+  type: "ready" | "blocked" | "ended";
+  width?: number;
+  height?: number;
+  message?: string;
+  reason?: "handed_back" | "idle" | "closed" | "cancelled";
+}
+
+/** The live page during a takeover (ADR 0008): frames as image URLs, server notices, and input back. */
+export interface ScreenConnection {
+  onFrame(listener: (url: string) => void): void;
+  onMessage(listener: (message: TakeoverServerMessage) => void): void;
+  onClose(listener: (code: number) => void): void;
+  send(input: TakeoverInput): void;
+  close(): void;
+}
+
+/** A WebSocket to WS /runs/{id}/screen. Frames arrive as JPEG blobs; each becomes an object URL (the last one
+ * is revoked when the next arrives, so memory stays flat). Frames are never stored. */
+export class WebSocketScreen implements ScreenConnection {
+  private readonly socket: WebSocket;
+  private lastUrl: string | null = null;
+
+  constructor(url: string) {
+    this.socket = new WebSocket(url);
+    this.socket.binaryType = "blob";
+  }
+
+  onFrame(listener: (url: string) => void): void {
+    this.socket.addEventListener("message", (event: MessageEvent) => {
+      if (typeof event.data === "string") return;
+      const next = URL.createObjectURL(event.data as Blob);
+      if (this.lastUrl) URL.revokeObjectURL(this.lastUrl);
+      this.lastUrl = next;
+      listener(next);
+    });
+  }
+
+  onMessage(listener: (message: TakeoverServerMessage) => void): void {
+    this.socket.addEventListener("message", (event: MessageEvent) => {
+      if (typeof event.data !== "string") return;
+      try {
+        listener(JSON.parse(event.data) as TakeoverServerMessage);
+      } catch {
+        // not a contract message: ignore
+      }
+    });
+  }
+
+  onClose(listener: (code: number) => void): void {
+    this.socket.addEventListener("close", (event: CloseEvent) => listener(event.code));
+  }
+
+  send(input: TakeoverInput): void {
+    if (this.socket.readyState === WebSocket.OPEN) this.socket.send(JSON.stringify(input));
+  }
+
+  close(): void {
+    if (this.lastUrl) URL.revokeObjectURL(this.lastUrl);
+    this.lastUrl = null;
+    this.socket.close();
+  }
+}
+
+/** Mock mode: one fixture screenshot as the page, input is recorded (tests and the e2e mock flow). */
+export class MockScreen implements ScreenConnection {
+  readonly sent: TakeoverInput[] = [];
+  private frameListeners: ((url: string) => void)[] = [];
+  private messageListeners: ((message: TakeoverServerMessage) => void)[] = [];
+  private closeListeners: ((code: number) => void)[] = [];
+
+  constructor(private readonly frameUrl = "/screenshots/step-3.png") {
+    setTimeout(() => {
+      this.messageListeners.forEach((l) => l({ type: "ready", width: 1280, height: 800 }));
+      this.frameListeners.forEach((l) => l(this.frameUrl));
+    }, 0);
+  }
+
+  onFrame(listener: (url: string) => void): void {
+    this.frameListeners.push(listener);
+  }
+
+  onMessage(listener: (message: TakeoverServerMessage) => void): void {
+    this.messageListeners.push(listener);
+  }
+
+  onClose(listener: (code: number) => void): void {
+    this.closeListeners.push(listener);
+  }
+
+  send(input: TakeoverInput): void {
+    this.sent.push(input);
+  }
+
+  close(): void {
+    this.closeListeners.forEach((l) => l(1000));
+  }
+}
+
 export interface ApiClient {
   health(): Promise<HealthResponse>;
   /** POST /tasks → 202 Task (status `planning`). */
@@ -288,6 +391,12 @@ export interface ApiClient {
    * `validation_error` with `details.reason = "input_unsafe"` and `details.key` for a bad value.
    */
   runWorkflow(workflowId: string, revision: number, inputs: Record<string, string>): Promise<Run>;
+  /** POST /runs/{id}/takeover: take control of the paused run's live page (ADR 0008). 409 when none is possible. */
+  startTakeover(runId: string): Promise<Run>;
+  /** POST /runs/{id}/handback: end the takeover and say what was done (barrier | step | rest). */
+  handBack(runId: string, stepSeq: number, done: HandBackDone): Promise<Run>;
+  /** WS /runs/{id}/screen: the live page's frames, and the owner's input back. */
+  openScreen(runId: string): ScreenConnection;
   /** POST /workflows/{workflowId}/exports with preset ("landscape" | "portrait"). */
   createExport(workflowId: string, preset: ExportPreset): Promise<Export>;
   /** GET /exports/{exportId}. */
@@ -863,6 +972,22 @@ export class HttpApiClient implements ApiClient {
       method: "POST",
       headers: { "X-Krama": "1", "Content-Type": "application/json" },
     });
+  }
+
+  startTakeover(runId: string): Promise<Run> {
+    return this.request<Run>(`/runs/${encodeURIComponent(runId)}/takeover`, this.json("POST"));
+  }
+
+  handBack(runId: string, stepSeq: number, done: HandBackDone): Promise<Run> {
+    return this.request<Run>(
+      `/runs/${encodeURIComponent(runId)}/handback`,
+      this.json("POST", { step_seq: stepSeq, done }),
+    );
+  }
+
+  openScreen(runId: string): ScreenConnection {
+    const base = this.baseUrl.replace(/^http/, "ws");
+    return new WebSocketScreen(`${base}/runs/${encodeURIComponent(runId)}/screen`);
   }
 
   getWorkflowInputs(workflowId: string): Promise<WorkflowInputList> {
@@ -1678,6 +1803,22 @@ export class MockApiClient implements ApiClient {
       throw mockError(429, "rate_limited", "Daily AI fix quota reached (5/day). Please regenerate the workflow or retry tomorrow.");
     }
     return { success: true, status: "checking" };
+  }
+
+  async startTakeover(runId: string): Promise<Run> {
+    const run = await this.getRun(runId);
+    return { ...run, status: "paused", takeover: { step_seq: run.current_seq ?? 1, started_at: nowTs() } };
+  }
+
+  async handBack(runId: string, stepSeq: number, done: HandBackDone): Promise<Run> {
+    void done;
+    const run = await this.getRun(runId);
+    return { ...run, status: "running", current_seq: stepSeq, takeover: null };
+  }
+
+  openScreen(runId: string): ScreenConnection {
+    void runId;
+    return new MockScreen();
   }
 
   async getWorkflowInputs(workflowId: string): Promise<WorkflowInputList> {
