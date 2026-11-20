@@ -1,4 +1,5 @@
 import React from "react";
+import { TEXT_FONT } from "../i18n.js";
 import { interpolate, useCurrentFrame, useVideoConfig } from "remotion";
 import type { VideoPreset } from "../types.js";
 
@@ -35,7 +36,7 @@ export const IntroCard: React.FC<IntroCardProps> = ({ title, site = "git.local",
         alignItems: "center",
         justifyContent: "center",
         color: "#ffffff",
-        fontFamily: "system-ui, -apple-system, sans-serif",
+        fontFamily: TEXT_FONT,
         padding: isPortrait ? "60px 40px" : "60px 120px",
         textAlign: "center",
         opacity,

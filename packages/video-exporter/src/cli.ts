@@ -70,6 +70,7 @@ async function main() {
   const screenshotsJson = args.screenshots;
   const audioJson = args.audio;
   const site = args.site || "git.local";
+  const language = args.language || "en";
   const verifiedDate = args.date || new Date().toISOString().split("T")[0];
   const vttPath = args.vtt;
   const metadataPath = args.metadata;
@@ -148,6 +149,7 @@ async function main() {
     screenshots,
     site,
     verifiedDate,
+    language,
     concurrency,
     vttPath: vttPath ? path.resolve(vttPath) : undefined,
     metadataPath: metadataPath ? path.resolve(metadataPath) : undefined,

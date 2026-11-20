@@ -1,5 +1,6 @@
-import React from "react";
-import { Sequence, staticFile, useVideoConfig } from "remotion";
+import React, { useEffect, useState } from "react";
+import { Sequence, continueRender, delayRender, staticFile, useVideoConfig } from "remotion";
+import { BUNDLED_FONTS, needsBundledFonts } from "../i18n.js";
 import type { VideoExportProps } from "../types.js";
 import { IntroCard } from "./IntroCard.js";
 import { OutroCard } from "./OutroCard.js";
@@ -30,8 +31,10 @@ export const TutorialComposition: React.FC<VideoExportProps> = ({
   verifiedDate = "2026-11-17",
   introDurationFrames = 60,
   outroDurationFrames = 60,
+  language,
 }) => {
   const { fps } = useVideoConfig();
+  useBundledFonts(language);
 
   let currentFrameOffset = 0;
 
@@ -83,11 +86,26 @@ export const TutorialComposition: React.FC<VideoExportProps> = ({
 
       {/* 3. Outro Card (2 seconds = 60 frames) */}
       <Sequence from={currentFrameOffset} durationInFrames={outroDurationFrames}>
-        <OutroCard site={site} verifiedDate={verifiedDate} preset={preset} />
+        <OutroCard site={site} verifiedDate={verifiedDate} preset={preset} language={language} />
       </Sequence>
     </div>
   );
 };
+
+/**
+ * Devanagari and Kannada need fonts the render machine may not have (#429): load the bundled Noto fonts, which
+ * renderer/render.ts copies into the public folder, before the first frame is taken.
+ */
+function useBundledFonts(language?: string): void {
+  const [handle] = useState(() => (needsBundledFonts(language) ? delayRender("Loading Indic fonts") : null));
+  useEffect(() => {
+    if (handle === null) return;
+    const loads = BUNDLED_FONTS.map((f) =>
+      new FontFace(f.family, `url(${staticFile(f.file)})`).load().then((face) => document.fonts.add(face)),
+    );
+    Promise.allSettled(loads).then(() => continueRender(handle));
+  }, [handle]);
+}
 
 /** A URL as is; a bare file name from the bundle's public folder (see renderer/render.ts) via staticFile. */
 function assetSrc(value: string | undefined): string | undefined {
