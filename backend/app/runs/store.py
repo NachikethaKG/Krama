@@ -165,6 +165,13 @@ class RunStore:
         error = {"code": code, "message": message, "details": {"reason": reason, **details}}
         return await self.transition(run_id, RunStatus.FAILED, {"error": error}, from_=from_, error=error)
 
+    async def paused_event(self, run_id: UUID, kind: str, data: Mapping[str, Any]) -> bool:
+        """An event about a paused run (takeover.started / takeover.ended), written only while it is paused,
+        so nothing lands after its final event."""
+        async with self._sessions.begin() as s:
+            row = await append_event(s, run_id, kind, data, while_status=(RunStatus.PAUSED,))
+        return await self._committed(run_id, row is not None)
+
     async def event(self, run_id: UUID, kind: str, data: Mapping[str, Any], **changes: Any) -> bool:
         """A step event, written only while the run is still running. False once it was cancelled."""
         async with self._sessions.begin() as s:

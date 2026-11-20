@@ -46,6 +46,9 @@ class PrepareError(RuntimeError):
 class TargetSetup:
     site: str | None = None
     """Key into the planner's SITE_HINTS."""
+    sign_in_hosts: tuple[str, ...] = ()
+    """Other hosts (`host[:port]`) a human may open while signing in during a takeover (ADR 0008), besides the
+    target's own. Everything else is blocked."""
     preconditions: list[ScriptedStep] = field(default_factory=list)
     """Run before planning and before step 1 (e.g. signing in). Never part of the plan or the recording."""
     signed_in_as: str | None = None
