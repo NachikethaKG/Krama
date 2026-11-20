@@ -151,6 +151,12 @@ class TutorialSpec(BaseModel):
     workflow_id: UUID
     title: Annotated[str, Field(min_length=1)]
     description: str | None = None
+    language: Annotated[
+        common_schema.Language | None,
+        Field(
+            description="The language of the captions and titles (#132). UI labels inside them stay in the site's own language."
+        ),
+    ] = "en"
     viewport: Annotated[
         workflow_schema.WorkflowViewport,
         Field(description="The recording's viewport: the coordinate space of every bbox and point."),

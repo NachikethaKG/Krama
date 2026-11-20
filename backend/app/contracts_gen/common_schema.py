@@ -10,6 +10,15 @@ from pydantic import BaseModel, ConfigDict, Field
 type Common = Annotated[Any, Field(title="Common")]
 
 
+type Language = Annotated[
+    Literal["en", "hi", "kn", "de", "es", "fr"],
+    Field(
+        description="A tutorial language (#132, L3). en is the original; the others are translations. Narration: en, de, es, fr; hi and kn get captions only (L7).",
+        title="Language",
+    ),
+]
+
+
 type PerformedBy = Annotated[
     Literal["krama", "human"],
     Field(
