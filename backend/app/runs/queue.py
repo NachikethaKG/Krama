@@ -23,6 +23,8 @@ from arq.connections import ArqRedis, RedisSettings
 
 from app.runs.states import RunStatus
 from app.runs.store import RunNotFoundError, RunStore
+from app.runs.takeover import FrameSink, Notice
+from app.runs.takeover_relay import ApiTakeoverRelay, RemoteTakeover
 
 JOB = "run_job"
 CONTROL = "krama:runs:control"
@@ -48,6 +50,7 @@ class ArqExecutor:
         self._url = redis_url
         self._pool: ArqRedis | None = None
         self.artifacts_dir = artifacts_dir
+        self._takeovers = ApiTakeoverRelay(self._redis)
 
     async def _redis(self) -> ArqRedis:
         if self._pool is None:
@@ -80,6 +83,23 @@ class ArqExecutor:
             return False  # e.g. the pause timed out in the worker meanwhile
         await self._signal("resume", run_id)
         return True
+
+    def takeover(self, run_id: UUID) -> RemoteTakeover | None:
+        """The run's active takeover, relayed from the worker (ADR 0008, #413)."""
+        return self._takeovers.takeover(run_id)
+
+    async def start_takeover(
+        self,
+        run_id: UUID,
+        on_frame: FrameSink,
+        *,
+        on_blocked: Notice | None = None,
+        on_end: Notice | None = None,
+    ) -> RemoteTakeover:
+        return await self._takeovers.start(run_id, on_frame, on_blocked, on_end)
+
+    async def hand_back(self, run_id: UUID, step_seq: int, done: str) -> bool:
+        return await self._takeovers.hand_back(run_id, step_seq, done)
 
     async def recover(self) -> list[UUID]:
         """Nothing here: the worker owns the browsers, so it recovers its own runs when it starts."""
