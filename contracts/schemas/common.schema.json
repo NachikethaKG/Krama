@@ -2,8 +2,23 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "common.schema.json",
   "title": "Common",
-  "$comment": "v1.2. Building blocks shared by plan, step, workflow, event and tutorial-spec schemas. See contracts/README.md for the schema rules.",
+  "$comment": "v1.3. Building blocks shared by plan, step, workflow, event and tutorial-spec schemas. See contracts/README.md for the schema rules.",
   "$defs": {
+    "PerformedBy": {
+      "title": "PerformedBy",
+      "description": "Who did a step: Krama, or the run's owner by hand in a takeover (ADR 0008).",
+      "enum": ["krama", "human"]
+    },
+    "TakeoverEndReason": {
+      "title": "TakeoverEndReason",
+      "description": "Why a takeover ended. handed_back: the owner said what they did; idle: 5 min without input; closed: the screen connection went away; cancelled: the run was cancelled.",
+      "enum": ["handed_back", "idle", "closed", "cancelled"]
+    },
+    "HandBackDone": {
+      "title": "HandBackDone",
+      "description": "What the owner did in a takeover. barrier: cleared a login wall or challenge (Krama re-checks and retries the step); step: did the paused step (Krama verifies it without acting); rest: did the rest of the task (Krama runs the final check).",
+      "enum": ["barrier", "step", "rest"]
+    },
     "Risk": {
       "title": "Risk",
       "enum": ["low", "medium", "high"]
