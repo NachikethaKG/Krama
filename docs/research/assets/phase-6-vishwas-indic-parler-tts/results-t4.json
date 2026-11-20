@@ -1,0 +1,53 @@
+{
+  "tag": "t4",
+  "torch": "2.15.0+cpu",
+  "torch_threads": 4,
+  "cuda_available": false,
+  "sampling_rate": 44100,
+  "seed": 430,
+  "import_s": 21.7,
+  "load_s": 41.7,
+  "warmup_s": 59.9,
+  "mem_after_load": {
+    "rss_now_mb": 2408,
+    "rss_peak_polled_mb": 3904,
+    "peak_wset_mb": 3904
+  },
+  "mem_end": {
+    "rss_now_mb": 3481,
+    "rss_peak_polled_mb": 3904,
+    "peak_wset_mb": 3904
+  },
+  "rows": [
+    {
+      "lang": "hi",
+      "n": 1,
+      "text": "“New repository” पर क्लिक करें।",
+      "words": 5,
+      "synth_s": 107.91,
+      "audio_s": 2.95,
+      "rtf": 36.59,
+      "wav": "wav/t4-hi1.wav",
+      "rss_now_mb": 3472,
+      "rss_peak_polled_mb": 3904,
+      "peak_wset_mb": 3904
+    },
+    {
+      "lang": "kn",
+      "n": 1,
+      "text": "“New repository” ಕ್ಲಿಕ್ ಮಾಡಿ.",
+      "words": 4,
+      "synth_s": 77.72,
+      "audio_s": 1.97,
+      "rtf": 39.38,
+      "wav": "wav/t4-kn1.wav",
+      "rss_now_mb": 3481,
+      "rss_peak_polled_mb": 3904,
+      "peak_wset_mb": 3904
+    }
+  ],
+  "per_lang_rtf": {
+    "hi": 36.58,
+    "kn": 39.45
+  }
+}

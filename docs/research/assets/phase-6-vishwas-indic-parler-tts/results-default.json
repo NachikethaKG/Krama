@@ -1,0 +1,17 @@
+{
+  "tag": "default",
+  "torch_threads": 10,
+  "note": "killed after hi1: 174 s for 2.95 s; process was paging (5.0 GB private, 3.1 GB working set, system free RAM 0.8 GB)",
+  "rows": [
+    {
+      "lang": "hi",
+      "n": 1,
+      "text": "“New repository” पर क्लिक करें।",
+      "words": 5,
+      "synth_s": 173.85,
+      "audio_s": 2.95,
+      "rtf": 58.95,
+      "wav": "wav/default-hi1.wav"
+    }
+  ]
+}

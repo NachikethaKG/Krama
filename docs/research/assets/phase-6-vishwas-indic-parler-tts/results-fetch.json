@@ -1,0 +1,10 @@
+{
+  "mirror": "naklitechie/indic-parler-tts",
+  "revision": "dd37df3cadd8b7ec06c3ca5cc7c85fc5ea02b399",
+  "matches_official": {
+    "config.json": true,
+    "model.safetensors": true,
+    "tokenizer.json": true,
+    "tokenizer.model": true
+  }
+}
