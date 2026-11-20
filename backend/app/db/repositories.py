@@ -209,9 +209,11 @@ async def list_workflows(
     user_id: UUID,
     limit: int,
     target_app: str | None = None,
+    status: str | None = None,
     before: tuple[datetime, UUID] | None = None,
 ) -> Sequence[WorkflowRow]:
-    """Newest first, optionally for one app. Steps are loaded too (`selectin`), for the step count."""
+    """Newest first, optionally for one app or status. Steps are loaded too (`selectin`), for the step
+    count."""
     query = (
         select(WorkflowRow)
         .where(WorkflowRow.user_id == user_id)
@@ -220,9 +222,34 @@ async def list_workflows(
     )
     if target_app is not None:
         query = query.where(WorkflowRow.target_app == target_app)
+    if status is not None:
+        query = query.where(WorkflowRow.status == status)
     if before is not None:
         query = query.where(tuple_(WorkflowRow.created_at, WorkflowRow.id) < tuple_(*before))
     return (await session.scalars(query)).all()
+
+
+async def refresh_search(
+    session: AsyncSession, workflow: WorkflowRow, steps: Sequence[WorkflowStepRow] | None = None
+) -> None:
+    """Copy the current version's step texts and the task's request onto the workflow, for search (#417).
+
+    Call it wherever `current_version_id` changes; `steps` are that version's steps if already at hand."""
+    if steps is None:
+        texts = list(
+            await session.scalars(
+                select(WorkflowStepRow.instruction_text)
+                .where(WorkflowStepRow.version_id == workflow.current_version_id)
+                .order_by(WorkflowStepRow.seq)
+            )
+        )
+    else:
+        texts = [s.instruction_text for s in sorted(steps, key=lambda s: s.seq)]
+    workflow.search_steps = "\n".join(texts)
+    if not workflow.search_request:
+        workflow.search_request = (
+            await session.scalar(select(TaskRow.prompt).where(TaskRow.id == workflow.task_id)) or ""
+        )
 
 
 async def add_workflow(
@@ -252,6 +279,7 @@ async def add_workflow(
     await session.flush()
     workflow.current_version_id = version.id
     workflow.revision = version.revision
+    await refresh_search(session, workflow, steps)
     await session.flush()
     return version
 
@@ -334,6 +362,7 @@ async def add_workflow_version(
         workflow.confidence = confidence
         workflow.recording_path = recording_path
         workflow.viewport = viewport
+        await refresh_search(session, workflow, steps)
     else:
         workflow.status = "outdated"
     await session.flush()
