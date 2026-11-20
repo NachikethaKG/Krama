@@ -1373,6 +1373,32 @@ export interface WorkflowSummary {
   step_count: number;
   confidence?: number | null;
   created_at?: string | null;
+  /**
+   * When validation last checked it (#135); null if never.
+   */
+  last_validated_at?: string | null;
+  /**
+   * Only with GET /workflows?q=: relevance x status x freshness (higher first, #135 S5).
+   */
+  score?: number | null;
+  /**
+   * Only with GET /workflows?q=: where the words matched best.
+   */
+  match?: WorkflowMatch | null;
+}
+/**
+ * This interface was referenced by `Workflow`'s JSON-Schema
+ * via the `definition` "WorkflowMatch".
+ */
+export interface WorkflowMatch {
+  /**
+   * The step whose text matched best; null when the title or request matched.
+   */
+  step_seq?: number | null;
+  /**
+   * Plain text with the matched words wrapped in <mark></mark>. Show it as text plus marks, never as HTML.
+   */
+  snippet: string;
 }
 /**
  * This interface was referenced by `Workflow`'s JSON-Schema

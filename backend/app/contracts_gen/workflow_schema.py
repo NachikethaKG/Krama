@@ -43,6 +43,22 @@ class WorkflowRecording(BaseModel):
     ended_at: AwareDatetime | None = None
 
 
+class WorkflowMatch(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+    step_seq: Annotated[
+        int | None,
+        Field(description="The step whose text matched best; null when the title or request matched.", ge=1),
+    ] = None
+    snippet: Annotated[
+        str,
+        Field(
+            description="Plain text with the matched words wrapped in <mark></mark>. Show it as text plus marks, never as HTML."
+        ),
+    ]
+
+
 type StepSeq = Annotated[int, Field(ge=1, title="StepSeq")]
 
 
@@ -243,6 +259,19 @@ class WorkflowSummary(BaseModel):
     step_count: Annotated[int, Field(ge=0)]
     confidence: Annotated[float | None, Field(ge=0.0, le=1.0)] = None
     created_at: AwareDatetime | None = None
+    last_validated_at: Annotated[
+        AwareDatetime | None, Field(description="When validation last checked it (#135); null if never.")
+    ] = None
+    score: Annotated[
+        float | None,
+        Field(
+            description="Only with GET /workflows?q=: relevance x status x freshness (higher first, #135 S5).",
+            ge=0.0,
+        ),
+    ] = None
+    match: Annotated[
+        WorkflowMatch | None, Field(description="Only with GET /workflows?q=: where the words matched best.")
+    ] = None
 
 
 class WorkflowPage(BaseModel):
