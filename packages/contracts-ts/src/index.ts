@@ -177,6 +177,7 @@ export type HighlightStyle = "pulsing_ring" | "solid_box" | "spotlight";
  * via the `definition` "WorkflowVersionSource".
  */
 export type WorkflowVersionSource = "initial" | "heal" | "regenerate" | "edit";
+export type StepSeq = number;
 /**
  * current: the one shown. pending_review: waits for the owner to accept it. superseded: an older current one. rejected: the owner turned it down.
  *
@@ -1290,7 +1291,7 @@ export interface WorkflowInput {
    *
    * @minItems 1
    */
-  steps: [number, ...number[]];
+  steps: [StepSeq, ...StepSeq[]];
 }
 /**
  * GET /workflows/{id}/inputs: what the owner fills in before "Do it for me" runs the current version.
