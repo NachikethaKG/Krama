@@ -170,11 +170,21 @@ async def get_workflow_inputs(
     account the run acts in: in v1 the account Krama is signed in to there, not the user's own (P11)."""
     async with services.sessions() as s:
         workflow = await owned_workflow(s, workflow_id, user)
-        account = services.target(workflow.target_url).signed_in_as
+        account, needs = await _account(services, user, workflow.target_url)
         try:
-            return await workflow_inputs(s, workflow, account)
+            return await workflow_inputs(s, workflow, account, needs)
         except DoItRefusedError as e:
             raise _refused(e) from None
+
+
+async def _account(services: Services, user: UserRow, target_url: str) -> tuple[str | None, str | None]:
+    """The account a do-it run acts in, and the site to sign in to first (ADR 0007). Sites without sign-in
+    (local test pages) need no session."""
+    target = services.target(target_url)
+    if target.login_path is None or services.profiles is None or target.site is None:
+        return target.signed_in_as, None
+    profile = await services.profiles.load(user.id, target.site)
+    return (profile.account, None) if profile is not None else (None, target.site)
 
 
 @router.post(
@@ -195,9 +205,17 @@ async def run_workflow(
     """ "Do it for me" (#129): run the stored steps for the owner with their values. Starting it approves the
     steps; it never resets the site, risky steps pause for confirmation, and no workflow is stored."""
     async with services.sessions() as s:
-        await owned_workflow(s, workflow_id, user)
+        workflow = await owned_workflow(s, workflow_id, user)
+        target_url = workflow.target_url
+    account, needs = await _account(services, user, target_url)
+    if needs is not None:
+        message = f"Sign in to {needs} first: Krama acts in your own account"
+        raise ApiException(409, "conflict", message, {"reason": "site_sign_in_needed", "site": needs})
+    swap = (services.target(target_url).signed_in_as, account) if account is not None else None
     try:
-        run_id = await create_do_it_run(services.sessions, workflow_id, body.revision, body.inputs)
+        run_id = await create_do_it_run(
+            services.sessions, workflow_id, body.revision, body.inputs, account=swap
+        )
     except DoItRefusedError as e:
         raise _refused(e) from None
     except InputUnsafeError as e:
