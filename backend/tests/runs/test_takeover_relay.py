@@ -63,7 +63,7 @@ async def relays() -> Any:
     stub = StubExecutor()
     worker = asyncio.create_task(WorkerTakeoverRelay(REDIS_URL, stub).run())
     await asyncio.sleep(0.3)  # subscribed
-    redis = Redis.from_url(REDIS_URL)
+    redis: Redis = Redis.from_url(REDIS_URL)
 
     async def factory() -> Redis:
         return redis
