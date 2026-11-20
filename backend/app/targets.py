@@ -13,7 +13,9 @@ import urllib.request
 from collections.abc import Awaitable, Callable, Mapping, Sequence
 from dataclasses import dataclass, field, replace
 from typing import Any
-from urllib.parse import quote, urlsplit, urlunsplit
+from urllib.parse import quote, urljoin, urlsplit, urlunsplit
+
+from playwright.async_api import Page
 
 from app.agent import SessionConfig
 from app.agent.gitea_create_repo import login_steps
@@ -46,6 +48,12 @@ class PrepareError(RuntimeError):
 class TargetSetup:
     site: str | None = None
     """Key into the planner's SITE_HINTS."""
+    login_path: str | None = None
+    """Where a human signs in by hand (a sign-in run, ADR 0007). None: the site has no sign-in to offer."""
+    account_of: Callable[[Page, StorageState], Awaitable[str | None]] | None = None
+    """The account the browser is signed in as, or None if it isn't (checked after a sign-in run)."""
+    session_cookie: str | None = None
+    """The sign-in cookie whose expiry is the stored session's (ADR 0007)."""
     sign_in_hosts: tuple[str, ...] = ()
     """Other hosts (`host[:port]`) a human may open while signing in during a takeover (ADR 0008), besides the
     target's own. Everything else is blocked."""
@@ -95,6 +103,9 @@ def target_setup(target_url: str, settings: Settings) -> TargetSetup:
             preconditions=login_steps(user=user, password=settings.gitea_demo_password),
             signed_in_as=user,
             reset=lambda steps: _gitea_reset(steps, settings),
+            login_path="/user/login",
+            account_of=_gitea_account,
+            session_cookie="i_like_gitea",
         )
     if _same_origin(target_url, settings.github_url):
         return _github_setup(settings)
@@ -124,6 +135,9 @@ def _github_setup(settings: Settings) -> TargetSetup:
         storage_state=None if problem else state,
         signed_in_check=GITHUB.signed_in_check,
         sign_in_problem=problem,
+        login_path="/login",
+        account_of=_github_account,
+        session_cookie=GITHUB.session_cookie,
         practice_repo=practice,
         prepare=prepare if practice else None,
         action_timeout_ms=10_000,
@@ -131,6 +145,22 @@ def _github_setup(settings: Settings) -> TargetSetup:
         settle_ms=2_500,
         verify_timeout_s=15.0,
     )
+
+
+async def _gitea_account(page: Page, state: StorageState) -> str | None:
+    """Who the Gitea session belongs to: the API's own answer for the browser's cookies."""
+    response = await page.request.get(urljoin(page.url, "/api/v1/user"))
+    if not response.ok:
+        return None
+    login = (await response.json()).get("login")
+    return str(login) if login else None
+
+
+async def _github_account(page: Page, state: StorageState) -> str | None:
+    """GitHub names the signed-in account in a cookie, and only when signed in."""
+    if not await GITHUB.signed_in_check(page):
+        return None
+    return _cookie(state, "dotcom_user")
 
 
 def _cookie(state: StorageState | None, name: str) -> str | None:

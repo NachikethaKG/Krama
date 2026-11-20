@@ -46,6 +46,10 @@ class RunJob:
     kind: str = "task"
     """task, or reverify: a replay of `source_workflow_id`'s stored steps that stores no workflow (#77)."""
     source_workflow_id: UUID | None = None
+    user_id: UUID | None = None
+    """Whose run it is (the task's owner): a do-it run uses their own site session (ADR 0007)."""
+    recorded_as: str | None = None
+    """The site account the run was signed in as; stored with the version it makes (ADR 0007)."""
 
 
 _RISK_ORDER = {"low": 0, "medium": 1, "high": 2}
@@ -96,6 +100,7 @@ class RunStore:
                 plan_revision=run.plan_revision,
                 kind=run.kind,
                 source_workflow_id=run.source_workflow_id,
+                user_id=task.user_id,
             )
 
     async def status(self, run_id: UUID) -> RunStatus:
@@ -245,6 +250,16 @@ class RunStore:
             )
         return await self._committed(job.run_id, row is not None)
 
+    async def complete_sign_in(self, job: RunJob, **changes: Any) -> bool:
+        """End a sign-in run as verified: the session is stored; there is no workflow (ADR 0007)."""
+        async with self._sessions.begin() as s:
+            row = await transition_run(
+                s, job.run_id, to=RunStatus.VERIFIED, allowed_from=(RunStatus.RUNNING,),
+                event_type="run.completed", event_data={"verified_steps": 0, "failed_actions": 0},
+                finished_at=datetime.now(UTC), **changes,
+            )  # fmt: skip
+        return await self._committed(job.run_id, row is not None)
+
     async def stored_targets(self, workflow_id: UUID) -> dict[int, dict[str, Any]]:
         """The current version's stored targets (with their fingerprints, #112), by step seq."""
         async with self._sessions() as s:
@@ -313,6 +328,7 @@ class RunStore:
             viewport=viewport,
             change_summary=None,
             created_by=created_by,
+            recorded_as=job.recorded_as,
         )
         diff = step_diff(parent, rows, old_rev=parent_revision, new_rev=version.revision)
         version.change_summary = diff.model_dump(mode="json", by_alias=True, exclude_none=True)
@@ -338,7 +354,8 @@ class RunStore:
         steps: Sequence[WorkflowStepRow],
         **changes: Any,
     ) -> UUID:
-        await add_workflow(s, workflow, steps)
+        version = await add_workflow(s, workflow, steps)
+        version.recorded_as = job.recorded_as
         row = await transition_run(
             s,
             job.run_id,
