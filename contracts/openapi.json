@@ -2435,6 +2435,109 @@
         "title": "TaskStatus",
         "type": "string"
       },
+      "TranslatedStep": {
+        "additionalProperties": false,
+        "properties": {
+          "step_seq": {
+            "minimum": 1.0,
+            "title": "Step Seq",
+            "type": "integer"
+          },
+          "text": {
+            "description": "The step text in the language. Quoted UI labels are byte for byte the site's own.",
+            "title": "Text",
+            "type": "string"
+          },
+          "translated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": true,
+            "description": "False when this step kept its English text (its translation failed the label check).",
+            "title": "Translated"
+          }
+        },
+        "required": [
+          "step_seq",
+          "text"
+        ],
+        "title": "TranslatedStep",
+        "type": "object"
+      },
+      "Translation": {
+        "additionalProperties": false,
+        "properties": {
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Why it failed (status failed); ask again to retry.",
+            "title": "Error"
+          },
+          "language": {
+            "$ref": "#/components/schemas/Language"
+          },
+          "revision": {
+            "minimum": 1.0,
+            "title": "Revision",
+            "type": "integer"
+          },
+          "status": {
+            "$ref": "#/components/schemas/TranslationStatus"
+          },
+          "steps": {
+            "items": {
+              "$ref": "#/components/schemas/TranslatedStep"
+            },
+            "title": "Steps",
+            "type": "array"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "workflow_id": {
+            "format": "uuid",
+            "title": "Workflow Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workflow_id",
+          "revision",
+          "language",
+          "status",
+          "steps"
+        ],
+        "title": "Translation",
+        "type": "object"
+      },
+      "TranslationStatus": {
+        "enum": [
+          "translating",
+          "ready",
+          "failed"
+        ],
+        "title": "TranslationStatus",
+        "type": "string"
+      },
       "User": {
         "additionalProperties": false,
         "properties": {
@@ -6302,6 +6405,108 @@
         "summary": "Revoke Share",
         "tags": [
           "shares"
+        ]
+      }
+    },
+    "/api/v1/workflows/{workflow_id}/translations/{language}": {
+      "get": {
+        "description": "The current version's title and step texts in `language` (#132): made on first request, then cached.\nUI labels stay the site's own; a step whose labels didn't survive keeps its English text.",
+        "operationId": "get_translation_api_v1_workflows__workflow_id__translations__language__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workflow_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workflow Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "language",
+            "required": true,
+            "schema": {
+              "description": "A tutorial language (#132, L3). en is the original; the others are translations. Narration: en, de, es, fr; hi and kn get captions only (L7).",
+              "enum": [
+                "en",
+                "hi",
+                "kn",
+                "de",
+                "es",
+                "fr"
+              ],
+              "title": "Language",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Translation"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Translation"
+                }
+              }
+            },
+            "description": "Translating: ask again"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "No translator configured"
+          }
+        },
+        "summary": "Get Translation",
+        "tags": [
+          "workflows"
         ]
       }
     },
