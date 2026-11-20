@@ -6,6 +6,7 @@ from urllib.parse import quote
 from uuid import UUID
 
 from fastapi import APIRouter, Query, Request, Response
+from sqlalchemy import select
 
 from app.api.auth import CurrentUser
 from app.api.convert import (
@@ -20,7 +21,7 @@ from app.api.convert import (
 from app.api.errors import ApiException
 from app.api.guide import guide_markdown
 from app.api.owner import owned_workflow
-from app.api.services import ServicesDep
+from app.api.services import Services, ServicesDep
 from app.contracts_gen.common_schema import ErrorResponse
 from app.contracts_gen.run_schema import Run
 from app.contracts_gen.task_schema import Task
@@ -29,10 +30,12 @@ from app.contracts_gen.workflow_schema import (
     Workflow,
     WorkflowInputList,
     WorkflowPage,
+    WorkflowStatus,
     WorkflowVersionList,
 )
-from app.db import RunRow, TaskRow
+from app.db import RunRow, TaskRow, UserRow, WorkflowRow
 from app.db.repositories import list_versions, list_workflows
+from app.db.search import MAX_QUERY, last_validated, search_workflows
 from app.runs.do_it import create_do_it_run, workflow_inputs
 from app.runs.inputs import DoItRefusedError, InputUnsafeError
 from app.runs.reverify import ReverifyRefusedError, create_reverify_run
@@ -213,14 +216,41 @@ async def get_workflows(
     user: CurrentUser,
     services: ServicesDep,
     target_app: str | None = None,
+    status: WorkflowStatus | None = None,
+    q: Annotated[str | None, Query(max_length=MAX_QUERY)] = None,
     limit: Annotated[int, Query(ge=1, le=100)] = 20,
     cursor: str | None = None,
+    offset: Annotated[int, Query(ge=0, le=10_000)] = 0,
 ) -> WorkflowPage:
-    """Stored workflows, newest first, optionally for one app (e.g. gitea)."""
+    """Stored workflows, newest first, optionally for one app (e.g. gitea) or status. With `q`: searched and
+    ranked (#135), paged by `offset`; `next_cursor` is then the next offset."""
+    if q is not None and q.strip():
+        return await _search(user, services, q, status, min(limit, 50), offset)
     async with services.sessions() as s:
         rows = await list_workflows(
-            s, user_id=user.id, limit=limit, target_app=target_app, before=decode_cursor(cursor)
+            s,
+            user_id=user.id,
+            limit=limit,
+            target_app=target_app,
+            status=status,
+            before=decode_cursor(cursor),
         )
-        items = [workflow_summary(r) for r in rows]
+        checked = await last_validated(s, [r.id for r in rows])
+        items = [workflow_summary(r, last_validated_at=checked.get(r.id)) for r in rows]
     next_cursor = encode_cursor(rows[-1].created_at, rows[-1].id) if len(rows) == limit else None
     return WorkflowPage(items=items, next_cursor=next_cursor)
+
+
+async def _search(
+    user: UserRow, services: Services, q: str, status: str | None, limit: int, offset: int
+) -> WorkflowPage:
+    async with services.sessions() as s:
+        hits = await search_workflows(s, user_id=user.id, query=q, status=status, limit=limit, offset=offset)
+        rows = {
+            r.id: r
+            for r in await s.scalars(
+                select(WorkflowRow).where(WorkflowRow.id.in_([h.workflow_id for h in hits]))
+            )
+        }
+        items = [workflow_summary(rows[h.workflow_id], hit=h) for h in hits if h.workflow_id in rows]
+    return WorkflowPage(items=items, next_cursor=str(offset + limit) if len(hits) == limit else None)

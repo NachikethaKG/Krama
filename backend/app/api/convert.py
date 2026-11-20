@@ -15,6 +15,7 @@ from app.contracts_gen.step_schema import Step
 from app.contracts_gen.task_schema import Task
 from app.contracts_gen.workflow_schema import Workflow, WorkflowSummary, WorkflowVersion
 from app.db import ExportRow, PlanRow, RunRow, TaskRow, WorkflowRow, WorkflowStepRow, WorkflowVersionRow
+from app.db.search import SearchHit
 
 
 def task_out(row: TaskRow, plan_id: UUID | None) -> Task:
@@ -149,9 +150,14 @@ def _workflow(row: WorkflowRow, task_prompt: str | None, steps: list[Step], **ve
     )
 
 
-def workflow_summary(row: WorkflowRow) -> WorkflowSummary:
+def workflow_summary(
+    row: WorkflowRow, *, last_validated_at: datetime | None = None, hit: SearchHit | None = None
+) -> WorkflowSummary:
     return WorkflowSummary.model_validate(
         {
+            "last_validated_at": hit.last_validated_at if hit is not None else last_validated_at,
+            "score": hit.score if hit is not None else None,
+            "match": {"step_seq": hit.step_seq, "snippet": hit.snippet} if hit is not None else None,
             "id": row.id,
             "title": row.title,
             "status": row.status,
