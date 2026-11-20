@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "workflow.schema.json",
   "title": "Workflow",
-  "$comment": "v1.3. The verified workflow, the core object of Krama (docs/phases/README.md §3.1, docs/database-schema.md).",
+  "$comment": "v1.4. The verified workflow, the core object of Krama (docs/phases/README.md §3.1, docs/database-schema.md).",
   "type": "object",
   "required": [
     "id",
@@ -129,7 +129,38 @@
         "target_app": { "type": ["string", "null"] },
         "step_count": { "type": "integer", "minimum": 0 },
         "confidence": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
-        "created_at": { "type": ["string", "null"], "format": "date-time" }
+        "created_at": { "type": ["string", "null"], "format": "date-time" },
+        "last_validated_at": {
+          "type": ["string", "null"],
+          "format": "date-time",
+          "description": "When validation last checked it (#135); null if never."
+        },
+        "score": {
+          "type": ["number", "null"],
+          "minimum": 0,
+          "description": "Only with GET /workflows?q=: relevance x status x freshness (higher first, #135 S5)."
+        },
+        "match": {
+          "description": "Only with GET /workflows?q=: where the words matched best.",
+          "oneOf": [{ "$ref": "#/$defs/WorkflowMatch" }, { "type": "null" }]
+        }
+      }
+    },
+    "WorkflowMatch": {
+      "title": "WorkflowMatch",
+      "type": "object",
+      "required": ["snippet"],
+      "additionalProperties": false,
+      "properties": {
+        "step_seq": {
+          "type": ["integer", "null"],
+          "minimum": 1,
+          "description": "The step whose text matched best; null when the title or request matched."
+        },
+        "snippet": {
+          "type": "string",
+          "description": "Plain text with the matched words wrapped in <mark></mark>. Show it as text plus marks, never as HTML."
+        }
       }
     },
     "WorkflowPage": {

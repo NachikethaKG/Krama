@@ -2,6 +2,15 @@
 
 Every change to `contracts/` is listed here. Additive change = minor version bump; breaking change = major bump + ADR.
 
+## 1.17 (#415)
+
+Workflow search (#135). Additive.
+
+- `workflow.schema.json` v1.4: `WorkflowSummary.last_validated_at`, `score` and `match` (`WorkflowMatch`:
+  step_seq, snippet with `<mark>` around matched words), all optional and nullable.
+- `docs/api-contract.md`: `GET /workflows` gains `q` (search, ranked by text x status x freshness, offset paging),
+  `status` (now applied; it was ignored) and `offset`.
+
 ## 1.16 (#406)
 
 Human takeover (#131, ADR 0008). Additive.
