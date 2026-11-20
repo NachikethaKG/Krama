@@ -115,8 +115,12 @@ class WorkflowInputList(BaseModel):
     account: Annotated[
         str | None,
         Field(
-            description="The site account the run will act in. v1: the account Krama is signed in to on that site, not the user's own (P11). Null when unknown."
+            description="The site account the run will act in: the user's own (ADR 0007). Null when unknown or not signed in yet."
         ),
+    ] = None
+    sign_in_site: Annotated[
+        str | None,
+        Field(description="The site the user must sign in to first (POST /sites/{site}/sign-in), else null."),
     ] = None
 
 
@@ -316,6 +320,12 @@ class WorkflowVersion(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
     )
+    recorded_as: Annotated[
+        str | None,
+        Field(
+            description="The site account the version was recorded in (ADR 0007). Do it for me swaps it for the user's own account. Null for versions from before 1.18 (they were recorded in the shared test account)."
+        ),
+    ] = None
     id: UUID
     workflow_id: UUID
     revision: Annotated[int, Field(ge=1)]

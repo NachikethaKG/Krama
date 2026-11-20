@@ -88,11 +88,11 @@ class RunCompletedEvent(BaseModel):
     seq: Annotated[int, Field(ge=1)]
     ts: AwareDatetime
     workflow_id: Annotated[
-        UUID,
+        UUID | None,
         Field(
-            description="The workflow the run stored; for a reverify run, the stored workflow it re-verified; for a do_it run, the stored workflow it ran (nothing is stored)."
+            description="The workflow the run stored; for a reverify run, the stored workflow it re-verified; for a do_it run, the stored workflow it ran (nothing is stored). Null for a sign_in run."
         ),
-    ]
+    ] = None
     verified_steps: Annotated[int, Field(ge=0)]
     failed_actions: Annotated[int, Field(ge=0)]
 

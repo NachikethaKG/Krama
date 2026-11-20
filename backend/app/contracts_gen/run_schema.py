@@ -10,7 +10,7 @@ from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
 
 from . import common_schema
 
-type RunKind = Annotated[Literal["task", "reverify", "do_it"], Field(title="RunKind")]
+type RunKind = Annotated[Literal["task", "reverify", "do_it", "sign_in"], Field(title="RunKind")]
 
 
 type RunStatus = Annotated[
@@ -61,7 +61,7 @@ class Run(BaseModel):
     kind: Annotated[
         RunKind | None,
         Field(
-            description="task: a run of a newly approved plan, which stores a new workflow when verified. reverify: a replay of a stored workflow's steps (POST /workflows/{id}/reverify), which stores none. do_it: a stored verified workflow run for its owner with the owner's own values (POST /workflows/{id}/run); it never resets the site, pauses at every risky step and stores no workflow."
+            description="task: a run of a newly approved plan, which stores a new workflow when verified. reverify: a replay of a stored workflow's steps (POST /workflows/{id}/reverify), which stores none. do_it: a stored verified workflow run for its owner with the owner's own values (POST /workflows/{id}/run); it never resets the site, pauses at every risky step and stores no workflow. sign_in: opens a site's sign-in page for its owner to sign in by hand in a takeover, then stores their session (POST /sites/{site}/sign-in, ADR 0007); no steps, no workflow."
         ),
     ] = "task"
     source_workflow_id: Annotated[
