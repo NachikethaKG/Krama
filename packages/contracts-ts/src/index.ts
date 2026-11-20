@@ -169,14 +169,14 @@ export type WorkflowStatus = "draft" | "approved" | "running" | "verified" | "fa
  */
 export type RunStatus = "queued" | "running" | "paused" | "verified" | "failed" | "cancelled";
 /**
- * task: a run of a newly approved plan, which stores a new workflow when verified. reverify: a replay of a stored workflow's steps (POST /workflows/{id}/reverify), which stores none. do_it: a stored verified workflow run for its owner with the owner's own values (POST /workflows/{id}/run); it never resets the site, pauses at every risky step and stores no workflow.
+ * task: a run of a newly approved plan, which stores a new workflow when verified. reverify: a replay of a stored workflow's steps (POST /workflows/{id}/reverify), which stores none. do_it: a stored verified workflow run for its owner with the owner's own values (POST /workflows/{id}/run); it never resets the site, pauses at every risky step and stores no workflow. sign_in: opens a site's sign-in page for its owner to sign in by hand in a takeover, then stores their session (POST /sites/{site}/sign-in, ADR 0007); no steps, no workflow.
  */
-export type RunKind = "task" | "reverify" | "do_it";
+export type RunKind = "task" | "reverify" | "do_it" | "sign_in";
 /**
  * This interface was referenced by `Run`'s JSON-Schema
  * via the `definition` "RunKind".
  */
-export type RunKind1 = "task" | "reverify" | "do_it";
+export type RunKind1 = "task" | "reverify" | "do_it" | "sign_in";
 /**
  * This interface was referenced by `Step`'s JSON-Schema
  * via the `definition` "VerificationResult".
@@ -236,6 +236,7 @@ export interface KramaContracts {
   review?: Review;
   run?: Run;
   share?: ShareLink;
+  site?: SiteProfile;
   step?: Step;
   takeover?: TakeoverInput;
   task?: Task;
@@ -442,9 +443,9 @@ export interface RunCompletedEvent {
   seq: number;
   ts: string;
   /**
-   * The workflow the run stored; for a reverify run, the stored workflow it re-verified; for a do_it run, the stored workflow it ran (nothing is stored).
+   * The workflow the run stored; for a reverify run, the stored workflow it re-verified; for a do_it run, the stored workflow it ran (nothing is stored). Null for a sign_in run.
    */
-  workflow_id: string;
+  workflow_id?: string | null;
   verified_steps: number;
   failed_actions: number;
 }
@@ -916,6 +917,28 @@ export interface ShareLinkCreated {
  */
 export interface ShareLinkList {
   items: ShareLink[];
+}
+export interface SiteProfile {
+  /**
+   * The site key, e.g. github or gitea.
+   */
+  site: string;
+  /**
+   * The account name the user signed in as.
+   */
+  account: string;
+  captured_at: string;
+  /**
+   * When the session's sign-in cookie expires, if known.
+   */
+  expires_at?: string | null;
+}
+/**
+ * This interface was referenced by `SiteProfile`'s JSON-Schema
+ * via the `definition` "SiteProfileList".
+ */
+export interface SiteProfileList {
+  items: SiteProfile[];
 }
 export interface Step {
   id: string;
@@ -1460,9 +1483,13 @@ export interface WorkflowInputList {
   revision: number;
   inputs: WorkflowInput[];
   /**
-   * The site account the run will act in. v1: the account Krama is signed in to on that site, not the user's own (P11). Null when unknown.
+   * The site account the run will act in: the user's own (ADR 0007). Null when unknown or not signed in yet.
    */
   account?: string | null;
+  /**
+   * The site the user must sign in to first (POST /sites/{site}/sign-in), else null.
+   */
+  sign_in_site?: string | null;
 }
 /**
  * POST /workflows/{id}/run: run the workflow's current version for its owner with these values ("Do it for me", #129). Starting it approves the steps; risky steps still pause for confirmation.
@@ -1487,6 +1514,10 @@ export interface RunWorkflowRequest {
  * via the `definition` "WorkflowVersion".
  */
 export interface WorkflowVersion {
+  /**
+   * The site account the version was recorded in (ADR 0007). Do it for me swaps it for the user's own account. Null for versions from before 1.18 (they were recorded in the shared test account).
+   */
+  recorded_as?: string | null;
   id: string;
   workflow_id: string;
   revision: number;
