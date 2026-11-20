@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from alembic import command
 from app.db import Base
 from app.db.models import (
+    PERFORMED_BY,
     PLAN_STATUSES,
     RISKS,
     RUN_KINDS,
@@ -72,6 +73,7 @@ async def test_models_and_migrations_have_not_drifted(sessions: async_sessionmak
         ("ck_runs_kind", RUN_KINDS),
         ("ck_workflows_status", WORKFLOW_STATUSES),
         ("ck_workflow_steps_risk", RISKS),
+        ("ck_workflow_steps_performed_by", PERFORMED_BY),
         ("ck_workflow_versions_source", WORKFLOW_VERSION_SOURCES),
         ("ck_workflow_versions_status", WORKFLOW_VERSION_STATUSES),
         ("ck_validations_status", VALIDATION_STATUSES),

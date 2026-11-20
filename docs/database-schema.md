@@ -112,6 +112,7 @@ Stored as rows (not jsonb) so steps can be queried, compared across versions and
 | verification | jsonb | `{result, method[], confidence}` |
 | risk | text | |
 | sensitive | bool | |
+| performed_by | text not null default 'krama' | `krama\|human`: the run's owner did the step in a takeover (#409, ADR 0008) |
 | screenshot_path | text null | |
 | start_ms / end_ms | int | offsets into the recording |
 
