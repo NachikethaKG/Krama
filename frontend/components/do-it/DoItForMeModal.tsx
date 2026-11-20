@@ -33,6 +33,8 @@ export function refusalMessage(err: unknown): string {
     }
     case "stale_revision":
       return "This tutorial changed since you opened it. Reload the page to see the new steps.";
+    case "site_sign_in_needed":
+      return `Sign in to ${String(details.site ?? "the site")} first: Krama acts in your own account.`;
     default:
       if (isApiError(err) && err.apiMessage) return err.apiMessage;
       return errorMessage(err, "This tutorial can't run for you right now.");
@@ -91,6 +93,16 @@ function DoItForMeDialog({ onClose, workflowId, tutorialTitle, client }: Omit<Do
   );
   const canRun = loaded.state === "ready" && inputs.every((i) => problems[i.key] === null) && !submitting;
   const swaps = Object.fromEntries(inputs.map((i) => [i.example, values[i.key] ?? ""]));
+
+  const signIn = async (site: string) => {
+    setError(null);
+    try {
+      const run = await api.startSignIn(site);
+      router.push(`/runs/${encodeURIComponent(run.id)}/live`);
+    } catch (err) {
+      setError(refusalMessage(err));
+    }
+  };
 
   const start = async () => {
     setTouched(true);
@@ -164,18 +176,36 @@ function DoItForMeDialog({ onClose, workflowId, tutorialTitle, client }: Omit<Do
 
           {loaded.state === "ready" && (
             <>
-              <p data-testid="do-it-account" className="flex items-start gap-2 text-xs text-ink-300">
-                <UserRound aria-hidden="true" className="mt-0.5 size-3.5 shrink-0 text-run" />
-                <span>
-                  Krama acts in{" "}
-                  {loaded.list.account ? (
-                    <strong className="text-white">the {loaded.list.account} account</strong>
-                  ) : (
-                    "the account it is signed in to"
-                  )}{" "}
-                  on this site, not in your own account yet.
-                </span>
-              </p>
+              {loaded.list.sign_in_site ? (
+                <div data-testid="do-it-sign-in" className="rounded-xl border border-run/30 bg-run/10 p-3 text-xs text-ink-200">
+                  <p className="font-semibold text-white">Sign in to {loaded.list.sign_in_site} first</p>
+                  <p className="mt-1">
+                    Krama acts in your own account. You sign in yourself in Krama&apos;s browser; Krama keeps the
+                    session encrypted and never sees your password.
+                  </p>
+                  <button
+                    type="button"
+                    data-testid="do-it-sign-in-btn"
+                    onClick={() => signIn(loaded.list.sign_in_site as string)}
+                    className="kr-btn kr-btn-tone mt-2 px-3.5 py-1.5 text-xs"
+                  >
+                    Sign in to {loaded.list.sign_in_site}
+                  </button>
+                </div>
+              ) : (
+                <p data-testid="do-it-account" className="flex items-start gap-2 text-xs text-ink-300">
+                  <UserRound aria-hidden="true" className="mt-0.5 size-3.5 shrink-0 text-run" />
+                  <span>
+                    Krama acts in{" "}
+                    {loaded.list.account ? (
+                      <strong className="text-white">your {loaded.list.account} account</strong>
+                    ) : (
+                      "the account it is signed in to"
+                    )}{" "}
+                    on this site.
+                  </span>
+                </p>
+              )}
 
               {inputs.length > 0 ? (
                 <div className="space-y-3">
@@ -268,7 +298,7 @@ function DoItForMeDialog({ onClose, workflowId, tutorialTitle, client }: Omit<Do
           <button
             type="button"
             data-testid="do-it-run-btn"
-            disabled={loaded.state !== "ready" || submitting}
+            disabled={loaded.state !== "ready" || submitting || Boolean(loaded.state === "ready" && loaded.list.sign_in_site)}
             aria-disabled={!canRun}
             onClick={start}
             className="kr-btn kr-btn-primary flex items-center gap-2 px-5 py-2 text-sm font-semibold"

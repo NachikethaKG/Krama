@@ -393,6 +393,8 @@ export interface ApiClient {
    * `validation_error` with `details.reason = "input_unsafe"` and `details.key` for a bad value.
    */
   runWorkflow(workflowId: string, revision: number, inputs: Record<string, string>): Promise<Run>;
+  /** POST /sites/{site}/sign-in → 202 Run (kind sign_in): sign in by hand in a takeover (ADR 0007). */
+  startSignIn(site: string): Promise<Run>;
   /** POST /runs/{id}/takeover: take control of the paused run's live page (ADR 0008). 409 when none is possible. */
   startTakeover(runId: string): Promise<Run>;
   /** POST /runs/{id}/handback: end the takeover and say what was done (barrier | step | rest). */
@@ -982,6 +984,10 @@ export class HttpApiClient implements ApiClient {
 
   startTakeover(runId: string): Promise<Run> {
     return this.request<Run>(`/runs/${encodeURIComponent(runId)}/takeover`, this.json("POST"));
+  }
+
+  startSignIn(site: string): Promise<Run> {
+    return this.request<Run>(`/sites/${encodeURIComponent(site)}/sign-in`, this.json("POST"));
   }
 
   handBack(runId: string, stepSeq: number, done: HandBackDone): Promise<Run> {
@@ -1847,6 +1853,18 @@ export class MockApiClient implements ApiClient {
       throw mockError(429, "rate_limited", "Daily AI fix quota reached (5/day). Please regenerate the workflow or retry tomorrow.");
     }
     return { success: true, status: "checking" };
+  }
+
+  async startSignIn(site: string): Promise<Run> {
+    return {
+      id: `run-sign-in-${site}`,
+      plan_id: `plan-sign-in-${site}`,
+      plan_revision: 1,
+      kind: "sign_in",
+      status: "queued",
+      retry_count: 0,
+      created_at: nowTs(),
+    };
   }
 
   async startTakeover(runId: string): Promise<Run> {

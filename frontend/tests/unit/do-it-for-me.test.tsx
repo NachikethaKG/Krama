@@ -28,7 +28,7 @@ describe("DoItForMeModal (#402)", () => {
     const field = await screen.findByLabelText("Repository name");
     expect(field).toHaveValue("");
     expect(field).toHaveAttribute("placeholder", "for example demo-repo");
-    expect(screen.getByTestId("do-it-account")).toHaveTextContent("the demo account");
+    expect(screen.getByTestId("do-it-account")).toHaveTextContent("your demo account");
   });
 
   it("shows the steps with the user's value and runs them", async () => {
@@ -79,6 +79,24 @@ describe("DoItForMeModal (#402)", () => {
 
     expect(await screen.findByTestId("do-it-refused")).toHaveTextContent("Only a verified tutorial can run for you");
     expect(screen.getByTestId("do-it-run-btn")).toBeDisabled();
+  });
+
+  it("asks the user to sign in to the site first and starts a sign-in run (#404)", async () => {
+    const client = new MockApiClient();
+    vi.spyOn(client, "getWorkflowInputs").mockResolvedValue({
+      ...giteaWorkflowInputsFixture,
+      account: null,
+      sign_in_site: "gitea",
+    });
+    const signIn = vi.spyOn(client, "startSignIn");
+    open(client);
+
+    expect(await screen.findByTestId("do-it-sign-in")).toHaveTextContent("Sign in to gitea first");
+    expect(screen.getByTestId("do-it-run-btn")).toBeDisabled();
+    fireEvent.click(screen.getByTestId("do-it-sign-in-btn"));
+
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/runs/run-sign-in-gitea/live"));
+    expect(signIn).toHaveBeenCalledWith("gitea");
   });
 
   it("marks the steps that will pause for the user's confirmation", async () => {
