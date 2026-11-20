@@ -26,6 +26,7 @@ from app.policy import LLMClassifier, PolicyService
 from app.ports import ExportQueue
 from app.runs import InProcessExecutor, RunEnvironment, RunStore
 from app.runs.events import EventHub, RedisEventRelay
+from app.runs.profiles import ProfileStore
 from app.runs.queue import ArqExecutor
 from app.runs.takeover import ScreenFeed
 from app.storage import LocalFsStore
@@ -48,6 +49,10 @@ class Services:
     relay: "RedisEventRelay | None" = None
     """With the arq worker: wakes the live-view streams when the worker commits an event."""
     screens: dict[UUID, ScreenFeed] = field(default_factory=dict)
+    profiles: ProfileStore | None = None
+    """Each user's own site sessions (ADR 0007)."""
+    sites: dict[str, str] = field(default_factory=dict)
+    """Site key -> URL, for sign-in runs (gitea, github)."""
     """Active takeovers' frame feeds, by run (ADR 0008): filled by POST /takeover, read by WS /screen."""
     exports: ExportQueue | None = None
     """Where `POST /workflows/{id}/exports` sends exports: the arq worker, or the API itself. None in tests
@@ -126,10 +131,11 @@ def build_services(settings: Settings) -> Services:
         # Runs execute in the worker (`just backend worker`); its events come back over Redis (#95).
         executor = ArqExecutor(store, settings.redis_url, artifacts_dir=settings.artifacts_dir)
         relay = RedisEventRelay(settings.redis_url, hub)
-    else:
-        executor = InProcessExecutor(
-            store, build_run_environment(settings), max_concurrent=settings.max_concurrent_runs
-        )
+    profiles = ProfileStore(sessions, settings.krama_storage_key.get_secret_value())
+    if settings.run_executor != "arq":
+        env = build_run_environment(settings)
+        env.profiles = profiles
+        executor = InProcessExecutor(store, env, max_concurrent=settings.max_concurrent_runs)
     return Services(
         sessions=sessions,
         hub=hub,
@@ -142,6 +148,8 @@ def build_services(settings: Settings) -> Services:
         target=lambda url: target_setup(url, settings),
         relay=relay,
         exports=exports,
+        profiles=profiles,
+        sites={"gitea": settings.gitea_url, "github": settings.github_url},
     )
 
 

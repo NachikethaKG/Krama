@@ -29,6 +29,7 @@ from app.export import EXPORT_JOB, EXPORT_QUEUE, ArqExportQueue, export_job
 from app.runs import InProcessExecutor, RunEnvironment, RunStore
 from app.runs.events import EVENTS
 from app.runs.exports import recover_exports
+from app.runs.profiles import ProfileStore
 from app.runs.queue import CONTROL, JOB, job_id, redis_settings
 from app.runs.states import RunStatus
 from app.runs.takeover_relay import WorkerTakeoverRelay
@@ -147,6 +148,8 @@ def worker_settings(
 
         store = RunStore(own_sessions, on_event=published)
         env = environment() if environment is not None else build_run_environment(settings)
+        if env.profiles is None:
+            env.profiles = ProfileStore(own_sessions, settings.krama_storage_key.get_secret_value())
         executor = InProcessExecutor(store, env, max_concurrent=settings.max_concurrent_runs)
         ctx.update(
             store=store,

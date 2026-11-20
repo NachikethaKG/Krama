@@ -176,6 +176,7 @@ def version_out(row: WorkflowVersionRow, step_count: int) -> WorkflowVersion:
             "id": row.id,
             "workflow_id": row.workflow_id,
             "revision": row.revision,
+            "recorded_as": row.recorded_as,
             "source": row.source,
             "status": row.status,
             "parent_version_id": row.parent_version_id,
