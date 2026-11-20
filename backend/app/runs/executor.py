@@ -44,6 +44,7 @@ from app.runs.reverify import failure_details
 from app.runs.states import RunStatus
 from app.runs.steps import StepOutcome, act_and_verify, step_ref
 from app.runs.store import RunJob, RunNotFoundError, RunStore
+from app.runs.takeover import TAKEOVER_REASONS, FrameSink, Notice, TakeoverSession, host_of
 from app.targets import TargetSetup
 from app.verifier import StepVerifier
 from app.verifier.task_check import TaskChecker
@@ -109,6 +110,23 @@ class RunEnvironment:
     """Self-healing (#112): chooses among the candidates when scoring can't decide. None: scoring only."""
     heal_budget: HealBudget | None = None
     """The daily budget for `heal_chooser` (D12). None: the chooser is never asked."""
+    takeover_idle_s: float = 300.0
+    """A takeover with no input for this long ends; the run stays paused (ADR 0008, T9)."""
+
+
+class TakeoverError(Exception):
+    """A takeover can't start. `reason`: not_available or active."""
+
+    def __init__(self, reason: str, message: str) -> None:
+        super().__init__(message)
+        self.reason = reason
+
+
+@dataclass(frozen=True)
+class _Pausable:
+    page: Page
+    step_seq: int
+    hosts: tuple[str, ...]
 
 
 class InProcessExecutor:
@@ -125,6 +143,10 @@ class InProcessExecutor:
         """Seconds each run spent paused (they don't count toward run_timeout_s)."""
         self._heals: dict[UUID, list[HealOutcome]] = {}
         """Steps a reverify run healed (#112): their outcomes, in step order."""
+        self._takeover_pages: dict[UUID, _Pausable] = {}
+        """Paused runs whose owner may take over the page (ADR 0008)."""
+        self._takeovers: dict[UUID, TakeoverSession] = {}
+        """Active takeovers: one controller per run."""
 
     @property
     def artifacts_dir(self) -> Path:
@@ -151,6 +173,7 @@ class InProcessExecutor:
         waiting = self._answers.get(run_id)
         if status is not RunStatus.PAUSED or current != step_seq or waiting is None or waiting.done():
             return False
+        await self.end_takeover(run_id, "closed")  # an answer ends any takeover first, while still paused
         if decision == "deny":
             if not await self._store.cancel(run_id, reason="confirmation_denied"):
                 return False
@@ -165,6 +188,52 @@ class InProcessExecutor:
         """Stop a run's steps and close its browser. The caller has already recorded why in the database (the
         API process cancels a run the worker runs, #95)."""
         await self._stop_task(run_id)
+
+    def takeover(self, run_id: UUID) -> TakeoverSession | None:
+        """The run's active takeover, if any."""
+        return self._takeovers.get(run_id)
+
+    async def start_takeover(
+        self,
+        run_id: UUID,
+        on_frame: FrameSink,
+        *,
+        on_blocked: Notice | None = None,
+        on_end: Notice | None = None,
+    ) -> TakeoverSession:
+        """Give the owner control of the paused page (ADR 0008). Raises TakeoverError `not_available` (not
+        paused here, or not at a pause a human can resolve on the page) or `active` (someone has control)."""
+        pausable = self._takeover_pages.get(run_id)
+        if pausable is None:
+            raise TakeoverError("not_available", "This run isn't paused at a step you can take over")
+        if run_id in self._takeovers:
+            raise TakeoverError("active", "Someone already has control of this run")
+
+        async def ended(reason: str) -> None:
+            self._takeovers.pop(run_id, None)
+            data = {"step_seq": pausable.step_seq, "reason": reason}
+            await self._store.paused_event(run_id, "takeover.ended", data)
+            if on_end is not None:
+                await on_end(reason)
+
+        session = TakeoverSession(
+            pausable.page,
+            allowed_hosts=pausable.hosts,
+            on_end=ended,
+            on_blocked=on_blocked,
+            idle_s=self._env.takeover_idle_s,
+        )
+        self._takeovers[run_id] = session
+        if not await self._store.paused_event(run_id, "takeover.started", {"step_seq": pausable.step_seq}):
+            self._takeovers.pop(run_id, None)
+            raise TakeoverError("not_available", "This run is no longer paused")
+        await session.start(on_frame)
+        return session
+
+    async def end_takeover(self, run_id: UUID, reason: str) -> None:
+        session = self._takeovers.get(run_id)
+        if session is not None:
+            await session.end(reason)
 
     def resume(self, run_id: UUID) -> bool:
         """Let a paused run go on. The caller has already moved it back to running in the database. False if
@@ -350,7 +419,7 @@ class InProcessExecutor:
                 message = (
                     "Nothing proved this step worked. Check the page: allow accepts the step, deny cancels."
                 )
-                if not await self._pause(job, step.seq, "verification_unclear", message):
+                if not await self._pause(job, step.seq, "verification_unclear", message, page=page):
                     return None
                 rows.append(self._row(job, step, out))  # a human accepted it; its confidence stays below 0.8
                 budget.succeeded()
@@ -393,6 +462,7 @@ class InProcessExecutor:
                 step.seq,
                 "recovery_exhausted",
                 f"Step {step.seq} failed: {why}. Allow tries it once more.",
+                page=page,
             ):
                 return None
             budget.retry_count += 1  # the human asked for one more try
@@ -416,7 +486,7 @@ class InProcessExecutor:
         ):  # fmt: skip
             return None  # cancelled meanwhile
         before = await observer.capture(page, step_ref(step))
-        if not await self._allowed(job, step, before):
+        if not await self._allowed(job, step, before, page):
             return None
         out = await act_and_verify(
             step,
@@ -526,12 +596,12 @@ class InProcessExecutor:
         state = ObservedState(url="/", title="", aria_excerpt=text, captured_at=datetime.now(UTC))
         return self._env.policy.mask(state).aria_excerpt
 
-    async def _allowed(self, job: RunJob, step: PlannedStep, before: ObservedState) -> bool:
+    async def _allowed(self, job: RunJob, step: PlannedStep, before: ObservedState, page: Page) -> bool:
         """Ask the policy before acting (AGENTS.md §4). True to go ahead; False if the run stopped."""
         decision = PolicyDecision(verdict="allow")
         if self._env.policy is not None:
-            page = PageState(url=before.url, title=before.title, aria_excerpt=before.aria_excerpt)
-            decision = await self._env.policy.check_action(step_ref(step), page)
+            state = PageState(url=before.url, title=before.title, aria_excerpt=before.aria_excerpt)
+            decision = await self._env.policy.check_action(step_ref(step), state)
         if decision.verdict == "allow" and step.risk == "high":
             # The approved plan itself says this step is risky: a human confirms it right before it runs.
             message = "The plan marks this step as high risk."
@@ -539,7 +609,7 @@ class InProcessExecutor:
         if decision.verdict == "allow":
             return True
         if decision.verdict == "pause" and decision.reason in PAUSE_REASONS:
-            return await self._pause(job, step.seq, decision.reason, decision.message or None)
+            return await self._pause(job, step.seq, decision.reason, decision.message or None, page=page)
         # A stop, or a pause the contract can't express: never continue.
         await self._store.fail(
             job.run_id,
@@ -619,10 +689,12 @@ class InProcessExecutor:
         message: str | None = None,
         *,
         plan_id: UUID | None = None,
+        page: Page | None = None,
     ) -> bool:
         """Pause with the browser open until /confirm. True if a human allowed it (deny cancels the task).
 
-        A reverify run has nobody watching it: instead of pausing it fails, with the pause reason."""
+        A reverify run has nobody watching it: instead of pausing it fails, with the pause reason. With
+        `page`, a pause a human can resolve on the page itself lets the owner take it over (ADR 0008)."""
         if job.kind == "reverify":
             text = message or f"Step {step_seq} needs a human ({reason})"
             await self._store.fail(
@@ -639,6 +711,10 @@ class InProcessExecutor:
                 paused["message"] = message
             if plan_id is not None:
                 paused["plan_id"] = str(plan_id)
+            if page is not None and reason in TAKEOVER_REASONS:
+                hosts = (host_of(job.target_url), *self._env.target(job).sign_in_hosts)
+                self._takeover_pages[job.run_id] = _Pausable(page, step_seq, hosts)
+                paused["takeover_available"] = True
             if not await self._store.transition(
                 job.run_id, RunStatus.PAUSED, paused, from_=RunStatus.RUNNING
             ):
@@ -657,6 +733,9 @@ class InProcessExecutor:
             return True  # confirm() already moved the run back to running
         finally:
             self._answers.pop(job.run_id, None)
+            self._takeover_pages.pop(job.run_id, None)
+            # Still active only if the pause ended without an answer (cancel, timeout): its WebSocket closes.
+            await self.end_takeover(job.run_id, "cancelled")
             if job.run_id in self._paused_s:
                 self._paused_s[job.run_id] += time.perf_counter() - t0
 
