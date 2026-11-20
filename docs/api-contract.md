@@ -45,7 +45,9 @@
 | 6 | GET | `/workflows/{id}/inputs` | → `WorkflowInputList` | "Do it for me" (#129): the values the owner chooses before running the current version (every non-sensitive single-line value the recorded run typed; the recorded value is the `example`), and the site `account` the run acts in. Owner only, `404` otherwise. `409 conflict` with `error.details.reason`: `not_verified` (status isn't `verified`), `pending_review` (a version waits for review), `secret_not_stored` (a step typed a secret; `details.step_seq`) |
 | 6 | POST | `/workflows/{id}/run` | `RunWorkflowRequest {revision, inputs}` → `202 Run` (`kind: "do_it"`, `source_workflow_id`) | Runs the stored steps for the owner with their values replacing the example everywhere it reappears. Starting it approves the steps; it never resets the site, and every high-risk or policy-flagged step pauses (`run.paused`, answer with `/runs/{id}/confirm`). No replan, no self-heal; the first step that fails after its one retry fails the run (`locator_miss`, `action_failed` or `state_mismatch` in `error.details`). Stores no workflow. Owner only (`404`). The same `409` reasons as `/inputs`, plus `stale_revision` (the current version is newer than `revision`). `422 validation_error` with `error.details.reason = input_unsafe` and `details.key` when a value is missing, unknown, shorter than `min_length` or doesn't match `pattern` |
 | 2 | GET | `/workflows/{id}/guide.md` | → `text/markdown` | Text guide: the tutorial's step texts, numbered, one screenshot each (absolute image URLs) |
-| 3 | POST | `/runs/{id}/takeover` | → `Run` | The user finishes manually after a CAPTCHA/bot wall |
+| 6 | POST | `/runs/{id}/takeover` | → `Run` (`takeover` set) | Human takeover (ADR 0008): the run's owner takes control of the paused run's page; `run.paused.takeover_available` says when it's offered (auth_wall, captcha, recovery_exhausted, verification_unclear, a failed do-it step; never rate_limited, reverify or validation runs). Emits `takeover.started`; the run stays `paused`. Owner only (`404`). `409 run_not_active` unless paused with a takeover available; `409 conflict` (`takeover_active`) when someone already has control |
+| 6 | POST | `/runs/{id}/handback` | `RunHandBackRequest {step_seq, done: "barrier"\|"step"\|"rest"}` → `Run` | Ends the takeover (`takeover.ended`, `handed_back`). barrier: Krama re-checks and retries the step; step: verifies its expected state without acting (`step.verified` with `performed_by: "human"`); rest: runs the final task check. Not verified → `run.paused` again with the reason. `409 run_not_active` without an active takeover at `step_seq` |
+| 6 | WS | `/runs/{id}/screen` | binary JPEG frames ↓, `TakeoverInput` JSON ↑, `TakeoverServerMessage` JSON ↓ | The live page while a takeover is active: frames only when the page changes, at most 15 fps, 1280×800. Checks the session cookie, `Origin` (in `CORS_ORIGINS`) and the run's owner; closes with 4403 otherwise and 4409 for a second controller. Navigation outside the target and its sign-in domains is blocked (`blocked`). 5 min without input ends the takeover (`ended`, `idle`); the run stays paused. Frames are never stored |
 | 3 | POST | `/auth/login` | `LoginRequest` → `User` + `Set-Cookie` | Seeded accounts only, no sign-up in the MVP. `401 unauthorized` with one generic message for a wrong email or password; repeated failures are slowed down (`429`). A new session id on every login |
 | 3 | POST | `/auth/logout` | → `204` | Revokes the session on the server and clears the cookie |
 | 3 | GET | `/auth/me` | → `User` | `401` when signed out (the frontend's route guard) |
@@ -103,14 +105,16 @@ Each message has `id: <seq>`, `event: <type>` and a JSON `data` field. Every `da
 | `run.started` | `plan_id`, `total_steps` |
 | `step.started` | `step_seq`, `instruction_text` |
 | `step.action_done` | `step_seq`, `screenshot_url`, `bbox` |
-| `step.verified` | `step_seq`, `method[]`, `confidence` |
+| `step.verified` | `step_seq`, `method[]`, `confidence`, `performed_by?` (`human` after a hand-back, ADR 0008) |
 | `step.failed` | `step_seq`, `expected`, `observed`, `screenshot_url` |
 | `run.replanning` | `reason`, `attempt` |
-| `run.paused` | `reason: "destructive_action"\|"captcha"\|"auth_wall"\|"rate_limited"\|"verification_unclear"\|"replan_review"\|"recovery_exhausted"\|"sensitive_data"\|"prompt_injection"`, `step_seq`, `message?`, `plan_id?` (replan_review: the proposed steps) |
+| `run.paused` | `takeover_available?` (ADR 0008), `reason: "destructive_action"\|"captcha"\|"auth_wall"\|"rate_limited"\|"verification_unclear"\|"replan_review"\|"recovery_exhausted"\|"sensitive_data"\|"prompt_injection"`, `step_seq`, `message?`, `plan_id?` (replan_review: the proposed steps) |
 | `run.completed` | `workflow_id`, `verified_steps`, `failed_actions` |
 | `run.failed` | `error` |
 | `run.cancelled` | `reason: "user"\|"confirmation_denied"`, `step_seq` (null before the first step) |
 | `run.resumed` | `step_seq`, `decision: "allow"` (after `/runs/{id}/confirm` allowed a paused step) |
+| `takeover.started` | `step_seq` (the owner took control of the paused page, ADR 0008) |
+| `takeover.ended` | `step_seq`, `reason: "handed_back"\|"idle"\|"closed"\|"cancelled"`, `done?: "barrier"\|"step"\|"rest"` |
 
 `run.completed`, `run.failed` and `run.cancelled` are final: the server closes the stream after them.
 

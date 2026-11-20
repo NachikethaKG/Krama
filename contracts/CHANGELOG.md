@@ -2,6 +2,21 @@
 
 Every change to `contracts/` is listed here. Additive change = minor version bump; breaking change = major bump + ADR.
 
+## 1.16 (#406)
+
+Human takeover (#131, ADR 0008). Additive.
+
+- `common.schema.json` v1.3: `PerformedBy` (`krama` | `human`), `HandBackDone` (`barrier` | `step` | `rest`),
+  `TakeoverEndReason` (`handed_back` | `idle` | `closed` | `cancelled`).
+- `run.schema.json` v1.3: `Run.takeover` (`RunTakeover`: step_seq, started_at, last_input_at; null when nobody has
+  control), `RunHandBackRequest` (step_seq, done).
+- `events.schema.json` v1.4: `run.paused.takeover_available` (default false); `step.verified.performed_by`
+  (default krama); new events `takeover.started` {step_seq} and `takeover.ended` {step_seq, reason, done?}.
+- `step.schema.json` v1.2: `Step.performed_by` (default krama).
+- New `takeover.schema.json` v1.0: `TakeoverInput` (`mouse`, `key`, `text`) and `TakeoverServerMessage` for the
+  screen WebSocket.
+- `docs/api-contract.md`: `POST /runs/{id}/takeover`, `POST /runs/{id}/handback`, `WS /runs/{id}/screen`.
+
 ## 1.15.1 (#437)
 
 Naming only, no change on the wire. `WorkflowInput.steps` items get the title `StepSeq`: without it the Python
