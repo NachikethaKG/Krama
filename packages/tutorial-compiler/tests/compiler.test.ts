@@ -194,6 +194,19 @@ describe("compileWorkflow", () => {
     assertValidTutorialSpec(compiled);
   });
 
+  it("shows a step done by hand in a takeover as a do-it-yourself step (#412)", () => {
+    const steps = workflowFixture.steps.map((s) => (s.seq === 3 ? { ...s, performed_by: "human" as const } : s));
+    const compiled = compileWorkflow({ ...workflowFixture, steps });
+    const byHand = compiled.scenes.find((s) => s.step_seq === 3)!;
+    const byKrama = compiled.scenes.find((s) => s.step_seq === 2)!;
+
+    expect(byHand.caption.text).toBe(`Do it yourself: ${workflowFixture.steps[2].instruction_text}`);
+    expect([byHand.cursor, byHand.highlight, byHand.camera]).toEqual([null, null, null]);
+    expect(byKrama.caption.text).toBe(workflowFixture.steps[1].instruction_text);
+    expect(byKrama.highlight).not.toBeNull();
+    assertValidTutorialSpec(compiled);
+  });
+
   it("generates heuristic word timings when generateWordTimings is enabled", () => {
     const compiled = compileWorkflow(workflowFixture, {
       generateWordTimings: true,
