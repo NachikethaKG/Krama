@@ -55,7 +55,7 @@ Ownership is by module ([ADR 0001](adr/0001-ownership-by-module.md)). Modules ow
 | `storage/` | Vishwas | `ArtifactStore` (local FS; SeaweedFS later, [ADR 0005](adr/0005-object-storage-seaweedfs.md)) |
 | `tts/` | Vishwas | Piper narration (Phase 5): one WAV per step + word timings + manifest, behind the `Narrator` port. Talks to `backend/tts-worker/` (GPL, own venv) over stdin/stdout |
 | `observer/` | Nachiketha | Captures page state after each action (URL, ARIA, screenshot, network) and the rrweb recording + timing alignment |
-| `policy/` | Nachiketha | Risk classification, destructive-action pause rules, CAPTCHA/auth-wall detection, sensitive-data masking, prompt-injection defense |
+| `policy/` | Nachiketha | Risk classification, destructive-action pause rules, CAPTCHA/auth-wall detection (pause for takeover, ADR 0008), sensitive-data masking, prompt-injection defense |
 | `validation/` | Nachiketha | Scheduled re-runs of stored workflows, UI drift detection (Phase 4) |
 | `export/` | Nachiketha | Video export jobs that drive `packages/video-exporter` (Phase 5) |
 | `contracts_gen/` | generated | Generated Pydantic models. **Never hand-edit** |
@@ -108,6 +108,7 @@ Every boundary is an interface with a mock that ships *before* the real implemen
 | Local disk for artifacts now; SeaweedFS when storage must be shared | MinIO's open-source repo is archived; exports are ~5 MB/min, so disk size isn't the trigger, a second machine or a deploy is | [0005](adr/0005-object-storage-seaweedfs.md) |
 | Export scenes follow the narration | scene = max(recorded action, 300 ms + Piper clip + 400 ms), in whole frames; the compiler's word-count estimate is too short for most real steps | [Phase 5 Alignment](research/phase-5-decisions-alignment.md) |
 | Export via ports + polling | `exports` row → `ExportQueue` (arq job, Nachiketha) → `ExportStore` progress; the UI polls every 2 s; only verified workflows; owner only | [Phase 5 Alignment](research/phase-5-decisions-alignment.md) |
+| A paused run's owner may take over the live page, incl. a login wall or CAPTCHA they solve themselves | Runs that meet a barrier or a step Krama can't do no longer start over; never automated solving, solver services or evasion | [ADR 0008](adr/0008-human-takeover-and-bot-challenges.md) |
 
 ## 6. Hardware rules
 
