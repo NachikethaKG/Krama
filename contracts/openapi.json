@@ -2733,6 +2733,34 @@
         "title": "WorkflowInputList",
         "type": "object"
       },
+      "WorkflowMatch": {
+        "additionalProperties": false,
+        "properties": {
+          "snippet": {
+            "description": "Plain text with the matched words wrapped in <mark></mark>. Show it as text plus marks, never as HTML.",
+            "title": "Snippet",
+            "type": "string"
+          },
+          "step_seq": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The step whose text matched best; null when the title or request matched.",
+            "title": "Step Seq"
+          }
+        },
+        "required": [
+          "snippet"
+        ],
+        "title": "WorkflowMatch",
+        "type": "object"
+      },
       "WorkflowPage": {
         "additionalProperties": false,
         "properties": {
@@ -2881,6 +2909,43 @@
             "format": "uuid",
             "title": "Id",
             "type": "string"
+          },
+          "last_validated_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "When validation last checked it (#135); null if never.",
+            "title": "Last Validated At"
+          },
+          "match": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WorkflowMatch"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Only with GET /workflows?q=: where the words matched best."
+          },
+          "score": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Only with GET /workflows?q=: relevance x status x freshness (higher first, #135 S5).",
+            "title": "Score"
           },
           "status": {
             "$ref": "#/components/schemas/WorkflowStatus"
