@@ -22,6 +22,7 @@ The source of truth between `backend/` and `frontend/`. Changing anything here i
 | `workflow.schema.json`, `step.schema.json` | Verified workflow and executed steps | #15 |
 | `tutorial-spec.schema.json` | `TutorialSpec`: the compiled tutorial (scenes, cursor, highlights, zoom, captions, timings) for the player and the video export | #71 |
 | `export.schema.json` | `Export`, `CreateExportRequest`, `ExportPreset`, `ExportStatus`, `ExportError`: MP4 exports (Phase 5) | #354 |
+| `site.schema.json` | `SiteProfile`, `SiteProfileList`: a user's own signed-in session per site (ADR 0007) | #404 |
 | `takeover.schema.json` | `TakeoverInput` (mouse, key, text) and `TakeoverServerMessage`: messages on the screen WebSocket of a human takeover (ADR 0008) | #406 |
 | `review.schema.json` | `ReviewItem`, `ReviewItemList`, `ReviewCount`, `ReviewActionResult`: the owner's review queue (Phase 4) | #377 |
 

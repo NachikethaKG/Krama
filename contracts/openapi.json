@@ -1300,7 +1300,7 @@
               }
             ],
             "default": "task",
-            "description": "task: a run of a newly approved plan, which stores a new workflow when verified. reverify: a replay of a stored workflow's steps (POST /workflows/{id}/reverify), which stores none. do_it: a stored verified workflow run for its owner with the owner's own values (POST /workflows/{id}/run); it never resets the site, pauses at every risky step and stores no workflow."
+            "description": "task: a run of a newly approved plan, which stores a new workflow when verified. reverify: a replay of a stored workflow's steps (POST /workflows/{id}/reverify), which stores none. do_it: a stored verified workflow run for its owner with the owner's own values (POST /workflows/{id}/run); it never resets the site, pauses at every risky step and stores no workflow. sign_in: opens a site's sign-in page for its owner to sign in by hand in a takeover, then stores their session (POST /sites/{site}/sign-in, ADR 0007); no steps, no workflow."
           },
           "plan_id": {
             "format": "uuid",
@@ -1429,7 +1429,8 @@
         "enum": [
           "task",
           "reverify",
-          "do_it"
+          "do_it",
+          "sign_in"
         ],
         "title": "RunKind",
         "type": "string"
@@ -2703,7 +2704,7 @@
                 "type": "null"
               }
             ],
-            "description": "The site account the run will act in. v1: the account Krama is signed in to on that site, not the user's own (P11). Null when unknown.",
+            "description": "The site account the run will act in: the user's own (ADR 0007). Null when unknown or not signed in yet.",
             "title": "Account"
           },
           "inputs": {
@@ -2718,6 +2719,18 @@
             "minimum": 1.0,
             "title": "Revision",
             "type": "integer"
+          },
+          "sign_in_site": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The site the user must sign in to first (POST /sites/{site}/sign-in), else null.",
+            "title": "Sign In Site"
           },
           "workflow_id": {
             "format": "uuid",
@@ -3058,6 +3071,18 @@
             ],
             "description": "The version this one was made from; null for the first.",
             "title": "Parent Version Id"
+          },
+          "recorded_as": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The site account the version was recorded in (ADR 0007). Do it for me swaps it for the user's own account. Null for versions from before 1.18 (they were recorded in the shared test account).",
+            "title": "Recorded As"
           },
           "revision": {
             "minimum": 1.0,
