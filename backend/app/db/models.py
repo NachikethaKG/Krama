@@ -21,7 +21,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.contracts_gen.common_schema import Risk
+from app.contracts_gen.common_schema import PerformedBy, Risk
 from app.contracts_gen.export_schema import ExportErrorCode, ExportPreset, ExportStatus
 from app.contracts_gen.plan_schema import PlanStatus
 from app.contracts_gen.run_schema import RunKind, RunStatus
@@ -43,6 +43,7 @@ WORKFLOW_VERSION_SOURCES = literal_values(WorkflowVersionSource)
 WORKFLOW_VERSION_STATUSES = literal_values(WorkflowVersionStatus)
 VALIDATION_STATUSES = literal_values(ValidationStatus)
 RISKS = literal_values(Risk)
+PERFORMED_BY = literal_values(PerformedBy)
 EXPORT_STATUSES = literal_values(ExportStatus)
 EXPORT_PRESETS = literal_values(ExportPreset)
 EXPORT_ERROR_CODES = literal_values(ExportErrorCode)
@@ -334,6 +335,7 @@ class WorkflowStepRow(Timestamps, Base):
         UniqueConstraint("version_id", "seq"),
         Index(None, "workflow_id"),
         status_check("risk", RISKS, "risk"),
+        status_check("performed_by", PERFORMED_BY, "performed_by"),
     )
 
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
@@ -350,6 +352,8 @@ class WorkflowStepRow(Timestamps, Base):
     verification: Mapped[dict[str, Any]] = mapped_column()
     risk: Mapped[str] = mapped_column(Text)
     sensitive: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    performed_by: Mapped[str] = mapped_column(Text, default="krama", server_default="krama")
+    """human: the run's owner did this step in a takeover (ADR 0008)."""
     screenshot_path: Mapped[str | None] = mapped_column(Text, default=None)
     start_ms: Mapped[int | None] = mapped_column(Integer, default=None)
     end_ms: Mapped[int | None] = mapped_column(Integer, default=None)
