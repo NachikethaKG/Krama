@@ -7,6 +7,7 @@ does for `krama run`. Tests build `Services` themselves with fakes where the arc
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Annotated
+from uuid import UUID
 
 from fastapi import Depends, Request
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
@@ -26,6 +27,7 @@ from app.ports import ExportQueue
 from app.runs import InProcessExecutor, RunEnvironment, RunStore
 from app.runs.events import EventHub, RedisEventRelay
 from app.runs.queue import ArqExecutor
+from app.runs.takeover import ScreenFeed
 from app.storage import LocalFsStore
 from app.targets import TargetSetup, target_setup
 from app.verifier import LayeredVerifier
@@ -45,6 +47,8 @@ class Services:
     """What we know about a target URL: hints, sign-in, and its reset for reverify (#77)."""
     relay: "RedisEventRelay | None" = None
     """With the arq worker: wakes the live-view streams when the worker commits an event."""
+    screens: dict[UUID, ScreenFeed] = field(default_factory=dict)
+    """Active takeovers' frame feeds, by run (ADR 0008): filled by POST /takeover, read by WS /screen."""
     exports: ExportQueue | None = None
     """Where `POST /workflows/{id}/exports` sends exports: the arq worker, or the API itself. None in tests
     that override the queue dependency."""

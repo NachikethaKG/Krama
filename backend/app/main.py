@@ -8,7 +8,20 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import artifacts, auth, exports, health, metrics, plans, reviews, runs, shares, tasks, workflows
+from app.api import (
+    artifacts,
+    auth,
+    exports,
+    health,
+    metrics,
+    plans,
+    reviews,
+    runs,
+    shares,
+    takeover,
+    tasks,
+    workflows,
+)
 from app.api.csrf import CsrfMiddleware
 from app.api.errors import ERROR_RESPONSES, install_error_handlers
 from app.api.services import Services, build_services
@@ -45,7 +58,21 @@ def create_app(services: Services | None = None) -> FastAPI:
         allow_headers=["*"],
     )
     install_error_handlers(app)
-    for module in (health, auth, tasks, plans, runs, workflows, exports, reviews, artifacts, shares, metrics):
+    modules = (
+        health,
+        auth,
+        tasks,
+        plans,
+        runs,
+        takeover,
+        workflows,
+        exports,
+        reviews,
+        artifacts,
+        shares,
+        metrics,
+    )
+    for module in modules:
         app.include_router(module.router, prefix=API_PREFIX)
     return app
 

@@ -18,9 +18,9 @@ from app.api.auth import CurrentUser
 from app.api.convert import decode_cursor, encode_cursor, run_out
 from app.api.errors import ApiException
 from app.api.owner import owned_run
-from app.api.services import ServicesDep
+from app.api.services import Services, ServicesDep
 from app.contracts_gen.common_schema import ErrorResponse
-from app.contracts_gen.run_schema import Run, RunConfirmRequest, RunPage
+from app.contracts_gen.run_schema import Run, RunConfirmRequest, RunPage, RunTakeover
 from app.db import RunRow, UserRow, WorkflowRow
 from app.db.repositories import event_payload, events_after, list_runs
 
@@ -51,7 +51,7 @@ async def get_runs(
 @router.get("/runs/{run_id}", responses=_404)
 async def get_run(run_id: UUID, user: CurrentUser, services: ServicesDep) -> Run:
     async with services.sessions() as s:
-        return await _run_out(s, run_id, user)
+        return await _run_out(s, run_id, user, services)
 
 
 @router.post(
@@ -120,9 +120,18 @@ async def run_events(
         await services.hub.wait(run_id, seen)
 
 
-async def _run_out(s: AsyncSession, run_id: UUID, user: UserRow) -> Run:
+async def _run_out(s: AsyncSession, run_id: UUID, user: UserRow, services: Services | None = None) -> Run:
     run = await owned_run(s, run_id, user)
-    return run_out(run, (await _workflow_ids(s, [run_id])).get(run_id))
+    out = run_out(run, (await _workflow_ids(s, [run_id])).get(run_id))
+    session = services.executor.takeover(run_id) if services is not None else None
+    if session is None or session.ended is not None:
+        return out
+    taken = {
+        "step_seq": session.step_seq,
+        "started_at": session.started_wall,
+        "last_input_at": session.last_input_wall,
+    }
+    return out.model_copy(update={"takeover": RunTakeover.model_validate(taken)})
 
 
 async def _workflow_ids(s: AsyncSession, run_ids: list[UUID]) -> dict[UUID, UUID]:
