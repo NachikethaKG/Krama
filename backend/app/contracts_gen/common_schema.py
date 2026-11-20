@@ -10,6 +10,33 @@ from pydantic import BaseModel, ConfigDict, Field
 type Common = Annotated[Any, Field(title="Common")]
 
 
+type PerformedBy = Annotated[
+    Literal["krama", "human"],
+    Field(
+        description="Who did a step: Krama, or the run's owner by hand in a takeover (ADR 0008).",
+        title="PerformedBy",
+    ),
+]
+
+
+type TakeoverEndReason = Annotated[
+    Literal["handed_back", "idle", "closed", "cancelled"],
+    Field(
+        description="Why a takeover ended. handed_back: the owner said what they did; idle: 5 min without input; closed: the screen connection went away; cancelled: the run was cancelled.",
+        title="TakeoverEndReason",
+    ),
+]
+
+
+type HandBackDone = Annotated[
+    Literal["barrier", "step", "rest"],
+    Field(
+        description="What the owner did in a takeover. barrier: cleared a login wall or challenge (Krama re-checks and retries the step); step: did the paused step (Krama verifies it without acting); rest: did the rest of the task (Krama runs the final check).",
+        title="HandBackDone",
+    ),
+]
+
+
 type Risk = Annotated[Literal["low", "medium", "high"], Field(title="Risk")]
 
 

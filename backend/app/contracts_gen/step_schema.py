@@ -77,6 +77,12 @@ class Step(BaseModel):
     verification: StepVerification
     risk: common_schema.Risk
     sensitive: bool | None = False
+    performed_by: Annotated[
+        common_schema.PerformedBy | None,
+        Field(
+            description="human: the run's owner did this step in a takeover; its confidence is capped and the tutorial shows it as a do-it-yourself step (ADR 0008)."
+        ),
+    ] = "krama"
     screenshot_path: str | None = None
     timing: StepTiming | None = None
     start_ms: Annotated[int | None, Field(ge=0)] = None
