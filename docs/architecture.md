@@ -48,7 +48,7 @@ Ownership is by module ([ADR 0001](adr/0001-ownership-by-module.md)). Modules ow
 | `api/` | Vishwas | FastAPI routers. Thin: validate the request, call a service, return a contract model |
 | `runs/` | Vishwas | Run state machine `draft → approved → running → verified/failed/paused/cancelled`, executor |
 | `planner/` | Vishwas | Task interpretation + plan generation (`instruction_text`, `expected_state` per step) |
-| `agent/` | Vishwas | Browser session, action execution, locator fallback chain, self-healing (Phase 4) |
+| `agent/` | Vishwas | Browser session, action execution, locator fallback chain, self-healing (Phase 4), per-user site sessions (`browser_profiles`, [ADR 0007](adr/0007-per-user-site-sessions.md)) |
 | `verifier/` | Vishwas | Compares expected vs observed state, returns result + method + confidence |
 | `llm/` | Vishwas | `LLMProvider` + Gemini / Fake implementations, prompt templates |
 | `db/` | Vishwas | SQLAlchemy models, repositories, Alembic migrations (schema: [`database-schema.md`](database-schema.md)) |
