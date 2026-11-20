@@ -2,6 +2,17 @@
 
 Every change to `contracts/` is listed here. Additive change = minor version bump; breaking change = major bump + ADR.
 
+## 1.18 (#404)
+
+Do it for me in the user's own account (ADR 0007). Additive, plus one relaxation.
+
+- `run.schema.json` v1.4: `RunKind` gains `sign_in` (sign in by hand in a takeover; no steps, no workflow).
+- `events.schema.json` v1.5: `run.completed.workflow_id` is optional and nullable (null for a sign_in run).
+- `workflow.schema.json` v1.5: `WorkflowVersion.recorded_as`; `WorkflowInputList.sign_in_site`.
+- New `site.schema.json` v1.0: `SiteProfile`, `SiteProfileList`.
+- `docs/api-contract.md`: `GET /sites/profiles`, `POST /sites/{site}/sign-in`, `DELETE /sites/{site}/profile`;
+  `POST /workflows/{id}/run` refuses with `409 site_sign_in_needed` without the user's session on that site.
+
 ## 1.17 (#415)
 
 Workflow search (#135). Additive.

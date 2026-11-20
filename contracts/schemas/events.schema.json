@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "events.schema.json",
   "title": "RunEvent",
-  "$comment": "v1.4. Live-view events sent over SSE on GET /runs/{id}/events. SSE `event:` = type, `id:` = seq. Keep-alives are SSE comment lines, not events.",
+  "$comment": "v1.5. Live-view events sent over SSE on GET /runs/{id}/events. SSE `event:` = type, `id:` = seq. Keep-alives are SSE comment lines, not events.",
   "type": "object",
   "oneOf": [
     { "$ref": "#/$defs/RunStartedEvent" },
@@ -148,7 +148,7 @@
     "RunCompletedEvent": {
       "title": "RunCompletedEvent",
       "type": "object",
-      "required": ["type", "run_id", "seq", "ts", "workflow_id", "verified_steps", "failed_actions"],
+      "required": ["type", "run_id", "seq", "ts", "verified_steps", "failed_actions"],
       "additionalProperties": false,
       "properties": {
         "type": { "const": "run.completed" },
@@ -156,9 +156,9 @@
         "seq": { "type": "integer", "minimum": 1 },
         "ts": { "type": "string", "format": "date-time" },
         "workflow_id": {
-          "type": "string",
+          "type": ["string", "null"],
           "format": "uuid",
-          "description": "The workflow the run stored; for a reverify run, the stored workflow it re-verified; for a do_it run, the stored workflow it ran (nothing is stored)."
+          "description": "The workflow the run stored; for a reverify run, the stored workflow it re-verified; for a do_it run, the stored workflow it ran (nothing is stored). Null for a sign_in run."
         },
         "verified_steps": { "type": "integer", "minimum": 0 },
         "failed_actions": { "type": "integer", "minimum": 0 }

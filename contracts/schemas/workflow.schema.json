@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "workflow.schema.json",
   "title": "Workflow",
-  "$comment": "v1.4. The verified workflow, the core object of Krama (docs/phases/README.md §3.1, docs/database-schema.md).",
+  "$comment": "v1.5. The verified workflow, the core object of Krama (docs/phases/README.md §3.1, docs/database-schema.md).",
   "type": "object",
   "required": [
     "id",
@@ -213,7 +213,11 @@
         "inputs": { "type": "array", "items": { "$ref": "#/$defs/WorkflowInput" } },
         "account": {
           "type": ["string", "null"],
-          "description": "The site account the run will act in. v1: the account Krama is signed in to on that site, not the user's own (P11). Null when unknown."
+          "description": "The site account the run will act in: the user's own (ADR 0007). Null when unknown or not signed in yet."
+        },
+        "sign_in_site": {
+          "type": ["string", "null"],
+          "description": "The site the user must sign in to first (POST /sites/{site}/sign-in), else null."
         }
       }
     },
@@ -248,6 +252,10 @@
       "required": ["id", "workflow_id", "revision", "source", "status", "step_count", "created_at"],
       "additionalProperties": false,
       "properties": {
+        "recorded_as": {
+          "type": ["string", "null"],
+          "description": "The site account the version was recorded in (ADR 0007). Do it for me swaps it for the user's own account. Null for versions from before 1.18 (they were recorded in the shared test account)."
+        },
         "id": {
           "type": "string",
           "format": "uuid"

@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "site.schema.json",
+  "title": "SiteProfile",
+  "$comment": "v1.0. A user's own signed-in session on a site (ADR 0007): GET /sites/profiles. The session itself is a secret and never leaves the server.",
+  "type": "object",
+  "required": [
+    "site",
+    "account",
+    "captured_at"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "site": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The site key, e.g. github or gitea."
+    },
+    "account": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The account name the user signed in as."
+    },
+    "captured_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "expires_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time",
+      "description": "When the session's sign-in cookie expires, if known."
+    }
+  },
+  "$defs": {
+    "SiteProfileList": {
+      "title": "SiteProfileList",
+      "type": "object",
+      "required": [
+        "items"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#"
+          }
+        }
+      }
+    }
+  }
+}
