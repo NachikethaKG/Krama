@@ -14,6 +14,7 @@ import asyncio
 import contextlib
 import logging
 import tempfile
+from collections.abc import Awaitable, Callable
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
@@ -21,6 +22,7 @@ from uuid import UUID
 
 from app.contracts_gen.export_schema import ExportErrorCode
 from app.contracts_gen.step_schema import Step
+from app.contracts_gen.workflow_schema import Workflow
 from app.ports.artifacts import ArtifactFiles
 from app.ports.exports import ExportNotFoundError, ExportStateError, ExportStore
 from app.ports.narration import NarrationError, NarrationLine, Narrator, plan_scenes
@@ -28,6 +30,9 @@ from app.runs.exports import DbExportStore
 from app.tts import get_narrator
 
 from .renderer import RemotionRenderer, RenderError, VideoRenderer
+
+type Localize = Callable[[Workflow, str], Awaitable[Workflow]]
+"""The workflow with its title and step texts in a language (TranslationService.localize, #422)."""
 
 logger = logging.getLogger(__name__)
 
@@ -41,11 +46,15 @@ async def render_export(
     files: ArtifactFiles,
     narrator: Narrator,
     renderer: VideoRenderer | None = None,
+    localize: Localize | None = None,
+    narrator_for: Callable[[str], Narrator] | None = None,
 ) -> str:
-    """Executes the export pipeline for one export ID."""
+    """Executes the export pipeline for one export ID. An export in another language (#428) gets its texts
+    from `localize` and its voice from `narrator_for`; English uses `narrator` and the texts as stored."""
     job_input = await store.load(export_id)
     export = job_input.export
     workflow = job_input.workflow
+    language = export.language or "en"
 
     if export.status == "rendering":
         # A worker died while rendering this export
@@ -56,6 +65,19 @@ async def render_export(
         return export.status
 
     await store.mark_rendering(export_id, 0)
+
+    if language != "en":
+        if localize is None:
+            await store.mark_failed(export_id, "internal", f"No translation into {language} on this server")
+            return "internal"
+        try:
+            workflow = await localize(workflow, language)
+        except Exception as e:
+            logger.warning("Export %s translation failed: %s", export_id, e)
+            await store.mark_failed(export_id, "internal", f"The {language} translation failed: {e}")
+            return "internal"
+        if narrator_for is not None:
+            narrator = narrator_for(language)
 
     # 1. Spoken narration per step (Decision D3-D5)
     lines = [
@@ -133,6 +155,7 @@ async def render_export(
                 metadata_path=tmp_meta,
                 site=site,
                 verified_date=verified,
+                language=language,
                 scenes=scenes,
                 on_progress=on_progress,
             )
@@ -180,12 +203,22 @@ async def run_export(
     narrator: Narrator,
     renderer: VideoRenderer | None = None,
     timeout_s: float,
+    localize: Localize | None = None,
+    narrator_for: Callable[[str], Narrator] | None = None,
 ) -> str:
     """`render_export` within EXPORT_TIMEOUT_SECONDS. Whatever happens, the export doesn't stay `rendering`:
     a timeout fails it as `timeout`, a cancel (worker stop) as `interrupted`, a crash as `internal`."""
     try:
         return await asyncio.wait_for(
-            render_export(export_id, store=store, files=files, narrator=narrator, renderer=renderer),
+            render_export(
+                export_id,
+                store=store,
+                files=files,
+                narrator=narrator,
+                renderer=renderer,
+                localize=localize,
+                narrator_for=narrator_for,
+            ),
             timeout=timeout_s,
         )
     except TimeoutError:
@@ -231,5 +264,12 @@ async def export_job(ctx: Ctx, export_id: str) -> str:
     renderer: VideoRenderer | None = ctx.get("video_renderer")
     timeout_s: float = ctx.get("export_timeout_s", 1800.0)
     return await run_export(
-        eid, store=store, files=files, narrator=narrator, renderer=renderer, timeout_s=timeout_s
+        eid,
+        store=store,
+        files=files,
+        narrator=narrator,
+        renderer=renderer,
+        timeout_s=timeout_s,
+        localize=ctx.get("localize"),
+        narrator_for=ctx.get("narrator_for", get_narrator),
     )

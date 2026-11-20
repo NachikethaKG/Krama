@@ -96,9 +96,15 @@ class DbExportStore:
 
 
 async def find_reusable(
-    s: AsyncSession, *, workflow_id: UUID, version_id: UUID, preset: ExportPreset, voice: str
+    s: AsyncSession,
+    *,
+    workflow_id: UUID,
+    version_id: UUID,
+    preset: ExportPreset,
+    voice: str,
+    language: str = "en",
 ) -> ExportRow | None:
-    """The newest queued, rendering or ready export of this version, preset and voice (D16)."""
+    """The newest queued, rendering or ready export of this version, preset, voice and language (D16)."""
     row: ExportRow | None = await s.scalar(
         select(ExportRow)
         .where(
@@ -106,6 +112,7 @@ async def find_reusable(
             ExportRow.version_id == version_id,
             ExportRow.preset == preset,
             ExportRow.voice == voice,
+            ExportRow.language == language,
             ExportRow.status.in_(REUSABLE),
         )
         .order_by(ExportRow.created_at.desc())

@@ -26,6 +26,7 @@ from app.db import ExportRow, WorkflowRow, WorkflowVersionRow
 from app.ports import ArtifactFiles, ArtifactNotFoundError, ExportQueue
 from app.runs.exports import DbExportStore, export_view, find_reusable
 from app.storage import get_artifact_files
+from app.tts import voice_for
 
 router = APIRouter(tags=["exports"])
 
@@ -66,7 +67,8 @@ async def create_export(
 ) -> Export:
     """Export the workflow's current version as an MP4 (D13-D17): re-use a queued, rendering or ready export
     of the same version, preset and voice; otherwise queue a new one."""
-    voice = get_settings().tts_voice
+    language = body.language or "en"
+    voice = voice_for(language, get_settings())
     async with services.sessions.begin() as s:
         workflow = await owned_workflow(s, workflow_id, user)
         # Lock the workflow row: two clicks at once must not queue two renders.
@@ -84,6 +86,7 @@ async def create_export(
             version_id=workflow.current_version_id,
             preset=body.preset,
             voice=voice,
+            language=language,
         )
         if existing is not None:
             response.status_code = 200
@@ -94,6 +97,7 @@ async def create_export(
             user_id=user.id,
             preset=body.preset,
             voice=voice,
+            language=language,
             status="queued",
             progress=0,
         )
