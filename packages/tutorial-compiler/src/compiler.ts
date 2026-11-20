@@ -87,6 +87,10 @@ export function compileWorkflow(
     };
 
     const sensitive = Boolean(step.sensitive);
+    // A step the run's owner did by hand in a takeover (ADR 0008, #412): the recording can't show Krama doing
+    // it, so the tutorial says so and draws no cursor or highlight for it.
+    const byHand = step.performed_by === "human";
+    const stepText = byHand ? `Do it yourself: ${step.instruction_text}` : step.instruction_text;
 
     // Synchronous window scroll position
     const scroll: ScrollOffset | null = step.target?.scroll
@@ -152,11 +156,11 @@ export function compileWorkflow(
     if (options?.wordTimings && options.wordTimings[step_seq] !== undefined) {
       words = options.wordTimings[step_seq];
     } else if (options?.generateWordTimings) {
-      words = generateHeuristicWordTimings(step.instruction_text);
+      words = generateHeuristicWordTimings(stepText);
     }
 
     const caption = {
-      text: step.instruction_text,
+      text: stepText,
       words,
     };
 
@@ -167,7 +171,7 @@ export function compileWorkflow(
 
     const bbox = step.target?.bbox;
 
-    if (bbox && bbox.length === 4) {
+    if (bbox && bbox.length === 4 && !byHand) {
       const targetCenter: Point = {
         x: round1(bbox[0] + bbox[2] / 2),
         y: round1(bbox[1] + bbox[3] / 2),
