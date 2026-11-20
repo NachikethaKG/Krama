@@ -43,7 +43,7 @@ class WorkflowRecording(BaseModel):
     ended_at: AwareDatetime | None = None
 
 
-type Step = Annotated[int, Field(ge=1)]
+type StepSeq = Annotated[int, Field(ge=1, title="StepSeq")]
 
 
 class WorkflowInput(BaseModel):
@@ -79,7 +79,7 @@ class WorkflowInput(BaseModel):
     ] = None
     min_length: Annotated[int, Field(description="Shortest value accepted (3 in v1, P5).", ge=1)]
     steps: Annotated[
-        list[Step],
+        list[StepSeq],
         Field(
             description="Seq of every step the value is typed in or reappears in (URL checks, headings, later targets, step text).",
             min_length=1,
