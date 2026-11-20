@@ -2,6 +2,16 @@
 
 Every change to `contracts/` is listed here. Additive change = minor version bump; breaking change = major bump + ADR.
 
+## 1.19 (#421)
+
+Multiple languages, backend (#132). Additive.
+
+- `common.schema.json` v1.4: `Language` (`en`, `hi`, `kn`, `de`, `es`, `fr`).
+- `export.schema.json`: `CreateExportRequest.language` and `Export.language` (default `en`); `voice` may be `silent`.
+- `tutorial-spec.schema.json`: `TutorialSpec.language` (default `en`).
+- `workflow.schema.json` v1.6: `Translation` (status, title, steps), `TranslatedStep`, `TranslationStatus`.
+- `docs/api-contract.md`: `GET /workflows/{id}/translations/{language}`; exports take `language`.
+
 ## 1.18 (#404)
 
 Do it for me in the user's own account (ADR 0007). Additive, plus one relaxation.

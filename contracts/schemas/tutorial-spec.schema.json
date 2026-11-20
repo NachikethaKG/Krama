@@ -16,6 +16,11 @@
     "workflow_id": { "type": "string", "format": "uuid" },
     "title": { "type": "string", "minLength": 1 },
     "description": { "type": ["string", "null"] },
+    "language": {
+      "$ref": "common.schema.json#/$defs/Language",
+      "default": "en",
+      "description": "The language of the captions and titles (#132). UI labels inside them stay in the site's own language."
+    },
     "viewport": {
       "$ref": "workflow.schema.json#/$defs/WorkflowViewport",
       "description": "The recording's viewport: the coordinate space of every bbox and point."

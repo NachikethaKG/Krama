@@ -17,7 +17,12 @@
     },
     "title": { "type": ["string", "null"], "description": "The workflow's title, for the dialog and the file name." },
     "preset": { "$ref": "#/$defs/ExportPreset" },
-    "voice": { "type": "string", "minLength": 1, "description": "Narration voice used (ADR 0004), e.g. en_US-ljspeech-medium." },
+    "voice": { "type": "string", "minLength": 1, "description": "Narration voice used (ADR 0004), e.g. en_US-ljspeech-medium; `silent` for a captions-only language (hi, kn)." },
+    "language": {
+      "$ref": "common.schema.json#/$defs/Language",
+      "default": "en",
+      "description": "The tutorial language of the captions, chapters and narration (#132)."
+    },
     "status": { "$ref": "#/$defs/ExportStatus" },
     "progress": {
       "type": "integer",
@@ -78,6 +83,11 @@
       "required": ["preset"],
       "additionalProperties": false,
       "properties": {
+        "language": {
+          "$ref": "common.schema.json#/$defs/Language",
+          "default": "en",
+          "description": "Export in this language: translated captions and chapters, narrated where a licensed voice exists (#132)."
+        },
         "preset": { "$ref": "#/$defs/ExportPreset" }
       }
     }
