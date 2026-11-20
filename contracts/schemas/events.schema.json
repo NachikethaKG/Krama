@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "events.schema.json",
   "title": "RunEvent",
-  "$comment": "v1.3. Live-view events sent over SSE on GET /runs/{id}/events. SSE `event:` = type, `id:` = seq. Keep-alives are SSE comment lines, not events.",
+  "$comment": "v1.4. Live-view events sent over SSE on GET /runs/{id}/events. SSE `event:` = type, `id:` = seq. Keep-alives are SSE comment lines, not events.",
   "type": "object",
   "oneOf": [
     { "$ref": "#/$defs/RunStartedEvent" },
@@ -15,7 +15,9 @@
     { "$ref": "#/$defs/RunCompletedEvent" },
     { "$ref": "#/$defs/RunFailedEvent" },
     { "$ref": "#/$defs/RunCancelledEvent" },
-    { "$ref": "#/$defs/RunResumedEvent" }
+    { "$ref": "#/$defs/RunResumedEvent" },
+    { "$ref": "#/$defs/TakeoverStartedEvent" },
+    { "$ref": "#/$defs/TakeoverEndedEvent" }
   ],
   "discriminator": { "propertyName": "type" },
   "$defs": {
@@ -80,7 +82,12 @@
           "minItems": 1,
           "items": { "$ref": "common.schema.json#/$defs/VerificationMethod" }
         },
-        "confidence": { "type": "number", "minimum": 0, "maximum": 1 }
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "performed_by": {
+          "$ref": "common.schema.json#/$defs/PerformedBy",
+          "default": "krama",
+          "description": "human: the run's owner did this step in a takeover and Krama only verified it (ADR 0008)."
+        }
       }
     },
     "StepFailedEvent": {
@@ -130,6 +137,11 @@
           "type": "string",
           "format": "uuid",
           "description": "For replan_review: the plan with the proposed steps (GET /plans/{id})"
+        },
+        "takeover_available": {
+          "type": "boolean",
+          "default": false,
+          "description": "The run's owner may take over the live page now (POST /runs/{id}/takeover, ADR 0008)."
         }
       }
     },
@@ -197,6 +209,36 @@
         "ts": { "type": "string", "format": "date-time" },
         "step_seq": { "type": "integer", "minimum": 1 },
         "decision": { "const": "allow" }
+      }
+    },
+    "TakeoverStartedEvent": {
+      "title": "TakeoverStartedEvent",
+      "description": "The run's owner took control of the paused run's page (ADR 0008). The run stays paused.",
+      "type": "object",
+      "required": ["type", "run_id", "seq", "ts", "step_seq"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "takeover.started" },
+        "run_id": { "type": "string", "format": "uuid" },
+        "seq": { "type": "integer", "minimum": 1 },
+        "ts": { "type": "string", "format": "date-time" },
+        "step_seq": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "TakeoverEndedEvent": {
+      "title": "TakeoverEndedEvent",
+      "description": "The takeover ended. handed_back: the owner said what they did (`done`) and Krama checks it; idle: 5 min without input; closed: the screen connection went away; cancelled: the run was cancelled. Except after handed_back, the run stays paused.",
+      "type": "object",
+      "required": ["type", "run_id", "seq", "ts", "step_seq", "reason"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "takeover.ended" },
+        "run_id": { "type": "string", "format": "uuid" },
+        "seq": { "type": "integer", "minimum": 1 },
+        "ts": { "type": "string", "format": "date-time" },
+        "step_seq": { "type": "integer", "minimum": 1 },
+        "reason": { "$ref": "common.schema.json#/$defs/TakeoverEndReason" },
+        "done": { "$ref": "common.schema.json#/$defs/HandBackDone" }
       }
     },
     "PauseReason": {
