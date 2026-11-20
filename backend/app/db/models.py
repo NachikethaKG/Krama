@@ -24,12 +24,13 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import REGCONFIG, TSVECTOR
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.contracts_gen.common_schema import PerformedBy, Risk
+from app.contracts_gen.common_schema import Language, PerformedBy, Risk
 from app.contracts_gen.export_schema import ExportErrorCode, ExportPreset, ExportStatus
 from app.contracts_gen.plan_schema import PlanStatus
 from app.contracts_gen.run_schema import RunKind, RunStatus
 from app.contracts_gen.task_schema import TaskStatus
 from app.contracts_gen.workflow_schema import (
+    TranslationStatus,
     ValidationStatus,
     WorkflowStatus,
     WorkflowVersionSource,
@@ -47,6 +48,8 @@ WORKFLOW_VERSION_STATUSES = literal_values(WorkflowVersionStatus)
 VALIDATION_STATUSES = literal_values(ValidationStatus)
 RISKS = literal_values(Risk)
 PERFORMED_BY = literal_values(PerformedBy)
+LANGUAGES = literal_values(Language)
+TRANSLATION_STATUSES = literal_values(TranslationStatus)
 EXPORT_STATUSES = literal_values(ExportStatus)
 EXPORT_PRESETS = literal_values(ExportPreset)
 EXPORT_ERROR_CODES = literal_values(ExportErrorCode)
@@ -323,6 +326,40 @@ class BrowserProfileRow(Timestamps, Base):
     expires_at: Mapped[datetime | None] = mapped_column(default=None)
 
 
+class TranslationRow(Timestamps, Base):
+    """A workflow version's title and step texts in one language (#422, L5): made once, on first request."""
+
+    __tablename__ = "translations"
+    __table_args__ = (
+        UniqueConstraint("version_id", "language"),
+        status_check("status", TRANSLATION_STATUSES, "status"),
+        status_check("language", LANGUAGES, "language"),
+    )
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    workflow_id: Mapped[UUID] = mapped_column(ForeignKey("workflows.id", ondelete="CASCADE"))
+    version_id: Mapped[UUID] = mapped_column(ForeignKey("workflow_versions.id", ondelete="CASCADE"))
+    language: Mapped[str] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(Text, default="translating", server_default="translating")
+    title: Mapped[str | None] = mapped_column(Text, default=None)
+    steps: Mapped[list[Any]] = mapped_column(default=list, server_default="[]")
+    """[{step_seq, text, translated}] in step order."""
+    error: Mapped[str | None] = mapped_column(Text, default=None)
+
+
+class TranslationCacheRow(Base):
+    """One translated text (L5): reused by every version and workflow with the same text, language and
+    prompt."""
+
+    __tablename__ = "translation_cache"
+
+    text_sha: Mapped[str] = mapped_column(Text, primary_key=True)
+    language: Mapped[str] = mapped_column(Text, primary_key=True)
+    prompt_version: Mapped[str] = mapped_column(Text, primary_key=True)
+    text: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now())
+
+
 class ExportRow(Timestamps, Base):
     """One MP4 render of one workflow version with one preset (#124, docs/database-schema.md).
 
@@ -334,8 +371,9 @@ class ExportRow(Timestamps, Base):
         status_check("status", EXPORT_STATUSES, "status"),
         status_check("preset", EXPORT_PRESETS, "preset"),
         status_check("error_code", EXPORT_ERROR_CODES, "error_code"),
+        status_check("language", LANGUAGES, "language"),
         # Re-use (D16): the same version, preset and voice that is queued, rendering or ready.
-        Index(None, "workflow_id", "version_id", "preset", "voice"),
+        Index(None, "workflow_id", "version_id", "preset", "voice", "language"),
         Index(None, "status", "finished_at"),
     )
 
@@ -346,6 +384,7 @@ class ExportRow(Timestamps, Base):
     """Who asked for it."""
     preset: Mapped[str] = mapped_column(Text)
     voice: Mapped[str] = mapped_column(Text)
+    language: Mapped[str] = mapped_column(Text, default="en", server_default="en")
     status: Mapped[str] = mapped_column(Text, default="queued", server_default="queued")
     progress: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     video_key: Mapped[str | None] = mapped_column(Text, default=None)
