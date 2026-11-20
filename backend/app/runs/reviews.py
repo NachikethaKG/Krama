@@ -19,6 +19,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.contracts_gen.review_schema import ReviewAction, ReviewActionResult, ReviewItem
 from app.db import ValidationRow, WorkflowRow, WorkflowVersionRow
+from app.db.repositories import refresh_search
 
 CANT_CHECK_AFTER = 3  # blocked validations in a row (D11)
 UNSTABLE_FLAKES = 2  # flaky validations ...
@@ -181,6 +182,7 @@ async def accept(s: AsyncSession, user_id: UUID, item_id: str) -> ReviewActionRe
     workflow.confidence = version.confidence
     workflow.recording_path = version.recording_path
     workflow.viewport = version.viewport
+    await refresh_search(s, workflow)
     await s.flush()
     return ReviewActionResult(
         workflow_id=workflow.id,
