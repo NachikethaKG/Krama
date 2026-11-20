@@ -31,6 +31,7 @@ from app.runs.events import EVENTS
 from app.runs.exports import recover_exports
 from app.runs.queue import CONTROL, JOB, job_id, redis_settings
 from app.runs.states import RunStatus
+from app.runs.takeover_relay import WorkerTakeoverRelay
 from app.runs.validation_backend import RunValidationBackend
 from app.storage import LocalFsStore
 from app.storage.cleanup import cleanup_with_settings
@@ -156,15 +157,17 @@ def worker_settings(
         )
         state["engine"] = engine
         state["listener"] = asyncio.create_task(_listen_for_control(settings.redis_url, executor))
+        state["takeovers"] = asyncio.create_task(WorkerTakeoverRelay(settings.redis_url, executor).run())
         await _recover(store, redis)
         logger.info("worker ready: %d run(s) at a time", settings.max_concurrent_runs)
 
     async def shutdown(ctx: Ctx) -> None:
-        listener = state.get("listener")
-        if listener is not None:
-            listener.cancel()
-            with contextlib.suppress(asyncio.CancelledError):
-                await listener
+        for name in ("listener", "takeovers"):
+            task = state.get(name)
+            if task is not None:
+                task.cancel()
+                with contextlib.suppress(asyncio.CancelledError):
+                    await task
         if "executor" in ctx:
             await ctx["executor"].shutdown()
         if state.get("engine") is not None:
