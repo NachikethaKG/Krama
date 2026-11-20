@@ -92,6 +92,18 @@
       "CreateExportRequest": {
         "additionalProperties": false,
         "properties": {
+          "language": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Language"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "en",
+            "description": "Export in this language: translated captions and chapters, narrated where a licensed voice exists (#132)."
+          },
           "preset": {
             "$ref": "#/components/schemas/ExportPreset"
           }
@@ -313,6 +325,18 @@
             "title": "Id",
             "type": "string"
           },
+          "language": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Language"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "en",
+            "description": "The tutorial language of the captions, chapters and narration (#132)."
+          },
           "preset": {
             "$ref": "#/components/schemas/ExportPreset"
           },
@@ -371,7 +395,7 @@
             "title": "Title"
           },
           "voice": {
-            "description": "Narration voice used (ADR 0004), e.g. en_US-ljspeech-medium.",
+            "description": "Narration voice used (ADR 0004), e.g. en_US-ljspeech-medium; `silent` for a captions-only language (hi, kn).",
             "minLength": 1,
             "title": "Voice",
             "type": "string"
@@ -588,6 +612,19 @@
         ],
         "title": "Interpretation",
         "type": "object"
+      },
+      "Language": {
+        "description": "A tutorial language (#132, L3). en is the original; the others are translations. Narration: en, de, es, fr; hi and kn get captions only (L7).",
+        "enum": [
+          "en",
+          "hi",
+          "kn",
+          "de",
+          "es",
+          "fr"
+        ],
+        "title": "Language",
+        "type": "string"
       },
       "LoginRequest": {
         "additionalProperties": false,
