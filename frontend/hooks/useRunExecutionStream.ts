@@ -54,6 +54,15 @@ export interface PauseDetails {
   message?: string;
   /** replan_review: the plan holding the proposed steps. */
   planId?: string;
+  /** The run's owner may take over the live page now (ADR 0008). */
+  takeoverAvailable?: boolean;
+}
+
+/** Human takeover of the paused page (ADR 0008): from takeover.started / takeover.ended. */
+export interface TakeoverState {
+  active: boolean;
+  /** Why the last one ended (handed_back, idle, closed, cancelled); null while none ended yet. */
+  endedReason: string | null;
 }
 
 export interface ProposedPlanState {
@@ -96,6 +105,7 @@ export interface UseRunExecutionStreamResult {
   pauseDetails: PauseDetails | null;
   proposedPlan: ProposedPlanState | null;
   policyStop: PolicyStopDetails | null;
+  takeover: TakeoverState;
   runError: ApiError | null;
   workflowId: string | null;
   replanState: ReplanState;
@@ -190,6 +200,7 @@ export function useRunExecutionStream({
   const [pauseDetails, setPauseDetailsState] = useState<PauseDetails | null>(null);
   const [proposedPlan, setProposedPlanState] = useState<ProposedPlanState | null>(null);
   const [policyStop, setPolicyStop] = useState<PolicyStopDetails | null>(null);
+  const [takeover, setTakeover] = useState<TakeoverState>({ active: false, endedReason: null });
   const [runError, setRunError] = useState<ApiError | null>(null);
   const [workflowId, setWorkflowId] = useState<string | null>(null);
   const [replanState, setReplanState] = useState<ReplanState>({ status: "idle", attempt: 0 });
@@ -395,6 +406,7 @@ export function useRunExecutionStream({
             stepSeq: event.step_seq,
             message: event.message,
             planId: event.plan_id,
+            takeoverAvailable: event.takeover_available ?? false,
           };
           setPause(pause);
           if (event.reason === "replan_review") {
@@ -470,6 +482,14 @@ export function useRunExecutionStream({
           setPause(null);
           setProposed(null);
           setIsCancelling(false);
+          break;
+        }
+        case "takeover.started": {
+          setTakeover({ active: true, endedReason: null });
+          break;
+        }
+        case "takeover.ended": {
+          setTakeover({ active: false, endedReason: event.reason });
           break;
         }
         default:
@@ -640,6 +660,7 @@ export function useRunExecutionStream({
     pauseDetails,
     proposedPlan,
     policyStop,
+    takeover,
     runError,
     workflowId,
     replanState,
