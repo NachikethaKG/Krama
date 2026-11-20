@@ -19,6 +19,7 @@ from app.config import Settings
 from app.db import create_engine, create_sessionmaker
 from app.export import ArqExportQueue, InProcessExportQueue
 from app.llm import create_provider
+from app.llm.translator import LLMTranslator
 from app.observer import PageObserver
 from app.planner import LLMPlanner
 from app.planner.service import PlanningService
@@ -29,6 +30,7 @@ from app.runs.events import EventHub, RedisEventRelay
 from app.runs.profiles import ProfileStore
 from app.runs.queue import ArqExecutor
 from app.runs.takeover import ScreenFeed
+from app.runs.translations import TranslationService
 from app.storage import LocalFsStore
 from app.targets import TargetSetup, target_setup
 from app.verifier import LayeredVerifier
@@ -49,6 +51,8 @@ class Services:
     relay: "RedisEventRelay | None" = None
     """With the arq worker: wakes the live-view streams when the worker commits an event."""
     screens: dict[UUID, ScreenFeed] = field(default_factory=dict)
+    translations: TranslationService | None = None
+    """Tutorials in other languages (#422)."""
     profiles: ProfileStore | None = None
     """Each user's own site sessions (ADR 0007)."""
     sites: dict[str, str] = field(default_factory=dict)
@@ -125,7 +129,10 @@ def build_services(settings: Settings) -> Services:
         exports = ArqExportQueue(settings.redis_url)
     else:
         exports = InProcessExportQueue(
-            sessions, LocalFsStore(settings.artifacts_dir), timeout_s=settings.export_timeout_seconds
+            sessions,
+            LocalFsStore(settings.artifacts_dir),
+            timeout_s=settings.export_timeout_seconds,
+            localize=TranslationService(sessions, LLMTranslator(llm)).localize,
         )
     if settings.run_executor == "arq":
         # Runs execute in the worker (`just backend worker`); its events come back over Redis (#95).
@@ -150,6 +157,7 @@ def build_services(settings: Settings) -> Services:
         exports=exports,
         profiles=profiles,
         sites={"gitea": settings.gitea_url, "github": settings.github_url},
+        translations=TranslationService(sessions, LLMTranslator(llm)),
     )
 
 
