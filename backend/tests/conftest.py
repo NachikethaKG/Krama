@@ -91,6 +91,15 @@ PAGES: dict[str, str] = {
           <button type="submit">Create item</button>
         </form></main>""",
     "/done": "<!doctype html><title>Item created</title><main><h1>Item created</h1></main>",
+    # A sign-in wall for takeover tests (ADR 0008): the policy pauses here; a human signs in by hand.
+    "/wall": """<!doctype html><title>Sign In</title><main><h1>Sign In</h1>
+        <form action="/members" method="get">
+          <label>Username <input name="user"></label>
+          <label>Password <input name="pw" type="password"></label>
+          <button type="submit">Sign In</button>
+        </form></main>""",
+    "/members": """<!doctype html><title>Members</title><main><h1>Members</h1>
+        <a href="/form">New item</a></main>""",
     # Navigates on its own after 600 ms: verification must wait for it instead of failing at once.
     "/slow": """<!doctype html><title>Slow</title><main><h1>Slow</h1>
         <script>setTimeout(() => { location.href = "/done" }, 600)</script></main>""",
