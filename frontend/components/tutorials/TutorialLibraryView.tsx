@@ -12,6 +12,9 @@ import { TutorialSearchFilter } from "./TutorialSearchFilter";
 /** Cards shown at first and added by each "Show more" (#318: the list used to render all of them at once). */
 export const PAGE_SIZE = 12;
 
+/** Wait this long after the last key before asking the server (#419). */
+export const SEARCH_DEBOUNCE_MS = 250;
+
 export interface TutorialLibraryViewProps {
   client?: ApiClient;
   initialTutorials?: TutorialSummary[];
@@ -32,6 +35,33 @@ export function TutorialLibraryView({
   const [statusFilter, setStatusFilter] = useState<"all" | TutorialStatus>("all");
   const [reloadKey, setReloadKey] = useState<number>(0);
   const [visible, setVisible] = useState<number>(PAGE_SIZE);
+  // Server search (#135): results for the typed words, best first; null while the box is empty.
+  const [searchResults, setSearchResults] = useState<TutorialSummary[] | null>(null);
+  const [searching, setSearching] = useState(false);
+
+  useEffect(() => {
+    const q = searchQuery.trim();
+    if (!q || initialTutorials) return;
+    let current = true;
+    const timer = setTimeout(() => {
+      setSearching(true);
+      apiClient
+        .searchTutorials(q, { status: statusFilter })
+        .then((items) => {
+          if (current) setSearchResults(items);
+        })
+        .catch((err) => {
+          if (current) setError(errorMessage(err, "Search failed. Please try again."));
+        })
+        .finally(() => {
+          if (current) setSearching(false);
+        });
+    }, SEARCH_DEBOUNCE_MS);
+    return () => {
+      current = false;
+      clearTimeout(timer);
+    };
+  }, [apiClient, initialTutorials, searchQuery, statusFilter]);
 
   useEffect(() => {
     if (initialTutorials) return;
@@ -89,10 +119,13 @@ export function TutorialLibraryView({
     };
   }, [tutorials]);
 
-  // Filtered tutorials based on search query, status filter, and optional target filter
+  // With words typed, the server's ranked results (#419); otherwise the loaded list, filtered by status here.
   const filteredTutorials = useMemo(() => {
     if (!tutorials) return [];
     const q = searchQuery.trim().toLowerCase();
+    if (q && !initialTutorials) {
+      return searchResults ?? [];
+    }
 
     return tutorials.filter((t) => {
       // Status filter
@@ -111,11 +144,13 @@ export function TutorialLibraryView({
 
       return true;
     });
-  }, [tutorials, searchQuery, statusFilter]);
+  }, [tutorials, searchQuery, statusFilter, searchResults, initialTutorials]);
 
   const hasActiveFilters = searchQuery.trim().length > 0 || statusFilter !== "all";
+  const pendingSearch = Boolean(searchQuery.trim()) && !initialTutorials && (searching || searchResults === null);
 
   const handleResetFilters = () => {
+    setSearchResults(null);
     setSearchQuery("");
     setStatusFilter("all");
     setVisible(PAGE_SIZE);
@@ -212,7 +247,13 @@ export function TutorialLibraryView({
       ) : null}
 
       {/* Empty states */}
-      {!isLoading && !error && filteredTutorials.length === 0 ? (
+      {pendingSearch ? (
+        <p role="status" data-testid="library-searching" className="mt-8 text-sm text-ink-300">
+          Searching…
+        </p>
+      ) : null}
+
+      {!isLoading && !error && !pendingSearch && filteredTutorials.length === 0 ? (
         <div
           data-testid="empty-tutorials"
           className="mt-12 rounded-[2rem] border border-dashed border-white/15 bg-white/[0.02] p-12 text-center"
