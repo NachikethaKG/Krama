@@ -44,9 +44,11 @@ class PolicyService:
         """Evaluate an impending action and decide whether to allow, pause, or stop."""
         barrier = check_barrier(page)
         if barrier.should_stop:
+            # Pause, never bypass (ADR 0008): the run's owner may sign in or solve the challenge themselves in a
+            # takeover. A run nobody watches (reverify, validation) fails at this pause instead.
             reason = "auth_wall" if barrier.barrier_type == BarrierType.AUTH_WALL else "captcha"
             return PolicyDecision(
-                verdict="stop",
+                verdict="pause",
                 reason=reason,
                 message=barrier.reason or f"Security barrier detected: {reason}",
             )

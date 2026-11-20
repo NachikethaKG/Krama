@@ -122,7 +122,7 @@ def test_auth_wall_respects_allow_auth_parameter() -> None:
 
 
 @pytest.mark.anyio
-async def test_policy_service_stops_on_captcha() -> None:
+async def test_policy_service_pauses_on_captcha() -> None:
     service = PolicyService()
     step = StepRef(
         seq=1,
@@ -137,13 +137,13 @@ async def test_policy_service_stops_on_captcha() -> None:
     )
 
     decision = await service.check_action(step, captcha_page)
-    assert decision.verdict == "stop"
+    assert decision.verdict == "pause"  # the owner may solve it in a takeover (ADR 0008), never code
     assert decision.reason == "captcha"
     assert "just a moment" in decision.message.lower()
 
 
 @pytest.mark.anyio
-async def test_policy_service_stops_on_auth_wall() -> None:
+async def test_policy_service_pauses_on_auth_wall() -> None:
     service = PolicyService()
     step = StepRef(
         seq=2,
@@ -159,7 +159,7 @@ async def test_policy_service_stops_on_auth_wall() -> None:
 
     # Injecting HTML simulation via aria excerpt and URL
     decision = await service.check_action(step, auth_page)
-    assert decision.verdict == "stop"
+    assert decision.verdict == "pause"  # the owner may solve it in a takeover (ADR 0008), never code
     assert decision.reason == "auth_wall"
 
 
@@ -282,5 +282,5 @@ async def test_strong_captcha_signals_stop_through_page_state(
     assert result.barrier_type == barrier
 
     decision = await PolicyService().check_action(_register_step(), page)
-    assert decision.verdict == "stop"
+    assert decision.verdict == "pause"  # the owner may solve it in a takeover (ADR 0008), never code
     assert decision.reason == "captcha"
