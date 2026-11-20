@@ -826,6 +826,15 @@
         "title": "ObservedState",
         "type": "object"
       },
+      "PerformedBy": {
+        "description": "Who did a step: Krama, or the run's owner by hand in a takeover (ADR 0008).",
+        "enum": [
+          "krama",
+          "human"
+        ],
+        "title": "PerformedBy",
+        "type": "string"
+      },
       "Plan": {
         "additionalProperties": false,
         "properties": {
@@ -1327,6 +1336,17 @@
           "status": {
             "$ref": "#/components/schemas/RunStatus"
           },
+          "takeover": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RunTakeover"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The active takeover of this paused run's page (ADR 0008); null when nobody has control."
+          },
           "workflow_id": {
             "anyOf": [
               {
@@ -1424,6 +1444,40 @@
         ],
         "title": "RunStatus",
         "type": "string"
+      },
+      "RunTakeover": {
+        "additionalProperties": false,
+        "properties": {
+          "last_input_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "5 min after this (or after started_at) without input, the takeover ends; the run stays paused.",
+            "title": "Last Input At"
+          },
+          "started_at": {
+            "format": "date-time",
+            "title": "Started At",
+            "type": "string"
+          },
+          "step_seq": {
+            "minimum": 1.0,
+            "title": "Step Seq",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "step_seq",
+          "started_at"
+        ],
+        "title": "RunTakeover",
+        "type": "object"
       },
       "RunWorkflowRequest": {
         "additionalProperties": false,
@@ -1615,6 +1669,18 @@
           },
           "observed_state": {
             "$ref": "#/components/schemas/ObservedState"
+          },
+          "performed_by": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PerformedBy"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "krama",
+            "description": "human: the run's owner did this step in a takeover; its confidence is capped and the tutorial shows it as a do-it-yourself step (ADR 0008)."
           },
           "risk": {
             "$ref": "#/components/schemas/Risk"

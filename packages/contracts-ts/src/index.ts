@@ -6,6 +6,27 @@
  */
 
 /**
+ * Who did a step: Krama, or the run's owner by hand in a takeover (ADR 0008).
+ *
+ * This interface was referenced by `Common`'s JSON-Schema
+ * via the `definition` "PerformedBy".
+ */
+export type PerformedBy = "krama" | "human";
+/**
+ * Why a takeover ended. handed_back: the owner said what they did; idle: 5 min without input; closed: the screen connection went away; cancelled: the run was cancelled.
+ *
+ * This interface was referenced by `Common`'s JSON-Schema
+ * via the `definition` "TakeoverEndReason".
+ */
+export type TakeoverEndReason = "handed_back" | "idle" | "closed" | "cancelled";
+/**
+ * What the owner did in a takeover. barrier: cleared a login wall or challenge (Krama re-checks and retries the step); step: did the paused step (Krama verifies it without acting); rest: did the rest of the task (Krama runs the final check).
+ *
+ * This interface was referenced by `Common`'s JSON-Schema
+ * via the `definition` "HandBackDone".
+ */
+export type HandBackDone = "barrier" | "step" | "rest";
+/**
  * This interface was referenced by `Common`'s JSON-Schema
  * via the `definition` "Risk".
  */
@@ -56,7 +77,13 @@ export type RunEvent =
   | RunCompletedEvent
   | RunFailedEvent
   | RunCancelledEvent
-  | RunResumedEvent;
+  | RunResumedEvent
+  | TakeoverStartedEvent
+  | TakeoverEndedEvent;
+/**
+ * human: the run's owner did this step in a takeover and Krama only verified it (ADR 0008).
+ */
+export type PerformedBy1 = "krama" | "human";
 /**
  * Why a run waits for a human. POST /runs/{id}/confirm with allow continues, deny cancels.
  */
@@ -156,6 +183,11 @@ export type RunKind1 = "task" | "reverify" | "do_it";
  */
 export type VerificationResult = "verified" | "failed" | "skipped";
 /**
+ * human: the run's owner did this step in a takeover; its confidence is capped and the tutorial shows it as a do-it-yourself step (ADR 0008).
+ */
+export type PerformedBy2 = "krama" | "human";
+export type TakeoverInput = TakeoverMouse | TakeoverKey | TakeoverText;
+/**
  * This interface was referenced by `Task`'s JSON-Schema
  * via the `definition` "TaskStatus".
  */
@@ -205,6 +237,7 @@ export interface KramaContracts {
   run?: Run;
   share?: ShareLink;
   step?: Step;
+  takeover?: TakeoverInput;
   task?: Task;
   "tutorial-spec"?: TutorialSpec;
   workflow?: Workflow;
@@ -356,6 +389,7 @@ export interface StepVerifiedEvent {
    */
   method: [VerificationMethod, ...VerificationMethod[]];
   confidence: number;
+  performed_by?: PerformedBy1;
 }
 export interface StepFailedEvent {
   type: "step.failed";
@@ -397,6 +431,10 @@ export interface RunPausedEvent {
    * For replan_review: the plan with the proposed steps (GET /plans/{id})
    */
   plan_id?: string;
+  /**
+   * The run's owner may take over the live page now (POST /runs/{id}/takeover, ADR 0008).
+   */
+  takeover_available?: boolean;
 }
 export interface RunCompletedEvent {
   type: "run.completed";
@@ -441,6 +479,28 @@ export interface RunResumedEvent {
   ts: string;
   step_seq: number;
   decision: "allow";
+}
+/**
+ * The run's owner took control of the paused run's page (ADR 0008). The run stays paused.
+ */
+export interface TakeoverStartedEvent {
+  type: "takeover.started";
+  run_id: string;
+  seq: number;
+  ts: string;
+  step_seq: number;
+}
+/**
+ * The takeover ended. handed_back: the owner said what they did (`done`) and Krama checks it; idle: 5 min without input; closed: the screen connection went away; cancelled: the run was cancelled. Except after handed_back, the run stays paused.
+ */
+export interface TakeoverEndedEvent {
+  type: "takeover.ended";
+  run_id: string;
+  seq: number;
+  ts: string;
+  step_seq: number;
+  reason: TakeoverEndReason;
+  done?: HandBackDone;
 }
 /**
  * One MP4 render of one workflow version with one preset. Created by POST /workflows/{id}/exports, rendered by the export job, polled with GET /exports/{id}.
@@ -778,9 +838,25 @@ export interface Run {
    */
   workflow_id?: string | null;
   error?: ApiError | null;
+  /**
+   * The active takeover of this paused run's page (ADR 0008); null when nobody has control.
+   */
+  takeover?: RunTakeover | null;
   created_at: string;
   started_at?: string | null;
   finished_at?: string | null;
+}
+/**
+ * This interface was referenced by `Run`'s JSON-Schema
+ * via the `definition` "RunTakeover".
+ */
+export interface RunTakeover {
+  step_seq: number;
+  started_at: string;
+  /**
+   * 5 min after this (or after started_at) without input, the takeover ends; the run stays paused.
+   */
+  last_input_at?: string | null;
 }
 /**
  * This interface was referenced by `Run`'s JSON-Schema
@@ -789,6 +865,16 @@ export interface Run {
 export interface RunPage {
   items: Run[];
   next_cursor?: string | null;
+}
+/**
+ * POST /runs/{id}/handback: end the takeover and say what was done; Krama checks it and continues, or pauses again with the reason.
+ *
+ * This interface was referenced by `Run`'s JSON-Schema
+ * via the `definition` "RunHandBackRequest".
+ */
+export interface RunHandBackRequest {
+  step_seq: number;
+  done: HandBackDone;
 }
 /**
  * Resume a run paused on a destructive step.
@@ -844,6 +930,7 @@ export interface Step {
   verification: StepVerification;
   risk: Risk;
   sensitive?: boolean;
+  performed_by?: PerformedBy2;
   screenshot_path?: string | null;
   timing?: StepTiming | null;
   start_ms?: number | null;
@@ -902,6 +989,46 @@ export interface StepVerification {
 export interface StepTiming {
   start_ms: number;
   end_ms: number;
+}
+export interface TakeoverMouse {
+  type: "mouse";
+  event: "down" | "up" | "move" | "wheel";
+  x: number;
+  y: number;
+  button?: "left" | "middle" | "right";
+  click_count?: number;
+  /**
+   * wheel only
+   */
+  delta_x?: number;
+  /**
+   * wheel only
+   */
+  delta_y?: number;
+  modifiers?: TakeoverModifiers;
+}
+export interface TakeoverModifiers {
+  alt?: boolean;
+  ctrl?: boolean;
+  meta?: boolean;
+  shift?: boolean;
+}
+/**
+ * One key going down or up, as KeyboardEvent.key / .code (e.g. "Enter", "Backspace", "a" / "KeyA").
+ */
+export interface TakeoverKey {
+  type: "key";
+  event: "down" | "up";
+  key: string;
+  code?: string;
+  modifiers?: TakeoverModifiers;
+}
+/**
+ * Pasted or composed text, inserted at the cursor (CDP Input.insertText: no key events).
+ */
+export interface TakeoverText {
+  type: "text";
+  text: string;
 }
 export interface Task {
   id: string;

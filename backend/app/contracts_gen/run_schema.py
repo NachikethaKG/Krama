@@ -18,6 +18,28 @@ type RunStatus = Annotated[
 ]
 
 
+class RunTakeover(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+    step_seq: Annotated[int, Field(ge=1)]
+    started_at: AwareDatetime
+    last_input_at: Annotated[
+        AwareDatetime | None,
+        Field(
+            description="5 min after this (or after started_at) without input, the takeover ends; the run stays paused."
+        ),
+    ] = None
+
+
+class RunHandBackRequest(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+    step_seq: Annotated[int, Field(ge=1)]
+    done: common_schema.HandBackDone
+
+
 class RunConfirmRequest(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
@@ -52,6 +74,12 @@ class Run(BaseModel):
         ),
     ] = None
     error: common_schema.ApiError | None = None
+    takeover: Annotated[
+        RunTakeover | None,
+        Field(
+            description="The active takeover of this paused run's page (ADR 0008); null when nobody has control."
+        ),
+    ] = None
     created_at: AwareDatetime
     started_at: AwareDatetime | None = None
     finished_at: AwareDatetime | None = None

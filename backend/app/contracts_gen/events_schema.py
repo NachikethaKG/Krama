@@ -59,6 +59,12 @@ class StepVerifiedEvent(BaseModel):
     step_seq: Annotated[int, Field(ge=1)]
     method: Annotated[list[common_schema.VerificationMethod], Field(min_length=1)]
     confidence: Annotated[float, Field(ge=0.0, le=1.0)]
+    performed_by: Annotated[
+        common_schema.PerformedBy | None,
+        Field(
+            description="human: the run's owner did this step in a takeover and Krama only verified it (ADR 0008)."
+        ),
+    ] = "krama"
 
 
 class RunReplanningEvent(BaseModel):
@@ -112,6 +118,30 @@ class RunResumedEvent(BaseModel):
     ts: AwareDatetime
     step_seq: Annotated[int, Field(ge=1)]
     decision: Literal["allow"]
+
+
+class TakeoverStartedEvent(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+    type: Literal["takeover.started"]
+    run_id: UUID
+    seq: Annotated[int, Field(ge=1)]
+    ts: AwareDatetime
+    step_seq: Annotated[int, Field(ge=1)]
+
+
+class TakeoverEndedEvent(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+    type: Literal["takeover.ended"]
+    run_id: UUID
+    seq: Annotated[int, Field(ge=1)]
+    ts: AwareDatetime
+    step_seq: Annotated[int, Field(ge=1)]
+    reason: common_schema.TakeoverEndReason
+    done: common_schema.HandBackDone | None = None
 
 
 type PauseReason = Annotated[
@@ -179,6 +209,12 @@ class RunPausedEvent(BaseModel):
         UUID | None,
         Field(description="For replan_review: the plan with the proposed steps (GET /plans/{id})"),
     ] = None
+    takeover_available: Annotated[
+        bool | None,
+        Field(
+            description="The run's owner may take over the live page now (POST /runs/{id}/takeover, ADR 0008)."
+        ),
+    ] = False
 
 
 class RunCancelledEvent(BaseModel):
@@ -207,6 +243,8 @@ type RunEvent = Annotated[
     | RunCompletedEvent
     | RunFailedEvent
     | RunCancelledEvent
-    | RunResumedEvent,
+    | RunResumedEvent
+    | TakeoverStartedEvent
+    | TakeoverEndedEvent,
     Field(discriminator="type", title="RunEvent"),
 ]
