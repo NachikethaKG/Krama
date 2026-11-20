@@ -13,13 +13,32 @@ from app.ports.narration import NarrationError
 from app.storage import get_artifact_store
 from app.tts.narrator import PiperNarrator
 from app.tts.process import PiperProcess
+from app.tts.silent import SilentNarrator
 
 SETUP_HINT = "run `just backend tts-setup`"
 
 
-def worker_command(settings: Settings) -> list[str]:
+VOICES = {
+    "de": "de_DE-thorsten-medium",  # CC0, trained from scratch
+    "es": "es_ES-davefx-medium",  # CC0
+    "fr": "fr_FR-siwis-medium",  # CC BY 4.0: credited in the outro
+}
+"""Narration voices per tutorial language (#428, L7; licenses in
+docs/research/phase-6-nachiketha-multiple-languages.md). English uses `TTS_VOICE`. Hindi and Kannada have no
+voice we may ship yet: captions only (`SILENT`)."""
+SILENT = "silent"
+
+
+def voice_for(language: str, settings: Settings) -> str:
+    """The voice an export in `language` is narrated with, or SILENT."""
+    if language == "en":
+        return settings.tts_voice
+    return VOICES.get(language, SILENT)
+
+
+def worker_command(settings: Settings, voice: str | None = None) -> list[str]:
     """`uv run` the worker in its own project, so its venv (and Piper) stays separate from the backend's."""
-    model = settings.tts_voices_dir / f"{settings.tts_voice}.onnx"
+    model = settings.tts_voices_dir / f"{voice or settings.tts_voice}.onnx"
     if not model.is_file() or not model.with_suffix(".onnx.json").is_file():
         raise NarrationError("voice_missing", f"voice model {model} not found: {SETUP_HINT}")
     uv = shutil.which("uv")
@@ -32,14 +51,27 @@ def worker_command(settings: Settings) -> list[str]:
     ]  # fmt: skip
 
 
-def get_narrator() -> Narrator:
-    """The narrator for this process. The worker only starts when a clip isn't cached yet."""
+def get_narrator(language: str = "en") -> Narrator:
+    """The narrator for an export in `language` (#428). The worker only starts when a clip isn't cached yet.
+    Hindi and Kannada get silent clips sized like speech: captions only (L7)."""
     settings = get_settings()
+    voice = voice_for(language, settings)
+    if voice == SILENT:
+        return SilentNarrator(get_artifact_store())
     return PiperNarrator(
         get_artifact_store(),
-        voice=settings.tts_voice,
-        start_worker=lambda: PiperProcess(worker_command(settings)),
+        voice=voice,
+        start_worker=lambda: PiperProcess(worker_command(settings, voice)),
     )
 
 
-__all__ = ["PiperNarrator", "PiperProcess", "get_narrator", "worker_command"]
+__all__ = [
+    "SILENT",
+    "VOICES",
+    "PiperNarrator",
+    "PiperProcess",
+    "SilentNarrator",
+    "get_narrator",
+    "voice_for",
+    "worker_command",
+]
