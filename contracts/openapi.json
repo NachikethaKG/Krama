@@ -1656,6 +1656,65 @@
         "title": "ShareLinkList",
         "type": "object"
       },
+      "SiteProfile": {
+        "additionalProperties": false,
+        "properties": {
+          "account": {
+            "description": "The account name the user signed in as.",
+            "minLength": 1,
+            "title": "Account",
+            "type": "string"
+          },
+          "captured_at": {
+            "format": "date-time",
+            "title": "Captured At",
+            "type": "string"
+          },
+          "expires_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "When the session's sign-in cookie expires, if known.",
+            "title": "Expires At"
+          },
+          "site": {
+            "description": "The site key, e.g. github or gitea.",
+            "minLength": 1,
+            "title": "Site",
+            "type": "string"
+          }
+        },
+        "required": [
+          "site",
+          "account",
+          "captured_at"
+        ],
+        "title": "SiteProfile",
+        "type": "object"
+      },
+      "SiteProfileList": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SiteProfile"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "SiteProfileList",
+        "type": "object"
+      },
       "Step": {
         "additionalProperties": false,
         "properties": {
@@ -4927,6 +4986,157 @@
         "summary": "Get Shared Artifact",
         "tags": [
           "shares"
+        ]
+      }
+    },
+    "/api/v1/sites/profiles": {
+      "get": {
+        "description": "The sites the user signed Krama in to, and as whom. Never the sessions.",
+        "operationId": "get_profiles_api_v1_sites_profiles_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteProfileList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal error"
+          }
+        },
+        "summary": "Get Profiles",
+        "tags": [
+          "sites"
+        ]
+      }
+    },
+    "/api/v1/sites/{site}/profile": {
+      "delete": {
+        "description": "Forget the user's session on that site (Krama is signed out of their account there).",
+        "operationId": "sign_out_api_v1_sites__site__profile_delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "site",
+            "required": true,
+            "schema": {
+              "title": "Site",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal error"
+          }
+        },
+        "summary": "Sign Out",
+        "tags": [
+          "sites"
+        ]
+      }
+    },
+    "/api/v1/sites/{site}/sign-in": {
+      "post": {
+        "description": "Start a sign-in run: take it over from the live view, sign in by hand, hand it back.",
+        "operationId": "sign_in_api_v1_sites__site__sign_in_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "site",
+            "required": true,
+            "schema": {
+              "title": "Site",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Run"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "No such site"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal error"
+          }
+        },
+        "summary": "Sign In",
+        "tags": [
+          "sites"
         ]
       }
     },
