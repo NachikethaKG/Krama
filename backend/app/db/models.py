@@ -15,6 +15,7 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     Integer,
+    LargeBinary,
     Text,
     UniqueConstraint,
     func,
@@ -267,6 +268,8 @@ class WorkflowVersionRow(Timestamps, Base):
     )
     run_id: Mapped[UUID | None] = mapped_column(ForeignKey("runs.id", ondelete="SET NULL"), default=None)
     """The run that recorded this version."""
+    recorded_as: Mapped[str | None] = mapped_column(Text, default=None)
+    """The site account the version was recorded in (ADR 0007); None before #404 (the shared test account)."""
     created_by: Mapped[UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), default=None)
     """Who asked for it (regenerate, edit). Null for the first version and for heals."""
     confidence: Mapped[float | None] = mapped_column(REAL, default=None)
@@ -301,6 +304,23 @@ class ValidationRow(Timestamps, Base):
     status: Mapped[str] = mapped_column(Text)
     drift_details: Mapped[dict[str, Any] | None] = mapped_column(default=None)
     ran_at: Mapped[datetime] = mapped_column(server_default=func.now())
+
+
+class BrowserProfileRow(Timestamps, Base):
+    """A user's own signed-in session on a site (#404, ADR 0007): the Playwright storage state,
+    Fernet-encrypted with KRAMA_STORAGE_KEY. One per (user, site); deleted with the user."""
+
+    __tablename__ = "browser_profiles"
+    __table_args__ = (UniqueConstraint("user_id", "site"),)
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    site: Mapped[str] = mapped_column(Text)
+    account: Mapped[str] = mapped_column(Text)
+    state: Mapped[bytes] = mapped_column(LargeBinary)
+    """The encrypted storage state. Never logged, returned or sent anywhere."""
+    captured_at: Mapped[datetime] = mapped_column(server_default=func.now())
+    expires_at: Mapped[datetime | None] = mapped_column(default=None)
 
 
 class ExportRow(Timestamps, Base):

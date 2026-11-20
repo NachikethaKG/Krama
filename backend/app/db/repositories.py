@@ -314,6 +314,7 @@ async def add_workflow_version(
     viewport: dict[str, Any] | None,
     change_summary: dict[str, Any] | None,
     created_by: UUID | None = None,
+    recorded_as: str | None = None,
 ) -> WorkflowVersionRow:
     """Add the next version of an existing workflow (a heal, a regenerate), made from the current one.
 
@@ -339,6 +340,7 @@ async def add_workflow_version(
         recording_path=recording_path,
         viewport=viewport,
         change_summary=change_summary,
+        recorded_as=recorded_as,
         steps=list(steps),
     )
     for step in steps:
