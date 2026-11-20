@@ -5106,7 +5106,7 @@
     },
     "/api/v1/workflows": {
       "get": {
-        "description": "Stored workflows, newest first, optionally for one app (e.g. gitea).",
+        "description": "Stored workflows, newest first, optionally for one app (e.g. gitea) or status. With `q`: searched and\nranked (#135), paged by `offset`; `next_cursor` is then the next offset.",
         "operationId": "get_workflows_api_v1_workflows_get",
         "parameters": [
           {
@@ -5123,6 +5123,39 @@
                 }
               ],
               "title": "Target App"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/WorkflowStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
             }
           },
           {
@@ -5151,6 +5184,18 @@
                 }
               ],
               "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "maximum": 10000,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
             }
           }
         ],
