@@ -1425,6 +1425,31 @@
         "title": "RunStatus",
         "type": "string"
       },
+      "RunWorkflowRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "inputs": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "One value per WorkflowInput.key; every input is required (the server checks min_length and pattern).",
+            "title": "Inputs",
+            "type": "object"
+          },
+          "revision": {
+            "description": "The version the user previewed (from WorkflowInputList); a newer current version gives 409 stale_revision.",
+            "minimum": 1.0,
+            "title": "Revision",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "revision",
+          "inputs"
+        ],
+        "title": "RunWorkflowRequest",
+        "type": "object"
+      },
       "ScrollOffset": {
         "additionalProperties": false,
         "properties": {
@@ -1804,6 +1829,11 @@
         ],
         "title": "StepDiff",
         "type": "object"
+      },
+      "StepSeq": {
+        "minimum": 1.0,
+        "title": "StepSeq",
+        "type": "integer"
       },
       "StepTarget": {
         "additionalProperties": false,
@@ -2498,6 +2528,114 @@
           "steps"
         ],
         "title": "Workflow",
+        "type": "object"
+      },
+      "WorkflowInput": {
+        "additionalProperties": false,
+        "properties": {
+          "example": {
+            "description": "The value the recorded run typed, shown as a placeholder, never as the default.",
+            "minLength": 1,
+            "title": "Example",
+            "type": "string"
+          },
+          "key": {
+            "description": "Stable name of the input in RunWorkflowRequest.inputs (e.g. repository_name).",
+            "pattern": "^[a-z][a-z0-9_]*$",
+            "title": "Key",
+            "type": "string"
+          },
+          "kind": {
+            "const": "text",
+            "description": "text only in v1; dropdowns replay the recorded option (P15).",
+            "title": "Kind",
+            "type": "string"
+          },
+          "label": {
+            "description": "What to ask for, from the field's label (e.g. \"Repository name\").",
+            "minLength": 1,
+            "title": "Label",
+            "type": "string"
+          },
+          "min_length": {
+            "description": "Shortest value accepted (3 in v1, P5).",
+            "minimum": 1.0,
+            "title": "Min Length",
+            "type": "integer"
+          },
+          "pattern": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "A regular expression a value must match: the example's character class (P5), e.g. ^[A-Za-z0-9._-]+$. Null when any single-line text is accepted.",
+            "title": "Pattern"
+          },
+          "steps": {
+            "description": "Seq of every step the value is typed in or reappears in (URL checks, headings, later targets, step text).",
+            "items": {
+              "$ref": "#/components/schemas/StepSeq"
+            },
+            "minItems": 1,
+            "title": "Steps",
+            "type": "array"
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "example",
+          "kind",
+          "min_length",
+          "steps"
+        ],
+        "title": "WorkflowInput",
+        "type": "object"
+      },
+      "WorkflowInputList": {
+        "additionalProperties": false,
+        "properties": {
+          "account": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The site account the run will act in. v1: the account Krama is signed in to on that site, not the user's own (P11). Null when unknown.",
+            "title": "Account"
+          },
+          "inputs": {
+            "items": {
+              "$ref": "#/components/schemas/WorkflowInput"
+            },
+            "title": "Inputs",
+            "type": "array"
+          },
+          "revision": {
+            "description": "The version the inputs belong to; send it back in RunWorkflowRequest.",
+            "minimum": 1.0,
+            "title": "Revision",
+            "type": "integer"
+          },
+          "workflow_id": {
+            "format": "uuid",
+            "title": "Workflow Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workflow_id",
+          "revision",
+          "inputs"
+        ],
+        "title": "WorkflowInputList",
         "type": "object"
       },
       "WorkflowPage": {
@@ -4953,6 +5091,80 @@
         ]
       }
     },
+    "/api/v1/workflows/{workflow_id}/inputs": {
+      "get": {
+        "description": "The values the owner chooses before \"Do it for me\" runs the current version (#129), and the site\naccount the run acts in: in v1 the account Krama is signed in to there, not the user's own (P11).",
+        "operationId": "get_workflow_inputs_api_v1_workflows__workflow_id__inputs_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workflow_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workflow Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowInputList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not verified, a version waits for review, a step typed a secret, or the version is stale"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal error"
+          }
+        },
+        "summary": "Get Workflow Inputs",
+        "tags": [
+          "workflows"
+        ]
+      }
+    },
     "/api/v1/workflows/{workflow_id}/regenerate": {
       "post": {
         "description": "Re-plan a workflow that can't heal (#113), from its original prompt and URL. Like POST /tasks: poll the\ntask, then review and approve its plan. When that run verifies, its steps become this workflow's next\nversion (D3); no new workflow.",
@@ -5170,6 +5382,90 @@
           }
         },
         "summary": "Reverify Workflow",
+        "tags": [
+          "workflows"
+        ]
+      }
+    },
+    "/api/v1/workflows/{workflow_id}/run": {
+      "post": {
+        "description": "\"Do it for me\" (#129): run the stored steps for the owner with their values. Starting it approves the\nsteps; it never resets the site, risky steps pause for confirmation, and no workflow is stored.",
+        "operationId": "run_workflow_api_v1_workflows__workflow_id__run_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workflow_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workflow Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RunWorkflowRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Run"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not verified, a version waits for review, a step typed a secret, or the version is stale"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "A value is missing, unknown or can't be used (input_unsafe)"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal error"
+          }
+        },
+        "summary": "Run Workflow",
         "tags": [
           "workflows"
         ]
