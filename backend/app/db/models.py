@@ -11,6 +11,7 @@ from sqlalchemy import (
     REAL,
     BigInteger,
     Boolean,
+    Computed,
     ForeignKey,
     Index,
     Integer,
@@ -19,6 +20,7 @@ from sqlalchemy import (
     func,
     text,
 )
+from sqlalchemy.dialects.postgresql import REGCONFIG, TSVECTOR
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.contracts_gen.common_schema import PerformedBy, Risk
@@ -163,6 +165,15 @@ class RunEventRow(Timestamps, Base):
     ts: Mapped[datetime] = mapped_column(server_default=func.now())
 
 
+SEARCH_VECTOR = (
+    "setweight(to_tsvector(lang, title), 'A') || setweight(to_tsvector('simple', target_app), 'A') || "
+    "setweight(to_tsvector(lang, search_request), 'B') || setweight(to_tsvector(lang, search_steps), 'C')"
+)
+"""What a workflow is searched by (#135): title and app weigh most, then the request, then the step texts."""
+SEARCH_TEXT = "title || ' ' || target_app || ' ' || search_request || ' ' || search_steps"
+"""The same text for trigram matching (typos, partial words)."""
+
+
 class WorkflowRow(Timestamps, Base):
     """A stored workflow: its identity (share links, tutorial URLs and reverify point here) plus copies of its
     current version's confidence, recording and viewport, so readers need one row. Its versions are
@@ -173,11 +184,26 @@ class WorkflowRow(Timestamps, Base):
         status_check("status", WORKFLOW_STATUSES, "status"),
         Index(None, "target_app", "status"),
         Index(None, "user_id", "created_at"),
+        # Search (#135, S1-S3): weighted full text, plus trigrams for typos and short titles.
+        Index(None, "search", postgresql_using="gin"),
+        Index(None, "title", postgresql_using="gin", postgresql_ops={"title": "gin_trgm_ops"}),
+        Index(None, "search_text", postgresql_using="gin", postgresql_ops={"search_text": "gin_trgm_ops"}),
     )
 
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
     task_id: Mapped[UUID] = mapped_column(ForeignKey("tasks.id"))
     run_id: Mapped[UUID] = mapped_column(ForeignKey("runs.id"), unique=True)
+    search_steps: Mapped[str] = mapped_column(Text, default="", server_default="")
+    """The current version's step texts, one per line: copied by `refresh_search` (generated columns can't
+    read other tables)."""
+    search_request: Mapped[str] = mapped_column(Text, default="", server_default="")
+    """The task's request, copied for search."""
+    lang: Mapped[str] = mapped_column(
+        REGCONFIG, default="english", server_default=text("'english'::regconfig")
+    )
+    """Text search language of title, request and steps (S3); per row, for translated text later (#132)."""
+    search: Mapped[Any] = mapped_column(TSVECTOR, Computed(SEARCH_VECTOR, persisted=True))
+    search_text: Mapped[str] = mapped_column(Text, Computed(SEARCH_TEXT, persisted=True))
     """The run that recorded its first version (one run makes one workflow)."""
     user_id: Mapped[UUID | None] = mapped_column(ForeignKey("users.id"), default=None)
     """The task's owner, copied when the workflow is stored (lists and share links filter on it)."""
