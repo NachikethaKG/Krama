@@ -14,6 +14,7 @@ import contextlib
 import logging
 import time
 from collections.abc import Awaitable, Callable, Iterable
+from datetime import UTC, datetime
 from typing import Any
 from urllib.parse import urlsplit
 
@@ -38,6 +39,53 @@ Notice = Callable[[str], Awaitable[None]]
 TakeoverInput = TakeoverMouse | TakeoverKey | TakeoverText
 
 
+class TakeoverError(Exception):
+    """A takeover can't start. `reason`: not_available or active."""
+
+    def __init__(self, reason: str, message: str) -> None:
+        super().__init__(message)
+        self.reason = reason
+
+
+class ScreenFeed:
+    """Between a takeover session and the one screen WebSocket watching it: the newest frames (a slow viewer
+    drops old ones instead of building a backlog) and notices (`blocked`, `ended`) as JSON-ready dicts."""
+
+    def __init__(self, max_frames: int = 2) -> None:
+        self._queue: asyncio.Queue[bytes | dict[str, Any]] = asyncio.Queue()
+        self._max_frames = max_frames
+        self._frames = 0
+        self._attached = False
+
+    def attach(self) -> bool:
+        """One viewer per takeover: False if one is attached already."""
+        if self._attached:
+            return False
+        self._attached = True
+        return True
+
+    def detach(self) -> None:
+        self._attached = False
+
+    async def frame(self, data: bytes) -> None:
+        if self._frames >= self._max_frames:
+            return  # the viewer is behind: skip this one, the next change sends a fresh frame
+        self._frames += 1
+        await self._queue.put(data)
+
+    async def blocked(self, message: str) -> None:
+        await self._queue.put({"type": "blocked", "message": message})
+
+    async def ended(self, reason: str) -> None:
+        await self._queue.put({"type": "ended", "reason": reason})
+
+    async def next(self) -> bytes | dict[str, Any]:
+        item = await self._queue.get()
+        if isinstance(item, bytes):
+            self._frames -= 1
+        return item
+
+
 def host_of(url: str) -> str:
     """`host[:port]`, lower case: what navigation is checked against."""
     return urlsplit(url).netloc.lower()
@@ -56,6 +104,7 @@ class TakeoverSession:
         max_fps: float = MAX_FPS,
         idle_s: float = IDLE_S,
         clock: Callable[[], float] = time.monotonic,
+        step_seq: int = 1,
     ) -> None:
         self._page = page
         self._allowed = {h.lower() for h in allowed_hosts if h}
@@ -66,8 +115,11 @@ class TakeoverSession:
         self._clock = clock
         self._sink: FrameSink | None = None
         self._last_frame = float("-inf")
+        self.step_seq = step_seq
         self.started_at = clock()
         self.last_input_at: float | None = None
+        self.started_wall = datetime.now(UTC)
+        self.last_input_wall: datetime | None = None
         self.ended: str | None = None
         self._watchdog: asyncio.Task[None] | None = None
         self._lock = asyncio.Lock()
@@ -93,6 +145,7 @@ class TakeoverSession:
         if self.ended is not None:
             return
         self.last_input_at = self._clock()
+        self.last_input_wall = datetime.now(UTC)
         mouse, keyboard = self._page.mouse, self._page.keyboard
         try:
             match message:

@@ -10,6 +10,7 @@ import asyncio
 import time
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from urllib.parse import urlsplit
 
 from playwright.async_api import Page, Request, Response
@@ -35,6 +36,16 @@ class StepOutcome:
     focus_screenshot: str | None = None
     """Artifact key of the page right before the action, with the target scrolled into view: where `bbox` and
     `scroll` were measured, and what a click step's video scene shows (#388). None without a target."""
+    by_hand_pending: bool = False
+    """The owner took over at the pause before this step's action: nothing ran yet (ADR 0008)."""
+
+    @classmethod
+    def pending_by_hand(cls, before: ObservedState) -> "StepOutcome":
+        result = ActionResult(
+            action="wait", ok=True, started_at=datetime.now(UTC), duration_ms=0, url_after=before.url
+        )
+        return cls(result=result, before=before, observed=before, verification=None, verify_attempts=0,
+                   by_hand_pending=True)  # fmt: skip
 
     @property
     def verified(self) -> bool:
@@ -62,10 +73,13 @@ async def act_and_verify(
     before: ObservedState | None = None,
     focus_shot: Callable[[], Awaitable[str | None]] | None = None,
     vision: bool = True,
+    act: bool = True,
 ) -> StepOutcome:
     """`before`: the page right before the action, if the caller already captured it (policy check).
     `focus_shot`: stores a screenshot once the target is scrolled into view and returns its key (#388).
-    `vision`: False never asks the vision judge; an undecided step stays `skipped` (a do-it run, P10)."""
+    `vision`: False never asks the vision judge; an undecided step stays `skipped` (a do-it run, P10).
+    `act`: False only checks the step's expected state on the page as it is: the owner did it by hand in a
+    takeover (ADR 0008)."""
     ref = step_ref(step)
     if before is None:
         before = await observer.capture(page, ref)
@@ -76,9 +90,15 @@ async def act_and_verify(
             focus.append(key)
 
     with _NetworkRecorder(page) as network:
-        result = await executor.execute(
-            step.action, step.target, instruction=step.instruction_text, on_ready=on_ready
-        )
+        if act:
+            result = await executor.execute(
+                step.action, step.target, instruction=step.instruction_text, on_ready=on_ready
+            )
+        else:
+            result = ActionResult(
+                action=step.action.type, ok=True, started_at=datetime.now(UTC), duration_ms=0,
+                url_after=urlsplit(page.url).path or "/",
+            )  # fmt: skip
         observed = await observer.capture(page, ref)
         outcome: VerificationOutcome | None = None
         attempts = 0
