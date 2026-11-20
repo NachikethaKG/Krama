@@ -1,0 +1,138 @@
+C:\Users\vishw\AppData\Local\Temp\claude\9f6752c6b3f094f5\4487b1af-8814-4f9b-b6fe-951fa55bca11\scratchpad\p6-430\venv\Lib\site-packages\torch\jit\_script.py:1491: FutureWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.
+  warnings.warn(
+Flash attention 2 is not installed
+Config of the text_encoder: <class 'transformers.models.t5.modeling_t5.T5EncoderModel'> is overwritten by shared text_encoder config: T5Config {
+  "_name_or_path": "google/flan-t5-large",
+  "architectures": [
+    "T5ForConditionalGeneration"
+  ],
+  "classifier_dropout": 0.0,
+  "d_ff": 2816,
+  "d_kv": 64,
+  "d_model": 1024,
+  "decoder_start_token_id": 0,
+  "dense_act_fn": "gelu_new",
+  "dropout_rate": 0.1,
+  "eos_token_id": 1,
+  "feed_forward_proj": "gated-gelu",
+  "initializer_factor": 1.0,
+  "is_encoder_decoder": true,
+  "is_gated_act": true,
+  "layer_norm_epsilon": 1e-06,
+  "model_type": "t5",
+  "n_positions": 512,
+  "num_decoder_layers": 24,
+  "num_heads": 16,
+  "num_layers": 24,
+  "output_past": true,
+  "pad_token_id": 0,
+  "relative_attention_max_distance": 128,
+  "relative_attention_num_buckets": 32,
+  "tie_word_embeddings": false,
+  "transformers_version": "4.46.1",
+  "use_cache": true,
+  "vocab_size": 32128
+}
+
+Config of the audio_encoder: <class 'transformers.models.dac.modeling_dac.DacModel'> is overwritten by shared audio_encoder config: DacConfig {
+  "_name_or_path": "ylacombe/dac_44khz",
+  "architectures": [
+    "DacModel"
+  ],
+  "codebook_dim": 8,
+  "codebook_loss_weight": 1.0,
+  "codebook_size": 1024,
+  "commitment_loss_weight": 0.25,
+  "decoder_hidden_size": 1536,
+  "downsampling_ratios": [
+    2,
+    4,
+    8,
+    8
+  ],
+  "encoder_hidden_size": 64,
+  "hidden_size": 1024,
+  "hop_length": 512,
+  "model_type": "dac",
+  "n_codebooks": 9,
+  "quantizer_dropout": 0.0,
+  "sampling_rate": 44100,
+  "torch_dtype": "float32",
+  "transformers_version": "4.46.1",
+  "upsampling_ratios": [
+    8,
+    8,
+    4,
+    2
+  ]
+}
+
+Config of the decoder: <class 'parler_tts.modeling_parler_tts.ParlerTTSForCausalLM'> is overwritten by shared decoder config: ParlerTTSDecoderConfig {
+  "_name_or_path": "/fsx/yoach/tmp/artefacts/parler-tts-mini-v2-empty/decoder",
+  "activation_dropout": 0.0,
+  "activation_function": "gelu",
+  "add_cross_attention": true,
+  "architectures": [
+    "ParlerTTSForCausalLM"
+  ],
+  "attention_dropout": 0.0,
+  "bos_token_id": 1025,
+  "codebook_weights": null,
+  "cross_attention_implementation_strategy": null,
+  "delay_strategy": "delay",
+  "dropout": 0.1,
+  "eos_token_id": 1024,
+  "ffn_dim": 4096,
+  "hidden_size": 1024,
+  "initializer_factor": 0.02,
+  "is_decoder": true,
+  "layerdrop": 0.0,
+  "max_position_embeddings": 4096,
+  "model_type": "parler_tts_decoder",
+  "num_attention_heads": 16,
+  "num_codebooks": 9,
+  "num_cross_attention_key_value_heads": 16,
+  "num_hidden_layers": 24,
+  "num_key_value_heads": 16,
+  "pad_token_id": 1024,
+  "rope_embeddings": false,
+  "rope_theta": 10000.0,
+  "scale_embedding": false,
+  "tie_word_embeddings": false,
+  "torch_dtype": "float32",
+  "transformers_version": "4.46.1",
+  "use_cache": true,
+  "use_fused_lm_heads": true,
+  "vocab_size": 1088
+}
+
+{"load_s": 41.7, "import_s": 21.7, "threads": 4, "rss_now_mb": 2408, "rss_peak_polled_mb": 3904, "peak_wset_mb": 3904}
+`prompt_attention_mask` is specified but `attention_mask` is not. A full `attention_mask` will be created. Make sure this is the intended behaviour.
+{"warmup_s": 59.9, "rss_now_mb": 3403, "rss_peak_polled_mb": 3904, "peak_wset_mb": 3904}
+{"lang": "hi", "n": 1, "text": "“New repository” पर क्लिक करें।", "words": 5, "synth_s": 107.91, "audio_s": 2.95, "rtf": 36.59, "wav": "wav/t4-hi1.wav", "rss_now_mb": 3472, "rss_peak_polled_mb": 3904, "peak_wset_mb": 3904}
+{"lang": "kn", "n": 1, "text": "“New repository” ಕ್ಲಿಕ್ ಮಾಡಿ.", "words": 4, "synth_s": 77.72, "audio_s": 1.97, "rtf": 39.38, "wav": "wav/t4-kn1.wav", "rss_now_mb": 3481, "rss_peak_polled_mb": 3904, "peak_wset_mb": 3904}
+{
+  "tag": "t4",
+  "torch": "2.15.0+cpu",
+  "torch_threads": 4,
+  "cuda_available": false,
+  "sampling_rate": 44100,
+  "seed": 430,
+  "import_s": 21.7,
+  "load_s": 41.7,
+  "warmup_s": 59.9,
+  "mem_after_load": {
+    "rss_now_mb": 2408,
+    "rss_peak_polled_mb": 3904,
+    "peak_wset_mb": 3904
+  },
+  "mem_end": {
+    "rss_now_mb": 3481,
+    "rss_peak_polled_mb": 3904,
+    "peak_wset_mb": 3904
+  },
+  "per_lang_rtf": {
+    "hi": 36.58,
+    "kn": 39.45
+  }
+}
