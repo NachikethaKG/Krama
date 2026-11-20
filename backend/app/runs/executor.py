@@ -14,9 +14,10 @@ from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Literal, Protocol
-from urllib.parse import urlsplit
+from urllib.parse import urljoin, urlsplit
 from uuid import UUID
 
+from playwright.async_api import Error as PlaywrightError
 from playwright.async_api import Page
 
 from app.agent import ActionExecutor, PlaywrightSession, SessionConfig, open_start_page, page_snapshot
@@ -40,6 +41,7 @@ from app.ports.models import (
 )
 from app.ports.observer import Observer
 from app.ports.policy import Policy
+from app.runs.profiles import ProfileStore
 from app.runs.reverify import failure_details
 from app.runs.states import RunStatus
 from app.runs.steps import StepOutcome, act_and_verify, step_ref
@@ -119,6 +121,8 @@ class RunEnvironment:
     """Self-healing (#112): chooses among the candidates when scoring can't decide. None: scoring only."""
     heal_budget: HealBudget | None = None
     """The daily budget for `heal_chooser` (D12). None: the chooser is never asked."""
+    profiles: ProfileStore | None = None
+    """Each user's own site sessions (ADR 0007): do-it runs act in them, sign-in runs fill them."""
     takeover_idle_s: float = 300.0
     """A takeover with no input for this long ends; the run stays paused (ADR 0008, T9)."""
 
@@ -336,6 +340,22 @@ class InProcessExecutor:
         t0 = time.perf_counter()
         env = self._env
         target = env.target(job)
+        if job.kind == "sign_in":
+            await self._sign_in(job, target)
+            return
+        profile = None
+        if job.kind == "do_it" and target.login_path is not None and env.profiles is not None:
+            # The user's own account (ADR 0007): their session, never the shared test account's.
+            profile = await env.profiles.load(job.user_id, target.site or "") if job.user_id else None
+            if profile is None:
+                await self._fail_sign_in(
+                    run_id, f"Sign in to {target.site} first: Krama acts in your own account."
+                )
+                return
+            target = replace(
+                target, storage_state=profile.state, sign_in_problem=None, signed_in_as=profile.account
+            )
+        job = replace(job, recorded_as=target.signed_in_as)
         if target.sign_in_problem is not None:
             await self._fail_sign_in(run_id, target.sign_in_problem)
             return
@@ -354,7 +374,7 @@ class InProcessExecutor:
             if target.signed_in_check is not None and not await target.signed_in_check(page):
                 await self._fail_sign_in(run_id, "The stored session no longer signs in. Log in again.")
                 return
-            setup = list(env.preconditions(job))
+            setup = [] if profile is not None else list(env.preconditions(job))
             if setup:
                 log = await run_script(executor, setup, task="preconditions", base_url=job.target_url)
                 if not log.ok:
@@ -698,6 +718,58 @@ class InProcessExecutor:
         if verdict.done is not False:
             return None
         return verdict.missing or "part of the task"
+
+    async def _sign_in(self, job: RunJob, target: TargetSetup) -> None:
+        """A sign-in run (ADR 0007): the site's sign-in page in a fresh browser, paused for the owner to sign
+        in by hand in a takeover. Each hand-back, Krama asks the site who is signed in; once someone is, it
+        stores the session for this user and site and completes. No recording: passwords are typed here."""
+        env, store = self._env, self._store
+        if target.login_path is None or target.account_of is None or target.site is None:
+            await store.fail(
+                job.run_id,
+                from_=RunStatus.RUNNING,
+                message="This site has no sign-in Krama can keep",
+                reason="sign_in_unsupported",
+            )
+            return
+        if env.profiles is None or job.user_id is None:
+            await store.fail(
+                job.run_id,
+                from_=RunStatus.RUNNING,
+                message="Sessions can't be stored here",
+                reason="sign_in_unsupported",
+            )
+            return
+        config = replace(target, storage_state=None).browser_config(env.session_config(job))
+        async with PlaywrightSession(config) as session:
+            page = session.page
+            try:
+                await page.goto(urljoin(job.target_url, target.login_path))
+            except PlaywrightError:
+                await store.fail(
+                    job.run_id,
+                    from_=RunStatus.RUNNING,
+                    message=f"Couldn't open {job.target_url}",
+                    reason="site_unreachable",
+                )
+                return
+            message = f"Sign in to {target.site} yourself: take over the page, sign in, then hand it back."
+            for _ in range(5):
+                if not await self._pause(job, 1, "auth_wall", message, page=page):
+                    return
+                self._handbacks.pop(job.run_id, None)
+                state = await page.context.storage_state()
+                account = await target.account_of(page, dict(state))
+                if account:
+                    await env.profiles.save(
+                        job.user_id, target.site, account, dict(state), session_cookie=target.session_cookie
+                    )
+                    await store.complete_sign_in(job)
+                    return
+                message = "Krama can't see that you're signed in yet. Take over again and finish signing in."
+        await store.fail(
+            job.run_id, from_=RunStatus.RUNNING, message="Not signed in after 5 tries", reason="not_signed_in"
+        )
 
     async def _fail_sign_in(self, run_id: UUID, message: str) -> None:
         """The target needs a signed-in session we don't have (#87): stop before step 1, say how to fix it."""
