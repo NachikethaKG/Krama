@@ -28,6 +28,8 @@ export interface VideoExportProps {
   site?: string;
   /** Date string of verification run (e.g. "2026-11-17") */
   verifiedDate?: string;
+  /** Tutorial language (#429): chapter names and card texts; hi and kn load the bundled Noto fonts. */
+  language?: string;
   /** Frames per second (default: 30) */
   fps?: number;
   /** Duration of intro card in frames (default: 60 = 2 seconds at 30fps) */

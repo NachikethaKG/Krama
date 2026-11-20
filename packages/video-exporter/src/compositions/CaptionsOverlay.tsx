@@ -1,4 +1,5 @@
 import React from "react";
+import { TEXT_FONT } from "../i18n.js";
 import type { Caption, WordTiming } from "@krama/contracts-ts";
 import type { VideoPreset } from "../types.js";
 
@@ -38,7 +39,7 @@ export const CaptionsOverlay: React.FC<CaptionsOverlayProps> = ({
         padding: isPortrait ? "18px 28px" : "16px 32px",
         textAlign: "center",
         color: "#ffffff",
-        fontFamily: "system-ui, -apple-system, sans-serif",
+        fontFamily: TEXT_FONT,
         fontSize: isPortrait ? 26 : 24,
         fontWeight: 600,
         lineHeight: 1.35,

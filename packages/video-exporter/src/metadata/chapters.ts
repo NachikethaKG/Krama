@@ -1,4 +1,5 @@
 import type { TutorialSpec } from "@krama/contracts-ts";
+import { videoStrings } from "../i18n.js";
 import type { VideoChapter } from "../types.js";
 
 /** Longest chapter title before it is shortened at a word boundary (players show one line). */
@@ -26,12 +27,14 @@ export function buildTutorialChapters(
   spec: TutorialSpec,
   introDurationMs = 2000,
   outroDurationMs = 2000,
+  language?: string,
 ): VideoChapter[] {
   const chapters: VideoChapter[] = [];
+  const words = videoStrings(language);
 
   // Chapter 1: Intro
   chapters.push({
-    title: "Intro",
+    title: words.intro,
     startMs: 0,
     endMs: introDurationMs,
   });
@@ -41,11 +44,11 @@ export function buildTutorialChapters(
   // Step chapters
   spec.scenes.forEach((scene, index) => {
     const stepNumber = scene.step_seq ?? index + 1;
-    const cleanTitle = chapterTitle(scene.caption?.text) ?? chapterTitle(scene.title) ?? `Step ${stepNumber}`;
+    const cleanTitle = chapterTitle(scene.caption?.text) ?? chapterTitle(scene.title) ?? words.step(stepNumber);
     const duration = scene.duration_ms;
 
     chapters.push({
-      title: `Step ${stepNumber}: ${cleanTitle}`,
+      title: `${words.step(stepNumber)}: ${cleanTitle}`,
       startMs: currentOffset,
       endMs: currentOffset + duration,
     });
@@ -55,7 +58,7 @@ export function buildTutorialChapters(
 
   // Final Chapter: Done
   chapters.push({
-    title: "Done",
+    title: words.done,
     startMs: currentOffset,
     endMs: currentOffset + outroDurationMs,
   });

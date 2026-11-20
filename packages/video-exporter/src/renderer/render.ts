@@ -9,6 +9,7 @@ import { buildTutorialChapters, formatFFMetadata } from "../metadata/chapters.js
 import { generateWebVTT } from "../metadata/webvtt.js";
 import { addMp4Chapters } from "../metadata/mp4-chapters.js";
 import { calculateTotalFrames } from "../compositions/TutorialComposition.js";
+import { BUNDLED_FONTS, needsBundledFonts } from "../i18n.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -30,6 +31,7 @@ export async function renderTutorialVideo(options: RenderVideoOptions): Promise<
     onProgress,
     metadataPath,
     vttPath,
+    language,
   } = options;
 
   const fps = options.fps ?? 30;
@@ -44,6 +46,7 @@ export async function renderTutorialVideo(options: RenderVideoOptions): Promise<
     spec,
     Math.round((introDurationFrames / fps) * 1000),
     Math.round((outroDurationFrames / fps) * 1000),
+    language,
   );
 
   if (metadataPath) {
@@ -67,6 +70,11 @@ export async function renderTutorialVideo(options: RenderVideoOptions): Promise<
   const publicDir = await fs.mkdtemp(path.join(os.tmpdir(), "krama-remotion-public-"));
   const servedScreenshots = await copyIntoPublic(screenshots, publicDir, "shot");
   const servedAudio = await copyIntoPublic(audioUrls, publicDir, "audio");
+  if (needsBundledFonts(language)) {
+    for (const font of BUNDLED_FONTS) {
+      await fs.copyFile(path.resolve(__dirname, "../../fonts", font.file), path.join(publicDir, font.file));
+    }
+  }
   const entryFile = path.resolve(__dirname, "../entry.ts");
   const bundleLocation = await bundle({
     entryPoint: entryFile,
@@ -91,6 +99,7 @@ export async function renderTutorialVideo(options: RenderVideoOptions): Promise<
     screenshots: servedScreenshots,
     site,
     verifiedDate,
+    language,
     fps,
     introDurationFrames,
     outroDurationFrames,

@@ -1,18 +1,22 @@
 import React from "react";
 import { interpolate, useCurrentFrame, useVideoConfig } from "remotion";
+import { TEXT_FONT, videoStrings } from "../i18n.js";
 import type { VideoPreset } from "../types.js";
 
 export interface OutroCardProps {
   site?: string;
   verifiedDate?: string;
   preset: VideoPreset;
+  language?: string;
 }
 
 export const OutroCard: React.FC<OutroCardProps> = ({
   site = "git.local",
   verifiedDate = "2026-11-17",
   preset,
+  language,
 }) => {
+  const words = videoStrings(language);
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
@@ -35,7 +39,7 @@ export const OutroCard: React.FC<OutroCardProps> = ({
         alignItems: "center",
         justifyContent: "center",
         color: "#ffffff",
-        fontFamily: "system-ui, -apple-system, sans-serif",
+        fontFamily: TEXT_FONT,
         padding: isPortrait ? "60px 40px" : "60px 120px",
         textAlign: "center",
         opacity,
@@ -75,7 +79,7 @@ export const OutroCard: React.FC<OutroCardProps> = ({
           color: "#ffffff",
         }}
       >
-        Verified on {site}
+        {words.verifiedOn(site)}
       </h2>
 
       <p
@@ -102,8 +106,13 @@ export const OutroCard: React.FC<OutroCardProps> = ({
           textShadow: "0 0 20px rgba(168, 85, 247, 0.4)",
         }}
       >
-        Made with Krama
+        {words.madeWith}
       </div>
+      {words.voiceCredit ? (
+        <p data-testid="outro-voice-credit" style={{ marginTop: 18, fontSize: 18, color: "#94a3b8" }}>
+          {words.voiceCredit}
+        </p>
+      ) : null}
     </div>
   );
 };
