@@ -509,6 +509,16 @@
         "title": "FieldValue",
         "type": "object"
       },
+      "HandBackDone": {
+        "description": "What the owner did in a takeover. barrier: cleared a login wall or challenge (Krama re-checks and retries the step); step: did the paused step (Krama verifies it without acting); rest: did the rest of the task (Krama runs the final check).",
+        "enum": [
+          "barrier",
+          "step",
+          "rest"
+        ],
+        "title": "HandBackDone",
+        "type": "string"
+      },
       "HealthResponse": {
         "additionalProperties": false,
         "properties": {
@@ -1394,6 +1404,25 @@
           "decision"
         ],
         "title": "RunConfirmRequest",
+        "type": "object"
+      },
+      "RunHandBackRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "done": {
+            "$ref": "#/components/schemas/HandBackDone"
+          },
+          "step_seq": {
+            "minimum": 1.0,
+            "title": "Step Seq",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "step_seq",
+          "done"
+        ],
+        "title": "RunHandBackRequest",
         "type": "object"
       },
       "RunKind": {
@@ -4515,6 +4544,164 @@
           }
         },
         "summary": "Run Events",
+        "tags": [
+          "runs"
+        ]
+      }
+    },
+    "/api/v1/runs/{run_id}/handback": {
+      "post": {
+        "description": "End the takeover and say what was done: Krama checks it and continues, or pauses again.",
+        "operationId": "hand_back_api_v1_runs__run_id__handback_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RunHandBackRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Run"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "No run with this id"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "No active takeover at this step"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal error"
+          }
+        },
+        "summary": "Hand Back",
+        "tags": [
+          "runs"
+        ]
+      }
+    },
+    "/api/v1/runs/{run_id}/takeover": {
+      "post": {
+        "description": "Take control of the paused run's page (ADR 0008). The run stays paused; open WS /runs/{id}/screen.",
+        "operationId": "start_takeover_api_v1_runs__run_id__takeover_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Run"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "No run with this id"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "No takeover possible, or one is active"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal error"
+          }
+        },
+        "summary": "Start Takeover",
         "tags": [
           "runs"
         ]
