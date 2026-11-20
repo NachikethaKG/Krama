@@ -1,0 +1,38 @@
+[
+  {
+    "type": "run.paused",
+    "run_id": "7b0e3a52-5c1d-4a39-9d55-2f1c6e8a9b10",
+    "seq": 9,
+    "ts": "2026-11-20T10:00:00Z",
+    "reason": "auth_wall",
+    "step_seq": 3,
+    "message": "The site asks you to sign in.",
+    "takeover_available": true
+  },
+  {
+    "type": "takeover.started",
+    "run_id": "7b0e3a52-5c1d-4a39-9d55-2f1c6e8a9b10",
+    "seq": 10,
+    "ts": "2026-11-20T10:00:05Z",
+    "step_seq": 3
+  },
+  {
+    "type": "takeover.ended",
+    "run_id": "7b0e3a52-5c1d-4a39-9d55-2f1c6e8a9b10",
+    "seq": 11,
+    "ts": "2026-11-20T10:01:40Z",
+    "step_seq": 3,
+    "reason": "handed_back",
+    "done": "step"
+  },
+  {
+    "type": "step.verified",
+    "run_id": "7b0e3a52-5c1d-4a39-9d55-2f1c6e8a9b10",
+    "seq": 12,
+    "ts": "2026-11-20T10:01:42Z",
+    "step_seq": 3,
+    "method": ["url", "dom"],
+    "confidence": 0.8,
+    "performed_by": "human"
+  }
+]
