@@ -8,6 +8,8 @@ from uuid import UUID
 
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
 
+from . import common_schema
+
 type ExportPreset = Annotated[
     Literal["landscape", "portrait"],
     Field(
@@ -44,6 +46,12 @@ class CreateExportRequest(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
     )
+    language: Annotated[
+        common_schema.Language | None,
+        Field(
+            description="Export in this language: translated captions and chapters, narrated where a licensed voice exists (#132)."
+        ),
+    ] = "en"
     preset: ExportPreset
 
 
@@ -65,8 +73,16 @@ class Export(BaseModel):
     ] = None
     preset: ExportPreset
     voice: Annotated[
-        str, Field(description="Narration voice used (ADR 0004), e.g. en_US-ljspeech-medium.", min_length=1)
+        str,
+        Field(
+            description="Narration voice used (ADR 0004), e.g. en_US-ljspeech-medium; `silent` for a captions-only language (hi, kn).",
+            min_length=1,
+        ),
     ]
+    language: Annotated[
+        common_schema.Language | None,
+        Field(description="The tutorial language of the captions, chapters and narration (#132)."),
+    ] = "en"
     status: ExportStatus
     progress: Annotated[
         int, Field(description="Render progress in percent. 0 while queued, 100 when ready.", ge=0, le=100)

@@ -6,6 +6,13 @@
  */
 
 /**
+ * A tutorial language (#132, L3). en is the original; the others are translations. Narration: en, de, es, fr; hi and kn get captions only (L7).
+ *
+ * This interface was referenced by `Common`'s JSON-Schema
+ * via the `definition` "Language".
+ */
+export type Language = "en" | "hi" | "kn" | "de" | "es" | "fr";
+/**
  * Who did a step: Krama, or the run's owner by hand in a takeover (ADR 0008).
  *
  * This interface was referenced by `Common`'s JSON-Schema
@@ -109,6 +116,10 @@ export type CancelReason = "user" | "confirmation_denied";
  */
 export type ExportPreset = "landscape" | "portrait";
 /**
+ * The tutorial language of the captions, chapters and narration (#132).
+ */
+export type Language1 = "en" | "hi" | "kn" | "de" | "es" | "fr";
+/**
  * queued -> rendering -> ready | failed; ready -> expired when cleanup deletes the file (the row stays).
  *
  * This interface was referenced by `Export`'s JSON-Schema
@@ -121,6 +132,10 @@ export type ExportStatus = "queued" | "rendering" | "ready" | "failed" | "expire
  */
 export type ExportErrorCode =
   "narration_failed" | "render_failed" | "storage_failed" | "interrupted" | "timeout" | "internal";
+/**
+ * Export in this language: translated captions and chapters, narrated where a licensed voice exists (#132).
+ */
+export type Language2 = "en" | "hi" | "kn" | "de" | "es" | "fr";
 /**
  * This interface was referenced by `MetricsSummary`'s JSON-Schema
  * via the `definition` "Ratio".
@@ -193,6 +208,10 @@ export type TakeoverInput = TakeoverMouse | TakeoverKey | TakeoverText;
  */
 export type TaskStatus = "planning" | "needs_clarification" | "planned" | "failed";
 /**
+ * The language of the captions and titles (#132). UI labels inside them stay in the site's own language.
+ */
+export type Language3 = "en" | "hi" | "kn" | "de" | "es" | "fr";
+/**
  * This interface was referenced by `TutorialSpec`'s JSON-Schema
  * via the `definition` "ClickType".
  */
@@ -209,6 +228,11 @@ export type HighlightStyle = "pulsing_ring" | "solid_box" | "spotlight";
  * via the `definition` "WorkflowVersionSource".
  */
 export type WorkflowVersionSource = "initial" | "heal" | "regenerate" | "edit";
+/**
+ * This interface was referenced by `Workflow`'s JSON-Schema
+ * via the `definition` "TranslationStatus".
+ */
+export type TranslationStatus = "translating" | "ready" | "failed";
 export type StepSeq = number;
 /**
  * current: the one shown. pending_review: waits for the owner to accept it. superseded: an older current one. rejected: the owner turned it down.
@@ -519,9 +543,10 @@ export interface Export {
   title?: string | null;
   preset: ExportPreset;
   /**
-   * Narration voice used (ADR 0004), e.g. en_US-ljspeech-medium.
+   * Narration voice used (ADR 0004), e.g. en_US-ljspeech-medium; `silent` for a captions-only language (hi, kn).
    */
   voice: string;
+  language?: Language1;
   status: ExportStatus;
   /**
    * Render progress in percent. 0 while queued, 100 when ready.
@@ -573,6 +598,7 @@ export interface ExportError {
  * via the `definition` "CreateExportRequest".
  */
 export interface CreateExportRequest {
+  language?: Language2;
   preset: ExportPreset;
 }
 export interface HealthResponse {
@@ -1114,6 +1140,7 @@ export interface TutorialSpec {
   workflow_id: string;
   title: string;
   description?: string | null;
+  language?: Language3;
   viewport: WorkflowViewport;
   /**
    * Frame rate for the video export only. The player ignores it.
@@ -1422,6 +1449,39 @@ export interface WorkflowMatch {
    * Plain text with the matched words wrapped in <mark></mark>. Show it as text plus marks, never as HTML.
    */
   snippet: string;
+}
+/**
+ * This interface was referenced by `Workflow`'s JSON-Schema
+ * via the `definition` "TranslatedStep".
+ */
+export interface TranslatedStep {
+  step_seq: number;
+  /**
+   * The step text in the language. Quoted UI labels are byte for byte the site's own.
+   */
+  text: string;
+  /**
+   * False when this step kept its English text (its translation failed the label check).
+   */
+  translated?: boolean;
+}
+/**
+ * GET /workflows/{id}/translations/{language}: the current version's title and step texts in a language (#132, L4-L6). Made once, on first request, then cached.
+ *
+ * This interface was referenced by `Workflow`'s JSON-Schema
+ * via the `definition` "Translation".
+ */
+export interface Translation {
+  workflow_id: string;
+  revision: number;
+  language: Language;
+  status: TranslationStatus;
+  title?: string | null;
+  steps: TranslatedStep[];
+  /**
+   * Why it failed (status failed); ask again to retry.
+   */
+  error?: string | null;
 }
 /**
  * This interface was referenced by `Workflow`'s JSON-Schema

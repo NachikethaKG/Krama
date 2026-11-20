@@ -8,7 +8,7 @@ from uuid import UUID
 
 from pydantic import AnyUrl, AwareDatetime, BaseModel, ConfigDict, Field
 
-from . import step_schema
+from . import common_schema, step_schema
 
 type WorkflowStatus = Annotated[
     Literal["draft", "approved", "running", "verified", "failed", "outdated"], Field(title="WorkflowStatus")
@@ -41,6 +41,45 @@ class WorkflowRecording(BaseModel):
     event_count: Annotated[int | None, Field(ge=0)] = None
     started_at: AwareDatetime | None = None
     ended_at: AwareDatetime | None = None
+
+
+type TranslationStatus = Annotated[
+    Literal["translating", "ready", "failed"], Field(title="TranslationStatus")
+]
+
+
+class TranslatedStep(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+    step_seq: Annotated[int, Field(ge=1)]
+    text: Annotated[
+        str,
+        Field(
+            description="The step text in the language. Quoted UI labels are byte for byte the site's own."
+        ),
+    ]
+    translated: Annotated[
+        bool | None,
+        Field(
+            description="False when this step kept its English text (its translation failed the label check)."
+        ),
+    ] = True
+
+
+class Translation(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+    workflow_id: UUID
+    revision: Annotated[int, Field(ge=1)]
+    language: common_schema.Language
+    status: TranslationStatus
+    title: str | None = None
+    steps: list[TranslatedStep]
+    error: Annotated[str | None, Field(description="Why it failed (status failed); ask again to retry.")] = (
+        None
+    )
 
 
 class WorkflowMatch(BaseModel):
