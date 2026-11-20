@@ -56,6 +56,7 @@ class VideoRenderer(Protocol):
         scenes: Sequence[SceneTiming] | None = None,
         on_progress: Callable[[int], Awaitable[None]] | None = None,
         timeout_s: float = 600.0,
+        language: str = "en",
     ) -> RenderResult: ...
 
 
@@ -92,6 +93,7 @@ class RemotionRenderer(VideoRenderer):
         scenes: Sequence[SceneTiming] | None = None,
         on_progress: Callable[[int], Awaitable[None]] | None = None,
         timeout_s: float = 600.0,
+        language: str = "en",
     ) -> RenderResult:
         if workflow is None and spec is None:
             raise ValueError("Either workflow or spec must be provided")
@@ -128,6 +130,8 @@ class RemotionRenderer(VideoRenderer):
 
             if verified_date:
                 cmd.extend(["--date", verified_date])
+            if language != "en":
+                cmd.extend(["--language", language])
 
             if scenes:
                 # Scene lengths and caption word timings from `plan_scenes` (decision D4), per step_seq.

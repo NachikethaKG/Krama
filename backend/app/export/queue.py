@@ -18,7 +18,7 @@ from app.ports.narration import Narrator
 from app.runs.exports import DbExportStore, recover_exports
 from app.tts import get_narrator
 
-from .job import run_export
+from .job import Localize, run_export
 from .renderer import RemotionRenderer, VideoRenderer
 
 EXPORT_JOB = "export_job"
@@ -76,8 +76,10 @@ class InProcessExportQueue:
         timeout_s: float,
         narrator: Callable[[], Narrator] = get_narrator,
         renderer: Callable[[], VideoRenderer] = RemotionRenderer,
+        localize: Localize | None = None,
     ) -> None:
         self.sessions = sessions
+        self._localize = localize
         self.files = files
         self.timeout_s = timeout_s
         self._narrator = narrator
@@ -114,4 +116,6 @@ class InProcessExportQueue:
                 narrator=self._narrator(),
                 renderer=self._renderer(),
                 timeout_s=self.timeout_s,
+                localize=self._localize,
+                narrator_for=get_narrator,
             )

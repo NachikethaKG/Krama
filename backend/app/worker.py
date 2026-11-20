@@ -26,6 +26,8 @@ from app.api.services import build_run_environment
 from app.config import Settings
 from app.db import create_engine, create_sessionmaker
 from app.export import EXPORT_JOB, EXPORT_QUEUE, ArqExportQueue, export_job
+from app.llm import create_provider
+from app.llm.translator import LLMTranslator
 from app.runs import InProcessExecutor, RunEnvironment, RunStore
 from app.runs.events import EVENTS
 from app.runs.exports import recover_exports
@@ -33,6 +35,7 @@ from app.runs.profiles import ProfileStore
 from app.runs.queue import CONTROL, JOB, job_id, redis_settings
 from app.runs.states import RunStatus
 from app.runs.takeover_relay import WorkerTakeoverRelay
+from app.runs.translations import TranslationService
 from app.runs.validation_backend import RunValidationBackend
 from app.storage import LocalFsStore
 from app.storage.cleanup import cleanup_with_settings
@@ -219,6 +222,8 @@ def export_worker_settings(
             sessions=own_sessions,
             files=LocalFsStore(settings.artifacts_dir),
             export_timeout_s=settings.export_timeout_seconds,
+            # Exports in another language (#428): their texts are translated (and cached) here too.
+            localize=TranslationService(own_sessions, LLMTranslator(create_provider(settings))).localize,
         )
         queue = ArqExportQueue(settings.redis_url)
         try:
