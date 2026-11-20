@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "takeover.schema.json",
+  "title": "TakeoverInput",
+  "$comment": "v1.0. Text messages from the browser on the screen WebSocket WS /runs/{id}/screen (ADR 0008). The server sends each frame as a binary JPEG message and TakeoverServerMessage as text. Coordinates are CSS pixels of the run's 1280x800 viewport.",
+  "type": "object",
+  "oneOf": [
+    { "$ref": "#/$defs/TakeoverMouse" },
+    { "$ref": "#/$defs/TakeoverKey" },
+    { "$ref": "#/$defs/TakeoverText" }
+  ],
+  "discriminator": { "propertyName": "type" },
+  "$defs": {
+    "TakeoverMouse": {
+      "title": "TakeoverMouse",
+      "type": "object",
+      "required": ["type", "event", "x", "y"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "mouse" },
+        "event": { "enum": ["down", "up", "move", "wheel"] },
+        "x": { "type": "number", "minimum": 0, "maximum": 1280 },
+        "y": { "type": "number", "minimum": 0, "maximum": 800 },
+        "button": { "enum": ["left", "middle", "right"], "default": "left" },
+        "click_count": { "type": "integer", "minimum": 0, "maximum": 3, "default": 1 },
+        "delta_x": { "type": "number", "default": 0, "description": "wheel only" },
+        "delta_y": { "type": "number", "default": 0, "description": "wheel only" },
+        "modifiers": { "$ref": "#/$defs/TakeoverModifiers" }
+      }
+    },
+    "TakeoverKey": {
+      "title": "TakeoverKey",
+      "type": "object",
+      "description": "One key going down or up, as KeyboardEvent.key / .code (e.g. \"Enter\", \"Backspace\", \"a\" / \"KeyA\").",
+      "required": ["type", "event", "key"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "key" },
+        "event": { "enum": ["down", "up"] },
+        "key": { "type": "string", "minLength": 1, "maxLength": 32 },
+        "code": { "type": "string", "maxLength": 32 },
+        "modifiers": { "$ref": "#/$defs/TakeoverModifiers" }
+      }
+    },
+    "TakeoverText": {
+      "title": "TakeoverText",
+      "type": "object",
+      "description": "Pasted or composed text, inserted at the cursor (CDP Input.insertText: no key events).",
+      "required": ["type", "text"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "text" },
+        "text": { "type": "string", "minLength": 1, "maxLength": 4000 }
+      }
+    },
+    "TakeoverModifiers": {
+      "title": "TakeoverModifiers",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "alt": { "type": "boolean", "default": false },
+        "ctrl": { "type": "boolean", "default": false },
+        "meta": { "type": "boolean", "default": false },
+        "shift": { "type": "boolean", "default": false }
+      }
+    },
+    "TakeoverServerMessage": {
+      "title": "TakeoverServerMessage",
+      "type": "object",
+      "description": "Text messages from the server. ready: control is yours (the viewport size); blocked: an input or navigation was refused (e.g. a site outside the target and its sign-in domains); ended: the takeover is over (TakeoverEndedEvent reasons).",
+      "required": ["type"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "enum": ["ready", "blocked", "ended"] },
+        "width": { "type": "integer", "minimum": 1 },
+        "height": { "type": "integer", "minimum": 1 },
+        "message": { "type": "string" },
+        "reason": { "$ref": "common.schema.json#/$defs/TakeoverEndReason" }
+      }
+    }
+  }
+}
