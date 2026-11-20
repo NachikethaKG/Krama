@@ -186,6 +186,8 @@ describe("Tutorial Library Component Suite", () => {
       const searchInput = screen.getByTestId("tutorial-search-input");
       fireEvent.change(searchInput, { target: { value: "GitHub" } });
 
+      await waitFor(() => expect(screen.queryByTestId("library-searching")).toBeNull());
+
       const filteredCards = screen.getAllByTestId("tutorial-card");
       expect(filteredCards.length).toBe(2);
       expect(screen.getByText("Star a repository on GitHub")).toBeInTheDocument();
@@ -204,6 +206,8 @@ describe("Tutorial Library Component Suite", () => {
       const searchInput = screen.getByTestId("tutorial-search-input");
       // Search for keyword in prompt/description: "kubernetes"
       fireEvent.change(searchInput, { target: { value: "kubernetes" } });
+
+      await waitFor(() => expect(screen.queryByTestId("library-searching")).toBeNull());
 
       const filteredCards = screen.getAllByTestId("tutorial-card");
       expect(filteredCards.length).toBe(1);
@@ -262,6 +266,8 @@ describe("Tutorial Library Component Suite", () => {
       const searchInput = screen.getByTestId("tutorial-search-input");
       fireEvent.change(searchInput, { target: { value: "Gitea" } });
 
+      await waitFor(() => expect(screen.queryByTestId("library-searching")).toBeNull());
+
       const filteredCards = screen.getAllByTestId("tutorial-card");
       expect(filteredCards.length).toBe(1);
       expect(screen.getByText("Add deploy key in Gitea repository")).toBeInTheDocument();
@@ -278,6 +284,8 @@ describe("Tutorial Library Component Suite", () => {
 
       const searchInput = screen.getByTestId("tutorial-search-input");
       fireEvent.change(searchInput, { target: { value: "nonexistent-query-12345" } });
+
+      await waitFor(() => expect(screen.queryByTestId("library-searching")).toBeNull());
 
       const emptyState = screen.getByTestId("empty-tutorials");
       expect(emptyState).toBeInTheDocument();
