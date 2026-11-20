@@ -93,6 +93,10 @@ describe("Contracts TypeScript Types", () => {
           return `cancelled: ${event.reason}`;
         case "run.resumed":
           return `resumed at step ${event.step_seq}`;
+        case "takeover.started":
+          return `takeover at step ${event.step_seq}`;
+        case "takeover.ended":
+          return `takeover ended: ${event.reason}`;
         default: {
           const _exhaustiveCheck: never = event;
           return _exhaustiveCheck;
