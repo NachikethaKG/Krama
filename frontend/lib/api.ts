@@ -351,6 +351,8 @@ export interface ApiClient {
   revokeShareLink(workflowId: string, shareId: string): Promise<ShareLink>;
   /** GET /tutorials (or stored workflows mapped to tutorial summaries). */
   getTutorials(options?: { limit?: number; status?: "all" | TutorialStatus }): Promise<TutorialSummary[]>;
+  /** GET /workflows?q= (#135): the user's tutorials matching `query`, best first, with a snippet each. */
+  searchTutorials(query: string, options?: { status?: "all" | TutorialStatus; limit?: number }): Promise<TutorialSummary[]>;
   /** Run + plan + task + workflow, shaped for the run detail / evidence page. */
   getRunDetails(runId: string): Promise<RunDetails>;
   /** POST /api/v1/sessions/manual-login?target={target} */
@@ -777,6 +779,20 @@ export class HttpApiClient implements ApiClient {
     });
   }
 
+  async searchTutorials(
+    query: string,
+    options?: { status?: "all" | TutorialStatus; limit?: number },
+  ): Promise<TutorialSummary[]> {
+    const params = new URLSearchParams({ q: query, limit: String(options?.limit ?? 30) });
+    if (options?.status === "verified" || options?.status === "outdated") params.set("status", options.status);
+    const page = await this.request<WorkflowPage>(`/workflows?${params.toString()}`);
+    return page.items.map((w) => ({
+      ...summaryOf(w),
+      snippet: w.match?.snippet ?? undefined,
+      matchStep: w.match?.step_seq ?? null,
+    }));
+  }
+
   async getTutorials(options?: { limit?: number; status?: "all" | TutorialStatus }): Promise<TutorialSummary[]> {
     // The API has no /tutorials endpoint (docs/api-contract.md): a tutorial is a stored workflow.
     const workflowStatus: WorkflowStatus | "all" =
@@ -784,17 +800,7 @@ export class HttpApiClient implements ApiClient {
         ? options.status
         : "all";
     const workflowsPage = await this.getWorkflows(options?.limit ?? 100, workflowStatus);
-    return workflowsPage.items.map((w) => ({
-      id: w.id,
-      title: w.title,
-      description: undefined,
-      taskPrompt: w.title,
-      target: (w.target_app === "github" ? "github" : w.target_app === "custom" ? "custom" : "gitea") as TargetPlatform,
-      status: workflowFreshness(w) as TutorialStatus,
-      stepCount: w.step_count,
-      durationMs: w.step_count * 18000,
-      createdAt: w.created_at ?? new Date().toISOString(),
-    }));
+    return workflowsPage.items.map(summaryOf);
   }
 
   /** Run → plan → task.prompt, cached per plan (the run list shows the real prompt). */
@@ -1201,6 +1207,28 @@ function mockError(
   return new ApiRequestError(`Request failed with status ${status}: ${message}`, status, { code, message, details });
 }
 
+/** `text` with each of `words` wrapped in <mark></mark> (mock search). */
+function markWords(text: string, words: string[]): string {
+  if (!words.length) return text;
+  const escaped = words.map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+  return text.replace(new RegExp(`(${escaped.join("|")})`, "gi"), "<mark>$1</mark>");
+}
+
+/** A stored workflow as a library card. */
+function summaryOf(w: WorkflowPage["items"][number]): TutorialSummary {
+  return {
+    id: w.id,
+    title: w.title,
+    description: undefined,
+    taskPrompt: w.title,
+    target: (w.target_app === "github" ? "github" : w.target_app === "custom" ? "custom" : "gitea") as TargetPlatform,
+    status: workflowFreshness(w) as TutorialStatus,
+    stepCount: w.step_count,
+    durationMs: w.step_count * 18000,
+    createdAt: w.created_at ?? new Date().toISOString(),
+  };
+}
+
 /** Why a "Do it for me" value can't be used (the server's input_unsafe rules), or null when it can. */
 export function inputProblem(input: WorkflowInput, value: string | undefined): string | null {
   if (value === undefined || value === "") return `${input.label} is missing`;
@@ -1485,6 +1513,22 @@ export class MockApiClient implements ApiClient {
       return mockWorkflowVersions[workflowId];
     }
     return giteaVersionsFixture;
+  }
+
+  async searchTutorials(
+    query: string,
+    options?: { status?: "all" | TutorialStatus; limit?: number },
+  ): Promise<TutorialSummary[]> {
+    // Mock mode: every word must appear in the title or prompt; the matched words are marked like the server does.
+    const words = query.toLowerCase().split(/\s+/).filter(Boolean);
+    const list = await this.getTutorials({ status: options?.status ?? "all" });
+    return list
+      .filter((t) => words.every((w) => `${t.title} ${t.taskPrompt ?? ""} ${t.description ?? ""} ${t.target}`.toLowerCase().includes(w)))
+      .slice(0, options?.limit ?? 30)
+      .map((t) => {
+        const marked = markWords(t.title, words);
+        return { ...t, snippet: marked.includes("<mark>") ? marked : undefined, matchStep: null };
+      });
   }
 
   async getTutorials(options?: { limit?: number; status?: "all" | TutorialStatus }): Promise<TutorialSummary[]> {

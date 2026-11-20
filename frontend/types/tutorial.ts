@@ -43,6 +43,10 @@ export interface TutorialSummary {
   thumbnailUrl?: string;
   activeVersion?: string;
   hasDiff?: boolean;
+  /** Search only (#135): where the words matched, with `<mark>` around them. Plain text: never render as HTML. */
+  snippet?: string;
+  /** Search only: the step whose text matched best. */
+  matchStep?: number | null;
 }
 
 export interface TutorialFilterOptions {
