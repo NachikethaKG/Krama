@@ -2,6 +2,12 @@
 
 Every change to `contracts/` is listed here. Additive change = minor version bump; breaking change = major bump + ADR.
 
+## 1.15.1 (#437)
+
+Naming only, no change on the wire. `WorkflowInput.steps` items get the title `StepSeq`: without it the Python
+generator named them `Step`, which clashed with the `Step` model in the OpenAPI document (FastAPI renamed both to
+`app__contracts_gen__..._Step`).
+
 ## 1.15 (#399)
 
 "Do it for me" (#129): run a stored verified workflow for its owner with their own values. Additive.
