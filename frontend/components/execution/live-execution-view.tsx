@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import type { PauseReason } from "@krama/contracts-ts";
 
 import { VerificationFailureCard } from "@/components/diagnostics";
@@ -9,10 +10,11 @@ import { FailureBanner } from "@/components/execution/failure-banner";
 import { PauseBanner } from "@/components/execution/pause-banner";
 import { ReplanStatusIndicator } from "@/components/execution/ReplanStatusIndicator";
 import { StepProgressItem } from "@/components/execution/step-progress-item";
+import { TakeoverViewer } from "@/components/execution/takeover-viewer";
 import { RiskBadge } from "@/components/risk-badge";
 import { AutomationRestrictedScreen, PolicyConfirmationModal } from "@/components/safety";
 import { type ProposedPlanState, useRunExecutionStream } from "@/hooks/useRunExecutionStream";
-import type { ApiClient } from "@/lib/api";
+import { type ApiClient, errorMessage, getApiClient } from "@/lib/api";
 
 /** Pauses the safety policy raises before an action: confirmed in the modal. Every other pause uses the banner. */
 const MODAL_REASONS: ReadonlySet<PauseReason> = new Set(["destructive_action", "sensitive_data", "prompt_injection"]);
@@ -77,6 +79,7 @@ export function LiveExecutionView({ runId, speed, client, className = "" }: Live
     pauseDetails,
     proposedPlan,
     policyStop,
+    takeover,
     runError,
     replanState,
     elapsedSeconds,
@@ -96,6 +99,18 @@ export function LiveExecutionView({ runId, speed, client, className = "" }: Live
     deny,
     reconnect,
   } = useRunExecutionStream({ runId, client, speed });
+  const api = client ?? getApiClient();
+  const [watching, setWatching] = useState(false);
+  const [takeoverError, setTakeoverError] = useState<string | null>(null);
+  const startTakeover = async () => {
+    setTakeoverError(null);
+    try {
+      await api.startTakeover(runId);
+      setWatching(true);
+    } catch (err) {
+      setTakeoverError(errorMessage(err, "The page can't be taken over right now."));
+    }
+  };
 
   if (isLoading) {
     return (
@@ -265,7 +280,29 @@ export function LiveExecutionView({ runId, speed, client, className = "" }: Live
           allowDisabled={pauseDetails.reason === "replan_review" && !proposedPlan?.plan}
         >
           {pauseDetails.reason === "replan_review" ? <ProposedSteps proposal={proposedPlan} /> : null}
+          {pauseDetails.takeoverAvailable && !watching && !takeover.active ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                data-testid="take-over-btn"
+                onClick={startTakeover}
+                className="kr-btn kr-btn-tone px-3.5 py-1.5 text-xs"
+              >
+                Take over the page
+              </button>
+              <span className="text-xs text-ink-300">Do it yourself in Krama&apos;s browser, then hand it back.</span>
+              {takeoverError ? (
+                <span role="alert" data-testid="take-over-error" className="text-xs font-semibold text-danger">
+                  {takeoverError}
+                </span>
+              ) : null}
+            </div>
+          ) : null}
         </PauseBanner>
+      )}
+
+      {watching && pauseDetails && runStatus === "paused" && (
+        <TakeoverViewer runId={runId} stepSeq={pauseDetails.stepSeq} client={api} onEnded={() => setWatching(false)} />
       )}
 
       {runStatus === "failed" && !policyStop && (
