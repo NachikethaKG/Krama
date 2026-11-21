@@ -62,35 +62,42 @@ _ANY_WORD = (
 
 _SQL = f"""
 WITH q AS (SELECT {_ANY_WORD} AS q, websearch_to_tsquery('english', :q) AS every),
-v AS (SELECT workflow_id, max(ran_at) AS last FROM validations GROUP BY workflow_id)
-SELECT w.id,
-  (0.7 * ts_rank_cd(w.search, q.q, 32) + 0.3 * word_similarity(:raw, w.title))
-  * CASE WHEN w.search @@ q.every THEN 1.5 ELSE 1.0 END
-  * CASE WHEN w.status = 'verified' AND coalesce(cv.source, 'initial') <> 'heal' THEN 1.0
-         WHEN w.status = 'verified' THEN 0.95
-         WHEN w.status = 'outdated' THEN 0.6
-         ELSE 0.3 END
-  * (0.8 + 0.2 * exp(-extract(epoch FROM (now() - coalesce(v.last, w.created_at))) / 86400.0 / 30.0))
-    AS score,
+v AS (SELECT workflow_id, max(ran_at) AS last FROM validations GROUP BY workflow_id),
+page AS (
+  SELECT w.id, w.lang, w.title, w.search_steps, v.last,
+    (0.7 * ts_rank_cd(w.search, q.q, 32) + 0.3 * word_similarity(:raw, w.title))
+    * CASE WHEN w.search @@ q.every THEN 1.5 ELSE 1.0 END
+    * CASE WHEN w.status = 'verified' AND coalesce(cv.source, 'initial') <> 'heal' THEN 1.0
+           WHEN w.status = 'verified' THEN 0.95
+           WHEN w.status = 'outdated' THEN 0.6
+           ELSE 0.3 END
+    * (0.8 + 0.2 * exp(-extract(epoch FROM (now() - coalesce(v.last, w.created_at))) / 86400.0 / 30.0))
+      AS score
+  FROM workflows w
+  CROSS JOIN q
+  LEFT JOIN v ON v.workflow_id = w.id
+  LEFT JOIN workflow_versions cv ON cv.id = w.current_version_id
+  WHERE w.user_id = :user_id
+    AND (w.search @@ q.q OR :raw <% w.search_text)
+    {{status}}
+  ORDER BY score DESC, w.id
+  LIMIT :limit OFFSET :offset
+)
+-- The snippet step only for the page's rows: doing it for every candidate was most of the time (#431).
+SELECT p.id, p.score,
   best.n AS step_n,
-  ts_headline(w.lang, coalesce(best.t, w.title), q.q,
+  ts_headline(p.lang, coalesce(best.t, p.title), q.q,
               'StartSel=<mark>, StopSel=</mark>, MaxWords=24, MinWords=6, ShortWord=2') AS snippet,
-  v.last AS last_validated_at
-FROM workflows w
+  p.last AS last_validated_at
+FROM page p
 CROSS JOIN q
-LEFT JOIN v ON v.workflow_id = w.id
-LEFT JOIN workflow_versions cv ON cv.id = w.current_version_id
 LEFT JOIN LATERAL (
-  SELECT s.t, s.n FROM unnest(string_to_array(w.search_steps, E'\\n')) WITH ORDINALITY AS s(t, n)
-  WHERE to_tsvector(w.lang, s.t) @@ q.q
-  ORDER BY ts_rank(to_tsvector(w.lang, s.t), q.q) DESC, s.n
+  SELECT s.t, s.n FROM unnest(string_to_array(p.search_steps, E'\\n')) WITH ORDINALITY AS s(t, n)
+  WHERE to_tsvector(p.lang, s.t) @@ q.q
+  ORDER BY ts_rank(to_tsvector(p.lang, s.t), q.q) DESC, s.n
   LIMIT 1
 ) best ON true
-WHERE w.user_id = :user_id
-  AND (w.search @@ q.q OR :raw <% w.search_text)
-  {{status}}
-ORDER BY score DESC, w.id
-LIMIT :limit OFFSET :offset
+ORDER BY p.score DESC, p.id
 """
 
 
