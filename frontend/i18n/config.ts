@@ -12,6 +12,8 @@ export const LOCALE_COOKIE = "KRAMA_LOCALE";
 
 /** Each language's own name, for the picker. */
 export const LOCALE_NAMES: Record<Locale, string> = { en: "English", hi: "हिन्दी", kn: "ಕನ್ನಡ" };
+/** The picker's button: each language's own short mark, so it stays small in a crowded header. */
+export const LOCALE_SHORT: Record<Locale, string> = { en: "EN", hi: "हि", kn: "ಕ" };
 
 export function isLocale(value: string | null | undefined): value is Locale {
   return LOCALES.includes(value as Locale);

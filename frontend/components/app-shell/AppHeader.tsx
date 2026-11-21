@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { History, LibraryBig, LogOut, ShieldAlert, Sparkles } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import type { User } from "@krama/contracts-ts";
 import { Logo, ThemeToggle } from "@/components/ui";
 import { LanguagePicker } from "./LanguagePicker";
@@ -53,6 +53,40 @@ export function AppHeader({ client }: { client?: ApiClient }) {
   const [user, setUser] = useState<User | null>(null);
   const [signingOut, setSigningOut] = useState(false);
   const [reviewCount, setReviewCount] = useState<number | null>(null);
+  // Compact: the inactive tabs show only their icon. On when the full labels overflow the nav (long labels in
+  // some languages, narrow windows); off again once the full width they needed fits.
+  const locale = useLocale();
+  const navRef = useRef<HTMLElement>(null);
+  const fullWidth = useRef(0);
+  const [compact, setCompact] = useState(false);
+
+  useLayoutEffect(() => {
+    const nav = navRef.current;
+    if (!nav || typeof ResizeObserver === "undefined") return;
+    fullWidth.current = 0;
+    setCompact(false); // the labels change with the language: measure them again
+    const fit = () => {
+      setCompact((was) => {
+        if (!was && nav.scrollWidth > nav.clientWidth + 1) {
+          fullWidth.current = nav.scrollWidth;
+          return true;
+        }
+        if (was && nav.clientWidth >= fullWidth.current) return false;
+        return was;
+      });
+    };
+    // The tabs too: their labels widen without the nav resizing when a script's font arrives late.
+    const observer = new ResizeObserver(fit);
+    observer.observe(nav);
+    for (const tab of Array.from(nav.children)) observer.observe(tab);
+    fit();
+    let live = true;
+    void document.fonts?.ready.then(() => live && fit());
+    return () => {
+      live = false;
+      observer.disconnect();
+    };
+  }, [locale]);
 
   useEffect(() => {
     let cancelled = false;
@@ -109,16 +143,23 @@ export function AppHeader({ client }: { client?: ApiClient }) {
             <Logo size={30} />
           </span>
         </Link>
-        <nav className="flex min-w-0 items-center gap-0.5 text-sm sm:gap-1" aria-label={t("mainNav")}>
+        <nav
+          ref={navRef}
+          data-compact={compact || undefined}
+          className="flex min-w-0 flex-1 items-center gap-0.5 overflow-hidden text-sm sm:gap-1"
+          aria-label={t("mainNav")}
+        >
           {NAV.map((item) => {
             const active = item.match(pathname);
             const Icon = item.icon;
+            const iconOnly = compact && !active;
             return (
               <Link
                 key={item.href}
                 href={item.href}
                 data-testid={item.href === "/dashboard/reviews" ? "review-queue-nav-link" : undefined}
                 aria-current={active ? "page" : undefined}
+                title={iconOnly ? t(`nav.${item.key}.label`) : undefined}
                 className={`group relative flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1.5 font-semibold transition-all sm:px-3.5 ${
                   active ? "text-oncolor" : "text-ink-300 hover:text-white"
                 }`}
@@ -134,7 +175,7 @@ export function AppHeader({ client }: { client?: ApiClient }) {
                   style={active ? undefined : { color: item.color }}
                 />
                 <span className="sm:hidden">{t(`nav.${item.key}.short`)}</span>
-                <span className="hidden sm:inline">{t(`nav.${item.key}.label`)}</span>
+                <span className={iconOnly ? "sr-only" : "hidden sm:inline"}>{t(`nav.${item.key}.label`)}</span>
                 {item.href === "/dashboard/reviews" && reviewCount !== null && (
                   reviewCount > 0 ? (
                     <span
@@ -164,7 +205,10 @@ export function AppHeader({ client }: { client?: ApiClient }) {
               >
                 {initial}
               </span>
-              <span data-testid="user-email-display" className="text-xs text-ink-300">
+              <span
+                data-testid="user-email-display"
+                className={compact ? "sr-only" : "max-w-40 truncate text-xs text-ink-300"}
+              >
                 {user.email}
               </span>
             </span>
