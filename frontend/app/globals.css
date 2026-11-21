@@ -102,7 +102,7 @@
   --color-ink-600: var(--ink-600);
   --color-ink-400: var(--ink-400);
   --color-ink-300: var(--ink-300);
-  --font-sans: var(--font-body);
+  --font-sans: var(--font-body), var(--font-devanagari), var(--font-kannada);
   --font-display: var(--font-display);
   --font-mono: var(--font-code);
 }
@@ -124,7 +124,7 @@ html {
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-body), var(--font-devanagari), var(--font-kannada), ui-sans-serif, system-ui, sans-serif;
 }
 
 :root[data-theme="light"] {
@@ -372,8 +372,19 @@ body {
 /* ---------- text ---------- */
 
 .kr-display {
-  font-family: var(--font-display), var(--font-body), sans-serif;
+  font-family: var(--font-display), var(--font-body), var(--font-devanagari), var(--font-kannada), sans-serif;
   letter-spacing: -0.03em;
+}
+
+/* Indic scripts (#425, #426): letter-spacing pulls apart or crushes the joined letter clusters, and their tall
+   vowel signs need more room than Latin line heights give. */
+:lang(hi) *,
+:lang(kn) * {
+  letter-spacing: normal !important;
+}
+:lang(hi) .kr-display,
+:lang(kn) .kr-display {
+  line-height: 1.3;
 }
 
 .kr-gradient-text {

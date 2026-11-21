@@ -16,7 +16,8 @@ class Settings(BaseSettings):
 
     app_version: str = "0.1.0"
     api_port: int = 8000
-    cors_origins: list[str] = ["http://localhost:3000"]
+    # Both spellings of the dev frontend: on Windows we use 127.0.0.1 (localhost can resolve to ::1 first).
+    cors_origins: list[str] = ["http://localhost:3000", "http://127.0.0.1:3000"]
     # Where share links point (#96): the frontend's /share/<token> page.
     frontend_url: str = "http://localhost:3000"
 

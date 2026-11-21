@@ -122,6 +122,27 @@ async def test_a_sign_in_run_stores_the_users_session(sessions: Sessions, tmp_pa
     assert unknown.status_code == 404
 
 
+async def test_a_paused_sign_in_run_answers_allow_and_deny(
+    sessions: Sessions, tmp_path: Path, site: str
+) -> None:
+    # It paused with no current step, so both buttons on the pause answered 409 (#431 gate).
+    svc = svc_with_profiles(sessions, tmp_path, site, reply(GOOD_PLAN))
+    async with Api(svc) as api:
+        run_id = Run.model_validate((await api.client.post("/sites/local/sign-in")).json()).id
+        paused = await wait_status(api, run_id, "paused")
+        allowed = await api.client.post(f"/runs/{run_id}/confirm", json={"step_seq": 1, "decision": "allow"})
+        again = await wait_status(api, run_id, "paused")  # nobody signed in: it asks again
+        denied = await api.client.post(f"/runs/{run_id}/confirm", json={"step_seq": 1, "decision": "deny"})
+        stream = await api.events(run_id)
+
+    assert paused.current_seq == 1
+    assert allowed.status_code == 200, allowed.text
+    assert again.current_seq == 1
+    assert denied.status_code == 200, denied.text
+    assert any("can't see that you're signed in" in str(e) for e in stream)
+    assert stream[-1]["type"] == "run.cancelled"
+
+
 # --- do it for me in the user's own account
 
 

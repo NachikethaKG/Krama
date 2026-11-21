@@ -67,6 +67,10 @@ class ScreenFeed:
     def detach(self) -> None:
         self._attached = False
 
+    @property
+    def attached(self) -> bool:
+        return self._attached
+
     async def frame(self, data: bytes) -> None:
         if self._frames >= self._max_frames:
             return  # the viewer is behind: skip this one, the next change sends a fresh frame

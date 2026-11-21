@@ -18,7 +18,9 @@ pytestmark = pytest.mark.anyio
 VIDEO = ArtifactRef(key="exports/x.mp4", content_type="video/mp4", size_bytes=4096)
 
 
-async def new_export(sessions: Sessions, *, status: str = "queued") -> tuple[UUID, UUID]:
+async def new_export(
+    sessions: Sessions, *, status: str = "queued", language: str = "en"
+) -> tuple[UUID, UUID]:
     user = await make_user(sessions)
     workflow_id = await stored_workflow(sessions, user)
     async with sessions.begin() as s:
@@ -31,6 +33,7 @@ async def new_export(sessions: Sessions, *, status: str = "queued") -> tuple[UUI
             preset="landscape",
             voice="en_US-ljspeech-medium",
             status=status,
+            language=language,
         )
         s.add(row)
         await s.flush()
@@ -52,6 +55,16 @@ async def test_load_gives_the_export_and_its_workflow(sessions: Sessions) -> Non
     assert job.export.id == export_id and job.export.status == "queued" and job.export.revision == 1
     assert job.workflow.id == workflow_id and job.workflow.revision == 1
     assert len(job.workflow.steps) >= 1 and job.workflow.recording_path is not None
+
+
+async def test_load_keeps_the_export_language(sessions: Sessions) -> None:
+    # The job translates only when it sees the language: it was dropped here and every export came out in
+    # English (#431 gate).
+    export_id, _ = await new_export(sessions, language="de")
+
+    job = await DbExportStore(sessions).load(export_id)
+
+    assert job.export.language == "de"
 
 
 async def test_load_renders_the_exported_version_after_a_newer_one(sessions: Sessions) -> None:

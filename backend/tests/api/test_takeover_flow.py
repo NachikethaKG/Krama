@@ -11,6 +11,7 @@ from uuid import UUID
 import pytest
 from fastapi import WebSocketDisconnect
 
+from app.api import takeover as takeover_api
 from app.api.accounts import SessionLimits, start_session
 from app.api.takeover import CLOSE_FORBIDDEN, CLOSE_TAKEN, screen
 from app.config import get_settings
@@ -208,8 +209,9 @@ class FakeSocket:
 
 
 async def test_the_screen_socket_streams_frames_takes_input_and_checks_who_connects(
-    sessions: Sessions, tmp_path: Path, site: str
+    sessions: Sessions, tmp_path: Path, site: str, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    monkeypatch.setattr(takeover_api, "DETACH_GRACE_S", 0.3)
     broken = {
         **GOOD_PLAN,
         "steps": [
@@ -250,8 +252,17 @@ async def test_the_screen_socket_streams_frames_takes_input_and_checks_who_conne
         await viewer.inbox.put('{"type": "wat"}')
         await viewer.inbox.put('{"type": "text", "text": "x"}')
         await asyncio.sleep(0.3)
-        await viewer.inbox.put(None)  # the viewer closes the tab
+        await viewer.inbox.put(None)  # the viewer goes away (a reload, or React's second effect in dev)...
         await watching
+        back = FakeSocket(api)
+        returning = asyncio.create_task(screen(back, run_id))  # type: ignore[arg-type]
+        for _ in range(100):  # ...and is back within the grace: same takeover
+            if back.accepted:
+                break
+            await asyncio.sleep(0.02)
+        await back.inbox.put(None)  # now the tab is closed for good
+        await returning
+        await asyncio.sleep(0.6)
         run = Run.model_validate((await api.client.get(f"/runs/{run_id}")).json())
         await api.client.post(f"/runs/{run_id}/cancel")
 
@@ -262,6 +273,7 @@ async def test_the_screen_socket_streams_frames_takes_input_and_checks_who_conne
     )
     assert any(t["type"] == "blocked" for t in viewer.texts)  # the input it didn't understand
     assert second.closed == CLOSE_TAKEN  # one viewer at a time
+    assert back.accepted  # a viewer back within the grace re-attaches
     assert (
         run.status == "paused" and run.takeover is None
     )  # closing the screen ends the takeover, not the run

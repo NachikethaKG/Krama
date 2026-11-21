@@ -46,28 +46,35 @@ export function TakeoverViewer({ runId, stepSeq, client, onEnded }: TakeoverView
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<Text | null>(null);
   const screen = useRef<ReturnType<ApiClient["openScreen"]> | null>(null);
+  const clientRef = useRef(client);
   const surface = useRef<HTMLDivElement | null>(null);
   const lastMove = useRef(0);
 
   useEffect(() => {
-    const connection = client.openScreen(runId);
+    const connection = clientRef.current.openScreen(runId);
     screen.current = connection;
-    connection.onFrame(setFrame);
+    // A connection this effect already closed must not touch the view: React runs effects twice in dev, and
+    // the first socket's close used to show "the takeover ended" over the live one (#431 gate).
+    let live = true;
+    connection.onFrame((url) => live && setFrame(url));
     connection.onMessage((message) => {
+      if (!live) return;
       if (message.type === "blocked") setNotice(message.message ? { text: message.message } : { key: "blocked" });
       if (message.type === "ended") setEnded(message.reason ?? "closed");
     });
     connection.onClose((code) => {
+      if (!live) return;
       if (code === 4403) setError({ key: "forbidden" });
       else if (code === 4409) setError({ key: "conflict" });
       setEnded((current) => current ?? "closed");
     });
     surface.current?.focus();
     return () => {
+      live = false;
       connection.close();
       screen.current = null;
     };
-  }, [client, runId]);
+  }, [runId]); // not the client: one screen per takeover, whatever the parent re-renders
 
   const send = (input: TakeoverInput) => screen.current?.send(input);
 

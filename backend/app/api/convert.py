@@ -206,6 +206,7 @@ def export_out(row: ExportRow, *, title: str | None, revision: int) -> Export:
             "title": title,
             "preset": row.preset,
             "voice": row.voice,
+            "language": row.language,
             "status": row.status,
             "progress": row.progress,
             "size_bytes": row.size_bytes,

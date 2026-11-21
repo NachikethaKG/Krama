@@ -6,6 +6,7 @@ encrypted browser session (#87): Krama never has its password.
 
 import asyncio
 import base64
+import html
 import json
 import re
 import urllib.error
@@ -147,13 +148,18 @@ def _github_setup(settings: Settings) -> TargetSetup:
     )
 
 
+_GITEA_USERNAME = re.compile(r'<input[^>]*\sname="name"[^>]*\svalue="([^"]+)"')
+
+
 async def _gitea_account(page: Page, state: StorageState) -> str | None:
-    """Who the Gitea session belongs to: the API's own answer for the browser's cookies."""
-    response = await page.request.get(urljoin(page.url, "/api/v1/user"))
-    if not response.ok:
-        return None
-    login = (await response.json()).get("login")
-    return str(login) if login else None
+    """Who the Gitea session belongs to: the account settings page, which opens only when signed in and holds
+    the username. (Gitea's API wants a token and answers 401 to a browser session, so asking it always said
+    "not signed in" (#431 gate).)"""
+    response = await page.request.get(urljoin(page.url, "/user/settings"), max_redirects=0)
+    if response.status != 200:
+        return None  # signed out: Gitea redirects to /user/login
+    found = _GITEA_USERNAME.search(await response.text())
+    return html.unescape(found.group(1)) if found else None
 
 
 async def _github_account(page: Page, state: StorageState) -> str | None:
