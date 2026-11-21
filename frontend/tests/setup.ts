@@ -23,6 +23,17 @@ vi.mock("next-intl", async (importOriginal) => {
   };
 });
 
+vi.mock("next-intl/server", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("next-intl/server")>();
+  const { createTranslator } = await import("next-intl");
+  return {
+    ...actual,
+    getLocale: async () => "en",
+    getTranslations: async (namespace?: string) =>
+      createTranslator({ locale: "en", messages: englishMessages as never, namespace: namespace as never }),
+  };
+});
+
 vi.mock("next/navigation", () => ({
   useRouter: () => ({
     push: vi.fn(),
