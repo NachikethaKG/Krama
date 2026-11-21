@@ -754,6 +754,13 @@ class InProcessExecutor:
                 )
                 return
             message = f"Sign in to {target.site} yourself: take over the page, sign in, then hand it back."
+            # Step 1 starts like any step: without it the run paused with no current step, and "allow" or
+            # "deny" on the pause answered 409 (#431 gate).
+            if not await store.event(
+                job.run_id, "step.started", {"step_seq": 1, "instruction_text": f"Sign in to {target.site}"},
+                current_seq=1, retry_count=0,
+            ):  # fmt: skip
+                return
             for _ in range(5):
                 if not await self._pause(job, 1, "auth_wall", message, page=page):
                     return
