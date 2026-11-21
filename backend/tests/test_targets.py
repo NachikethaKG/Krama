@@ -8,7 +8,7 @@ from unittest.mock import patch
 import pytest
 
 from app.config import Settings
-from app.targets import ResetError, target_setup
+from app.targets import ResetError, _gitea_account, target_setup
 
 pytestmark = pytest.mark.anyio
 
@@ -152,3 +152,48 @@ def test_github_tasks_get_the_practice_repository_when_the_org_and_token_are_set
     assert setup.practice_repo == "krama-bench/bench-practice" and setup.prepare is not None
     assert without.practice_repo is None and without.prepare is None
     assert target_setup("http://localhost:3001", SETTINGS).practice_repo is None
+
+
+# --- who is signed in to Gitea (#431 gate: its API answers 401 to a browser session, so the check never
+# passed)
+
+
+class _Response:
+    def __init__(self, status: int, body: str = "") -> None:
+        self.status, self._body = status, body
+
+    async def text(self) -> str:
+        return self._body
+
+
+class _Page:
+    url = "http://127.0.0.1:3001/user/login"
+
+    def __init__(self, response: _Response) -> None:
+        self.asked: list[str] = []
+        self._response = response
+        self.request = self
+
+    async def get(self, url: str, max_redirects: int = 20) -> _Response:
+        self.asked.append(url)
+        return self._response
+
+
+@pytest.mark.parametrize(
+    ("response", "account"),
+    [
+        (
+            _Response(200, '<input id="username" name="name" value="demo&amp;co" data-name="demo" required>'),
+            "demo&co",
+        ),
+        (_Response(303), None),  # signed out: Gitea redirects to /user/login
+        (_Response(200, "<p>no username field</p>"), None),
+    ],
+)
+async def test_the_gitea_account_comes_from_the_settings_page(
+    response: _Response, account: str | None
+) -> None:
+    page = _Page(response)
+
+    assert await _gitea_account(page, {}) == account  # type: ignore[arg-type]
+    assert page.asked == ["http://127.0.0.1:3001/user/settings"]
