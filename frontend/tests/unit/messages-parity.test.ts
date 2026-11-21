@@ -31,9 +31,10 @@ function leaves(tree: Tree, prefix = ""): Map<string, string> {
 
 /** The ICU arguments and tags a message uses: {name}, {count, plural, ...}, <b>...</b>. */
 function shape(message: string): string[] {
-  const args = [...message.matchAll(/\{\s*([A-Za-z_][\w]*)\s*(?:,\s*(plural|select|selectordinal|number|date|time))?/g)].map(
-    (m) => `${m[1]}:${m[2] ?? ""}`,
-  );
+  // `{name}` or `{name, plural, ...}` only: branch text like `one {step}` isn't an argument (it may be translated).
+  const args = [
+    ...message.matchAll(/\{\s*([A-Za-z_]\w*)\s*(?:,\s*(plural|select|selectordinal|number|date|time)|(?=\}))/g),
+  ].map((m) => `${m[1]}:${m[2] ?? ""}`);
   const tags = [...message.matchAll(/<\/?([A-Za-z][\w-]*)>/g)].map((m) => `<${m[1]}>`);
   return [...new Set([...args, ...tags])].sort();
 }
