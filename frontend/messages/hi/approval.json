@@ -1,1 +1,125 @@
-{}
+{
+  "riskBadge": {
+    "ariaLabel": "जोखिम स्तर: {level}",
+    "safe": "सुरक्षित",
+    "creates": "कुछ नया बनाता है",
+    "changes": "बदलता या हटाता है",
+    "dangerous": "खतरनाक"
+  },
+  "taskHeader": {
+    "workflowPlan": "वर्कफ़्लो योजना",
+    "defaultTitle": "यह रही योजना",
+    "taskPrompt": "कार्य का विवरण",
+    "targetUrl": "लक्ष्य सिस्टम URL",
+    "noTargetUrl": "कोई लक्ष्य URL सेट नहीं है"
+  },
+  "targetPicker": {
+    "label": "लक्ष्य एनवायरनमेंट",
+    "hint": "चुनें कि वर्कफ़्लो एजेंट कार्य कहाँ चलाए।",
+    "option": {
+      "gitea": {
+        "name": "Gitea (लोकल)",
+        "badge": "लोकल",
+        "description": "ऑफ़लाइन परीक्षण के लिए सैंडबॉक्स रिपॉज़िटरी इंस्टेंस"
+      },
+      "github": {
+        "name": "GitHub (असली)",
+        "badge": "लाइव",
+        "description": "github.com रिपॉज़िटरी (एन्क्रिप्टेड ब्राउज़र सेशन का उपयोग करता है)"
+      },
+      "custom": {
+        "name": "कस्टम लक्ष्य",
+        "badge": "कस्टम",
+        "description": "कोई भी Git सर्वर या एंटरप्राइज़ वेब एंडपॉइंट"
+      }
+    },
+    "customLabel": "कस्टम लक्ष्य का बेस URL",
+    "customPlaceholder": "https://git.example.corp",
+    "urlError": {
+      "required": "लक्ष्य URL आवश्यक है।",
+      "protocol": "URL में http:// या https:// प्रोटोकॉल होना चाहिए (जैसे https://github.example.com)।",
+      "host": "URL में एक मान्य होस्ट नाम होना चाहिए।",
+      "invalid": "कृपया एक मान्य URL दर्ज करें (जैसे https://github.example.com)।"
+    }
+  },
+  "taskInput": {
+    "examples": {
+      "privateRepo": "मुझे दिखाएँ कि GitHub पर प्राइवेट रिपॉज़िटरी कैसे बनाते हैं",
+      "addLabel": "GitHub रिपॉज़िटरी में लेबल कैसे जोड़ें?",
+      "newBranch": "GitHub पर एक नई ब्रांच बनाएँ"
+    },
+    "planningTimeout": "योजना बनाने में {seconds} s से ज़्यादा समय लग रहा है। थोड़ी देर में फिर कोशिश करें।",
+    "planningFailed": "योजना नहीं बन सकी",
+    "noPlanId": "कार्य की योजना बन गई है, लेकिन उसकी कोई प्लान id नहीं है",
+    "createFailed": "कार्य नहीं बनाया जा सका",
+    "sectionAria": "नया ट्यूटोरियल",
+    "statusPlanning": "योजना बन रही है",
+    "statusReady": "तैयार",
+    "label": "आप क्या सीखना चाहते हैं?",
+    "placeholder": "जैसे: मुझे दिखाएँ कि GitHub पर प्राइवेट रिपॉज़िटरी कैसे बनाते हैं",
+    "devOptions": "डेवलपर विकल्प: लक्ष्य साइट चुनें",
+    "planningStatus": "चरणों की योजना बन रही है… {elapsed} Krama {site} खोल रहा है और हर चरण तय कर रहा है। इसमें आमतौर पर 15–60 सेकंड लगते हैं।",
+    "elapsedSeconds": "{seconds} s",
+    "theSite": "साइट",
+    "flow": "योजना → मंज़ूरी → रन → जाँच → सीखें",
+    "planningButton": "योजना बन रही है…",
+    "submit": "चरणों की योजना बनाएँ",
+    "clarifyDefault": "इसकी योजना बनाने के लिए Krama को थोड़ी और जानकारी चाहिए।",
+    "answerLabel": "आपका जवाब",
+    "sendAnswer": "जवाब भेजें",
+    "siteUnsupported": "Krama अभी {name} पर कार्य नहीं कर सकता। यह {sites} पर काम करता है।",
+    "website": "वेबसाइट:",
+    "whichSite": "यह किस वेबसाइट के लिए है?",
+    "consoleTitle": "krama://ask"
+  },
+  "screen": {
+    "loadFailed": "योजना लोड नहीं हो सकी",
+    "notEditable": "{message} इसकी मौजूदा स्थिति देखने के लिए रीलोड करें।",
+    "genericError": "कुछ गलत हो गया",
+    "saveFailed": "योजना सेव नहीं हो सकी",
+    "reloadFailed": "योजना फिर से लोड नहीं हो सकी",
+    "approveFailed": "मंज़ूरी नहीं दी जा सकी",
+    "rejectFailed": "अस्वीकार नहीं किया जा सका",
+    "loading": "वर्कफ़्लो योजना लोड हो रही है…",
+    "notFound": "योजना नहीं मिली",
+    "goal": "लक्ष्य: {goal}",
+    "conflictTitle": "इस बीच यह योजना बदल गई है",
+    "reloadLatest": "नया संस्करण लोड करें"
+  },
+  "summary": {
+    "found": "मुझे {count} चरणों वाली योजना मिली।",
+    "risky": "{count, plural, one {# चरण कुछ बदलता या हटाता है: उससे पहले Krama आपसे फिर पूछेगा।} other {# चरण कुछ बदलते या हटाते हैं: हर एक से पहले Krama आपसे फिर पूछेगा।}}",
+    "safe": "कोई विनाशकारी कार्रवाई नहीं मिली।",
+    "check": "चरणों को जाँचें, फिर उन्हें चलाने के लिए मंज़ूरी दें।"
+  },
+  "controls": {
+    "approveFailed": "योजना को मंज़ूरी नहीं दी जा सकी",
+    "rejectFailed": "योजना रद्द नहीं की जा सकी",
+    "ariaLabel": "वर्कफ़्लो मंज़ूरी नियंत्रण",
+    "dismiss": "बंद करें",
+    "approved": "मंज़ूरी मिल गई। कार्य शुरू हो रहा है…",
+    "goLive": "लाइव एक्ज़िक्यूशन पर जाएँ",
+    "cancelled": "योजना रद्द कर दी गई। कुछ भी नहीं चलाया गया।",
+    "doneEditing": "संपादन पूरा हुआ",
+    "editSteps": "चरण संपादित करें",
+    "cancel": "रद्द करें",
+    "saveFirst": "मंज़ूरी देने से पहले अपने बदलाव सेव करें",
+    "processing": "प्रोसेस हो रहा है…",
+    "approve": "मंज़ूरी दें और चलाएँ"
+  },
+  "stepList": {
+    "empty": "इस वर्कफ़्लो योजना में कोई चरण प्रस्तावित नहीं है।",
+    "ariaLabel": "चलाने के लिए योजनाबद्ध चरण",
+    "title": "प्रस्तावित चरण ({count})",
+    "editing": "चरणों के निर्देश और क्रम संपादित हो रहे हैं",
+    "on": "पर",
+    "inputLabel": "चरण {seq} का निर्देश",
+    "moveUpAria": "चरण {seq} को ऊपर ले जाएँ",
+    "moveUp": "चरण ऊपर ले जाएँ",
+    "moveDownAria": "चरण {seq} को नीचे ले जाएँ",
+    "moveDown": "चरण नीचे ले जाएँ",
+    "deleteAria": "चरण {seq} हटाएँ",
+    "delete": "चरण हटाएँ",
+    "targetName": "\"{name}\""
+  }
+}

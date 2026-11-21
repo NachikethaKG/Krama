@@ -1,1 +1,100 @@
-{}
+{
+  "copyable": {
+    "copiedAria": "क्लिपबोर्ड पर कॉपी किया गया",
+    "copyAria": "{text} को क्लिपबोर्ड पर कॉपी करें",
+    "copied": "कॉपी हो गया!",
+    "copy": "कॉपी करें"
+  },
+  "recordedPage": {
+    "failed": "रिकॉर्डिंग दिखाई नहीं जा सकी।"
+  },
+  "controls": {
+    "region": "ट्यूटोरियल प्लेबैक नियंत्रण",
+    "progress": "सीन प्लेबैक की प्रगति",
+    "progressValue": "चरण {current} / {total}: {title}",
+    "prev": "पिछला चरण",
+    "prevTitle": "पिछला चरण (ArrowLeft या J)",
+    "pause": "ट्यूटोरियल रोकें",
+    "play": "ट्यूटोरियल चलाएँ",
+    "pauseTitle": "रोकें (Space या K)",
+    "playTitle": "चलाएँ (Space या K)",
+    "replay": "मौजूदा चरण दोबारा चलाएँ",
+    "replayTitle": "चरण दोबारा चलाएँ (R)",
+    "next": "अगला चरण",
+    "nextTitle": "अगला चरण (ArrowRight या L)",
+    "stepOf": "चरण {current} / {total}",
+    "unmute": "नैरेशन चालू करें",
+    "mute": "नैरेशन बंद करें",
+    "muteTitleMuted": "नैरेशन चालू/बंद करें (M) - अभी बंद है",
+    "muteTitleActive": "नैरेशन चालू/बंद करें (M) - अभी चालू है",
+    "zoomOff": "ऑटो-ज़ूम बंद करें",
+    "zoomOn": "ऑटो-ज़ूम चालू करें",
+    "zoomTitleAuto": "ज़ूम बदलें (Z) - अभी ऑटो-ज़ूम",
+    "zoomTitleOverview": "ज़ूम बदलें (Z) - अभी ओवरव्यू (1.0x)",
+    "zoomActive": "ज़ूम चालू",
+    "overview": "ओवरव्यू",
+    "hideCaptions": "कैप्शन छिपाएँ",
+    "showCaptions": "कैप्शन दिखाएँ",
+    "captionsTitle": "कैप्शन चालू/बंद करें (C)",
+    "captionsShort": "CC",
+    "closeStepList": "चरणों की सूची बंद करें",
+    "openStepList": "चरणों की सूची खोलें",
+    "toggleStepList": "चरणों की सूची दिखाएँ/छिपाएँ"
+  },
+  "tutorialLibrary": {
+    "loadError": "ट्यूटोरियल लोड नहीं हो सके।",
+    "loading": "ट्यूटोरियल लोड हो रहे हैं…",
+    "empty": "अभी कोई सत्यापित वर्कफ़्लो नहीं है।",
+    "meta": "{count, plural, one {# चरण} other {# चरण}} · {app}",
+    "siteFallback": "साइट"
+  },
+  "stepList": {
+    "label": "ट्यूटोरियल के चरणों की सूची",
+    "heading": "चरण ({count})",
+    "total": "कुल: {seconds}s",
+    "close": "चरणों की सूची बंद करें",
+    "nav": "चरण",
+    "active": "सक्रिय",
+    "noInstruction": "कोई निर्देश नहीं"
+  },
+  "workflowTutorial": {
+    "notFound": "इस id वाला कोई सेव किया गया वर्कफ़्लो नहीं है।",
+    "loadError": "ट्यूटोरियल लोड नहीं हो सका।",
+    "loading": "ट्यूटोरियल लोड हो रहा है…",
+    "readAsText": "टेक्स्ट के रूप में पढ़ें"
+  },
+  "stage": {
+    "brand": "Krama ट्यूटोरियल",
+    "descriptionFallback": "वर्कफ़्लो पूरा करने के लिए हाइलाइट किए गए चरणों का पालन करें।",
+    "newButton": "+ नया",
+    "fakeUrl": "https://git.local/{slug}",
+    "secure": "🔒 SSL"
+  },
+  "player": {
+    "announcement": "चरण {seq} / {total}: {text}",
+    "stepN": "चरण {seq}",
+    "region": "इंटरैक्टिव ट्यूटोरियल प्लेयर",
+    "roleDescription": "इंटरैक्टिव वीडियो ट्यूटोरियल",
+    "learn": "सीखें",
+    "readOnly": "सिर्फ़ पढ़ने के लिए",
+    "doItForMe": "मेरे लिए करें",
+    "exportMp4": "MP4 एक्सपोर्ट करें",
+    "share": "शेयर करें",
+    "versionHistory": "संस्करण इतिहास",
+    "summary": "{count, plural, one {# चरण} other {# चरण}}, हर एक जाँचा गया · देखने में {seconds} s",
+    "sensitive": "संवेदनशील",
+    "duration": "अवधि: {seconds}s",
+    "instruction": "निर्देश",
+    "inputValue": "इनपुट मान",
+    "valueLabel": "मान",
+    "stepsDrawer": "चरणों का ड्रॉअर",
+    "versionHistoryTitle": "वर्कफ़्लो संस्करण इतिहास और चरणों के अंतर",
+    "closeVersionHistory": "संस्करण इतिहास बंद करें"
+  },
+  "language": {
+    "label": "ट्यूटोरियल की भाषा",
+    "translating": "ट्यूटोरियल का अनुवाद हो रहा है…",
+    "failed": "इस ट्यूटोरियल का अभी अनुवाद नहीं हो सका। इसे अंग्रेज़ी में दिखाया जा रहा है।",
+    "partly": "कुछ चरण अभी भी अंग्रेज़ी में हैं: उनके अनुवाद में पेज के लेबल हूबहू नहीं रहे।"
+  }
+}

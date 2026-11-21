@@ -1,1 +1,51 @@
-{}
+{
+  "card": {
+    "underAMinute": "< 1 मिनट",
+    "aboutMinutes": "~{minutes} मिनट",
+    "targetCustom": "कस्टम",
+    "matchStep": "चरण {step}:",
+    "meta": "{count, plural, one {# चरण} other {# चरण}} · {duration}",
+    "open": "ट्यूटोरियल खोलें",
+    "quoted": "“{text}”"
+  },
+  "statusBadge": {
+    "aria": "ताज़गी की स्थिति: {status}",
+    "verified": "सत्यापित",
+    "autoUpdated": "अपने-आप अपडेट हुआ",
+    "outdated": "पुराना",
+    "notAutoChecked": "अपने-आप नहीं जाँचा गया",
+    "viewDiff": "ठीक किए गए चरण का अंतर देखें",
+    "diff": "अंतर"
+  },
+  "filter": {
+    "searchLabel": "ट्यूटोरियल खोजें",
+    "searchPlaceholder": "शीर्षक, विवरण या प्रॉम्प्ट से ट्यूटोरियल खोजें...",
+    "clearSearch": "खोज साफ़ करें",
+    "tabsLabel": "सत्यापन स्थिति के अनुसार फ़िल्टर करें",
+    "all": "सभी",
+    "verified": "सत्यापित",
+    "outdated": "पुराने",
+    "autoUpdated": "अपने-आप अपडेट हुए",
+    "notChecked": "जाँचे नहीं गए"
+  },
+  "view": {
+    "eyebrow": "आपकी लाइब्रेरी",
+    "title": "मेरे ट्यूटोरियल",
+    "subtitle": "हर वह कार्य जो Krama ने आपके लिए किया और चरण-दर-चरण जाँचा। किसी को भी दोबारा देखने के लिए खोलें।",
+    "newTutorialAction": "+ नया ट्यूटोरियल",
+    "errorTitle": "आपके ट्यूटोरियल लोड नहीं हो सके",
+    "searchFailed": "खोज विफल रही। कृपया फिर कोशिश करें।",
+    "loadFailed": "ट्यूटोरियल लोड नहीं हो सके। कृपया फिर कोशिश करें।",
+    "tryAgain": "फिर कोशिश करें",
+    "loading": "ट्यूटोरियल लोड हो रहे हैं…",
+    "searching": "खोज रहे हैं…",
+    "noMatchTitle": "आपकी खोज से कोई ट्यूटोरियल मेल नहीं खाता",
+    "noMatchBody": "दूसरे शब्द आज़माएँ, या अपने सभी ट्यूटोरियल देखने के लिए खोज साफ़ करें।",
+    "resetFilters": "फ़िल्टर रीसेट करें",
+    "emptyTitle": "अभी कोई ट्यूटोरियल नहीं",
+    "emptyBody": "Krama से एक बनाने को कहें, जैसे “मुझे दिखाएँ कि GitHub रिपॉज़िटरी कैसे बनाते हैं”।",
+    "newTutorial": "नया ट्यूटोरियल",
+    "showing": "{total} {total, plural, one {ट्यूटोरियल} other {ट्यूटोरियल}} में से {shown} दिखाए जा रहे हैं",
+    "showMore": "और दिखाएँ"
+  }
+}

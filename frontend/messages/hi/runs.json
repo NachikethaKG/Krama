@@ -1,1 +1,204 @@
-{}
+{
+  "statusBadge": {
+    "ariaLabel": "रन की स्थिति: {label}",
+    "verified": "सत्यापित",
+    "failed": "विफल",
+    "paused": "रुका हुआ",
+    "cancelled": "रद्द",
+    "queued": "कतार में",
+    "running": "चल रहा है"
+  },
+  "pagination": {
+    "ariaLabel": "पेज नेविगेशन",
+    "empty": "दिखाने के लिए कोई रन नहीं",
+    "showingMore": "<num>{start}</num> से <num>{end}</num> तक दिखाए जा रहे हैं (पेज <current>{page}</current>, पुराने रन उपलब्ध हैं)",
+    "showingLast": "<num>{start}</num> से <num>{end}</num> तक दिखाए जा रहे हैं (पेज <current>{page}</current>, सबसे पुराने रन)",
+    "newerAria": "नए रन",
+    "olderAria": "पुराने रन",
+    "newer": "नए",
+    "older": "पुराने"
+  },
+  "liveViewport": {
+    "badge": "लाइव हेडलेस",
+    "waiting": "ब्राउज़र व्यूपोर्ट फ़्रेम का इंतज़ार है…",
+    "waitingHint": "एजेंट के काम करते समय लाइव हेडलेस स्क्रीनशॉट यहाँ दिखेंगे",
+    "imageAlt": "हेडलेस ब्राउज़र की लाइव स्ट्रीम"
+  },
+  "detailHeader": {
+    "back": "रन",
+    "promptUnavailable": "(प्रॉम्प्ट उपलब्ध नहीं)",
+    "website": "वेबसाइट:",
+    "watchTutorial": "ट्यूटोरियल देखें",
+    "started": "शुरू हुआ:",
+    "finished": "खत्म हुआ:",
+    "totalSteps": "कुल चरण",
+    "verifiedSteps": "सत्यापित चरण",
+    "failedSteps": "विफल चरण",
+    "duration": "अवधि"
+  },
+  "detailView": {
+    "loading": "रन के सत्यापन के सबूत लोड हो रहे हैं…",
+    "loadingHint": "आर्टिफ़ैक्ट स्टोर से चरणों के स्क्रीनशॉट और बहु-स्तरीय सत्यापन स्कोर लाए जा रहे हैं",
+    "notFound": "रन नहीं मिला",
+    "notFoundBody": "माँगा गया रन \"{runId}\" मौजूद नहीं है या उसके एक्ज़िक्यूशन आर्टिफ़ैक्ट हटा दिए गए हैं।",
+    "backToRuns": "रन पर वापस जाएँ",
+    "openLive": "लाइव व्यू खोलें",
+    "title": "Krama ने क्या किया और क्या <em>जाँचा</em>",
+    "subtitle": "हर चरण, उसे कैसे जाँचा गया, और उसके ठीक बाद के पेज का स्क्रीनशॉट।",
+    "stepCount": "{count, plural, one {# चरण} other {# चरण}}",
+    "noSteps": "इस वर्कफ़्लो रन के लिए अभी कोई चरण नहीं चला है।"
+  },
+  "observer": {
+    "allRuns": "सभी रन",
+    "defaultTitle": "लाइव एजेंट हेडलेस एक्ज़िक्यूशन",
+    "connected": "SSE स्ट्रीम कनेक्ट है",
+    "reconnecting": "स्ट्रीम फिर से कनेक्ट हो रही है…",
+    "standby": "स्ट्रीम स्टैंडबाय पर",
+    "connectionLost": "स्ट्रीम कनेक्शन टूट गया। लाइव ऑब्ज़र्वर स्ट्रीम से फिर से कनेक्ट हो रहे हैं…",
+    "activityTitle": "ऑब्ज़र्वर स्ट्रीम गतिविधि",
+    "activityRun": "रन: {runId}",
+    "activityStatus": "स्थिति:",
+    "activityStep": "सक्रिय चरण: {seq}",
+    "activityTarget": "लक्ष्य: {url}"
+  },
+  "list": {
+    "loading": "रन लोड हो रहे हैं…",
+    "loadError": "आपके रन लोड नहीं हो सके",
+    "emptyTitle": "अभी कोई रन नहीं",
+    "emptyBody": "जब भी Krama आपके लिए कोई कार्य करता है, वह यहाँ दिखता है।",
+    "newTutorial": "नया ट्यूटोरियल",
+    "colTask": "कार्य",
+    "colResult": "नतीजा",
+    "colStarted": "शुरू हुआ",
+    "colTook": "लगा समय",
+    "colOpen": "खोलें",
+    "promptUnavailable": "(कार्य का टेक्स्ट उपलब्ध नहीं)",
+    "retried": "{count, plural, one {एक बार फिर आज़माया} other {# बार फिर आज़माया}}",
+    "details": "विवरण"
+  },
+  "banners": {
+    "pausedTitle": "एक्ज़िक्यूशन रुका: कार्रवाई के लिए मैन्युअल मंज़ूरी चाहिए / बॉट बाधा मिली",
+    "pausedDefault": "सुरक्षा नीति की समीक्षा के लिए एक्ज़िक्यूशन रोका गया।",
+    "context": "संदर्भ:",
+    "atStep": " चरण {seq} पर",
+    "processing": "प्रोसेस हो रहा है…",
+    "abort": "रन रोकें",
+    "resuming": "फिर से शुरू हो रहा है…",
+    "allowResume": "अनुमति दें और फिर शुरू करें",
+    "failedDefault": "वर्कफ़्लो एक्ज़िक्यूशन अचानक रुक गया",
+    "failedTitle": "चरण {step} पर एक्ज़िक्यूशन विफल: {error}",
+    "failedBody": "एजेंट रुक गया क्योंकि देखा गया वातावरण अपेक्षा से मेल नहीं खाता था या कोई नीति प्रतिबंध आ गया।",
+    "mismatch": "स्थिति सत्यापन में अंतर",
+    "expected": "अपेक्षित",
+    "observed": "देखा गया",
+    "completeTitle": "वर्कफ़्लो एक्ज़िक्यूशन पूरा हुआ",
+    "completeBody": "योजना के सभी चरण सफलतापूर्वक चलाए और सत्यापित किए गए हैं।",
+    "openTutorial": "इंटरैक्टिव ट्यूटोरियल खोलें"
+  },
+  "checklist": {
+    "title": "एक्ज़िक्यूशन के चरण",
+    "current": "मौजूदा: चरण {seq}",
+    "waiting": "एक्ज़िक्यूशन योजना का इंतज़ार है…",
+    "ariaLabel": "चलाने के लिए योजनाबद्ध चरण",
+    "pendingAria": "बाकी चरण",
+    "runningAria": "चल रहा चरण",
+    "completedAria": "पूरा हुआ चरण",
+    "pausedAria": "रुका हुआ चरण",
+    "failedAria": "विफल चरण",
+    "status": {
+      "pending": "बाकी",
+      "running": "चल रहा है",
+      "completed": "पूरा हुआ",
+      "paused": "रुका हुआ",
+      "failed": "विफल"
+    }
+  },
+  "evidence": {
+    "method": {
+      "url_dom": {
+        "label": "पेज का पता",
+        "description": "Krama ने इस चरण के बाद खुले पेज को जाँचा।"
+      },
+      "aria": {
+        "label": "पेज की सामग्री",
+        "description": "Krama ने जाँचा कि पेज पर अपेक्षित बटन, फ़ील्ड या टेक्स्ट दिख रहा है।"
+      },
+      "network": {
+        "label": "साइट का जवाब",
+        "description": "वेबसाइट ने बदलाव की पुष्टि की।"
+      },
+      "vision": {
+        "label": "स्क्रीनशॉट",
+        "description": "स्क्रीनशॉट देखकर चरण की पुष्टि हुई।"
+      }
+    },
+    "confidence": {
+      "sure": "पक्का",
+      "fairlySure": "काफ़ी हद तक पक्का",
+      "unsure": "पक्का नहीं"
+    },
+    "verified": "सत्यापित",
+    "failed": "विफल",
+    "pending": "बाकी",
+    "howChecked": "इसे कैसे जाँचा गया",
+    "howSure": "कितना पक्का",
+    "notApplicable": "लागू नहीं",
+    "notVerified": "अभी सत्यापित नहीं",
+    "screenshotAfter": "इस चरण के बाद का स्क्रीनशॉट",
+    "duration": "अवधि: {ms}ms",
+    "screenshotAlt": "चरण {seq} का सत्यापन स्क्रीनशॉट: {instruction}",
+    "screenshotFailed": "आर्टिफ़ैक्ट स्टोर से स्क्रीनशॉट लोड नहीं हो सका",
+    "noScreenshot": "इस चरण का कोई स्क्रीनशॉट नहीं लिया गया",
+    "recordedVia": "सत्यापन {method} के ज़रिए रिकॉर्ड किया गया",
+    "showDetails": "तकनीकी विवरण दिखाएँ",
+    "hideDetails": "तकनीकी विवरण छिपाएँ",
+    "expectedState": "अपेक्षित स्थिति",
+    "observedState": "देखी गई स्थिति",
+    "urlMatches": "URL मेल खाता है:",
+    "visible": "दिख रहा है:",
+    "url": "URL:",
+    "title": "शीर्षक:",
+    "action": {
+      "navigate": "एक पेज खोला",
+      "click": "क्लिक किया",
+      "fill": "टाइप किया",
+      "select": "एक विकल्प चुना",
+      "press": "एक कुंजी दबाई",
+      "wait": "इंतज़ार किया",
+      "scroll": "स्क्रॉल किया"
+    },
+    "role": {
+      "textbox": "फ़ील्ड",
+      "searchbox": "खोज फ़ील्ड",
+      "combobox": "फ़ील्ड",
+      "button": "बटन",
+      "link": "लिंक",
+      "checkbox": "चेकबॉक्स",
+      "radio": "विकल्प",
+      "tab": "टैब",
+      "menuitem": "मेनू आइटम",
+      "other": "{role}"
+    },
+    "actionTarget": "{what} “{name}” — {verb}",
+    "methodLabel": {
+      "page": "पेज का पता",
+      "content": "पेज की सामग्री",
+      "site": "साइट का जवाब",
+      "screenshot": "स्क्रीनशॉट"
+    },
+    "visibleElement": "[{role}: \"{name}\"]"
+  },
+  "replay": {
+    "overlayAria": "रीप्ले चरण हाइलाइट ओवरले",
+    "initializing": "रीप्ले एनवायरनमेंट शुरू हो रहा है...",
+    "emptyTitle": "रीप्ले के लिए कोई रिकॉर्ड किए गए सेशन इवेंट उपलब्ध नहीं हैं।",
+    "emptyBody": "एक्ज़िक्यूशन देखने के लिए एक मान्य rrweb इवेंट स्ट्रीम दें।",
+    "stepBadge": "चरण {seq}",
+    "timelineAria": "चरण टाइमलाइन नेविगेशन",
+    "prev": "पिछला",
+    "next": "अगला",
+    "stepOf": "चरण {current} / {total}",
+    "jumpTitle": "चरण {seq} पर जाएँ: {instruction}",
+    "jumpAria": "चरण {seq} पर जाएँ"
+  }
+}

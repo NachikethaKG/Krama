@@ -1,1 +1,51 @@
-{}
+{
+  "versions": {
+    "stepVerified": "चरण {step} (सत्यापित)",
+    "stepWordingUpdated": "चरण {step} (शब्द अपडेट हुए)",
+    "stepLocatorHealed": "चरण {step} (लोकेटर ठीक किया गया)",
+    "summaryBaseline": "मूल संस्करण। पहले कोई बदलाव नहीं।",
+    "summaryIdentical": "चरणों में बिना किसी बदलाव के एक जैसा सत्यापन।",
+    "summaryLocatorHealed": "चरण {step}: लोकेटर ठीक किया गया ({from} → {to})",
+    "summaryTargetFallback": "लक्ष्य",
+    "summaryHealedFallback": "ठीक किया गया",
+    "summaryWordingUpdated": "चरण {step}: शब्द अपडेट हुए"
+  },
+  "diff": {
+    "empty": "कोई अंतर नहीं मिला। दोनों संस्करणों में चरण और लोकेटर एक जैसे हैं।",
+    "title": "अंतर की तुलना",
+    "modified": "{count, plural, one {# चरण बदला गया} other {# चरण बदले गए}}",
+    "unchangedCount": "{count} अपरिवर्तित",
+    "unchanged": "अपरिवर्तित",
+    "locatorHealed": "लोकेटर ठीक किया गया",
+    "wordingChanged": "शब्द बदले गए",
+    "targetSelector": "लक्ष्य सेलेक्टर",
+    "elementLabel": "एलिमेंट लेबल",
+    "instructionCaption": "निर्देश / कैप्शन",
+    "quoted": "“{text}”"
+  },
+  "history": {
+    "loading": "संस्करण इतिहास लोड हो रहा है…",
+    "errorTitle": "संस्करण इतिहास लोड नहीं हो सका",
+    "loadFailed": "संस्करण इतिहास लोड नहीं हो सका।",
+    "title": "संस्करण इतिहास",
+    "count": "{count, plural, one {# संस्करण} other {# संस्करण}}",
+    "baselineTitle": "मूल संस्करण (v1.0)",
+    "baselineBody": "यह शुरुआती रिकॉर्ड किया गया संस्करण है। इससे पहले का कोई संशोधन या ठीक किए गए चरणों का बदलाव मौजूद नहीं है।",
+    "autoUpdated": "अपने-आप अपडेट हुआ",
+    "active": "सक्रिय",
+    "archived": "संग्रहीत",
+    "switchTo": "{version} पर जाएँ",
+    "inspectDiff": "चरणों का अंतर देखें",
+    "wordingChanges": "सिर्फ़ शब्दों में बदलाव ({count})",
+    "wordingHint": "(कैप्शन और विवरण)",
+    "hide": "▲ छिपाएँ",
+    "show": "▼ दिखाएँ",
+    "viewDiff": "अंतर देखें",
+    "pendingReview": "समीक्षा बाकी ({count})",
+    "pendingHint": "ठीक किए गए संस्करण समीक्षा कतार में बनाने वाले की पुष्टि का इंतज़ार कर रहे हैं। स्वीकार होने तक दर्शक इन्हें नहीं चला सकते।",
+    "locked": "लॉक (समीक्षा बाकी)",
+    "reviewDiff": "अंतर की समीक्षा करें",
+    "diffTitle": "चरण-दर-चरण अंतर ({version})",
+    "closeDiff": "अंतर का प्रीव्यू बंद करें"
+  }
+}
