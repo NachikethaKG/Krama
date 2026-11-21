@@ -42,6 +42,20 @@ function setup() {
 describe("TakeoverViewer (#411)", () => {
   afterEach(() => vi.restoreAllMocks());
 
+  it("keeps one screen while the page re-renders, and ignores a screen it already closed", () => {
+    // The run page re-rendered every second with a new client: the viewer reconnected each time until the
+    // takeover ended (#431 gate).
+    const { client, scripted, onEnded, view } = setup();
+    view.rerender(<TakeoverViewer runId="run-1" stepSeq={3} client={new MockApiClient()} onEnded={onEnded} />);
+    view.rerender(<TakeoverViewer runId="run-1" stepSeq={3} client={new MockApiClient()} onEnded={onEnded} />);
+    expect(client.openScreen).toHaveBeenCalledTimes(1);
+    expect(scripted.closedByClient).toBe(false);
+
+    view.unmount();
+    act(() => scripted.closed?.(1000)); // the closed socket's late close event
+    expect(onEnded).not.toHaveBeenCalled();
+  });
+
   it("shows the live frame and sends mouse input in page coordinates", () => {
     const { scripted } = setup();
     act(() => scripted.frame("blob:frame-1"));

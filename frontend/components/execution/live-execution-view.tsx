@@ -102,7 +102,9 @@ export function LiveExecutionView({ runId, speed, client, className = "" }: Live
     deny,
     reconnect,
   } = useRunExecutionStream({ runId, client, speed });
-  const api = client ?? getApiClient();
+  // One client for the page's life: a new one each render (the elapsed timer re-renders every second) made the
+  // takeover viewer reconnect its screen every second until the takeover ended (#431 gate).
+  const [api] = useState<ApiClient>(() => client ?? getApiClient());
   const [watching, setWatching] = useState(false);
   const [takeoverError, setTakeoverError] = useState<string | null>(null);
   const startTakeover = async () => {
