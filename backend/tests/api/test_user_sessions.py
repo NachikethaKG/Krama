@@ -122,7 +122,9 @@ async def test_a_sign_in_run_stores_the_users_session(sessions: Sessions, tmp_pa
     assert unknown.status_code == 404
 
 
-async def test_a_paused_sign_in_run_answers_allow_and_deny(sessions: Sessions, tmp_path: Path, site: str) -> None:
+async def test_a_paused_sign_in_run_answers_allow_and_deny(
+    sessions: Sessions, tmp_path: Path, site: str
+) -> None:
     # It paused with no current step, so both buttons on the pause answered 409 (#431 gate).
     svc = svc_with_profiles(sessions, tmp_path, site, reply(GOOD_PLAN))
     async with Api(svc) as api:

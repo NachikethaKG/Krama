@@ -106,8 +106,27 @@ async def screen(websocket: WebSocket, run_id: UUID) -> None:
         with contextlib.suppress(asyncio.CancelledError):
             await sender
         feed.detach()
-        if session.ended is None:
-            await session.end("closed")  # the viewer went away: the run stays paused
+        if session.ended is not None:
+            services.screens.pop(run_id, None)
+        else:  # the viewer went away: the takeover ends, the run stays paused, unless a viewer is back soon
+            task = asyncio.create_task(_end_unless_back(services, run_id, feed, session))
+            _grace_tasks.add(task)
+            task.add_done_callback(_grace_tasks.discard)
+
+
+DETACH_GRACE_S = 5.0
+"""How long a takeover outlives its viewer: a reload, or React opening the socket twice in dev, re-attaches
+within it; a closed tab ends the takeover after it (#431 gate)."""
+_grace_tasks: set[asyncio.Task[None]] = set()
+
+
+async def _end_unless_back(services: Services, run_id: UUID, feed: ScreenFeed, session: Any) -> None:
+    await asyncio.sleep(DETACH_GRACE_S)
+    if feed.attached:
+        return
+    if session.ended is None:
+        await session.end("closed")
+    if services.screens.get(run_id) is feed:
         services.screens.pop(run_id, None)
 
 
