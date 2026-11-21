@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Bricolage_Grotesque, Geist, JetBrains_Mono } from "next/font/google";
+import { Bricolage_Grotesque, Geist, JetBrains_Mono, Noto_Sans_Devanagari, Noto_Sans_Kannada } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import { AmbientBackground } from "@/components/ui/AmbientBackground";
@@ -14,6 +14,20 @@ const display = Bricolage_Grotesque({
 const body = Geist({
   variable: "--font-body",
   subsets: ["latin"],
+});
+
+// Hindi and Kannada (#425, #426): real glyphs and bold weights instead of a system fallback with faked bold. Not
+// preloaded: the browser fetches them only for a page that shows those scripts (unicode-range).
+const devanagari = Noto_Sans_Devanagari({
+  variable: "--font-devanagari",
+  subsets: ["devanagari"],
+  preload: false,
+});
+
+const kannada = Noto_Sans_Kannada({
+  variable: "--font-kannada",
+  subsets: ["kannada"],
+  preload: false,
 });
 
 const code = JetBrains_Mono({
@@ -43,7 +57,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       lang={locale}
       data-theme="dark"
       suppressHydrationWarning
-      className={`dark ${display.variable} ${body.variable} ${code.variable} h-full antialiased`}
+      className={`dark ${display.variable} ${body.variable} ${code.variable} ${devanagari.variable} ${kannada.variable} h-full antialiased`}
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
