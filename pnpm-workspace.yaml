@@ -7,3 +7,6 @@ allowBuilds:
   esbuild: true
   sharp: false
   unrs-resolver: false
+  # Pulled in by next-intl's optional message extractor, which we don't use (#423)
+  "@parcel/watcher": false
+  "@swc/core": false
