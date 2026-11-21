@@ -7,6 +7,7 @@ import { History, LibraryBig, LogOut, ShieldAlert, Sparkles } from "lucide-react
 import type { LucideIcon } from "lucide-react";
 import type { User } from "@krama/contracts-ts";
 import { Logo, ThemeToggle } from "@/components/ui";
+import { LanguagePicker } from "./LanguagePicker";
 import { type ApiClient, getApiClient } from "@/lib/api";
 
 // `short` is shown on phones, where the full labels don't fit next to the logo and Sign out.
@@ -154,6 +155,7 @@ export function AppHeader({ client }: { client?: ApiClient }) {
           })}
         </nav>
         <div className="ml-auto flex shrink-0 items-center gap-2 text-sm">
+          <LanguagePicker />
           <ThemeToggle />
           {user && (
             <span className="hidden items-center gap-2 rounded-full bg-white/5 py-1 pl-1 pr-3 sm:flex">
