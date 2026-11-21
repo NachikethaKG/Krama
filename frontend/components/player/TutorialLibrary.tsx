@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowUpRight, Loader2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import type { WorkflowSummary } from "@krama/contracts-ts";
 import { errorMessage, getApiClient } from "@/lib/api";
 
@@ -11,15 +12,16 @@ const TONES = ["kr-learn", "kr-ask", "kr-run", "kr-plan", "kr-verify", "kr-appro
 
 /** Every stored Verified Workflow, each one a tutorial (#83). Real API mode only. */
 export function TutorialLibrary() {
+  const t = useTranslations("player");
   const [items, setItems] = useState<WorkflowSummary[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<{ cause: unknown } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     getApiClient()
       .getWorkflows()
       .then((page) => !cancelled && setItems(page.items))
-      .catch((err) => !cancelled && setError(errorMessage(err, "The tutorials could not be loaded.")));
+      .catch((err) => !cancelled && setError({ cause: err }));
     return () => {
       cancelled = true;
     };
@@ -28,7 +30,7 @@ export function TutorialLibrary() {
   if (error) {
     return (
       <p role="alert" className="py-20 text-center text-sm font-semibold text-danger">
-        {error}
+        {errorMessage(error.cause, t("tutorialLibrary.loadError"))}
       </p>
     );
   }
@@ -36,12 +38,12 @@ export function TutorialLibrary() {
     return (
       <p role="status" className="flex items-center justify-center gap-2 py-20 text-center text-sm text-ink-400">
         <Loader2 aria-hidden="true" className="size-4 animate-spin text-learn" />
-        Loading tutorials…
+        {t("tutorialLibrary.loading")}
       </p>
     );
   }
   if (items.length === 0) {
-    return <p className="py-20 text-center text-sm text-ink-400">No verified workflows yet.</p>;
+    return <p className="py-20 text-center text-sm text-ink-400">{t("tutorialLibrary.empty")}</p>;
   }
   return (
     <ul data-testid="tutorial-library" className="mx-auto grid max-w-5xl gap-4 px-4 sm:grid-cols-2">
@@ -54,7 +56,7 @@ export function TutorialLibrary() {
             <span>
               <span className="block text-sm font-bold text-white">{w.title}</span>
               <span className="mt-1 block text-xs text-ink-400">
-                {w.step_count} steps · {w.target_app ?? "site"}
+                {t("tutorialLibrary.meta", { count: w.step_count, app: w.target_app ?? t("tutorialLibrary.siteFallback") })}
                 {w.created_at ? ` · ${w.created_at.slice(0, 10)}` : ""}
               </span>
             </span>

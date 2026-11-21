@@ -13,7 +13,9 @@ import {
   Smartphone,
   X,
 } from "lucide-react";
-import type { Export, ExportPreset } from "@krama/contracts-ts";
+import { useTranslations } from "next-intl";
+import type { Export, ExportPreset, Language } from "@krama/contracts-ts";
+import { TUTORIAL_LANGUAGES, TutorialLanguageSelect } from "@/components/player/TutorialLanguageSelect";
 import { getApiClient } from "@/lib/api";
 
 export interface ExportVideoModalProps {
@@ -22,6 +24,8 @@ export interface ExportVideoModalProps {
   workflowId: string;
   tutorialTitle?: string;
   stepCount?: number;
+  /** The language the tutorial is shown in (#427): the export starts in it. */
+  initialLanguage?: string;
 }
 
 function formatBytes(bytes?: number | null): string {
@@ -48,11 +52,17 @@ export function ExportVideoModal({
   workflowId,
   tutorialTitle,
   stepCount = 1,
+  initialLanguage,
 }: ExportVideoModalProps) {
+  const t = useTranslations("export");
   const [preset, setPreset] = useState<ExportPreset>("landscape");
+  const [language, setLanguage] = useState<Language>(
+    TUTORIAL_LANGUAGES.includes(initialLanguage as Language) ? (initialLanguage as Language) : "en",
+  );
   const [currentExport, setCurrentExport] = useState<Export | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  // The server's message, or which of our own messages to show (translated when shown).
+  const [error, setError] = useState<{ message: string | null; fallback: "statusFailed" | "startFailed" } | null>(null);
 
   const pollTimerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -77,7 +87,7 @@ export function ExportVideoModal({
         }
       } catch (err) {
         if (isCancelled) return;
-        setError(err instanceof Error ? err.message : "Failed to check export status");
+        setError({ message: err instanceof Error ? err.message : null, fallback: "statusFailed" });
         if (pollTimerRef.current) clearInterval(pollTimerRef.current);
       }
     }, 2000);
@@ -96,11 +106,10 @@ export function ExportVideoModal({
     setIsSubmitting(true);
     setError(null);
     try {
-      const exp = await getApiClient().createExport(workflowId, preset);
+      const exp = await getApiClient().createExport(workflowId, preset, language);
       setCurrentExport(exp);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Failed to start export";
-      setError(msg);
+      setError({ message: err instanceof Error ? err.message : null, fallback: "startFailed" });
     } finally {
       setIsSubmitting(false);
     }
@@ -140,10 +149,10 @@ export function ExportVideoModal({
             </div>
             <div>
               <h2 id="export-dialog-title" className="kr-display text-lg font-bold text-white">
-                Export Tutorial as Video
+                {t("modal.title")}
               </h2>
               <p className="text-xs text-ink-300">
-                {tutorialTitle || "Export MP4 with narration, captions & chapters"}
+                {tutorialTitle || t("modal.subtitleFallback")}
               </p>
             </div>
           </div>
@@ -152,7 +161,7 @@ export function ExportVideoModal({
             data-testid="close-export-modal-btn"
             onClick={onClose}
             className="rounded-lg p-1.5 text-ink-400 hover:bg-ink-800 hover:text-white transition-colors"
-            aria-label="Close dialog"
+            aria-label={t("modal.closeDialog")}
           >
             <X className="size-5" />
           </button>
@@ -167,8 +176,8 @@ export function ExportVideoModal({
             >
               <AlertCircle className="size-4 shrink-0 mt-0.5" />
               <div className="flex-1">
-                <p className="font-semibold">Export Error</p>
-                <p className="mt-0.5 text-ink-200">{error}</p>
+                <p className="font-semibold">{t("modal.errorTitle")}</p>
+                <p className="mt-0.5 text-ink-200">{error.message ?? t(`modal.${error.fallback}`)}</p>
               </div>
             </div>
           )}
@@ -178,9 +187,9 @@ export function ExportVideoModal({
             <>
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-ink-300 mb-2.5">
-                  Select Aspect Ratio & Preset
+                  {t("modal.selectPreset")}
                 </label>
-                <div className="grid grid-cols-2 gap-3" role="radiogroup" aria-label="Export Preset">
+                <div className="grid grid-cols-2 gap-3" role="radiogroup" aria-label={t("modal.presetGroup")}>
                   {/* Landscape option */}
                   <button
                     type="button"
@@ -199,8 +208,8 @@ export function ExportVideoModal({
                       <span className="font-mono text-xs text-ink-400">16:9</span>
                     </div>
                     <div>
-                      <p className="text-sm font-bold text-white">Landscape</p>
-                      <p className="text-xs text-ink-300 mt-0.5">1920×1080 · Desktop, YouTube & docs</p>
+                      <p className="text-sm font-bold text-white">{t("modal.landscape")}</p>
+                      <p className="text-xs text-ink-300 mt-0.5">{t("modal.landscapeHint")}</p>
                     </div>
                   </button>
 
@@ -222,26 +231,38 @@ export function ExportVideoModal({
                       <span className="font-mono text-xs text-ink-400">9:16</span>
                     </div>
                     <div>
-                      <p className="text-sm font-bold text-white">Portrait</p>
-                      <p className="text-xs text-ink-300 mt-0.5">1080×1920 · Mobile view & Shorts</p>
+                      <p className="text-sm font-bold text-white">{t("modal.portrait")}</p>
+                      <p className="text-xs text-ink-300 mt-0.5">{t("modal.portraitHint")}</p>
                     </div>
                   </button>
                 </div>
               </div>
 
+              <TutorialLanguageSelect
+                value={language}
+                onChange={setLanguage}
+                label={t("modal.language")}
+                testId="export-language-select"
+              />
+              {language === "hi" || language === "kn" ? (
+                <p data-testid="export-captions-only" className="text-xs text-ink-300">
+                  {t("modal.captionsOnly")}
+                </p>
+              ) : null}
+
               {/* Feature Highlights */}
               <div className="rounded-xl border border-ink-800 bg-ink-950/40 p-3.5 text-xs text-ink-300 space-y-1.5 font-mono">
                 <p className="flex items-center gap-2">
                   <span className="size-1.5 rounded-full bg-approve" />
-                  <span>Public domain voice narration (LJSpeech)</span>
+                  <span>{t("modal.featureVoice")}</span>
                 </p>
                 <p className="flex items-center gap-2">
                   <span className="size-1.5 rounded-full bg-learn" />
-                  <span>Synchronized karaoke captions burned into video</span>
+                  <span>{t("modal.featureCaptions")}</span>
                 </p>
                 <p className="flex items-center gap-2">
                   <span className="size-1.5 rounded-full bg-accent" />
-                  <span>Embedded chapter markers for all {stepCount} steps</span>
+                  <span>{t("modal.featureChapters", { count: stepCount })}</span>
                 </p>
               </div>
 
@@ -253,7 +274,7 @@ export function ExportVideoModal({
                   onClick={onClose}
                   className="kr-btn kr-btn-secondary px-4 py-2 text-sm text-ink-300 hover:text-white"
                 >
-                  Cancel
+                  {t("modal.cancel")}
                 </button>
                 <button
                   type="button"
@@ -265,12 +286,12 @@ export function ExportVideoModal({
                   {isSubmitting ? (
                     <>
                       <Loader2 className="size-4 animate-spin" />
-                      <span>Queueing Export…</span>
+                      <span>{t("modal.queueing")}</span>
                     </>
                   ) : (
                     <>
                       <Film className="size-4" />
-                      <span>Start Export</span>
+                      <span>{t("modal.start")}</span>
                     </>
                   )}
                 </button>
@@ -289,17 +310,17 @@ export function ExportVideoModal({
 
               <div>
                 <h3 className="text-base font-bold text-white">
-                  {currentExport.status === "queued" ? "Queued in Background" : "Rendering Video…"}
+                  {currentExport.status === "queued" ? t("modal.queued") : t("modal.rendering")}
                 </h3>
                 <p className="text-xs text-ink-300 mt-1">
-                  Rendering runs CPU-only with chapter metadata and burned-in captions.
+                  {t("modal.renderingHint")}
                 </p>
               </div>
 
               {/* Progress bar */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between text-xs font-mono text-ink-300">
-                  <span>{currentExport.progress < 15 ? "Synthesizing voice & timeline" : "Composing frames"}</span>
+                  <span>{currentExport.progress < 15 ? t("modal.phaseVoice") : t("modal.phaseFrames")}</span>
                   <span data-testid="export-progress-percent">{currentExport.progress}%</span>
                 </div>
                 <div className="h-2 w-full overflow-hidden rounded-full bg-ink-800">
@@ -312,7 +333,7 @@ export function ExportVideoModal({
               </div>
 
               <p className="font-mono text-[11px] text-ink-400">
-                Preset: {currentExport.preset === "portrait" ? "Portrait (9:16)" : "Landscape (16:9)"}
+                {t("modal.presetLine", { preset: currentExport.preset === "portrait" ? t("modal.portraitRatio") : t("modal.landscapeRatio") })}
               </p>
             </div>
           )}
@@ -323,9 +344,9 @@ export function ExportVideoModal({
               <div className="flex items-center gap-3 rounded-xl border border-approve/30 bg-approve/10 p-3.5 text-xs text-approve">
                 <CheckCircle2 className="size-5 shrink-0" />
                 <div>
-                  <p className="font-bold text-sm">Export Complete</p>
+                  <p className="font-bold text-sm">{t("modal.completeTitle")}</p>
                   <p className="mt-0.5 text-ink-200">
-                    Your video is ready with embedded chapter markers and captions.
+                    {t("modal.completeBody")}
                   </p>
                 </div>
               </div>
@@ -333,16 +354,18 @@ export function ExportVideoModal({
               {/* Video stats */}
               <div className="grid grid-cols-3 gap-2.5 rounded-xl border border-ink-800 bg-ink-950/60 p-3 text-center font-mono text-xs">
                 <div>
-                  <span className="text-ink-400 text-[10px] uppercase">Duration</span>
+                  <span className="text-ink-400 text-[10px] uppercase">{t("modal.statDuration")}</span>
                   <p className="font-bold text-white mt-0.5">{formatDuration(currentExport.duration_ms)}</p>
                 </div>
                 <div>
-                  <span className="text-ink-400 text-[10px] uppercase">Size</span>
+                  <span className="text-ink-400 text-[10px] uppercase">{t("modal.statSize")}</span>
                   <p className="font-bold text-white mt-0.5">{formatBytes(currentExport.size_bytes)}</p>
                 </div>
                 <div>
-                  <span className="text-ink-400 text-[10px] uppercase">Preset</span>
-                  <p className="font-bold text-white mt-0.5 capitalize">{currentExport.preset}</p>
+                  <span className="text-ink-400 text-[10px] uppercase">{t("modal.statPreset")}</span>
+                  <p className="font-bold text-white mt-0.5 capitalize">
+                    {currentExport.preset === "portrait" ? t("modal.portrait") : t("modal.landscape")}
+                  </p>
                 </div>
               </div>
 
@@ -356,7 +379,7 @@ export function ExportVideoModal({
                     className="kr-btn kr-btn-primary flex w-full items-center justify-center gap-2 py-2.5 text-sm font-semibold text-white bg-accent hover:bg-accent/90"
                   >
                     <Download className="size-4" />
-                    <span>Download MP4 Video</span>
+                    <span>{t("modal.downloadVideo")}</span>
                   </a>
                 )}
 
@@ -368,7 +391,7 @@ export function ExportVideoModal({
                     className="kr-btn kr-btn-secondary flex w-full items-center justify-center gap-2 py-2 text-xs text-ink-300 hover:text-white border border-ink-700"
                   >
                     <FileText className="size-3.5 text-learn" />
-                    <span>Download WebVTT Captions (.vtt)</span>
+                    <span>{t("modal.downloadCaptions")}</span>
                   </a>
                 )}
 
@@ -379,7 +402,7 @@ export function ExportVideoModal({
                   className="flex w-full items-center justify-center gap-1.5 text-xs text-ink-400 hover:text-ink-200 pt-2 transition-colors"
                 >
                   <RefreshCw className="size-3" />
-                  <span>Export with another preset</span>
+                  <span>{t("modal.exportAnother")}</span>
                 </button>
               </div>
             </div>
@@ -392,13 +415,11 @@ export function ExportVideoModal({
                 <AlertCircle className="size-5 shrink-0 mt-0.5" />
                 <div>
                   <p className="font-bold text-sm">
-                    {isExpired ? "Export Expired" : "Export Failed"}
+                    {isExpired ? t("modal.expiredTitle") : t("modal.failedTitle")}
                   </p>
                   <p className="mt-0.5 text-ink-200">
                     {currentExport.error?.message ||
-                      (isExpired
-                        ? "This export has expired after retention limits. Click below to render again."
-                        : "Video rendering could not be completed.")}
+                      (isExpired ? t("modal.expiredBody") : t("modal.failedBody"))}
                   </p>
                 </div>
               </div>
@@ -409,7 +430,7 @@ export function ExportVideoModal({
                   onClick={onClose}
                   className="kr-btn kr-btn-secondary px-4 py-2 text-sm text-ink-300 hover:text-white"
                 >
-                  Close
+                  {t("modal.close")}
                 </button>
                 <button
                   type="button"
@@ -418,7 +439,7 @@ export function ExportVideoModal({
                   className="kr-btn kr-btn-primary flex items-center gap-2 px-5 py-2 text-sm font-semibold text-white bg-accent hover:bg-accent/90"
                 >
                   <RefreshCw className="size-4" />
-                  <span>Try Again</span>
+                  <span>{t("modal.tryAgain")}</span>
                 </button>
               </div>
             </div>

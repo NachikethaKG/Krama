@@ -2,22 +2,29 @@
 
 import { useEffect, useState } from "react";
 import { Check, Lock, MousePointer2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 /**
  * The hero's "watch it work" window: a pretend browser where a cursor glides to each control, clicks,
  * and evidence chips light up as every step is verified. Decorative (aria-hidden): the page copy says
  * the same thing in words.
  */
+// `label` and `evidence` are keys under landing.demo.steps / landing.demo.evidence.
 const STEPS = [
-  { label: "Click “New repository”", target: { x: 76, y: 14 }, evidence: ["url", "aria"], tone: "var(--plan)" },
-  { label: "Type “bench-new-4821”", target: { x: 38, y: 40 }, evidence: ["field value"], tone: "var(--approve)" },
-  { label: "Choose “Private”", target: { x: 22, y: 60 }, evidence: ["checked"], tone: "var(--run)" },
-  { label: "Click “Create repository”", target: { x: 30, y: 82 }, evidence: ["url", "network 3xx"], tone: "var(--verify)" },
+  { label: "clickNew", target: { x: 76, y: 14 }, evidence: ["url", "aria"], tone: "var(--plan)" },
+  { label: "typeName", target: { x: 38, y: 40 }, evidence: ["fieldValue"], tone: "var(--approve)" },
+  { label: "choosePrivate", target: { x: 22, y: 60 }, evidence: ["checked"], tone: "var(--run)" },
+  { label: "clickCreate", target: { x: 30, y: 82 }, evidence: ["url", "network3xx"], tone: "var(--verify)" },
 ];
+
+/** What the pretend run types into the name field: an example value, the same in every language. */
+const TYPED_NAME = "bench-new-4821";
+const DEMO_URL = "github.com/new";
 
 const STEP_MS = 2200;
 
 export function HeroRunDemo() {
+  const t = useTranslations("landing.demo");
   const [index, setIndex] = useState(0);
   const [clicked, setClicked] = useState(false);
 
@@ -45,10 +52,10 @@ export function HeroRunDemo() {
         <span className="size-3 rounded-full bg-verify" />
         <div className="ml-3 flex flex-1 items-center gap-2 rounded-full bg-white/5 px-3 py-1 font-mono text-[11px] text-ink-300">
           <Lock className="size-3 text-verify" />
-          github.com/new
+          {DEMO_URL}
         </div>
         <span className="kr-chip kr-run ml-2 !py-0.5 !text-[10px]">
-          <span className="kr-dot kr-dot-live !size-1.5" /> LIVE
+          <span className="kr-dot kr-dot-live !size-1.5" /> {t("live")}
         </span>
       </div>
 
@@ -59,10 +66,10 @@ export function HeroRunDemo() {
           className="absolute right-[6%] top-[8%] rounded-lg px-3 py-1.5 text-[10px] font-bold text-oncolor"
           style={{ background: "var(--plan)" }}
         >
-          New repository
+          {t("newRepository")}
         </div>
         <div className="absolute left-[6%] top-[33%] h-8 w-[64%] rounded-lg border border-white/15 bg-white/5 px-3 pt-2 font-mono text-[11px] text-white/80">
-          {index >= 1 ? "bench-new-4821" : ""}
+          {index >= 1 ? TYPED_NAME : ""}
           {index === 1 && <span className="kr-caret" />}
         </div>
         <div className="absolute left-[6%] top-[55%] flex items-center gap-2 text-[11px] text-ink-300">
@@ -72,10 +79,10 @@ export function HeroRunDemo() {
           >
             {index >= 2 && <span className="size-1.5 rounded-full bg-ink-950" />}
           </span>
-          Private
+          {t("private")}
         </div>
         <div className="absolute left-[6%] top-[76%] rounded-lg bg-verify px-3 py-1.5 text-[10px] font-bold text-oncolor">
-          Create repository
+          {t("createRepository")}
         </div>
 
         {/* highlight around the target */}
@@ -106,8 +113,8 @@ export function HeroRunDemo() {
 
       {/* step + evidence */}
       <div className="mt-3 flex flex-wrap items-center gap-2 px-1">
-        <span className="font-mono text-[11px] text-ink-400">step {index + 1}/4</span>
-        <span className="text-sm font-semibold text-white">{step.label}</span>
+        <span className="font-mono text-[11px] text-ink-400">{t("stepCount", { current: index + 1, total: STEPS.length })}</span>
+        <span className="text-sm font-semibold text-white">{t(`steps.${step.label}`, { value: TYPED_NAME })}</span>
         <span className="ml-auto flex gap-1.5">
           {step.evidence.map((e) => (
             <span
@@ -115,7 +122,7 @@ export function HeroRunDemo() {
               className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold text-oncolor transition-opacity duration-300"
               style={{ background: "var(--verify)", opacity: clicked ? 1 : 0.15 }}
             >
-              <Check className="size-3" /> {e}
+              <Check className="size-3" /> {t(`evidence.${e}`)}
             </span>
           ))}
         </span>

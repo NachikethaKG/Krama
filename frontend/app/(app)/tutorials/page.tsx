@@ -1,9 +1,11 @@
+import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { TutorialLibraryView } from "@/components/tutorials";
 
-export const metadata = {
-  title: "My tutorials · Krama",
-  description: "Your interactive tutorials, recorded from tasks Krama did and checked.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("shell.meta.tutorials");
+  return { title: t("title"), description: t("description") };
+}
 
 export default function TutorialsPage() {
   return (

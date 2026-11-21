@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import { useLocale, useTranslations } from "next-intl";
 import {
   AlertTriangle,
   ArrowUpRight,
@@ -29,11 +30,11 @@ export interface ReviewQueueItemCardProps {
   quotaError?: string | null;
 }
 
-function formatDate(isoString: string): string {
+function formatDate(isoString: string, locale: string): string {
   try {
     const d = new Date(isoString);
     if (Number.isNaN(d.getTime())) return isoString;
-    return d.toLocaleDateString("en-US", {
+    return d.toLocaleDateString(locale, {
       month: "short",
       day: "numeric",
       hour: "2-digit",
@@ -54,6 +55,8 @@ export function ReviewQueueItemCard({
   isProcessing = false,
   quotaError = null,
 }: ReviewQueueItemCardProps) {
+  const t = useTranslations("reviews");
+  const locale = useLocale();
   const [isDiffExpanded, setIsDiffExpanded] = useState(item.category === "heal_pending");
 
   const renderCategoryBadge = () => {
@@ -65,7 +68,7 @@ export function ReviewQueueItemCard({
             className="inline-flex items-center gap-1.5 rounded-full border border-purple-400/40 bg-purple-500/15 px-3 py-1 text-xs font-bold text-purple-300"
           >
             <Sparkles className="size-3.5 text-purple-400" aria-hidden="true" />
-            <span>Heal Pending</span>
+            <span>{t("card.healPending")}</span>
           </span>
         );
       case "outdated":
@@ -75,7 +78,7 @@ export function ReviewQueueItemCard({
             className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/40 bg-amber-500/15 px-3 py-1 text-xs font-bold text-amber-300"
           >
             <AlertTriangle className="size-3.5 text-amber-400" aria-hidden="true" />
-            <span>Outdated</span>
+            <span>{t("card.outdated")}</span>
           </span>
         );
       case "unstable":
@@ -85,7 +88,7 @@ export function ReviewQueueItemCard({
             className="inline-flex items-center gap-1.5 rounded-full border border-orange-400/40 bg-orange-500/15 px-3 py-1 text-xs font-bold text-orange-300"
           >
             <RotateCcw className="size-3.5 text-orange-400" aria-hidden="true" />
-            <span>Unstable</span>
+            <span>{t("card.unstable")}</span>
           </span>
         );
       case "cant_check":
@@ -97,7 +100,7 @@ export function ReviewQueueItemCard({
             className="inline-flex items-center gap-1.5 rounded-full border border-rose-400/40 bg-rose-500/15 px-3 py-1 text-xs font-bold text-rose-300"
           >
             <AlertTriangle className="size-3.5 text-rose-400" aria-hidden="true" />
-            <span data-testid="category-cant_check">Can&apos;t check: {item.reason}</span>
+            <span data-testid="category-cant_check">{t("card.cantCheck", { reason: item.reason })}</span>
           </span>
         );
     }
@@ -143,18 +146,18 @@ export function ReviewQueueItemCard({
           className="flex items-center gap-1 text-xs text-ink-400"
         >
           <Clock className="size-3.5" aria-hidden="true" />
-          <span>{formatDate(item.createdAt)}</span>
+          <span>{formatDate(item.createdAt, locale)}</span>
         </div>
       </div>
 
       {/* Middle Body / Description */}
       <div className="my-4 flex flex-col gap-3">
         <div className="rounded-xl border border-white/5 bg-white/[0.02] p-3 text-sm text-ink-200">
-          <span className="font-semibold text-white">Trigger reason: </span>
+          <span className="font-semibold text-white">{t("card.triggerReason")} </span>
           <span data-testid="review-reason">{item.reason}</span>
           {item.failedStepIndex !== undefined && (
             <span className="ml-2 font-mono text-xs text-ink-400">
-              (Step {item.failedStepIndex})
+              {t("card.failedStep", { step: item.failedStepIndex })}
             </span>
           )}
         </div>
@@ -168,7 +171,7 @@ export function ReviewQueueItemCard({
               onClick={() => setIsDiffExpanded((prev) => !prev)}
               className="flex w-fit items-center gap-1.5 text-xs font-bold text-purple-300 hover:text-white transition-colors"
             >
-              <span>{isDiffExpanded ? "Hide Step-by-Step Diff" : "Inspect Step-by-Step Diff"}</span>
+              <span>{isDiffExpanded ? t("card.hideDiff") : t("card.inspectDiff")}</span>
               <span className="text-[10px]">{isDiffExpanded ? "▲" : "▼"}</span>
             </button>
 
@@ -179,8 +182,8 @@ export function ReviewQueueItemCard({
               >
                 <StepDiffViewer
                   diffs={item.stepDiffs ?? []}
-                  fromVersion={item.currentVersion ?? "current"}
-                  toVersion={item.pendingVersion ?? "pending"}
+                  fromVersion={item.currentVersion ?? t("card.currentVersion")}
+                  toVersion={item.pendingVersion ?? t("card.pendingVersion")}
                   changeSummary={item.reason}
                 />
               </div>
@@ -216,7 +219,7 @@ export function ReviewQueueItemCard({
               className="inline-flex items-center gap-1.5 rounded-full border border-rose-500/40 bg-rose-500/10 px-4 py-2 text-xs font-bold text-rose-300 hover:bg-rose-500/20 disabled:opacity-50 transition-colors"
             >
               <X className="size-3.5" aria-hidden="true" />
-              <span>Reject</span>
+              <span>{t("card.reject")}</span>
             </button>
 
             <button
@@ -227,7 +230,7 @@ export function ReviewQueueItemCard({
               className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-4 py-2 text-xs font-bold text-white shadow-md hover:bg-emerald-500 disabled:opacity-50 transition-all"
             >
               <Check className="size-3.5" aria-hidden="true" />
-              <span>Accept</span>
+              <span>{t("card.accept")}</span>
             </button>
           </>
         )}
@@ -243,7 +246,7 @@ export function ReviewQueueItemCard({
                 className="inline-flex items-center gap-1.5 rounded-full border border-sky-400/40 bg-sky-500/10 px-4 py-2 text-xs font-bold text-sky-300 hover:bg-sky-500/20 disabled:opacity-50 transition-colors"
               >
                 <Sparkles className="size-3.5 text-sky-400" aria-hidden="true" />
-                <span>Retry AI Fix</span>
+                <span>{t("card.retryAiFix")}</span>
               </button>
             )}
 
@@ -255,7 +258,7 @@ export function ReviewQueueItemCard({
               className="inline-flex items-center gap-1.5 rounded-full bg-indigo-600 px-4 py-2 text-xs font-bold text-white shadow-md hover:bg-indigo-500 disabled:opacity-50 transition-all"
             >
               <RefreshCw className={`size-3.5 ${isProcessing ? "animate-spin" : ""}`} aria-hidden="true" />
-              <span>Regenerate</span>
+              <span>{t("card.regenerate")}</span>
             </button>
           </>
         )}
@@ -269,7 +272,7 @@ export function ReviewQueueItemCard({
                 className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/40 bg-amber-500/10 px-4 py-2 text-xs font-bold text-amber-300 hover:bg-amber-500/20 transition-colors"
               >
                 <KeyRound className="size-3.5" aria-hidden="true" />
-                <span>Re-authenticate Session</span>
+                <span>{t("card.reauth")}</span>
                 <ExternalLink className="size-3 opacity-60" aria-hidden="true" />
               </Link>
             )}
@@ -282,7 +285,7 @@ export function ReviewQueueItemCard({
               className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-4 py-2 text-xs font-bold text-white hover:bg-white/20 disabled:opacity-50 transition-colors"
             >
               <RotateCcw className={`size-3.5 ${isProcessing ? "animate-spin" : ""}`} aria-hidden="true" />
-              <span>Retry Check</span>
+              <span>{t("card.retryCheck")}</span>
             </button>
           </>
         )}

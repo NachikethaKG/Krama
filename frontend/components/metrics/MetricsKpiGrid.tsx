@@ -4,6 +4,7 @@ import type { MetricsSummary } from "@krama/contracts-ts";
 import type { ReactNode } from "react";
 import { Activity, Gauge, LifeBuoy, ShieldCheck } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { formatMs } from "./LatencySparkline";
 
 export interface MetricsKpiGridProps {
@@ -11,6 +12,7 @@ export interface MetricsKpiGridProps {
 }
 
 export function MetricsKpiGrid({ summary }: MetricsKpiGridProps) {
+  const t = useTranslations("metrics.kpi");
   // PRD §33 Targets:
   // 1. Success Rate >= 80%
   const successRate = summary.overall_success_rate ?? 0;
@@ -37,7 +39,7 @@ export function MetricsKpiGrid({ summary }: MetricsKpiGridProps) {
     : undefined;
   // The reporter writes a percentage (0-100).
   const recoveryRate = rawRecovery == null ? null : rawRecovery > 1 ? rawRecovery / 100 : rawRecovery;
-  const recoveryRatePct = recoveryRate == null ? "Not measured" : `${(recoveryRate * 100).toFixed(1)}%`;
+  const recoveryRatePct = recoveryRate == null ? t("recoveryRate.notMeasured") : `${(recoveryRate * 100).toFixed(1)}%`;
   const isRecoveryPassed = recoveryRate != null && recoveryRate >= 0.5;
 
   // 4. Latency Profile: < 15s planning, < 60s total
@@ -55,59 +57,66 @@ export function MetricsKpiGrid({ summary }: MetricsKpiGridProps) {
         id="success-rate"
         tone="kr-verify"
         icon={Activity}
-        label="Task Success Rate"
-        target="Target ≥ 80%"
+        label={t("successRate.label")}
+        target={t("successRate.target")}
         passed={isSuccessPassed}
         value={`${successRatePct}%`}
-        unit={`(${summary.overall_successful_runs ?? 0}/${summary.overall_total_runs ?? 0} runs)`}
+        unit={t("successRate.unit", {
+          successful: summary.overall_successful_runs ?? 0,
+          total: summary.overall_total_runs ?? 0,
+        })}
         meter={successRate}
       >
-        Workflows executing end-to-end to verified state
+        {t("successRate.body")}
       </KpiTile>
 
       <KpiTile
         id="verifier-accuracy"
         tone="kr-approve"
         icon={ShieldCheck}
-        label="Verifier Accuracy"
-        target="Target ≥ 90%"
+        label={t("verifierAccuracy.label")}
+        target={t("verifierAccuracy.target")}
         passed={isAccuracyPassed}
         value={`${verifierAccuracyPct}%`}
-        unit="precision"
+        unit={t("verifierAccuracy.unit")}
         meter={verifierAccuracy}
       >
-        Layered verifier (DOM + visual + network) without false alarms
+        {t("verifierAccuracy.body")}
       </KpiTile>
 
       <KpiTile
         id="recovery-rate"
         tone="kr-plan"
         icon={LifeBuoy}
-        label="Recovery Rate"
-        target="Target ≥ 50%"
+        label={t("recoveryRate.label")}
+        target={t("recoveryRate.target")}
         passed={isRecoveryPassed}
         warnOnly
         value={recoveryRatePct}
-        unit="replan success"
+        unit={t("recoveryRate.unit")}
         meter={recoveryRate ?? 0}
       >
-        Automatic recovery from transient DOM drift and step failures
+        {t("recoveryRate.body")}
       </KpiTile>
 
       <KpiTile
         id="latency-profile"
         tone="kr-run"
         icon={Gauge}
-        label="Latency Profile"
-        target="Target < 60s"
+        label={t("latency.label")}
+        target={t("latency.target")}
         passed={isLatencyPassed}
         warnOnly
         value={formatMs(avgLatencyMs)}
-        unit="mean total"
+        unit={t("latency.unit")}
         meter={Math.max(0, 1 - avgLatencyMs / 90000)}
       >
         <span className="flex items-center justify-between font-mono">
-          <span>Plan: {planningLatencyMs == null ? "not measured" : formatMs(planningLatencyMs)} (&lt; 15s)</span>
+          <span>
+            {t("latency.plan", {
+              value: planningLatencyMs == null ? t("latency.notMeasured") : formatMs(planningLatencyMs),
+            })}
+          </span>
           <span>P90: {formatMs(p90LatencyMs)}</span>
         </span>
       </KpiTile>

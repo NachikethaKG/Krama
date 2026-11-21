@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { type ApiClient, getApiClient } from "@/lib/api";
 
@@ -13,19 +14,15 @@ export interface ApiStatusBadgeProps {
 
 export function ApiStatusBadge({ status, className = "" }: ApiStatusBadgeProps) {
   // The status wears a spectrum colour: lime when up, coral when down, amber while checking.
+  const t = useTranslations("landing.apiStatus");
   const tone = status === "online" ? "kr-verify" : status === "offline" ? "kr-danger" : "kr-plan";
 
-  const label =
-    status === "online"
-      ? "Systems Operational"
-      : status === "offline"
-        ? "API Offline"
-        : "Connecting...";
+  const label = t(status === "online" ? "online" : status === "offline" ? "offline" : "checking");
 
   return (
     <div
       className={`${tone} kr-chip !px-3 !py-1 ${className}`}
-      aria-label="System Status"
+      aria-label={t("label")}
       role="status"
     >
       <span className={`kr-dot !size-2 ${status === "offline" ? "" : "kr-dot-live"}`} />
@@ -45,6 +42,7 @@ export function ApiStatus({
   showOfflineBanner = true,
   className = "",
 }: ApiStatusProps) {
+  const t = useTranslations("landing.apiStatus");
   const [status, setStatus] = useState<SystemStatus>("checking");
 
   useEffect(() => {
@@ -77,14 +75,12 @@ export function ApiStatus({
       {showOfflineBanner && status === "offline" && (
         <div
           role="alert"
-          aria-label="Backend offline notification"
+          aria-label={t("offlineLabel")}
           className="kr-plan kr-tone-card rounded-2xl px-3 py-2 text-xs text-plan"
         >
           <div className="flex items-center gap-2">
             <span className="kr-dot !size-1.5" />
-            <span>
-              Backend service offline. Cached workflows and mock mode remain available.
-            </span>
+            <span>{t("offlineBanner")}</span>
           </div>
         </div>
       )}

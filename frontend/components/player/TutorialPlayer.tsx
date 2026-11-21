@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import type { TutorialSpec } from "@krama/tutorial-compiler";
 import type { eventWithTime } from "@rrweb/types";
 import type { TutorialFreshnessStatus } from "@/types/tutorial";
@@ -36,6 +37,10 @@ export interface TutorialPlayerProps {
   recording?: eventWithTime[] | null;
   /** When true, edit, delete, re-run, or sharing management controls are omitted. */
   readOnly?: boolean;
+  /** The tutorial's language (#427): narration speaks it, and the export dialog starts with it. */
+  language?: string;
+  /** Shown in the header, e.g. the tutorial-language switch. */
+  headerExtra?: React.ReactNode;
 }
 
 export function TutorialPlayer({
@@ -52,8 +57,11 @@ export function TutorialPlayer({
   onComplete,
   recording = null,
   readOnly = false,
+  language,
+  headerExtra,
 }: TutorialPlayerProps) {
   // The narration sets this while it talks; the player holds the step's end until it's done (#83).
+  const t = useTranslations("player");
   const narratingRef = useRef(false);
   const [isVersionHistoryOpen, setIsVersionHistoryOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
@@ -90,6 +98,7 @@ export function TutorialPlayer({
     currentStepIndex: player.currentSceneIndex,
     initialMuted,
     narratingRef,
+    language,
   });
 
   // WCAG Keyboard Navigation Shortcuts
@@ -106,17 +115,19 @@ export function TutorialPlayer({
 
   // Screen Reader polite live region text derived synchronously from active scene
   const announcement = currentScene
-    ? `Step ${currentScene.step_seq} of ${player.totalScenes}: ${
-        currentScene.caption?.text || currentScene.title || `Step ${currentScene.step_seq}`
-      }`
+    ? t("player.announcement", {
+        seq: currentScene.step_seq,
+        total: player.totalScenes,
+        text: currentScene.caption?.text || currentScene.title || t("player.stepN", { seq: currentScene.step_seq }),
+      })
     : "";
 
   return (
     <section
       ref={playerContainerRef}
       role="region"
-      aria-label="Interactive Tutorial Player"
-      aria-roledescription="interactive video tutorial"
+      aria-label={t("player.region")}
+      aria-roledescription={t("player.roleDescription")}
       data-testid="tutorial-player-root"
       className={`mx-auto flex w-full max-w-7xl flex-col gap-6 overflow-x-hidden p-3 sm:p-4 md:p-6 ${className}`}
     >
@@ -137,7 +148,7 @@ export function TutorialPlayer({
           <div className="flex items-center gap-2">
             <span className="kr-chip">
               <Clapperboard aria-hidden="true" className="size-3.5" />
-              Learn
+              {t("player.learn")}
             </span>
             <TutorialStatusBadge
               status={freshnessStatus}
@@ -146,7 +157,7 @@ export function TutorialPlayer({
             {readOnly ? (
               <span data-testid="readonly-badge" className="kr-chip kr-run">
                 <Eye aria-hidden="true" className="size-3.5" />
-                Read-Only
+                {t("player.readOnly")}
               </span>
             ) : null}
           </div>
@@ -159,9 +170,11 @@ export function TutorialPlayer({
               className="kr-chip cursor-pointer transition-colors hover:text-white"
             >
               <Zap className="size-3.5 text-approve" aria-hidden="true" />
-              <span>Do it for me</span>
+              <span>{t("player.doItForMe")}</span>
             </button>
           )}
+
+          {headerExtra}
 
           {!readOnly && effectiveWorkflowId && (
             <button
@@ -171,7 +184,7 @@ export function TutorialPlayer({
               className="kr-chip cursor-pointer transition-colors hover:text-white"
             >
               <Film className="size-3.5 text-accent" aria-hidden="true" />
-              <span>Export MP4</span>
+              <span>{t("player.exportMp4")}</span>
             </button>
           )}
 
@@ -183,7 +196,7 @@ export function TutorialPlayer({
               className="kr-chip cursor-pointer transition-colors hover:text-white"
             >
               <Share2 className="size-3.5 text-approve" aria-hidden="true" />
-              <span>Share</span>
+              <span>{t("player.share")}</span>
             </button>
           )}
 
@@ -195,7 +208,7 @@ export function TutorialPlayer({
               className="kr-chip cursor-pointer transition-colors hover:text-white"
             >
               <History className="size-3.5 text-learn" aria-hidden="true" />
-              <span>Version History</span>
+              <span>{t("player.versionHistory")}</span>
             </button>
           )}
         </div>
@@ -207,8 +220,10 @@ export function TutorialPlayer({
         )}
         <p data-testid="tutorial-summary" className="flex items-center gap-1.5 font-mono text-xs text-learn">
           <Timer aria-hidden="true" className="size-3.5" />
-          {spec.scenes.length} {spec.scenes.length === 1 ? "step" : "steps"}, each one checked ·{" "}
-          {Math.max(1, Math.round((spec.total_duration_ms || 1) / 1000))} s to watch
+          {t("player.summary", {
+            count: spec.scenes.length,
+            seconds: Math.max(1, Math.round((spec.total_duration_ms || 1) / 1000)),
+          })}
         </p>
         <div aria-hidden="true" className="kr-rail absolute bottom-0 left-0 w-full opacity-60" />
       </header>
@@ -270,20 +285,20 @@ export function TutorialPlayer({
                     {currentScene.step_seq}
                   </span>
                   <span className="kr-display text-lg font-bold text-white">
-                    {currentScene.title || `Step ${currentScene.step_seq}`}
+                    {currentScene.title || t("player.stepN", { seq: currentScene.step_seq })}
                   </span>
                   <span className="kr-chip font-mono uppercase">
                     {currentScene.action.type}
                   </span>
                   {currentScene.sensitive && (
                     <span className="kr-chip kr-plan">
-                      Sensitive
+                      {t("player.sensitive")}
                     </span>
                   )}
                 </div>
 
                 <span className="font-mono text-xs text-ink-400">
-                  Duration: {(currentScene.duration_ms / 1000).toFixed(1)}s
+                  {t("player.duration", { seconds: (currentScene.duration_ms / 1000).toFixed(1) })}
                 </span>
               </div>
 
@@ -291,7 +306,7 @@ export function TutorialPlayer({
               <div className="mt-3 space-y-3">
                 <div>
                   <h3 className="text-[11px] font-bold uppercase tracking-[0.2em]" style={{ color: "var(--kr-tone)" }}>
-                    Instruction
+                    {t("player.instruction")}
                   </h3>
                   <p
                     data-testid="instruction-text"
@@ -305,11 +320,11 @@ export function TutorialPlayer({
                 {actionValue && (
                   <div>
                     <h3 className="mb-1 text-[11px] font-bold uppercase tracking-[0.2em] text-ink-400">
-                      Input Value
+                      {t("player.inputValue")}
                     </h3>
                     <CopyableText
                       text={actionValue}
-                      label="Value"
+                      label={t("player.valueLabel")}
                       code={true}
                     />
                   </div>
@@ -320,7 +335,7 @@ export function TutorialPlayer({
                   <div className="pt-1">
                     <CopyableText
                       text={currentScene.caption.text}
-                      label="Instruction"
+                      label={t("player.instruction")}
                       code={false}
                     />
                   </div>
@@ -349,7 +364,7 @@ export function TutorialPlayer({
         <div
           role="dialog"
           aria-modal="true"
-          aria-label="Steps drawer"
+          aria-label={t("player.stepsDrawer")}
           data-testid="mobile-step-drawer"
           className="fixed inset-0 z-50 flex flex-col justify-end bg-ink-950/70 backdrop-blur-sm lg:hidden"
           onClick={() => setIsMobileDrawerOpen(false)}
@@ -383,14 +398,14 @@ export function TutorialPlayer({
           <div className="flex max-h-[85vh] w-full max-w-2xl flex-col rounded-2xl bg-white shadow-2xl dark:bg-zinc-950 overflow-hidden border border-zinc-200 dark:border-zinc-800">
             <div className="flex items-center justify-between border-b border-zinc-200 px-5 py-4 dark:border-zinc-800">
               <h4 className="text-base font-bold text-zinc-900 dark:text-zinc-100">
-                Workflow Version History & Step Diffs
+                {t("player.versionHistoryTitle")}
               </h4>
               <button
                 type="button"
                 data-testid="close-version-history-btn"
                 onClick={() => setIsVersionHistoryOpen(false)}
                 className="rounded-lg p-1 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
-                aria-label="Close version history"
+                aria-label={t("player.closeVersionHistory")}
               >
                 <svg className="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
@@ -432,6 +447,7 @@ export function TutorialPlayer({
           workflowId={effectiveWorkflowId}
           tutorialTitle={spec.title}
           stepCount={spec.scenes.length}
+          initialLanguage={language}
         />
       )}
     </section>

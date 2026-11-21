@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Check, Copy, Link2, Share2, X } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
 import type { ShareLink } from "@krama/contracts-ts";
 import { getApiClient } from "@/lib/api";
 
@@ -12,19 +13,24 @@ export interface ShareTutorialModalProps {
   tutorialTitle?: string;
 }
 
+type ErrorKey = "loadFailed" | "createFailed" | "copyFailed" | "revokeFailed";
+
 export function ShareTutorialModal({
   isOpen,
   onClose,
   workflowId,
   tutorialTitle,
 }: ShareTutorialModalProps) {
+  const t = useTranslations("share");
+  const locale = useLocale();
   const [links, setLinks] = useState<ShareLink[]>([]);
   const [activeUrl, setActiveUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [revokingId, setRevokingId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  // The server's message, or which of our own messages to show (translated when shown).
+  const [error, setError] = useState<{ message: string | null; fallback: ErrorKey } | null>(null);
 
   useEffect(() => {
     if (!isOpen || !workflowId) return;
@@ -44,7 +50,7 @@ export function ShareTutorialModal({
       })
       .catch((err: unknown) => {
         if (cancelled) return;
-        setError(err instanceof Error ? err.message : "Failed to load share links.");
+        setError({ message: err instanceof Error ? err.message : null, fallback: "loadFailed" });
       })
       .finally(() => {
         if (!cancelled) setIsLoading(false);
@@ -69,7 +75,7 @@ export function ShareTutorialModal({
       setActiveUrl(res.url);
       setLinks((prev) => [res.link, ...prev.filter((l) => l.id !== res.link.id)]);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to create share link.");
+      setError({ message: err instanceof Error ? err.message : null, fallback: "createFailed" });
     } finally {
       setIsCreating(false);
     }
@@ -82,7 +88,7 @@ export function ShareTutorialModal({
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      setError("Failed to copy link to clipboard.");
+      setError({ message: null, fallback: "copyFailed" });
     }
   };
 
@@ -94,7 +100,7 @@ export function ShareTutorialModal({
       setLinks((prev) => prev.map((l) => (l.id === shareId ? updated : l)));
       setActiveUrl(null);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to revoke share link.");
+      setError({ message: err instanceof Error ? err.message : null, fallback: "revokeFailed" });
     } finally {
       setRevokingId(null);
     }
@@ -120,7 +126,7 @@ export function ShareTutorialModal({
             </span>
             <div>
               <h2 id="share-modal-title" className="kr-display text-lg font-bold text-white">
-                Share tutorial
+                {t("modal.title")}
               </h2>
               {tutorialTitle && <p className="text-xs text-ink-400 line-clamp-1">{tutorialTitle}</p>}
             </div>
@@ -130,7 +136,7 @@ export function ShareTutorialModal({
             data-testid="close-share-modal-btn"
             onClick={onClose}
             className="rounded-lg p-1.5 text-ink-400 hover:bg-white/5 hover:text-white transition-colors"
-            aria-label="Close dialog"
+            aria-label={t("modal.closeDialog")}
           >
             <X className="size-4" />
           </button>
@@ -144,14 +150,14 @@ export function ShareTutorialModal({
               data-testid="share-modal-error"
               className="rounded-xl border border-danger/40 bg-danger/10 p-3 text-xs text-danger"
             >
-              {error}
+              {error.message ?? t(`modal.${error.fallback}`)}
             </div>
           )}
 
           {isLoading ? (
             <div data-testid="share-modal-loading" className="flex items-center justify-center py-8 text-xs text-ink-400">
               <span className="mr-2 size-4 animate-spin rounded-full border-2 border-white/20 border-t-approve" />
-              Loading share links…
+              {t("modal.loading")}
             </div>
           ) : (
             <>
@@ -159,7 +165,7 @@ export function ShareTutorialModal({
               {activeUrl ? (
                 <div className="space-y-2 rounded-2xl border border-approve/40 bg-approve/5 p-4">
                   <span className="text-[11px] font-bold uppercase tracking-wider text-approve">
-                    Public share link ready
+                    {t("modal.ready")}
                   </span>
                   <div className="flex items-center gap-2">
                     <input
@@ -177,25 +183,25 @@ export function ShareTutorialModal({
                     >
                       {copied ? (
                         <>
-                          <Check className="size-3.5 mr-1" /> Copied!
+                          <Check className="size-3.5 mr-1" /> {t("modal.copied")}
                         </>
                       ) : (
                         <>
-                          <Copy className="size-3.5 mr-1" /> Copy link
+                          <Copy className="size-3.5 mr-1" /> {t("modal.copyLink")}
                         </>
                       )}
                     </button>
                   </div>
                   <p className="text-[11px] text-ink-400">
-                    Anyone with this link can watch and replay the verified recording without signing in.
+                    {t("modal.readyHint")}
                   </p>
                 </div>
               ) : activeLinks.length === 0 ? (
                 <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-5 text-center">
                   <Link2 className="mx-auto mb-2 size-8 text-ink-400 opacity-60" aria-hidden="true" />
-                  <p className="text-xs text-ink-300">No active share links for this tutorial yet.</p>
+                  <p className="text-xs text-ink-300">{t("modal.emptyTitle")}</p>
                   <p className="mt-1 text-[11px] text-ink-400">
-                    Create a public link to let teammates view this tutorial in their browser.
+                    {t("modal.emptyHint")}
                   </p>
                 </div>
               ) : null}
@@ -203,7 +209,7 @@ export function ShareTutorialModal({
               {/* Action to create a new link */}
               <div className="flex items-center justify-between pt-1">
                 <span className="text-xs text-ink-400">
-                  {activeLinks.length > 0 ? `${activeLinks.length} active share link` : "Share link"}
+                  {activeLinks.length > 0 ? t("modal.activeCount", { count: activeLinks.length }) : t("modal.shareLink")}
                 </span>
                 <button
                   type="button"
@@ -212,7 +218,7 @@ export function ShareTutorialModal({
                   disabled={isCreating}
                   className="kr-btn kr-btn-tone kr-approve px-3 py-1.5 text-xs"
                 >
-                  {isCreating ? "Creating…" : activeLinks.length > 0 ? "Generate new link" : "Create share link"}
+                  {isCreating ? t("modal.creating") : activeLinks.length > 0 ? t("modal.generateNew") : t("modal.create")}
                 </button>
               </div>
 
@@ -220,7 +226,7 @@ export function ShareTutorialModal({
               {links.length > 0 && (
                 <div className="space-y-2 border-t border-white/10 pt-3">
                   <h4 className="text-[11px] font-bold uppercase tracking-wider text-ink-400">
-                    Share links history
+                    {t("modal.history")}
                   </h4>
                   <ul data-testid="share-links-list" className="space-y-2 max-h-48 overflow-y-auto">
                     {links.map((link) => {
@@ -233,16 +239,16 @@ export function ShareTutorialModal({
                         >
                           <div className="flex flex-col gap-0.5">
                             <span className="font-mono text-[11px] text-ink-300">
-                              Created {new Date(link.created_at).toLocaleDateString()}
+                              {t("modal.created", { date: new Date(link.created_at).toLocaleDateString(locale) })}
                             </span>
                             <span className="text-[10px] text-ink-400">
-                              {isRevoked ? "Revoked" : "Active public link"}
+                              {isRevoked ? t("modal.revoked") : t("modal.activeLink")}
                             </span>
                           </div>
 
                           <div>
                             {isRevoked ? (
-                              <span className="kr-chip kr-danger !text-[10px]">Revoked</span>
+                              <span className="kr-chip kr-danger !text-[10px]">{t("modal.revoked")}</span>
                             ) : (
                               <button
                                 type="button"
@@ -251,7 +257,7 @@ export function ShareTutorialModal({
                                 disabled={revokingId === link.id}
                                 className="kr-btn kr-btn-ghost kr-danger px-2.5 py-1 text-xs text-danger"
                               >
-                                {revokingId === link.id ? "Revoking…" : "Revoke"}
+                                {revokingId === link.id ? t("modal.revoking") : t("modal.revoke")}
                               </button>
                             )}
                           </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 
 export interface ApprovalControlsProps {
   /** The run created by POST /plans/{id}/approve; the success banner links to its live view. */
@@ -29,6 +30,7 @@ export function ApprovalControls({
   error: externalError,
   className = "",
 }: ApprovalControlsProps) {
+  const t = useTranslations("approval");
   const [internalPending, setInternalPending] = useState(false);
   const [internalError, setInternalError] = useState<string | null>(null);
 
@@ -45,7 +47,7 @@ export function ApprovalControls({
     try {
       await onApprove();
     } catch (err) {
-      setInternalError(err instanceof Error ? err.message : "Couldn't approve the plan");
+      setInternalError(err instanceof Error ? err.message : t("controls.approveFailed"));
     } finally {
       setInternalPending(false);
     }
@@ -58,7 +60,7 @@ export function ApprovalControls({
     try {
       await onReject();
     } catch (err) {
-      setInternalError(err instanceof Error ? err.message : "Couldn't cancel the plan");
+      setInternalError(err instanceof Error ? err.message : t("controls.rejectFailed"));
     } finally {
       setInternalPending(false);
     }
@@ -68,7 +70,7 @@ export function ApprovalControls({
     <section
       role="region"
       data-testid="approval-controls"
-      aria-label="Workflow approval controls"
+      aria-label={t("controls.ariaLabel")}
       className={`flex flex-col gap-3 ${className}`}
     >
       {/* Error banner */}
@@ -100,7 +102,7 @@ export function ApprovalControls({
             onClick={() => setInternalError(null)}
             className="text-xs font-bold text-danger underline hover:text-white"
           >
-            Dismiss
+            {t("controls.dismiss")}
           </button>
         </div>
       )}
@@ -123,7 +125,7 @@ export function ApprovalControls({
             >
               <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
             </svg>
-            <span>Approved. Starting the task…</span>
+            <span>{t("controls.approved")}</span>
           </div>
           {runId && (
             <div>
@@ -132,7 +134,7 @@ export function ApprovalControls({
                 data-testid="live-execution-link"
                 className="inline-flex items-center gap-1 text-xs font-bold text-verify underline hover:text-white"
               >
-                Go to Live Execution &rarr;
+                {t("controls.goLive")} →
               </a>
             </div>
           )}
@@ -155,7 +157,7 @@ export function ApprovalControls({
           >
             <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
           </svg>
-          <span>Plan cancelled. Nothing was run.</span>
+          <span>{t("controls.cancelled")}</span>
         </div>
       )}
 
@@ -184,7 +186,7 @@ export function ApprovalControls({
                   d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"
                 />
               </svg>
-              <span>{isEditing ? "Done editing" : "Edit steps"}</span>
+              <span>{isEditing ? t("controls.doneEditing") : t("controls.editSteps")}</span>
             </button>
           )}
         </div>
@@ -197,7 +199,7 @@ export function ApprovalControls({
             onClick={handleReject}
             className="kr-btn kr-btn-ghost kr-danger px-4 py-2.5 text-sm text-danger"
           >
-            <span>Cancel</span>
+            <span>{t("controls.cancel")}</span>
           </button>
 
           <button
@@ -205,7 +207,7 @@ export function ApprovalControls({
             data-testid="approve-btn"
             aria-busy={pending}
             disabled={approveDisabled}
-            title={isEditing ? "Save your edits before approving" : undefined}
+            title={isEditing ? t("controls.saveFirst") : undefined}
             onClick={handleApprove}
             className="kr-btn kr-btn-primary px-7 py-3 text-base"
           >
@@ -231,7 +233,7 @@ export function ApprovalControls({
                     d="M4 12a8 8 0 018-8v8H4z"
                   />
                 </svg>
-                <span>Processing…</span>
+                <span>{t("controls.processing")}</span>
               </>
             ) : (
               <>
@@ -245,7 +247,7 @@ export function ApprovalControls({
                 >
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                 </svg>
-                <span>Approve & run</span>
+                <span>{t("controls.approve")}</span>
               </>
             )}
           </button>

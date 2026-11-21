@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { useTranslations } from "next-intl";
 import type { StageKey } from "./stages";
 import { STAGE } from "./stages";
 
@@ -19,6 +20,7 @@ export function PageHero({
   subtitle?: ReactNode;
   actions?: ReactNode;
 }) {
+  const t = useTranslations("common.ui.stages");
   const s = STAGE[stage];
   const Icon = s.icon;
   return (
@@ -26,7 +28,7 @@ export function PageHero({
       <div className="min-w-0">
         <span className="kr-chip mb-3">
           <Icon aria-hidden="true" className="size-3.5" />
-          {eyebrow ?? s.label}
+          {eyebrow ?? t(`${stage}.label`)}
         </span>
         <h1 className="kr-display text-4xl font-extrabold leading-[1.05] text-white sm:text-5xl">{title}</h1>
         {subtitle && <p className="mt-3 max-w-2xl text-base text-ink-300">{subtitle}</p>}

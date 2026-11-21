@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslations } from "next-intl";
 
 export interface OutdatedSiteBannerProps {
   className?: string;
@@ -7,8 +8,9 @@ export interface OutdatedSiteBannerProps {
 
 export function OutdatedSiteBanner({
   className = "",
-  message = "The target website has changed since this tutorial was recorded. Some steps, locators, or flows may no longer match the current site.",
+  message,
 }: OutdatedSiteBannerProps) {
+  const t = useTranslations("share");
   return (
     <div
       role="alert"
@@ -35,14 +37,14 @@ export function OutdatedSiteBanner({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <h3 className="text-sm font-bold text-amber-900 dark:text-amber-100">
-              Site Changed
+              {t("outdatedBanner.title")}
             </h3>
             <span className="rounded-full bg-amber-200/80 px-2 py-0.5 text-[10px] font-semibold text-amber-900 dark:bg-amber-900 dark:text-amber-200">
-              Outdated
+              {t("outdatedBanner.badge")}
             </span>
           </div>
           <p className="mt-1 text-xs text-amber-800 dark:text-amber-200/90 leading-relaxed">
-            {message}
+            {message ?? t("outdatedBanner.message")}
           </p>
         </div>
       </div>

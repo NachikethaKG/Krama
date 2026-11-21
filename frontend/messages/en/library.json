@@ -1,0 +1,51 @@
+{
+  "card": {
+    "underAMinute": "< 1 min",
+    "aboutMinutes": "~{minutes} min",
+    "targetCustom": "Custom",
+    "matchStep": "Step {step}:",
+    "meta": "{count, plural, one {# step} other {# steps}} · {duration}",
+    "open": "Open Tutorial",
+    "quoted": "“{text}”"
+  },
+  "statusBadge": {
+    "aria": "Freshness status: {status}",
+    "verified": "Verified",
+    "autoUpdated": "Auto-Updated",
+    "outdated": "Outdated",
+    "notAutoChecked": "Not Auto-Checked",
+    "viewDiff": "View healed step diff",
+    "diff": "Diff"
+  },
+  "filter": {
+    "searchLabel": "Search tutorials",
+    "searchPlaceholder": "Search tutorials by title, description, or prompt...",
+    "clearSearch": "Clear search",
+    "tabsLabel": "Filter by verification status",
+    "all": "All",
+    "verified": "Verified",
+    "outdated": "Outdated",
+    "autoUpdated": "Auto-Updated",
+    "notChecked": "Not Checked"
+  },
+  "view": {
+    "eyebrow": "Your library",
+    "title": "My tutorials",
+    "subtitle": "Every task Krama did for you and checked step by step. Open one to watch it again.",
+    "newTutorialAction": "+ New tutorial",
+    "errorTitle": "Couldn't load your tutorials",
+    "searchFailed": "Search failed. Please try again.",
+    "loadFailed": "Failed to load tutorials. Please try again.",
+    "tryAgain": "Try again",
+    "loading": "Loading tutorials…",
+    "searching": "Searching…",
+    "noMatchTitle": "No tutorials match your search",
+    "noMatchBody": "Try other words, or clear the search to see all your tutorials.",
+    "resetFilters": "Reset filters",
+    "emptyTitle": "No tutorials yet",
+    "emptyBody": "Ask Krama for one, e.g. “Show me how to create a GitHub repository”.",
+    "newTutorial": "New tutorial",
+    "showing": "Showing {shown} of {total} {total, plural, one {tutorial} other {tutorials}}",
+    "showMore": "Show more"
+  }
+}

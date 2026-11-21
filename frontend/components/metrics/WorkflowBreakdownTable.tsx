@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import type { TaskMetrics } from "@krama/contracts-ts";
 import { LatencySparkline } from "./LatencySparkline";
 
@@ -25,6 +27,7 @@ function formatTaskTitle(taskName: string): string {
 }
 
 export function WorkflowBreakdownTable({ tasks }: WorkflowBreakdownTableProps) {
+  const t = useTranslations("metrics.table");
   if (tasks.length === 0) {
     return (
       <div
@@ -32,7 +35,7 @@ export function WorkflowBreakdownTable({ tasks }: WorkflowBreakdownTableProps) {
         className="kr-glass rounded-3xl border-dashed p-8 text-center"
       >
         <p className="text-sm font-medium text-ink-400">
-          No workflow tasks found matching the selected filter.
+          {t("empty")}
         </p>
       </div>
     );
@@ -48,22 +51,22 @@ export function WorkflowBreakdownTable({ tasks }: WorkflowBreakdownTableProps) {
           <thead>
             <tr className="border-b border-white/10 bg-gradient-to-r from-run/15 via-approve/10 to-ask/15">
               <th scope="col" className="py-3.5 pl-4 pr-3 font-bold uppercase tracking-wider text-[10px] text-ink-300 sm:pl-6">
-                Workflow Task
+                {t("task")}
               </th>
               <th scope="col" className="px-3 py-3.5 font-bold uppercase tracking-wider text-[10px] text-ink-300">
-                Platform
+                {t("platform")}
               </th>
               <th scope="col" className="px-3 py-3.5 font-bold uppercase tracking-wider text-[10px] text-ink-300 text-center">
-                Trials (Pass/Fail)
+                {t("trials")}
               </th>
               <th scope="col" className="px-3 py-3.5 font-bold uppercase tracking-wider text-[10px] text-ink-300 text-right">
-                Success Rate
+                {t("successRate")}
               </th>
               <th scope="col" className="px-3 py-3.5 font-bold uppercase tracking-wider text-[10px] text-ink-300 text-right">
-                Verifier Accuracy
+                {t("verifierAccuracy")}
               </th>
               <th scope="col" className="py-3.5 pl-3 pr-4 font-bold uppercase tracking-wider text-[10px] text-ink-300 sm:pr-6">
-                Latency Profile (P50 / P90)
+                {t("latency")}
               </th>
             </tr>
           </thead>

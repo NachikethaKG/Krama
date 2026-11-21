@@ -1,0 +1,51 @@
+{
+  "versions": {
+    "stepVerified": "Step {step} (Verified)",
+    "stepWordingUpdated": "Step {step} (Wording Updated)",
+    "stepLocatorHealed": "Step {step} (Locator Healed)",
+    "summaryBaseline": "Baseline version. No prior changes.",
+    "summaryIdentical": "Identical verification pass without step alterations.",
+    "summaryLocatorHealed": "Step {step}: locator healed ({from} → {to})",
+    "summaryTargetFallback": "target",
+    "summaryHealedFallback": "healed",
+    "summaryWordingUpdated": "Step {step}: wording updated"
+  },
+  "diff": {
+    "empty": "No differences found. Both versions share identical steps and locators.",
+    "title": "Diff Comparison",
+    "modified": "{count, plural, one {# step modified} other {# steps modified}}",
+    "unchangedCount": "{count} unchanged",
+    "unchanged": "Unchanged",
+    "locatorHealed": "Locator Healed",
+    "wordingChanged": "Wording Changed",
+    "targetSelector": "Target Selector",
+    "elementLabel": "Element Label",
+    "instructionCaption": "Instruction / Caption",
+    "quoted": "“{text}”"
+  },
+  "history": {
+    "loading": "Loading version history…",
+    "errorTitle": "Unable to load version history",
+    "loadFailed": "Failed to load version history.",
+    "title": "Version History",
+    "count": "{count, plural, one {# version} other {# versions}}",
+    "baselineTitle": "Baseline version (v1.0)",
+    "baselineBody": "This is the initial recorded version. No prior revisions or healed step deltas exist.",
+    "autoUpdated": "Auto-Updated",
+    "active": "Active",
+    "archived": "Archived",
+    "switchTo": "Switch to {version}",
+    "inspectDiff": "Inspect Step Diff",
+    "wordingChanges": "Wording-only changes ({count})",
+    "wordingHint": "(captions & descriptions)",
+    "hide": "▲ Hide",
+    "show": "▼ Show",
+    "viewDiff": "View diff",
+    "pendingReview": "Pending Review ({count})",
+    "pendingHint": "Healed versions awaiting creator confirmation in the Review Queue. They are locked from viewer playback until accepted.",
+    "locked": "Locked (Pending Review)",
+    "reviewDiff": "Review diff",
+    "diffTitle": "Step-by-Step Diff ({version})",
+    "closeDiff": "Close diff preview"
+  }
+}

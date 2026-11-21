@@ -2,6 +2,7 @@
 
 import type { Scene, TutorialSpec } from "@krama/tutorial-compiler";
 import { X } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { stepColor } from "./spectrum";
 
 export interface TutorialStepListProps {
@@ -21,19 +22,20 @@ export function TutorialStepList({
   isDrawer = false,
   className = "",
 }: TutorialStepListProps) {
+  const t = useTranslations("player");
   const scenes = spec.scenes ?? [];
 
   return (
     <aside
       data-testid="step-list"
-      aria-label="Tutorial step list"
+      aria-label={t("stepList.label")}
       className={`kr-glass flex flex-col overflow-hidden rounded-3xl ${className}`}
     >
       <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
         <div className="flex items-baseline gap-2">
-          <h2 className="kr-display text-lg font-extrabold text-white">Steps ({scenes.length})</h2>
+          <h2 className="kr-display text-lg font-extrabold text-white">{t("stepList.heading", { count: scenes.length })}</h2>
           <span className="font-mono text-xs text-learn">
-            Total: {((spec.total_duration_ms || 1) / 1000).toFixed(1)}s
+            {t("stepList.total", { seconds: ((spec.total_duration_ms || 1) / 1000).toFixed(1) })}
           </span>
         </div>
 
@@ -42,7 +44,7 @@ export function TutorialStepList({
             type="button"
             onClick={onClose}
             data-testid="drawer-close-button"
-            aria-label="Close steps list"
+            aria-label={t("stepList.close")}
             className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-2xl text-ink-300 transition-colors hover:bg-white/10 hover:text-white"
           >
             <X aria-hidden="true" className="size-5" />
@@ -50,7 +52,7 @@ export function TutorialStepList({
         )}
       </div>
 
-      <nav className="kr-scroll flex-1 overflow-y-auto p-2.5" aria-label="Steps">
+      <nav className="kr-scroll flex-1 overflow-y-auto p-2.5" aria-label={t("stepList.nav")}>
         <ol className="relative flex flex-col gap-1.5">
           {scenes.map((scene: Scene, index: number) => {
             const isActive = index === currentSceneIndex;
@@ -107,7 +109,7 @@ export function TutorialStepList({
                           className="rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-oncolor"
                           style={{ background: color }}
                         >
-                          Active
+                          {t("stepList.active")}
                         </span>
                       )}
                       <span className="font-mono text-[11px] text-ink-400">{durationSec}s</span>
@@ -119,7 +121,7 @@ export function TutorialStepList({
                       isActive ? "font-medium text-white" : "text-ink-400"
                     }`}
                   >
-                    {scene.caption?.text || "No instruction"}
+                    {scene.caption?.text || t("stepList.noInstruction")}
                   </p>
                 </button>
               </li>

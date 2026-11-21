@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CheckCircle2, Loader2, ShieldAlert } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { type ApiClient, errorMessage, getApiClient } from "@/lib/api";
 import { ReviewQueueFilterTabs, type ReviewQueueCounts } from "./ReviewQueueFilterTabs";
 import { ReviewQueueItemCard } from "./ReviewQueueItemCard";
@@ -14,16 +15,20 @@ export interface ReviewQueueViewProps {
   className?: string;
 }
 
+type ErrorKey = "loadFailed" | "acceptFailed" | "rejectFailed" | "regenerateFailed" | "retryCheckFailed";
+
 export function ReviewQueueView({
   initialItems,
   client,
   className = "",
 }: ReviewQueueViewProps) {
+  const t = useTranslations("reviews");
   const router = useRouter();
   const [apiClient] = useState<ApiClient>(() => client ?? getApiClient());
   const [items, setItems] = useState<ReviewQueueItem[]>(() => initialItems ?? []);
   const [isLoading, setIsLoading] = useState<boolean>(!initialItems);
-  const [error, setError] = useState<string | null>(null);
+  // The thrown value and which of our messages to fall back to (translated when shown).
+  const [error, setError] = useState<{ cause: unknown; fallback: ErrorKey } | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<ReviewFilterCategory>("all");
   const [inFlightIds, setInFlightIds] = useState<Set<string>>(new Set());
   const [quotaErrors, setQuotaErrors] = useState<Record<string, string>>({});
@@ -42,7 +47,7 @@ export function ReviewQueueView({
       })
       .catch((err) => {
         if (!isMounted) return;
-        setError(errorMessage(err, "Failed to load review queue."));
+        setError({ cause: err, fallback: "loadFailed" });
         setIsLoading(false);
       });
 
@@ -88,9 +93,9 @@ export function ReviewQueueView({
       const updated = items.filter((item) => item.id !== id);
       setItems(updated);
       dispatchCountChange(updated.length);
-      setToastMessage("Healed version is now live");
+      setToastMessage(t("queue.acceptedToast"));
     } catch (err) {
-      setError(errorMessage(err, "Failed to accept healed version."));
+      setError({ cause: err, fallback: "acceptFailed" });
     } finally {
       setInFlightIds((prev) => {
         const next = new Set(prev);
@@ -110,7 +115,7 @@ export function ReviewQueueView({
           return {
             ...item,
             category: "outdated" as const,
-            reason: `Pending heal rejected. Workflow requires regeneration or replanning.`,
+            reason: t("queue.rejectedReason"),
             pendingVersion: undefined,
             stepDiffs: undefined,
           };
@@ -121,9 +126,9 @@ export function ReviewQueueView({
       // Decrement pending heal count from active badge
       const activePendingCount = updated.filter((i) => i.category === "heal_pending").length;
       dispatchCountChange(activePendingCount);
-      setToastMessage("Pending heal rejected. Workflow marked outdated.");
+      setToastMessage(t("queue.rejectedToast"));
     } catch (err) {
-      setError(errorMessage(err, "Failed to reject healed version."));
+      setError({ cause: err, fallback: "rejectFailed" });
     } finally {
       setInFlightIds((prev) => {
         const next = new Set(prev);
@@ -140,7 +145,7 @@ export function ReviewQueueView({
       const newRunId = res.run_id || res.id;
       router.push(`/runs/${encodeURIComponent(newRunId)}`);
     } catch (err) {
-      setError(errorMessage(err, "Failed to start workflow regeneration."));
+      setError({ cause: err, fallback: "regenerateFailed" });
       setInFlightIds((prev) => {
         const next = new Set(prev);
         next.delete(workflowId);
@@ -159,14 +164,13 @@ export function ReviewQueueView({
 
     try {
       await apiClient.retryAiFix(workflowId);
-      setToastMessage("AI Fix initiated. Checking workflow in background...");
+      setToastMessage(t("queue.aiFixToast"));
     } catch (err) {
-      const msg = errorMessage(err, "Daily AI fix quota reached (5/day).");
+      // No message, or the server's quota message: the friendly limit text.
+      const msg = errorMessage(err, "");
       setQuotaErrors((prev) => ({
         ...prev,
-        [workflowId]: msg.includes("quota")
-          ? "Daily AI fix limit reached (5/day). Please regenerate the workflow or retry tomorrow."
-          : msg,
+        [workflowId]: !msg || msg.includes("quota") ? t("queue.quotaReached") : msg,
       }));
     } finally {
       setInFlightIds((prev) => {
@@ -183,7 +187,7 @@ export function ReviewQueueView({
       const run = await apiClient.reverifyWorkflow(workflowId);
       router.push(`/runs/${encodeURIComponent(run.id)}`);
     } catch (err) {
-      setError(errorMessage(err, "Failed to trigger retry check."));
+      setError({ cause: err, fallback: "retryCheckFailed" });
     } finally {
       setInFlightIds((prev) => {
         const next = new Set(prev);
@@ -219,10 +223,10 @@ export function ReviewQueueView({
           </span>
           <div>
             <h1 className="kr-display text-3xl font-extrabold text-white sm:text-4xl">
-              Owner Review Queue
+              {t("queue.title")}
             </h1>
             <p className="mt-1 text-sm text-ink-300">
-              Inspect and resolve workflows requiring human review, heal acceptance, or regeneration.
+              {t("queue.subtitle")}
             </p>
           </div>
         </div>
@@ -243,7 +247,7 @@ export function ReviewQueueView({
           role="alert"
           className="rounded-2xl border border-rose-500/30 bg-rose-500/10 p-4 text-sm text-rose-300"
         >
-          <p>{error}</p>
+          <p>{errorMessage(error.cause, t(`queue.${error.fallback}`))}</p>
         </div>
       )}
 
@@ -251,7 +255,7 @@ export function ReviewQueueView({
       {isLoading ? (
         <div className="flex items-center justify-center p-12 text-sm text-ink-400">
           <Loader2 aria-hidden="true" className="mr-2 size-5 animate-spin text-purple-400" />
-          <span>Loading review queue items…</span>
+          <span>{t("queue.loading")}</span>
         </div>
       ) : items.length === 0 ? (
         /* Empty Queue Zero State */
@@ -263,10 +267,10 @@ export function ReviewQueueView({
             <CheckCircle2 className="size-7" aria-hidden="true" />
           </div>
           <h3 className="kr-display text-xl font-bold text-white">
-            All tutorials are healthy — nothing needs review
+            {t("queue.emptyTitle")}
           </h3>
           <p className="mt-2 max-w-md text-sm text-ink-300">
-            No workflows currently have broken locators, outdated steps, or validation blocks.
+            {t("queue.emptyBody")}
           </p>
         </div>
       ) : filteredItems.length === 0 ? (
@@ -275,7 +279,7 @@ export function ReviewQueueView({
           data-testid="review-queue-filter-empty"
           className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-white/10 bg-white/[0.01] p-12 text-center text-sm text-ink-400"
         >
-          <p>No review items match this category filter.</p>
+          <p>{t("queue.filterEmpty")}</p>
         </div>
       ) : (
         /* List of Review Items */

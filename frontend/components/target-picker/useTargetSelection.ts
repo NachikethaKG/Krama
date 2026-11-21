@@ -17,7 +17,10 @@ const STORAGE_KEY = "krama:target_config";
 
 export interface UrlValidationResult {
   valid: boolean;
+  /** English text, for logs and callers without translations. */
   error?: string;
+  /** Message key under targetPicker.urlError in the "approval" namespace; what the UI shows. */
+  errorKey?: "required" | "protocol" | "host" | "invalid";
 }
 
 /**
@@ -26,7 +29,7 @@ export interface UrlValidationResult {
 export function validateTargetUrl(url: string): UrlValidationResult {
   const trimmed = url.trim();
   if (!trimmed) {
-    return { valid: false, error: "Target URL is required." };
+    return { valid: false, error: "Target URL is required.", errorKey: "required" };
   }
   try {
     const parsed = new URL(trimmed);
@@ -34,16 +37,18 @@ export function validateTargetUrl(url: string): UrlValidationResult {
       return {
         valid: false,
         error: "URL must use http:// or https:// protocol (e.g. https://github.example.com).",
+        errorKey: "protocol",
       };
     }
     if (!parsed.hostname) {
-      return { valid: false, error: "URL must include a valid host name." };
+      return { valid: false, error: "URL must include a valid host name.", errorKey: "host" };
     }
     return { valid: true };
   } catch {
     return {
       valid: false,
       error: "Please enter a valid URL (e.g. https://github.example.com).",
+      errorKey: "invalid",
     };
   }
 }

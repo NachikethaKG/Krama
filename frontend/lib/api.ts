@@ -31,6 +31,8 @@ import type {
   WorkflowInputList,
   WorkflowVersionList,
   HandBackDone,
+  Language,
+  Translation,
   TakeoverInput,
 } from "@krama/contracts-ts";
 import { compileWorkflow, type TutorialSpec } from "@krama/tutorial-compiler";
@@ -402,7 +404,9 @@ export interface ApiClient {
   /** WS /runs/{id}/screen: the live page's frames, and the owner's input back. */
   openScreen(runId: string): ScreenConnection;
   /** POST /workflows/{workflowId}/exports with preset ("landscape" | "portrait"). */
-  createExport(workflowId: string, preset: ExportPreset): Promise<Export>;
+  createExport(workflowId: string, preset: ExportPreset, language?: Language): Promise<Export>;
+  /** GET /workflows/{id}/translations/{language} (#422): 202 while it is being made; poll until ready. */
+  getTranslation(workflowId: string, language: Language): Promise<Translation>;
   /** GET /exports/{exportId}. */
   getExport(exportId: string): Promise<Export>;
   /** URL for downloading exported MP4. */
@@ -1013,14 +1017,20 @@ export class HttpApiClient implements ApiClient {
     );
   }
 
-  async createExport(workflowId: string, preset: ExportPreset): Promise<Export> {
+  getTranslation(workflowId: string, language: Language): Promise<Translation> {
+    return this.request<Translation>(
+      `/workflows/${encodeURIComponent(workflowId)}/translations/${encodeURIComponent(language)}`,
+    );
+  }
+
+  async createExport(workflowId: string, preset: ExportPreset, language: Language = "en"): Promise<Export> {
     const path = this.baseUrl.endsWith("/api/v1")
       ? `/workflows/${encodeURIComponent(workflowId)}/exports`
       : `/api/v1/workflows/${encodeURIComponent(workflowId)}/exports`;
     return this.request<Export>(path, {
       method: "POST",
       headers: { "X-Krama": "1", "Content-Type": "application/json" },
-      body: JSON.stringify({ preset }),
+      body: JSON.stringify(language === "en" ? { preset } : { preset, language }),
     });
   }
 
@@ -1970,7 +1980,24 @@ export class MockApiClient implements ApiClient {
 
   private static readonly globalExports = new Map<string, Export>();
 
-  async createExport(workflowId: string, preset: ExportPreset): Promise<Export> {
+  async getTranslation(workflowId: string, language: Language): Promise<Translation> {
+    // Mock mode: the steps tagged with the language, labels untouched; ready at once.
+    const workflow = await this.getWorkflow(workflowId);
+    return {
+      workflow_id: workflow.id,
+      revision: workflow.revision ?? 1,
+      language,
+      status: "ready",
+      title: language === "en" ? workflow.title : `[${language}] ${workflow.title}`,
+      steps: workflow.steps.map((s) => ({
+        step_seq: s.seq,
+        text: language === "en" ? s.instruction_text : `[${language}] ${s.instruction_text}`,
+        translated: true,
+      })),
+    };
+  }
+
+  async createExport(workflowId: string, preset: ExportPreset, language: Language = "en"): Promise<Export> {
     const id = `mock-export-${Math.random().toString(36).substring(2, 10)}`;
     const mockExport: Export = {
       id,
@@ -1979,6 +2006,7 @@ export class MockApiClient implements ApiClient {
       title: "Exported Tutorial",
       preset,
       voice: "en_US-ljspeech-medium",
+      language,
       status: "queued",
       progress: 0,
       created_at: nowTs(),

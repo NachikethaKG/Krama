@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import type { LiveScreenshotFrame } from "@/hooks/useRunStream";
 
 export interface LiveViewportStreamProps {
@@ -15,6 +16,7 @@ export function LiveViewportStream({
   isLoading = false,
   className = "",
 }: LiveViewportStreamProps) {
+  const t = useTranslations("runs");
   const formattedTime = frame?.timestampMs
     ? new Date(frame.timestampMs).toLocaleTimeString([], {
         hour: "2-digit",
@@ -40,7 +42,7 @@ export function LiveViewportStream({
               data-testid="live-indicator-badge"
               className="kr-chip kr-verify !py-0.5 !text-[10px] uppercase tracking-[0.2em]"
             >
-              LIVE HEADLESS
+              {t("liveViewport.badge")}
             </span>
           </div>
 
@@ -76,10 +78,10 @@ export function LiveViewportStream({
             <div className="size-12 animate-spin rounded-full border-4 border-white/10 border-t-run shadow-[0_0_30px_-4px_var(--run)]" />
             <div className="space-y-1">
               <p className="font-mono text-xs font-semibold text-run">
-                Waiting for browser viewport frame…
+                {t("liveViewport.waiting")}
               </p>
               <p className="text-[11px] text-ink-400">
-                Live headless screenshots will render here as the agent acts
+                {t("liveViewport.waitingHint")}
               </p>
             </div>
           </div>
@@ -87,7 +89,7 @@ export function LiveViewportStream({
           /* eslint-disable-next-line @next/next/no-img-element */
           <img
             src={frame.imageUrl}
-            alt="Headless browser live stream"
+            alt={t("liveViewport.imageAlt")}
             data-testid="live-stream-image"
             className="size-full object-contain"
           />

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import type { MetricsSummary } from "@krama/contracts-ts";
 import { MetricsKpiGrid } from "./MetricsKpiGrid";
 import { getTaskPlatform, WorkflowBreakdownTable } from "./WorkflowBreakdownTable";
@@ -12,8 +13,13 @@ export interface MetricsDashboardClientProps {
 
 export type PlatformFilter = "all" | "gitea" | "github";
 
-function formatGeneratedDate(dateStr?: string): string {
-  if (!dateStr) return "Not available";
+// A command and a file path: the same in every language.
+const BENCH_REPORT_RECIPE = "just bench-report";
+const BENCH_SUMMARY_PATH = "benchmarks/results/summary.json";
+
+/** null when there is no date: the caller shows "Not available". */
+function formatGeneratedDate(dateStr?: string): string | null {
+  if (!dateStr) return null;
   try {
     const d = new Date(dateStr);
     if (Number.isNaN(d.getTime())) return dateStr;
@@ -30,6 +36,7 @@ function formatGeneratedDate(dateStr?: string): string {
 }
 
 export function MetricsDashboardClient({ initialData }: MetricsDashboardClientProps) {
+  const t = useTranslations("metrics.dashboard");
   const [platformFilter, setPlatformFilter] = useState<PlatformFilter>("all");
 
   const tasks = initialData?.tasks ?? [];
@@ -42,7 +49,7 @@ export function MetricsDashboardClient({ initialData }: MetricsDashboardClientPr
       ? tasks
       : tasks.filter((t) => getTaskPlatform(t) === platformFilter);
 
-  const formattedDate = formatGeneratedDate(initialData?.generated_at);
+  const formattedDate = formatGeneratedDate(initialData?.generated_at) ?? t("notAvailable");
 
   if (!initialData || tasks.length === 0) {
     return (
@@ -54,10 +61,10 @@ export function MetricsDashboardClient({ initialData }: MetricsDashboardClientPr
               href="/runs"
               className="font-medium text-ink-300 hover:text-run transition-colors"
             >
-              ← Runs
+              {t("breadcrumbRuns")}
             </Link>
             <span className="text-ink-300">/</span>
-            <span className="kr-chip kr-run">Technical Metrics</span>
+            <span className="kr-chip kr-run">{t("technicalMetrics")}</span>
           </div>
 
           <div
@@ -70,17 +77,20 @@ export function MetricsDashboardClient({ initialData }: MetricsDashboardClientPr
               </svg>
             </div>
             <h2 className="kr-display text-2xl font-extrabold text-white">
-              No Benchmark Summary Available
+              {t("emptyTitle")}
             </h2>
             <p className="mt-2 text-sm text-ink-400 max-w-md mx-auto">
-              Run the multi-target benchmark collector across Gitea and GitHub to generate real metrics data.
+              {t("emptyBody")}
             </p>
             <div className="mt-6 flex flex-col items-center gap-3">
               <code className="rounded-lg px-4 py-2 font-mono text-xs font-semibold bg-white/10 text-white">
-                just bench-report
+                {BENCH_REPORT_RECIPE}
               </code>
               <p className="text-xs text-ink-400">
-                Generates <code className="font-mono">benchmarks/results/summary.json</code> adhering to PRD §33.
+                {t.rich("emptyGenerates", {
+                  path: BENCH_SUMMARY_PATH,
+                  code: (chunks) => <code className="font-mono">{chunks}</code>,
+                })}
               </p>
             </div>
           </div>
@@ -99,21 +109,21 @@ export function MetricsDashboardClient({ initialData }: MetricsDashboardClientPr
               href="/"
               className="font-medium text-ink-300 hover:text-run transition-colors"
             >
-              ← Krama Home
+              {t("breadcrumbHome")}
             </Link>
             <span className="text-ink-300">/</span>
             <Link
               href="/runs"
               className="font-medium text-ink-300 hover:text-run transition-colors"
             >
-              Runs
+              {t("runs")}
             </Link>
             <span className="text-ink-300">/</span>
-            <span className="kr-chip kr-run">Technical Metrics</span>
+            <span className="kr-chip kr-run">{t("technicalMetrics")}</span>
           </div>
 
           <div className="flex items-center gap-2 text-xs text-ink-400 font-mono">
-            <span>Generated:</span>
+            <span>{t("generated")}</span>
             <span data-testid="metrics-generated-at" className="font-semibold text-white">
               {formattedDate}
             </span>
@@ -125,17 +135,17 @@ export function MetricsDashboardClient({ initialData }: MetricsDashboardClientPr
           <div>
             <div className="flex items-center gap-3">
               <h1 className="kr-display text-4xl font-extrabold tracking-tight text-white sm:text-5xl">
-                PRD §33 Technical Metrics
+                {t("title")}
               </h1>
               <span
                 data-testid="metrics-task-count-badge"
                 className="inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-semibold border-run/40 bg-run/15 text-run"
               >
-                {initialData.total_tasks} Benchmark Workflows
+                {t("workflowCount", { count: initialData.total_tasks })}
               </span>
             </div>
             <p className="mt-1 text-sm text-ink-400">
-              Multi-target reliability matrix evaluating Task Success Rate, Verifier Accuracy, Recovery Rate, and Latency Profile across Gitea &amp; GitHub.
+              {t("subtitle")}
             </p>
           </div>
 
@@ -144,7 +154,7 @@ export function MetricsDashboardClient({ initialData }: MetricsDashboardClientPr
               href="/runs/new"
               className="kr-btn kr-btn-tone kr-run px-4 py-2 text-xs"
             >
-              <span>+ Launch Real Run</span>
+              <span>{t("launchRun")}</span>
             </Link>
           </div>
         </div>
@@ -152,7 +162,7 @@ export function MetricsDashboardClient({ initialData }: MetricsDashboardClientPr
         {/* Top-Level KPI Summary Cards */}
         <section aria-labelledby="kpi-summary-heading">
           <h2 id="kpi-summary-heading" className="sr-only">
-            Key Performance Indicators
+            {t("kpiHeading")}
           </h2>
           <MetricsKpiGrid summary={initialData} />
         </section>
@@ -165,13 +175,13 @@ export function MetricsDashboardClient({ initialData }: MetricsDashboardClientPr
                 id="workflows-breakdown-heading"
                 className="kr-display text-2xl font-extrabold tracking-tight text-white flex items-center gap-2"
               >
-                <span>Task Matrix Breakdown</span>
+                <span>{t("breakdownTitle")}</span>
                 <span className="rounded-full px-2 py-0.5 text-xs font-semibold bg-white/10 text-ink-300">
                   {filteredTasks.length}
                 </span>
               </h2>
               <p className="mt-0.5 text-xs text-ink-400">
-                Granular trial counts, verification accuracy, and execution latency profiles per workflow
+                {t("breakdownBody")}
               </p>
             </div>
 
@@ -180,7 +190,7 @@ export function MetricsDashboardClient({ initialData }: MetricsDashboardClientPr
               data-testid="platform-filter-tabs"
               className="kr-glass inline-flex rounded-full p-1"
               role="tablist"
-              aria-label="Filter workflows by target platform"
+              aria-label={t("filterLabel")}
             >
               <button
                 type="button"
@@ -194,7 +204,7 @@ export function MetricsDashboardClient({ initialData }: MetricsDashboardClientPr
                     : "text-ink-400 hover:text-white"
                 }`}
               >
-                All Workflows ({tasks.length})
+                {t("allWorkflows", { count: tasks.length })}
               </button>
               <button
                 type="button"

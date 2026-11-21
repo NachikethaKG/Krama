@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { artifactUrl } from "@/lib/artifacts";
 import type { ElementRef, ExpectedState, FieldValue, ObservedSummary } from "@krama/contracts-ts";
 
@@ -37,35 +38,38 @@ export interface VerificationFailureCardProps {
   className?: string;
 }
 
+/** A known layer is a message key under diagnostic.layer in the "execution" namespace; anything else is shown as-is. */
+type FailedLayer = { key: "url" | "aria" | "dom" | "vision" | "network" | "effect" | "state" } | { raw: string };
+
 function resolveFailedLayer(
   explicitLayer?: string,
   expected?: VerificationFailureCardProps["expected"],
   observed?: VerificationFailureCardProps["observed"],
-): string {
+): FailedLayer {
   if (explicitLayer) {
     const formatted = explicitLayer.toLowerCase();
-    if (formatted.includes("url")) return "URL Verifier";
-    if (formatted.includes("aria")) return "ARIA Verifier";
-    if (formatted.includes("dom")) return "DOM Verifier";
-    if (formatted.includes("vision")) return "Vision Verifier";
-    if (formatted.includes("network")) return "Network Verifier";
-    if (formatted.includes("effect")) return "Effect Signal";
-    return explicitLayer;
+    if (formatted.includes("url")) return { key: "url" };
+    if (formatted.includes("aria")) return { key: "aria" };
+    if (formatted.includes("dom")) return { key: "dom" };
+    if (formatted.includes("vision")) return { key: "vision" };
+    if (formatted.includes("network")) return { key: "network" };
+    if (formatted.includes("effect")) return { key: "effect" };
+    return { raw: explicitLayer };
   }
 
   if (expected?.url_matches && observed?.url && !observed.url.match(new RegExp(expected.url_matches))) {
-    return "URL Verifier";
+    return { key: "url" };
   }
   if (expected?.visible && expected.visible.length > 0) {
-    return "ARIA Verifier";
+    return { key: "aria" };
   }
   if (expected?.absent && expected.absent.length > 0) {
-    return "ARIA Verifier";
+    return { key: "aria" };
   }
   if (expected?.field_values && expected.field_values.length > 0) {
-    return "DOM Verifier";
+    return { key: "dom" };
   }
-  return "State Assertion Verifier";
+  return { key: "state" };
 }
 
 export function VerificationFailureCard({
@@ -80,12 +84,13 @@ export function VerificationFailureCard({
   onRetryReplan,
   className = "",
 }: VerificationFailureCardProps) {
+  const t = useTranslations("execution");
   const [previousImgError, setPreviousImgError] = useState(false);
   const [observedImgError, setObservedImgError] = useState(false);
 
-  const layerName = resolveFailedLayer(failedLayer, expected, observed);
-  const reasonText =
-    failureReason || "Verification failed: observed state did not match expected preconditions.";
+  const layer = resolveFailedLayer(failedLayer, expected, observed);
+  const layerName = "key" in layer ? t(`diagnostic.layer.${layer.key}`) : layer.raw;
+  const reasonText = failureReason || t("diagnostic.defaultReason");
 
   // API screenshot references resolve against the API origin, never the Next.js origin.
   const previousSrc = artifactUrl(previousScreenshotUrl);
@@ -104,7 +109,7 @@ export function VerificationFailureCard({
   return (
     <section
       role="region"
-      aria-label="Verification Failure Diagnostic"
+      aria-label={t("diagnostic.ariaLabel")}
       data-testid="verification-failure-card"
       className={`kr-danger kr-tone-card overflow-hidden rounded-3xl ${className}`}
     >
@@ -125,14 +130,14 @@ export function VerificationFailureCard({
             <div className="flex flex-col gap-1">
               <div className="flex flex-wrap items-center gap-2">
                 <h3 className="kr-display text-lg font-bold text-white">
-                  Step Verification Failure Diagnostic
+                  {t("diagnostic.title")}
                 </h3>
                 {stepSeq !== undefined && (
                   <span
                     data-testid="diagnostic-step-seq"
                     className="rounded-md px-2 py-0.5 font-mono text-xs font-semibold bg-danger/15 text-danger"
                   >
-                    Step #{stepSeq}
+                    {t("diagnostic.stepSeq", { seq: stepSeq })}
                   </span>
                 )}
                 <span
@@ -145,7 +150,7 @@ export function VerificationFailureCard({
 
               {instructionText && (
                 <p data-testid="diagnostic-instruction" className="text-xs font-medium sm:text-sm text-ink-400">
-                  Target action: <span className="font-semibold text-ink-300">{instructionText}</span>
+                  {t("diagnostic.targetAction")} <span className="font-semibold text-ink-300">{instructionText}</span>
                 </p>
               )}
 
@@ -165,7 +170,7 @@ export function VerificationFailureCard({
               <svg className="size-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
               </svg>
-              Retry Replan
+              {t("diagnostic.retry")}
             </button>
           )}
         </div>
@@ -176,10 +181,10 @@ export function VerificationFailureCard({
         <div data-testid="expected-vs-observed-section" className="flex flex-col gap-3">
           <div className="flex items-center justify-between">
             <h4 className="text-xs font-bold tracking-wider uppercase text-ink-400">
-              Assertion Breakdown: Expected (X) vs. Observed (Y)
+              {t("diagnostic.breakdown")}
             </h4>
             <span className="font-mono text-[11px] text-ink-400">
-              State Diff
+              {t("diagnostic.stateDiff")}
             </span>
           </div>
 
@@ -193,13 +198,13 @@ export function VerificationFailureCard({
                 <span className="flex size-4 items-center justify-center rounded-full bg-verify text-[10px] font-bold text-oncolor">
                   ✓
                 </span>
-                <span className="text-xs font-bold uppercase tracking-wider">Expected State (X)</span>
+                <span className="text-xs font-bold uppercase tracking-wider">{t("diagnostic.expectedState")}</span>
               </div>
 
               <div className="flex flex-col gap-1.5 font-mono text-[11px]">
                 {expected?.url_matches && (
                   <div data-testid="expected-url" className="flex flex-col gap-0.5">
-                    <span className="text-[10px] font-semibold uppercase text-ink-400">URL Pattern:</span>
+                    <span className="text-[10px] font-semibold uppercase text-ink-400">{t("diagnostic.urlPattern")}</span>
                     <span className="rounded px-2 py-1 shadow-2xs bg-white/5 text-verify">
                       {expected.url_matches}
                     </span>
@@ -208,23 +213,23 @@ export function VerificationFailureCard({
 
                 {expected?.title_contains && (
                   <div data-testid="expected-title" className="flex flex-col gap-0.5">
-                    <span className="text-[10px] font-semibold uppercase text-ink-400">Page Title:</span>
+                    <span className="text-[10px] font-semibold uppercase text-ink-400">{t("diagnostic.pageTitle")}</span>
                     <span className="rounded px-2 py-1 shadow-2xs bg-white/5 text-verify">
-                      contains &quot;{expected.title_contains}&quot;
+                      {t("diagnostic.titleContains", { text: expected.title_contains })}
                     </span>
                   </div>
                 )}
 
                 {expected?.visible && expected.visible.length > 0 && (
                   <div data-testid="expected-visible-elements" className="flex flex-col gap-0.5">
-                    <span className="text-[10px] font-semibold uppercase text-ink-400">Visible Elements:</span>
+                    <span className="text-[10px] font-semibold uppercase text-ink-400">{t("diagnostic.visibleElements")}</span>
                     <div className="flex flex-wrap gap-1">
                       {expected.visible.map((elem, idx) => (
                         <span
                           key={`${elem.role}-${elem.name}-${idx}`}
                           className="rounded px-1.5 py-0.5 shadow-2xs bg-white/5 text-verify"
                         >
-                          {elem.role} &quot;{elem.name}&quot;
+                          {t("diagnostic.element", { role: elem.role, name: elem.name })}
                         </span>
                       ))}
                     </div>
@@ -233,14 +238,14 @@ export function VerificationFailureCard({
 
                 {expected?.absent && expected.absent.length > 0 && (
                   <div data-testid="expected-absent-elements" className="flex flex-col gap-0.5">
-                    <span className="text-[10px] font-semibold uppercase text-ink-400">Absent Elements (Must Not Appear):</span>
+                    <span className="text-[10px] font-semibold uppercase text-ink-400">{t("diagnostic.absentElements")}</span>
                     <div className="flex flex-wrap gap-1">
                       {expected.absent.map((elem, idx) => (
                         <span
                           key={`${elem.role}-${elem.name}-${idx}`}
                           className="rounded px-1.5 py-0.5 shadow-2xs bg-white/5 text-verify"
                         >
-                          absent: {elem.role} &quot;{elem.name}&quot;
+                          {t("diagnostic.absentElement", { role: elem.role, name: elem.name })}
                         </span>
                       ))}
                     </div>
@@ -249,14 +254,14 @@ export function VerificationFailureCard({
 
                 {expected?.field_values && expected.field_values.length > 0 && (
                   <div data-testid="expected-field-values" className="flex flex-col gap-0.5">
-                    <span className="text-[10px] font-semibold uppercase text-ink-400">Field Values:</span>
+                    <span className="text-[10px] font-semibold uppercase text-ink-400">{t("diagnostic.fieldValues")}</span>
                     <div className="flex flex-col gap-1">
                       {expected.field_values.map((field, idx) => (
                         <span
                           key={`${field.role}-${field.name}-${idx}`}
                           className="rounded px-2 py-0.5 shadow-2xs bg-white/5 text-verify"
                         >
-                          {field.name} = &quot;{field.value}&quot;
+                          {t("diagnostic.fieldValue", { name: field.name, value: field.value })}
                         </span>
                       ))}
                     </div>
@@ -267,7 +272,7 @@ export function VerificationFailureCard({
                   !expected?.title_contains &&
                   (!expected?.visible || expected.visible.length === 0) &&
                   (!expected?.field_values || expected.field_values.length === 0) && (
-                    <span className="text-ink-400 italic">Precondition state not explicitly specified.</span>
+                    <span className="text-ink-400 italic">{t("diagnostic.noPrecondition")}</span>
                   )}
               </div>
             </div>
@@ -281,20 +286,20 @@ export function VerificationFailureCard({
                 <span className="flex size-4 items-center justify-center rounded-full bg-danger text-[10px] font-bold text-oncolor">
                   ✕
                 </span>
-                <span className="text-xs font-bold uppercase tracking-wider">Observed State (Y)</span>
+                <span className="text-xs font-bold uppercase tracking-wider">{t("diagnostic.observedState")}</span>
               </div>
 
               <div className="flex flex-col gap-1.5 font-mono text-[11px]">
                 <div data-testid="observed-url" className="flex flex-col gap-0.5">
-                  <span className="text-[10px] font-semibold uppercase text-ink-400">Landed URL:</span>
+                  <span className="text-[10px] font-semibold uppercase text-ink-400">{t("diagnostic.landedUrl")}</span>
                   <span className="rounded px-2 py-1 font-semibold shadow-2xs bg-white/5 text-danger">
-                    {observed?.url || "URL state unavailable or unchanged"}
+                    {observed?.url || t("diagnostic.urlUnavailable")}
                   </span>
                 </div>
 
                 {observed?.title && (
                   <div data-testid="observed-title" className="flex flex-col gap-0.5">
-                    <span className="text-[10px] font-semibold uppercase text-ink-400">Landed Page Title:</span>
+                    <span className="text-[10px] font-semibold uppercase text-ink-400">{t("diagnostic.landedTitle")}</span>
                     <span className="rounded px-2 py-1 shadow-2xs bg-white/5 text-danger">
                       {observed.title}
                     </span>
@@ -303,7 +308,7 @@ export function VerificationFailureCard({
 
                 {observerFinding && (
                   <div data-testid="observed-error" className="flex flex-col gap-0.5">
-                    <span className="text-[10px] font-semibold uppercase text-ink-400">Observer Finding:</span>
+                    <span className="text-[10px] font-semibold uppercase text-ink-400">{t("diagnostic.observerFinding")}</span>
                     <span className="rounded px-2 py-1 shadow-2xs bg-white/5 text-danger">
                       {observerFinding}
                     </span>
@@ -312,7 +317,7 @@ export function VerificationFailureCard({
 
                 {missingSelector && (
                   <div data-testid="observed-missing-selector" className="flex flex-col gap-0.5">
-                    <span className="text-[10px] font-semibold uppercase text-ink-400">Missing Selector:</span>
+                    <span className="text-[10px] font-semibold uppercase text-ink-400">{t("diagnostic.missingSelector")}</span>
                     <span className="rounded px-2 py-1 shadow-2xs bg-white/5 text-danger">
                       {missingSelector}
                     </span>
@@ -327,10 +332,10 @@ export function VerificationFailureCard({
         <div data-testid="screenshot-comparison-section" className="flex flex-col gap-3">
           <div className="flex items-center justify-between">
             <h4 className="text-xs font-bold tracking-wider uppercase text-ink-400">
-              Screenshots: Before vs. After This Step
+              {t("diagnostic.screenshotsTitle")}
             </h4>
             <span className="text-xs text-ink-400">
-              Expected state is listed above
+              {t("diagnostic.expectedListedAbove")}
             </span>
           </div>
 
@@ -343,9 +348,9 @@ export function VerificationFailureCard({
               <div className="flex items-center justify-between border-b px-3 py-2 text-xs font-medium border-white/10 bg-white/5 text-ink-300">
                 <span className="flex items-center gap-1.5 font-semibold">
                   <span className="size-2 rounded-full bg-verify" />
-                  Before This Step
+                  {t("diagnostic.beforeStep")}
                 </span>
-                <span className="font-mono text-[10px] text-ink-400">Previous Step</span>
+                <span className="font-mono text-[10px] text-ink-400">{t("diagnostic.previousStep")}</span>
               </div>
 
               <div className="relative flex aspect-16/10 w-full items-center justify-center bg-ink-950/60">
@@ -354,7 +359,7 @@ export function VerificationFailureCard({
                   <img
                     data-testid="previous-screenshot-img"
                     src={previousSrc}
-                    alt="Page before this step"
+                    alt={t("diagnostic.beforeAlt")}
                     onError={() => setPreviousImgError(true)}
                     className="h-full w-full object-contain"
                   />
@@ -370,8 +375,8 @@ export function VerificationFailureCard({
                         d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"
                       />
                     </svg>
-                    <span className="text-xs font-medium">No earlier screenshot</span>
-                    <span className="text-[10px] opacity-70">Compare with the expected state listed above</span>
+                    <span className="text-xs font-medium">{t("diagnostic.noEarlierScreenshot")}</span>
+                    <span className="text-[10px] opacity-70">{t("diagnostic.compareExpected")}</span>
                   </div>
                 )}
               </div>
@@ -385,9 +390,9 @@ export function VerificationFailureCard({
               <div className="flex items-center justify-between border-b px-3 py-2 text-xs font-medium border-white/10 bg-white/5 text-ink-300">
                 <span className="flex items-center gap-1.5 font-semibold">
                   <span className="size-2 rounded-full bg-danger" />
-                  Observed State (Actual)
+                  {t("diagnostic.observedActual")}
                 </span>
-                <span className="font-mono text-[10px] text-ink-400">Captured at Failure</span>
+                <span className="font-mono text-[10px] text-ink-400">{t("diagnostic.capturedAtFailure")}</span>
               </div>
 
               <div className="relative flex aspect-16/10 w-full items-center justify-center bg-ink-950/60">
@@ -396,7 +401,7 @@ export function VerificationFailureCard({
                   <img
                     data-testid="observed-screenshot-img"
                     src={observedSrc}
-                    alt="Observed state capture"
+                    alt={t("diagnostic.observedAlt")}
                     onError={() => setObservedImgError(true)}
                     className="h-full w-full object-contain"
                   />
@@ -413,8 +418,8 @@ export function VerificationFailureCard({
                       />
                       <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
                     </svg>
-                    <span className="text-xs font-medium">Screenshot not captured or failed to load</span>
-                    <span className="text-[10px] opacity-70">Observer artifact unavailable</span>
+                    <span className="text-xs font-medium">{t("diagnostic.observedMissing")}</span>
+                    <span className="text-[10px] opacity-70">{t("diagnostic.observerUnavailable")}</span>
                   </div>
                 )}
               </div>

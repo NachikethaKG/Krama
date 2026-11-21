@@ -1,6 +1,7 @@
 "use client";
 
 import { useId } from "react";
+import { useTranslations } from "next-intl";
 import {
   GITEA_DEFAULT_URL,
   GITHUB_DEFAULT_URL,
@@ -18,12 +19,10 @@ export interface TargetPickerProps {
   className?: string;
 }
 
+/** Name, badge and description of each option: targetPicker.option.<type> in the "approval" namespace. */
 interface TargetOption {
   type: TargetType;
   color: string;
-  name: string;
-  badge: string;
-  description: string;
   url: string;
   testId: string;
 }
@@ -32,27 +31,18 @@ const TARGET_OPTIONS: TargetOption[] = [
   {
     type: "gitea",
     color: "var(--verify)",
-    name: "Gitea (Local)",
-    badge: "Local",
-    description: "Sandbox repository instance for offline testing",
     url: GITEA_DEFAULT_URL,
     testId: "target-option-gitea",
   },
   {
     type: "github",
     color: "var(--run)",
-    name: "GitHub (Real)",
-    badge: "Live",
-    description: "github.com repository (uses encrypted browser session)",
     url: GITHUB_DEFAULT_URL,
     testId: "target-option-github",
   },
   {
     type: "custom",
     color: "var(--approve)",
-    name: "Custom Target",
-    badge: "Custom",
-    description: "Arbitrary Git server or enterprise web endpoint",
     url: "",
     testId: "target-option-custom",
   },
@@ -65,6 +55,7 @@ export function TargetPicker({
   disabled = false,
   className = "",
 }: TargetPickerProps) {
+  const t = useTranslations("approval");
   const customInputId = useId();
   const isControlled = value !== undefined;
 
@@ -82,7 +73,7 @@ export function TargetPicker({
   const validation =
     activeTarget === "custom"
       ? validateTargetUrl(activeCustomUrl)
-      : { valid: true, error: undefined };
+      : { valid: true, error: undefined, errorKey: undefined };
 
   const handleSelect = (type: TargetType) => {
     if (disabled) return;
@@ -118,10 +109,10 @@ export function TargetPicker({
           id="target-picker-label"
           className="text-xs font-bold uppercase tracking-wider text-plan"
         >
-          Target Environment
+          {t("targetPicker.label")}
         </label>
         <p className="text-xs text-ink-400">
-          Choose where the workflow agent executes tasks.
+          {t("targetPicker.hint")}
         </p>
       </div>
 
@@ -152,7 +143,7 @@ export function TargetPicker({
             >
               <div className="flex w-full items-center justify-between gap-2">
                 <span className="text-sm font-bold text-white">
-                  {opt.name}
+                  {t(`targetPicker.option.${opt.type}.name`)}
                 </span>
                 <span
                   className="rounded-full px-2 py-0.5 text-[10px] font-extrabold"
@@ -162,11 +153,11 @@ export function TargetPicker({
                       : { color: opt.color, background: "rgb(var(--fg-rgb) / 0.06)" }
                   }
                 >
-                  {opt.badge}
+                  {t(`targetPicker.option.${opt.type}.badge`)}
                 </span>
               </div>
               <p className="mt-1 line-clamp-2 text-xs text-ink-300">
-                {opt.description}
+                {t(`targetPicker.option.${opt.type}.description`)}
               </p>
               {opt.url && (
                 <span className="mt-2 font-mono text-[11px] text-ink-400">
@@ -191,7 +182,7 @@ export function TargetPicker({
           htmlFor={customInputId}
           className="text-xs font-bold text-approve"
         >
-          Custom Target Base URL
+          {t("targetPicker.customLabel")}
         </label>
         <input
           id={customInputId}
@@ -200,18 +191,18 @@ export function TargetPicker({
           type="url"
           value={activeCustomUrl}
           onChange={handleCustomUrlChange}
-          placeholder="https://git.example.corp"
+          placeholder={t("targetPicker.customPlaceholder")}
           disabled={disabled}
           required={activeTarget === "custom"}
           className="kr-input w-full px-3.5 py-2 font-mono text-sm"
         />
-        {activeTarget === "custom" && validation.error && (
+        {activeTarget === "custom" && validation.errorKey && (
           <p
             role="alert"
             data-testid="target-url-error"
             className="text-xs font-bold text-danger"
           >
-            {validation.error}
+            {t(`targetPicker.urlError.${validation.errorKey}`)}
           </p>
         )}
       </div>

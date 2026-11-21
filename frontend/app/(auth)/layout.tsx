@@ -1,8 +1,11 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { Logo, STAGES, ThemeToggle } from "@/components/ui";
 
-export default function AuthLayout({ children }: { children: ReactNode }) {
+export default async function AuthLayout({ children }: { children: ReactNode }) {
+  const t = await getTranslations("auth.layout");
+  const tStage = await getTranslations("common.ui.stages");
   return (
     <div className="relative grid min-h-screen lg:grid-cols-2">
       <ThemeToggle className="!absolute right-4 top-4 z-10" />
@@ -11,11 +14,11 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
         <Logo size={38} />
         <div>
           <p className="kr-display text-6xl font-extrabold leading-[0.95] text-white">
-            Ask it.
+            {t("askIt")}
             <br />
-            <span className="kr-gradient-text">Watch it done.</span>
+            <span className="kr-gradient-text">{t("watchIt")}</span>
             <br />
-            Learn it.
+            {t("learnIt")}
           </p>
           <div className="mt-10 flex flex-col gap-3">
             {STAGES.map((stage, i) => {
@@ -32,8 +35,8 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
                   >
                     <Icon className="size-4" />
                   </span>
-                  <span className="font-semibold text-white">{stage.verb}</span>
-                  <span className="text-sm text-ink-400">{stage.blurb}</span>
+                  <span className="font-semibold text-white">{tStage(`${stage.key}.verb`)}</span>
+                  <span className="text-sm text-ink-400">{tStage(`${stage.key}.blurb`)}</span>
                 </div>
               );
             })}
@@ -45,7 +48,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
       {/* Right: the form */}
       <div className="flex flex-col justify-center px-4 py-12 sm:px-6 lg:px-16">
         <div className="sm:mx-auto sm:w-full sm:max-w-md">
-          <Link href="/" className="flex justify-center lg:hidden" aria-label="Krama home">
+          <Link href="/" className="flex justify-center lg:hidden" aria-label={t("homeLabel")}>
             <Logo size={36} />
           </Link>
         </div>

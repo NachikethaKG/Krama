@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { AlertTriangle, BookOpenText, ChevronDown, RotateCcw, SearchX } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { PageHero } from "@/components/ui";
 import { type ApiClient, errorMessage, getApiClient } from "@/lib/api";
 import type { TargetPlatform, TutorialStatus, TutorialSummary } from "@/types/tutorial";
@@ -24,12 +25,14 @@ export function TutorialLibraryView({
   client,
   initialTutorials,
 }: TutorialLibraryViewProps) {
+  const t = useTranslations("library");
   const [apiClient] = useState<ApiClient>(() => client ?? getApiClient());
   const [tutorials, setTutorials] = useState<TutorialSummary[] | null>(
     initialTutorials ?? null,
   );
   const [isLoading, setIsLoading] = useState<boolean>(!initialTutorials);
-  const [error, setError] = useState<string | null>(null);
+  // The cause is kept, not a message: the message is translated when shown.
+  const [error, setError] = useState<{ cause: unknown; kind: "search" | "load" } | null>(null);
 
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<"all" | TutorialStatus>("all");
@@ -51,7 +54,7 @@ export function TutorialLibraryView({
           if (current) setSearchResults(items);
         })
         .catch((err) => {
-          if (current) setError(errorMessage(err, "Search failed. Please try again."));
+          if (current) setError({ cause: err, kind: "search" });
         })
         .finally(() => {
           if (current) setSearching(false);
@@ -92,7 +95,7 @@ export function TutorialLibraryView({
       })
       .catch((err) => {
         if (!isMounted) return;
-        setError(errorMessage(err, "Failed to load tutorials. Please try again."));
+        setError({ cause: err, kind: "load" });
         setIsLoading(false);
       });
 
@@ -161,12 +164,12 @@ export function TutorialLibraryView({
       {/* Header section */}
       <PageHero
         stage="learn"
-        eyebrow="Your library"
-        title="My tutorials"
-        subtitle="Every task Krama did for you and checked step by step. Open one to watch it again."
+        eyebrow={t("view.eyebrow")}
+        title={t("view.title")}
+        subtitle={t("view.subtitle")}
         actions={
           <Link href="/" className="kr-btn kr-btn-primary px-4 py-2.5 text-xs">
-            <span>+ New tutorial</span>
+            <span>{t("view.newTutorialAction")}</span>
           </Link>
         }
       />
@@ -201,15 +204,17 @@ export function TutorialLibraryView({
           >
             <AlertTriangle className="size-6" aria-hidden="true" />
           </div>
-          <h2 className="kr-display mt-4 text-lg font-bold text-white">Couldn&apos;t load your tutorials</h2>
-          <p className="mt-1 text-sm text-danger">{error}</p>
+          <h2 className="kr-display mt-4 text-lg font-bold text-white">{t("view.errorTitle")}</h2>
+          <p className="mt-1 text-sm text-danger">
+            {errorMessage(error.cause, error.kind === "search" ? t("view.searchFailed") : t("view.loadFailed"))}
+          </p>
           <button
             type="button"
             onClick={handleRetry}
             className="kr-btn kr-btn-ghost kr-danger mt-5 px-4 py-2 text-xs"
           >
             <RotateCcw aria-hidden="true" className="size-3.5" />
-            Try again
+            {t("view.tryAgain")}
           </button>
         </div>
       ) : null}
@@ -221,7 +226,7 @@ export function TutorialLibraryView({
           data-testid="tutorials-loading"
           className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3"
         >
-          <span className="sr-only">Loading tutorials…</span>
+          <span className="sr-only">{t("view.loading")}</span>
           {[1, 2, 3, 4, 5, 6].map((i) => (
             <div
               key={i}
@@ -249,7 +254,7 @@ export function TutorialLibraryView({
       {/* Empty states */}
       {pendingSearch ? (
         <p role="status" data-testid="library-searching" className="mt-8 text-sm text-ink-300">
-          Searching…
+          {t("view.searching")}
         </p>
       ) : null}
 
@@ -273,9 +278,9 @@ export function TutorialLibraryView({
           </div>
           {hasActiveFilters ? (
             <>
-              <h2 className="kr-display mt-5 text-xl font-bold text-white">No tutorials match your search</h2>
+              <h2 className="kr-display mt-5 text-xl font-bold text-white">{t("view.noMatchTitle")}</h2>
               <p className="mt-1 text-sm text-ink-300">
-                Try other words, or clear the search to see all your tutorials.
+                {t("view.noMatchBody")}
               </p>
               <button
                 type="button"
@@ -283,17 +288,17 @@ export function TutorialLibraryView({
                 onClick={handleResetFilters}
                 className="kr-btn kr-btn-ghost kr-learn mt-5 px-4 py-2 text-xs"
               >
-                Reset filters
+                {t("view.resetFilters")}
               </button>
             </>
           ) : (
             <>
-              <h2 className="kr-display mt-5 text-xl font-bold text-white">No tutorials yet</h2>
+              <h2 className="kr-display mt-5 text-xl font-bold text-white">{t("view.emptyTitle")}</h2>
               <p className="mt-1 text-sm text-ink-300">
-                Ask Krama for one, e.g. &ldquo;Show me how to create a GitHub repository&rdquo;.
+                {t("view.emptyBody")}
               </p>
               <Link href="/" className="kr-btn kr-btn-primary mt-5 px-5 py-2.5 text-xs">
-                New tutorial
+                {t("view.newTutorial")}
               </Link>
             </>
           )}
@@ -305,8 +310,7 @@ export function TutorialLibraryView({
         <div className="mt-8">
           <div className="mb-4 flex items-center gap-3 text-xs text-ink-400">
             <span>
-              Showing {Math.min(visible, filteredTutorials.length)} of {filteredTutorials.length}{" "}
-              {filteredTutorials.length === 1 ? "tutorial" : "tutorials"}
+              {t("view.showing", { shown: Math.min(visible, filteredTutorials.length), total: filteredTutorials.length })}
             </span>
             <span aria-hidden="true" className="h-px flex-1 bg-gradient-to-r from-learn/60 to-transparent" />
           </div>
@@ -326,7 +330,7 @@ export function TutorialLibraryView({
                 onClick={() => setVisible((v) => v + PAGE_SIZE)}
                 className="kr-btn kr-btn-ghost kr-learn px-5 py-2.5 text-sm"
               >
-                Show more
+                {t("view.showMore")}
                 <ChevronDown aria-hidden="true" className="size-4" />
               </button>
             </div>

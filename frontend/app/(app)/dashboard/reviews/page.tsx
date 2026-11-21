@@ -1,10 +1,11 @@
+import { getTranslations } from "next-intl/server";
 import type { Metadata } from "next";
 import { ReviewQueueView } from "@/components/reviews";
 
-export const metadata: Metadata = {
-  title: "Review Queue · Krama",
-  description: "Owner review queue for outdated and self-healing tutorials.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("shell.meta.reviews");
+  return { title: t("title"), description: t("description") };
+}
 
 export default function ReviewQueuePage() {
   return (

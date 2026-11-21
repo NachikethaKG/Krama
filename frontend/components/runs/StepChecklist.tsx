@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { useTranslations } from "next-intl";
 import type { StreamStep } from "@/hooks/useRunStream";
 
 export interface StepChecklistProps {
@@ -10,6 +11,7 @@ export interface StepChecklistProps {
 }
 
 export function StepChecklist({ steps, currentStepSeq, className = "" }: StepChecklistProps) {
+  const t = useTranslations("runs");
   const activeItemRef = useRef<HTMLLIElement | null>(null);
 
   // Auto-scroll to active step if list is long
@@ -30,7 +32,7 @@ export function StepChecklist({ steps, currentStepSeq, className = "" }: StepChe
       <div className="flex items-center justify-between border-b pb-3 border-white/10">
         <div className="flex items-center gap-2">
           <h2 className="kr-display text-lg font-bold text-white">
-            Execution Steps
+            {t("checklist.title")}
           </h2>
           <span
             data-testid="step-count-badge"
@@ -42,19 +44,19 @@ export function StepChecklist({ steps, currentStepSeq, className = "" }: StepChe
 
         {currentStepSeq && (
           <span className="text-xs text-ink-400">
-            Current: Step {currentStepSeq}
+            {t("checklist.current", { seq: currentStepSeq })}
           </span>
         )}
       </div>
 
       {steps.length === 0 ? (
         <div className="py-8 text-center text-xs text-ink-400">
-          Waiting for execution plan…
+          {t("checklist.waiting")}
         </div>
       ) : (
         <ol
           className="kr-scroll mt-3 flex max-h-[500px] flex-col gap-2.5 overflow-y-auto pr-1"
-          aria-label="Planned execution steps"
+          aria-label={t("checklist.ariaLabel")}
         >
           {steps.map((step) => {
             const isActive = step.seq === currentStepSeq;
@@ -81,7 +83,7 @@ export function StepChecklist({ steps, currentStepSeq, className = "" }: StepChe
                       {step.status === "pending" && (
                         <span
                           data-testid="step-pending"
-                          aria-label="Pending step"
+                          aria-label={t("checklist.pendingAria")}
                           className="flex size-5 items-center justify-center rounded-full border text-[10px] font-semibold border-white/10 bg-white/5 text-ink-400"
                         >
                           {step.seq}
@@ -91,7 +93,7 @@ export function StepChecklist({ steps, currentStepSeq, className = "" }: StepChe
                       {step.status === "running" && (
                         <span
                           data-testid="step-running"
-                          aria-label="Running step"
+                          aria-label={t("checklist.runningAria")}
                           className="flex size-5 items-center justify-center rounded-full bg-run text-oncolor shadow-[0_0_12px_var(--run)]"
                         >
                           <svg
@@ -119,7 +121,7 @@ export function StepChecklist({ steps, currentStepSeq, className = "" }: StepChe
                       {step.status === "completed" && (
                         <span
                           data-testid="step-completed"
-                          aria-label="Completed step"
+                          aria-label={t("checklist.completedAria")}
                           className="flex size-5 items-center justify-center rounded-full bg-verify text-oncolor shadow-[0_0_12px_var(--verify)]"
                         >
                           <svg
@@ -141,7 +143,7 @@ export function StepChecklist({ steps, currentStepSeq, className = "" }: StepChe
                       {step.status === "paused" && (
                         <span
                           data-testid="step-paused"
-                          aria-label="Paused step"
+                          aria-label={t("checklist.pausedAria")}
                           className="flex size-5 items-center justify-center rounded-full bg-plan text-oncolor shadow-[0_0_12px_var(--plan)]"
                         >
                           <svg
@@ -163,7 +165,7 @@ export function StepChecklist({ steps, currentStepSeq, className = "" }: StepChe
                       {step.status === "failed" && (
                         <span
                           data-testid="step-failed"
-                          aria-label="Failed step"
+                          aria-label={t("checklist.failedAria")}
                           className="flex size-5 items-center justify-center rounded-full bg-danger text-oncolor shadow-[0_0_12px_var(--danger)]"
                         >
                           <svg
@@ -208,7 +210,7 @@ export function StepChecklist({ steps, currentStepSeq, className = "" }: StepChe
                                 : "bg-white/[0.06] text-ink-400"
                       }`}
                     >
-                      {step.status}
+                      {t(`checklist.status.${step.status}`)}
                     </span>
                   </div>
                 </div>

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import type { FailedState, PausedState } from "@/hooks/useRunStream";
 
 export interface RunStatusBannersProps {
@@ -23,6 +24,7 @@ export function RunStatusBanners({
   onAbort,
   className = "",
 }: RunStatusBannersProps) {
+  const t = useTranslations("runs");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleResume = async () => {
@@ -71,15 +73,15 @@ export function RunStatusBanners({
 
           <div className="flex-1 space-y-1">
             <h3 className="kr-display text-lg font-bold text-white">
-              Execution Paused: Action requires manual approval / bot barrier detected
+              {t("banners.pausedTitle")}
             </h3>
             <p className="text-xs leading-relaxed text-ink-300">
-              {pausedState?.message || "Execution paused for safety policy review."}
+              {pausedState?.message || t("banners.pausedDefault")}
             </p>
             {pausedState?.triggerContext && (
               <p className="text-[11px] font-medium text-plan">
-                Context: <span className="font-semibold">{pausedState.triggerContext}</span>
-                {pausedState.stepSeq ? ` at Step ${pausedState.stepSeq}` : ""}
+                {t("banners.context")} <span className="font-semibold">{pausedState.triggerContext}</span>
+                {pausedState.stepSeq ? t("banners.atStep", { seq: pausedState.stepSeq }) : ""}
               </p>
             )}
           </div>
@@ -93,7 +95,7 @@ export function RunStatusBanners({
             onClick={handleAbort}
             className="kr-btn kr-btn-ghost kr-danger px-3.5 py-1.5 text-xs"
           >
-            {isSubmitting ? "Processing…" : "Abort Run"}
+            {isSubmitting ? t("banners.processing") : t("banners.abort")}
           </button>
 
           <button
@@ -103,7 +105,7 @@ export function RunStatusBanners({
             onClick={handleResume}
             className="kr-btn kr-btn-tone px-4 py-1.5 text-xs"
           >
-            {isSubmitting ? "Resuming…" : "Allow & Resume"}
+            {isSubmitting ? t("banners.resuming") : t("banners.allowResume")}
           </button>
         </div>
       </div>
@@ -111,7 +113,7 @@ export function RunStatusBanners({
   }
 
   if (status === "failed") {
-    const errorMsg = failedState?.error || "Workflow execution halted unexpectedly";
+    const errorMsg = failedState?.error || t("banners.failedDefault");
     const stepIndex = failedState?.stepSeq ?? "?";
 
     return (
@@ -139,10 +141,10 @@ export function RunStatusBanners({
 
           <div className="flex-1 space-y-1">
             <h3 className="kr-display text-lg font-bold text-white">
-              Execution Failed at Step {stepIndex}: {errorMsg}
+              {t("banners.failedTitle", { step: String(stepIndex), error: errorMsg })}
             </h3>
             <p className="text-xs text-ink-300">
-              The agent stopped because the observed environment did not match expectations or encountered a policy restriction.
+              {t("banners.failedBody")}
             </p>
           </div>
         </div>
@@ -154,12 +156,12 @@ export function RunStatusBanners({
             className="rounded-2xl border border-danger/30 bg-ink-950/60 p-3"
           >
             <h4 className="text-[11px] font-bold uppercase tracking-wider text-danger mb-2">
-              State Verification Mismatch
+              {t("banners.mismatch")}
             </h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs font-mono">
               <div className="rounded-lg p-2.5 bg-ink-950">
                 <span className="block text-[10px] uppercase font-bold text-ink-400 mb-1">
-                  Expected
+                  {t("banners.expected")}
                 </span>
                 <pre className="whitespace-pre-wrap text-ink-300 text-[11px]">
                   {typeof failedState.expected === "object"
@@ -170,7 +172,7 @@ export function RunStatusBanners({
 
               <div className="rounded-lg p-2.5 bg-ink-950">
                 <span className="block text-[10px] uppercase font-bold text-ink-400 mb-1">
-                  Observed
+                  {t("banners.observed")}
                 </span>
                 <pre className="whitespace-pre-wrap text-ink-300 text-[11px]">
                   {typeof failedState.observed === "object"
@@ -210,10 +212,10 @@ export function RunStatusBanners({
 
           <div>
             <h3 className="kr-display text-lg font-bold text-white">
-              Workflow Execution Complete
+              {t("banners.completeTitle")}
             </h3>
             <p className="text-xs text-ink-300">
-              All planned steps have been successfully executed and verified.
+              {t("banners.completeBody")}
             </p>
           </div>
         </div>
@@ -224,7 +226,7 @@ export function RunStatusBanners({
             data-testid="open-tutorial-btn"
             className="kr-btn kr-btn-primary px-4 py-1.5 text-xs"
           >
-            Open Interactive Tutorial
+            {t("banners.openTutorial")}
           </Link>
         )}
       </div>

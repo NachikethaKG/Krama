@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { BarChart3, LayoutDashboard, ShieldAlert } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { type ApiClient, getApiClient } from "@/lib/api";
 
 export interface DashboardNavProps {
@@ -20,6 +21,7 @@ export function DashboardNav({
   client,
   className = "",
 }: DashboardNavProps) {
+  const t = useTranslations("shell");
   const pathname = usePathname() ?? "/dashboard";
   const [apiClient] = useState<ApiClient>(() => client ?? getApiClient());
   const [fetchedCount, setFetchedCount] = useState<number>(0);
@@ -56,14 +58,14 @@ export function DashboardNav({
   const navItems = [
     {
       id: "overview",
-      label: "My Tutorials",
+      label: t("dashboardNav.overview"),
       href: "/",
       icon: LayoutDashboard,
       active: activeTab === "overview" || pathname === "/" || pathname === "/dashboard",
     },
     {
       id: "reviews",
-      label: "Review Queue",
+      label: t("dashboardNav.reviews"),
       href: "/dashboard/reviews",
       icon: ShieldAlert,
       active: activeTab === "reviews" || pathname.startsWith("/dashboard/reviews"),
@@ -71,7 +73,7 @@ export function DashboardNav({
     },
     {
       id: "metrics",
-      label: "Metrics",
+      label: t("dashboardNav.metrics"),
       href: "/dashboard/metrics",
       icon: BarChart3,
       active: activeTab === "metrics" || pathname.startsWith("/dashboard/metrics"),
@@ -81,7 +83,7 @@ export function DashboardNav({
   return (
     <nav
       data-testid="dashboard-nav"
-      aria-label="Dashboard sections"
+      aria-label={t("dashboardNav.label")}
       className={`flex items-center gap-2 border-b border-white/10 pb-4 ${className}`}
     >
       {navItems.map((item) => {
@@ -104,7 +106,7 @@ export function DashboardNav({
               item.badge > 0 ? (
                 <span
                   data-testid="review-queue-badge"
-                  aria-label={`${item.badge} pending reviews`}
+                  aria-label={t("header.pendingReviews", { count: item.badge })}
                   className="inline-flex size-5 items-center justify-center rounded-full bg-rose-500 text-[10px] font-extrabold text-white"
                 >
                   {item.badge}

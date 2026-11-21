@@ -1,4 +1,5 @@
 import { ExternalLink, Globe, ListChecks, Sparkles } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 export interface TaskHeaderProps {
   prompt: string;
@@ -20,6 +21,7 @@ const STATUS_TONE: Record<string, string> = {
 };
 
 export function TaskHeader({ prompt, targetUrl, title, targetApp, status, className = "" }: TaskHeaderProps) {
+  const t = useTranslations("approval");
   return (
     <header
       data-testid="task-header"
@@ -36,7 +38,7 @@ export function TaskHeader({ prompt, targetUrl, title, targetApp, status, classN
           <div className="flex flex-wrap items-center gap-2">
             <span className="kr-chip kr-plan">
               <ListChecks aria-hidden="true" className="size-3.5" />
-              Workflow Plan
+              {t("taskHeader.workflowPlan")}
             </span>
             {targetApp && (
               <span className="kr-chip kr-run">
@@ -54,7 +56,7 @@ export function TaskHeader({ prompt, targetUrl, title, targetApp, status, classN
             )}
           </div>
           <h1 className="kr-display text-3xl font-extrabold leading-tight text-white sm:text-4xl">
-            {title || "Here's the plan"}
+            {title || t("taskHeader.defaultTitle")}
           </h1>
         </div>
       </div>
@@ -63,7 +65,7 @@ export function TaskHeader({ prompt, targetUrl, title, targetApp, status, classN
         <div className="flex flex-col gap-1.5 rounded-2xl border border-white/10 bg-ink-950/50 p-4">
           <span className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-ask">
             <Sparkles aria-hidden="true" className="size-3.5" />
-            Task Prompt
+            {t("taskHeader.taskPrompt")}
           </span>
           <p data-testid="task-prompt" className="text-sm font-medium text-white">
             {prompt}
@@ -73,7 +75,7 @@ export function TaskHeader({ prompt, targetUrl, title, targetApp, status, classN
         <div className="flex flex-col gap-1.5 rounded-2xl border border-white/10 bg-ink-950/50 p-4">
           <span className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-run">
             <Globe aria-hidden="true" className="size-3.5" />
-            Target System URL
+            {t("taskHeader.targetUrl")}
           </span>
           {targetUrl ? (
             <a
@@ -88,7 +90,7 @@ export function TaskHeader({ prompt, targetUrl, title, targetApp, status, classN
             </a>
           ) : (
             <span data-testid="target-url" className="text-sm italic text-ink-400">
-              No target URL configured
+              {t("taskHeader.noTargetUrl")}
             </span>
           )}
         </div>

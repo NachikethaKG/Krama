@@ -1,12 +1,14 @@
+import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { cookies, headers } from "next/headers";
 import type { MetricsSummary } from "@krama/contracts-ts";
 import { MetricsDashboardClient } from "@/components/metrics";
 import { mockMetricsSummary } from "@/lib/fixtures";
 
-export const metadata = {
-  title: "Technical Metrics & Multi-Target Benchmark · Krama",
-  description: "PRD §33 technical metrics dashboard covering Task Success Rate, Verifier Accuracy, Recovery Rate, and Latency Profile across Gitea and GitHub.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("shell.meta.metrics");
+  return { title: t("title"), description: t("description") };
+}
 
 async function fetchMetricsSummary(): Promise<MetricsSummary | null> {
   const isMockMode = process.env.NEXT_PUBLIC_API_MODE !== "http";

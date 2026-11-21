@@ -1,0 +1,46 @@
+{
+  "outdatedBanner": {
+    "title": "Site Changed",
+    "badge": "Outdated",
+    "message": "The target website has changed since this tutorial was recorded. Some steps, locators, or flows may no longer match the current site."
+  },
+  "revoked": {
+    "notFound": "Link Not Found (404)",
+    "unavailable": "Unavailable ({status})",
+    "title": "Tutorial Link Unavailable",
+    "message": "This tutorial link is invalid or has been revoked by the creator.",
+    "hint": "This tutorial may have been removed, or the share link was revoked by the creator.",
+    "home": "Return to Homepage"
+  },
+  "header": {
+    "home": "Krama home",
+    "viewing": "Viewing shared tutorial",
+    "readOnly": "Read-only preview"
+  },
+  "modal": {
+    "title": "Share tutorial",
+    "closeDialog": "Close dialog",
+    "loadFailed": "Failed to load share links.",
+    "createFailed": "Failed to create share link.",
+    "copyFailed": "Failed to copy link to clipboard.",
+    "revokeFailed": "Failed to revoke share link.",
+    "loading": "Loading share links…",
+    "ready": "Public share link ready",
+    "copied": "Copied!",
+    "copyLink": "Copy link",
+    "readyHint": "Anyone with this link can watch and replay the verified recording without signing in.",
+    "emptyTitle": "No active share links for this tutorial yet.",
+    "emptyHint": "Create a public link to let teammates view this tutorial in their browser.",
+    "activeCount": "{count, plural, one {# active share link} other {# active share links}}",
+    "shareLink": "Share link",
+    "creating": "Creating…",
+    "generateNew": "Generate new link",
+    "create": "Create share link",
+    "history": "Share links history",
+    "created": "Created {date}",
+    "revoked": "Revoked",
+    "activeLink": "Active public link",
+    "revoking": "Revoking…",
+    "revoke": "Revoke"
+  }
+}

@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque, Geist, JetBrains_Mono } from "next/font/google";
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import { AmbientBackground } from "@/components/ui/AmbientBackground";
 import { THEME_INIT_SCRIPT } from "@/lib/theme";
 import "./globals.css";
@@ -19,10 +21,10 @@ const code = JetBrains_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "Krama",
-  description: "Verified, interactive software tutorials",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("shell.meta.root");
+  return { title: t("title"), description: t("description") };
+}
 
 export const viewport: Viewport = {
   themeColor: [
@@ -31,12 +33,14 @@ export const viewport: Viewport = {
   ],
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  const locale = await getLocale();
+  const messages = await getMessages();
   return (
     // Dark by default; THEME_INIT_SCRIPT switches to the saved light theme before the first paint, so the
     // class and data-theme on <html> can differ from the server's markup on purpose.
     <html
-      lang="en"
+      lang={locale}
       data-theme="dark"
       suppressHydrationWarning
       className={`dark ${display.variable} ${body.variable} ${code.variable} h-full antialiased`}
@@ -46,7 +50,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       </head>
       <body className="relative min-h-full flex flex-col overflow-x-hidden">
         <AmbientBackground />
-        {children}
+        <NextIntlClientProvider locale={locale} messages={messages}>
+          {children}
+        </NextIntlClientProvider>
       </body>
     </html>
   );

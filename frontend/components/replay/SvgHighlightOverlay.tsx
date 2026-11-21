@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useTranslations } from 'next-intl';
 import type { Point, TransformedRect } from './types';
 
 export interface SvgHighlightOverlayProps {
@@ -62,6 +63,7 @@ export function SvgHighlightOverlay({
   containerHeight,
   className = '',
 }: SvgHighlightOverlayProps) {
+  const t = useTranslations('runs');
   const colors = STATUS_COLORS[status] ?? STATUS_COLORS.active;
   const hasValidRect = Boolean(transformedRect && transformedRect.visible);
   const hasValidCursor = Boolean(
@@ -82,7 +84,7 @@ export function SvgHighlightOverlay({
           ? `0 0 ${containerWidth} ${containerHeight}`
           : undefined
       }
-      aria-label="Replay Step Highlight Overlay"
+      aria-label={t("replay.overlayAria")}
       role="presentation"
       data-testid="svg-highlight-overlay"
     >

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { compileWorkflow, type TutorialSpec } from "@krama/tutorial-compiler";
 import type { Workflow } from "@krama/contracts-ts";
 import type { eventWithTime } from "@rrweb/types";
@@ -15,9 +16,10 @@ export interface SharePageProps {
 
 export async function generateMetadata({ params }: SharePageProps): Promise<Metadata> {
   await params;
+  const t = await getTranslations("shell.meta.share");
   return {
-    title: "Shared Tutorial · Krama",
-    description: "Public interactive tutorial replay.",
+    title: t("title"),
+    description: t("description"),
     robots: {
       index: false,
       follow: false,

@@ -1,0 +1,45 @@
+{
+  "handBack": {
+    "barrier": {
+      "label": "I cleared what was in the way",
+      "detail": "Krama checks the page and does the step itself."
+    },
+    "step": {
+      "label": "I did this step",
+      "detail": "Krama checks the step worked, then goes on."
+    },
+    "rest": {
+      "label": "I finished the task",
+      "detail": "Krama checks the end result."
+    }
+  },
+  "blocked": "That was blocked during the takeover.",
+  "forbidden": "You can't control this run.",
+  "conflict": "Someone else is already controlling this run, or the takeover ended.",
+  "handBackFailed": "Handing back failed.",
+  "endedIdle": "The takeover ended after 5 minutes without input.",
+  "ended": "The takeover ended.",
+  "stillPaused": "The run is still paused: take over again, allow or cancel it.",
+  "backToPause": "Back to the pause",
+  "sectionAria": "Live page you control",
+  "youControl": "You control the page at step {seq}",
+  "done": "I'm done",
+  "privacy": "What you type goes to the page only; Krama never stores the screen. Only this site and its sign-in pages open here.",
+  "surfaceAria": "The run's page. Click to focus, then use mouse and keyboard as usual.",
+  "connecting": "Connecting to the page…",
+  "handBackAria": "What did you do?",
+  "manualLogin": {
+    "timedOut": "Login timed out or browser was closed before completing sign-in.",
+    "statusFailed": "Failed checking session status",
+    "launchFailed": "Failed to launch manual login session",
+    "title": "One-Time Manual Authentication",
+    "explainer": "You will log in directly in a separate browser window. Krama only saves an encrypted session cookie, never your password.",
+    "active": "Session Active (Encrypted Storage State Saved)",
+    "expires": "(Expires {date})",
+    "reauth": "Re-authenticate",
+    "pending": "Waiting for you to complete sign-in in the open browser...",
+    "defaultError": "Authentication could not be completed.",
+    "retry": "Retry Manual Login",
+    "launch": "Launch Manual Login"
+  }
+}

@@ -1,0 +1,100 @@
+{
+  "copyable": {
+    "copiedAria": "ಕ್ಲಿಪ್‌ಬೋರ್ಡ್‌ಗೆ ನಕಲಿಸಲಾಗಿದೆ",
+    "copyAria": "{text} ಅನ್ನು ಕ್ಲಿಪ್‌ಬೋರ್ಡ್‌ಗೆ ನಕಲಿಸಿ",
+    "copied": "ನಕಲಿಸಲಾಗಿದೆ!",
+    "copy": "ನಕಲಿಸಿ"
+  },
+  "recordedPage": {
+    "failed": "ರೆಕಾರ್ಡಿಂಗ್ ಅನ್ನು ತೋರಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ."
+  },
+  "controls": {
+    "region": "ಟ್ಯುಟೋರಿಯಲ್ ಪ್ಲೇಬ್ಯಾಕ್ ನಿಯಂತ್ರಣಗಳು",
+    "progress": "ದೃಶ್ಯ ಪ್ಲೇಬ್ಯಾಕ್ ಪ್ರಗತಿ",
+    "progressValue": "{total} ರಲ್ಲಿ ಹಂತ {current}: {title}",
+    "prev": "ಹಿಂದಿನ ಹಂತ",
+    "prevTitle": "ಹಿಂದಿನ ಹಂತ (ArrowLeft ಅಥವಾ J)",
+    "pause": "ಟ್ಯುಟೋರಿಯಲ್ ವಿರಾಮಗೊಳಿಸಿ",
+    "play": "ಟ್ಯುಟೋರಿಯಲ್ ಪ್ಲೇ ಮಾಡಿ",
+    "pauseTitle": "ವಿರಾಮ (Space ಅಥವಾ K)",
+    "playTitle": "ಪ್ಲೇ (Space ಅಥವಾ K)",
+    "replay": "ಪ್ರಸ್ತುತ ಹಂತವನ್ನು ಮರುಪ್ರದರ್ಶಿಸಿ",
+    "replayTitle": "ಹಂತ ಮರುಪ್ರದರ್ಶನ (R)",
+    "next": "ಮುಂದಿನ ಹಂತ",
+    "nextTitle": "ಮುಂದಿನ ಹಂತ (ArrowRight ಅಥವಾ L)",
+    "stepOf": "{total} ರಲ್ಲಿ ಹಂತ {current}",
+    "unmute": "ನಿರೂಪಣೆಯನ್ನು ಅನ್‌ಮ್ಯೂಟ್ ಮಾಡಿ",
+    "mute": "ನಿರೂಪಣೆಯನ್ನು ಮ್ಯೂಟ್ ಮಾಡಿ",
+    "muteTitleMuted": "ನಿರೂಪಣೆ ಟಾಗಲ್ (M) - ಸದ್ಯ ಮ್ಯೂಟ್ ಆಗಿದೆ",
+    "muteTitleActive": "ನಿರೂಪಣೆ ಟಾಗಲ್ (M) - ಸದ್ಯ ಸಕ್ರಿಯವಾಗಿದೆ",
+    "zoomOff": "ಸ್ವಯಂ-ಜೂಮ್ ನಿಷ್ಕ್ರಿಯಗೊಳಿಸಿ",
+    "zoomOn": "ಸ್ವಯಂ-ಜೂಮ್ ಸಕ್ರಿಯಗೊಳಿಸಿ",
+    "zoomTitleAuto": "ಜೂಮ್ ಟಾಗಲ್ (Z) - ಸದ್ಯ ಸ್ವಯಂ-ಜೂಮ್",
+    "zoomTitleOverview": "ಜೂಮ್ ಟಾಗಲ್ (Z) - ಸದ್ಯ ಸಮಗ್ರ ನೋಟ (1.0x)",
+    "zoomActive": "ಜೂಮ್ ಸಕ್ರಿಯ",
+    "overview": "ಸಮಗ್ರ ನೋಟ",
+    "hideCaptions": "ಉಪಶೀರ್ಷಿಕೆಗಳನ್ನು ಮರೆಮಾಡಿ",
+    "showCaptions": "ಉಪಶೀರ್ಷಿಕೆಗಳನ್ನು ತೋರಿಸಿ",
+    "captionsTitle": "ಉಪಶೀರ್ಷಿಕೆ ಟಾಗಲ್ (C)",
+    "captionsShort": "CC",
+    "closeStepList": "ಹಂತಗಳ ಪಟ್ಟಿ ಮುಚ್ಚಿ",
+    "openStepList": "ಹಂತಗಳ ಪಟ್ಟಿ ತೆರೆಯಿರಿ",
+    "toggleStepList": "ಹಂತಗಳ ಪಟ್ಟಿ ಟಾಗಲ್ ಮಾಡಿ"
+  },
+  "tutorialLibrary": {
+    "loadError": "ಟ್ಯುಟೋರಿಯಲ್‌ಗಳನ್ನು ಲೋಡ್ ಮಾಡಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ.",
+    "loading": "ಟ್ಯುಟೋರಿಯಲ್‌ಗಳು ಲೋಡ್ ಆಗುತ್ತಿವೆ…",
+    "empty": "ಇನ್ನೂ ಯಾವುದೇ ಪರಿಶೀಲಿತ ವರ್ಕ್‌ಫ್ಲೋಗಳಿಲ್ಲ.",
+    "meta": "{count, plural, one {# ಹಂತ} other {# ಹಂತಗಳು}} · {app}",
+    "siteFallback": "ಸೈಟ್"
+  },
+  "stepList": {
+    "label": "ಟ್ಯುಟೋರಿಯಲ್ ಹಂತಗಳ ಪಟ್ಟಿ",
+    "heading": "ಹಂತಗಳು ({count})",
+    "total": "ಒಟ್ಟು: {seconds}s",
+    "close": "ಹಂತಗಳ ಪಟ್ಟಿ ಮುಚ್ಚಿ",
+    "nav": "ಹಂತಗಳು",
+    "active": "ಸಕ್ರಿಯ",
+    "noInstruction": "ಯಾವುದೇ ಸೂಚನೆ ಇಲ್ಲ"
+  },
+  "workflowTutorial": {
+    "notFound": "ಈ id ಯೊಂದಿಗೆ ಯಾವುದೇ ಸಂಗ್ರಹಿತ ವರ್ಕ್‌ಫ್ಲೋ ಇಲ್ಲ.",
+    "loadError": "ಟ್ಯುಟೋರಿಯಲ್ ಅನ್ನು ಲೋಡ್ ಮಾಡಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ.",
+    "loading": "ಟ್ಯುಟೋರಿಯಲ್ ಲೋಡ್ ಆಗುತ್ತಿದೆ…",
+    "readAsText": "ಪಠ್ಯವಾಗಿ ಓದಿ"
+  },
+  "stage": {
+    "brand": "Krama ಟ್ಯುಟೋರಿಯಲ್",
+    "descriptionFallback": "ವರ್ಕ್‌ಫ್ಲೋ ಪೂರ್ಣಗೊಳಿಸಲು ಹೈಲೈಟ್ ಮಾಡಿದ ಹಂತಗಳನ್ನು ಅನುಸರಿಸಿ.",
+    "newButton": "+ ಹೊಸದು",
+    "fakeUrl": "https://git.local/{slug}",
+    "secure": "🔒 SSL"
+  },
+  "player": {
+    "announcement": "{total} ರಲ್ಲಿ ಹಂತ {seq}: {text}",
+    "stepN": "ಹಂತ {seq}",
+    "region": "ಸಂವಾದಾತ್ಮಕ ಟ್ಯುಟೋರಿಯಲ್ ಪ್ಲೇಯರ್",
+    "roleDescription": "ಸಂವಾದಾತ್ಮಕ ವೀಡಿಯೊ ಟ್ಯುಟೋರಿಯಲ್",
+    "learn": "ಕಲಿಯಿರಿ",
+    "readOnly": "ಓದಲು-ಮಾತ್ರ",
+    "doItForMe": "ನನಗಾಗಿ ಮಾಡಿ",
+    "exportMp4": "MP4 ಎಕ್ಸ್‌ಪೋರ್ಟ್ ಮಾಡಿ",
+    "share": "ಹಂಚಿಕೊಳ್ಳಿ",
+    "versionHistory": "ಆವೃತ್ತಿ ಇತಿಹಾಸ",
+    "summary": "{count, plural, one {# ಹಂತ} other {# ಹಂತಗಳು}}, ಪ್ರತಿಯೊಂದೂ ಪರಿಶೀಲಿತ · ನೋಡಲು {seconds} s",
+    "sensitive": "ಸೂಕ್ಷ್ಮ",
+    "duration": "ಅವಧಿ: {seconds}s",
+    "instruction": "ಸೂಚನೆ",
+    "inputValue": "ಇನ್‌ಪುಟ್ ಮೌಲ್ಯ",
+    "valueLabel": "ಮೌಲ್ಯ",
+    "stepsDrawer": "ಹಂತಗಳ ಡ್ರಾಯರ್",
+    "versionHistoryTitle": "ವರ್ಕ್‌ಫ್ಲೋ ಆವೃತ್ತಿ ಇತಿಹಾಸ ಮತ್ತು ಹಂತಗಳ ವ್ಯತ್ಯಾಸಗಳು",
+    "closeVersionHistory": "ಆವೃತ್ತಿ ಇತಿಹಾಸ ಮುಚ್ಚಿ"
+  },
+  "language": {
+    "label": "ಟ್ಯುಟೋರಿಯಲ್ ಭಾಷೆ",
+    "translating": "ಟ್ಯುಟೋರಿಯಲ್ ಅನ್ನು ಅನುವಾದಿಸಲಾಗುತ್ತಿದೆ…",
+    "failed": "ಈ ಟ್ಯುಟೋರಿಯಲ್ ಅನ್ನು ಸದ್ಯಕ್ಕೆ ಅನುವಾದಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ. ಇಂಗ್ಲಿಷ್‌ನಲ್ಲಿ ತೋರಿಸಲಾಗುತ್ತಿದೆ.",
+    "partly": "ಕೆಲವು ಹಂತಗಳು ಇನ್ನೂ ಇಂಗ್ಲಿಷ್‌ನಲ್ಲಿವೆ: ಅವುಗಳ ಅನುವಾದ ಪುಟದ ಲೇಬಲ್‌ಗಳನ್ನು ನಿಖರವಾಗಿ ಉಳಿಸಿಕೊಳ್ಳಲಿಲ್ಲ."
+  }
+}

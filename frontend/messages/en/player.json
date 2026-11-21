@@ -1,0 +1,100 @@
+{
+  "copyable": {
+    "copiedAria": "Copied to clipboard",
+    "copyAria": "Copy {text} to clipboard",
+    "copied": "Copied!",
+    "copy": "Copy"
+  },
+  "recordedPage": {
+    "failed": "The recording could not be shown."
+  },
+  "controls": {
+    "region": "Tutorial playback controls",
+    "progress": "Scene playback progress",
+    "progressValue": "Step {current} of {total}: {title}",
+    "prev": "Previous step",
+    "prevTitle": "Previous step (ArrowLeft or J)",
+    "pause": "Pause tutorial",
+    "play": "Play tutorial",
+    "pauseTitle": "Pause (Space or K)",
+    "playTitle": "Play (Space or K)",
+    "replay": "Replay current step",
+    "replayTitle": "Replay step (R)",
+    "next": "Next step",
+    "nextTitle": "Next step (ArrowRight or L)",
+    "stepOf": "Step {current} of {total}",
+    "unmute": "Unmute narration",
+    "mute": "Mute narration",
+    "muteTitleMuted": "Toggle narration (M) - Currently Muted",
+    "muteTitleActive": "Toggle narration (M) - Currently Active",
+    "zoomOff": "Disable auto-zoom",
+    "zoomOn": "Enable auto-zoom",
+    "zoomTitleAuto": "Toggle zoom (Z) - Currently Auto-Zoom",
+    "zoomTitleOverview": "Toggle zoom (Z) - Currently Overview (1.0x)",
+    "zoomActive": "Zoom Active",
+    "overview": "Overview",
+    "hideCaptions": "Hide captions",
+    "showCaptions": "Show captions",
+    "captionsTitle": "Toggle captions (C)",
+    "captionsShort": "CC",
+    "closeStepList": "Close step list",
+    "openStepList": "Open step list",
+    "toggleStepList": "Toggle step list"
+  },
+  "tutorialLibrary": {
+    "loadError": "The tutorials could not be loaded.",
+    "loading": "Loading tutorials…",
+    "empty": "No verified workflows yet.",
+    "meta": "{count, plural, one {# step} other {# steps}} · {app}",
+    "siteFallback": "site"
+  },
+  "stepList": {
+    "label": "Tutorial step list",
+    "heading": "Steps ({count})",
+    "total": "Total: {seconds}s",
+    "close": "Close steps list",
+    "nav": "Steps",
+    "active": "Active",
+    "noInstruction": "No instruction"
+  },
+  "workflowTutorial": {
+    "notFound": "There is no stored workflow with this id.",
+    "loadError": "The tutorial could not be loaded.",
+    "loading": "Loading the tutorial…",
+    "readAsText": "Read as text"
+  },
+  "stage": {
+    "brand": "Krama Tutorial",
+    "descriptionFallback": "Follow the highlighted steps to complete the workflow.",
+    "newButton": "+ New",
+    "fakeUrl": "https://git.local/{slug}",
+    "secure": "🔒 SSL"
+  },
+  "player": {
+    "announcement": "Step {seq} of {total}: {text}",
+    "stepN": "Step {seq}",
+    "region": "Interactive Tutorial Player",
+    "roleDescription": "interactive video tutorial",
+    "learn": "Learn",
+    "readOnly": "Read-Only",
+    "doItForMe": "Do it for me",
+    "exportMp4": "Export MP4",
+    "share": "Share",
+    "versionHistory": "Version History",
+    "summary": "{count, plural, one {# step} other {# steps}}, each one checked · {seconds} s to watch",
+    "sensitive": "Sensitive",
+    "duration": "Duration: {seconds}s",
+    "instruction": "Instruction",
+    "inputValue": "Input Value",
+    "valueLabel": "Value",
+    "stepsDrawer": "Steps drawer",
+    "versionHistoryTitle": "Workflow Version History & Step Diffs",
+    "closeVersionHistory": "Close version history"
+  },
+  "language": {
+    "label": "Tutorial language",
+    "translating": "Translating the tutorial…",
+    "failed": "This tutorial couldn't be translated right now. Showing it in English.",
+    "partly": "Some steps are still in English: their translation didn't keep the page's labels exact."
+  }
+}

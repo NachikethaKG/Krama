@@ -1,6 +1,7 @@
 "use client";
 
 import { Search, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 import type { TutorialStatus } from "@/types/tutorial";
 
 export interface StatusCounts {
@@ -67,12 +68,13 @@ export function TutorialSearchFilter({
   onStatusFilterChange,
   counts,
 }: TutorialSearchFilterProps) {
+  const t = useTranslations("library");
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
       {/* Search Bar */}
       <div className="kr-learn relative max-w-md flex-1">
         <label htmlFor="tutorial-search" className="sr-only">
-          Search tutorials
+          {t("filter.searchLabel")}
         </label>
         <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-learn">
           <Search className="size-4" aria-hidden="true" />
@@ -83,7 +85,7 @@ export function TutorialSearchFilter({
           data-testid="tutorial-search-input"
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
-          placeholder="Search tutorials by title, description, or prompt..."
+          placeholder={t("filter.searchPlaceholder")}
           className="kr-input w-full !rounded-full py-2.5 pl-10 pr-10 text-sm"
         />
         {searchQuery ? (
@@ -92,7 +94,7 @@ export function TutorialSearchFilter({
             data-testid="tutorial-search-clear"
             onClick={() => onSearchChange("")}
             className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-ink-400 hover:text-white"
-            aria-label="Clear search"
+            aria-label={t("filter.clearSearch")}
           >
             <X className="size-4" aria-hidden="true" />
           </button>
@@ -102,14 +104,14 @@ export function TutorialSearchFilter({
       {/* Status Filter Tabs / Pills */}
       <div
         role="tablist"
-        aria-label="Filter by verification status"
+        aria-label={t("filter.tabsLabel")}
         className="kr-glass flex items-center gap-1 rounded-full p-1"
       >
         <FilterTab
           testId="filter-status-all"
           selected={statusFilter === "all"}
           color="var(--learn)"
-          label="All"
+          label={t("filter.all")}
           count={counts.all}
           onClick={() => onStatusFilterChange("all")}
         />
@@ -117,7 +119,7 @@ export function TutorialSearchFilter({
           testId="filter-status-verified"
           selected={statusFilter === "verified"}
           color="var(--verify)"
-          label="Verified"
+          label={t("filter.verified")}
           count={counts.verified}
           onClick={() => onStatusFilterChange("verified")}
         />
@@ -125,7 +127,7 @@ export function TutorialSearchFilter({
           testId="filter-status-outdated"
           selected={statusFilter === "outdated"}
           color="var(--plan)"
-          label="Outdated"
+          label={t("filter.outdated")}
           count={counts.outdated}
           onClick={() => onStatusFilterChange("outdated")}
         />
@@ -134,7 +136,7 @@ export function TutorialSearchFilter({
             testId="filter-status-auto-updated"
             selected={statusFilter === "auto-updated"}
             color="#0284c7"
-            label="Auto-Updated"
+            label={t("filter.autoUpdated")}
             count={counts.autoUpdated}
             onClick={() => onStatusFilterChange("auto-updated")}
           />
@@ -144,7 +146,7 @@ export function TutorialSearchFilter({
             testId="filter-status-not-auto-checked"
             selected={statusFilter === "not_auto_checked"}
             color="#71717a"
-            label="Not Checked"
+            label={t("filter.notChecked")}
             count={counts.notAutoChecked}
             onClick={() => onStatusFilterChange("not_auto_checked")}
           />

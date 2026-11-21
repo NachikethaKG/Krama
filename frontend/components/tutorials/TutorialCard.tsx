@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { ArrowUpRight, Box, Clock, Globe, Layers } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
 import { TiltCard } from "@/components/ui";
 import type { TargetPlatform, TutorialSummary } from "@/types/tutorial";
 import { TutorialStatusBadge } from "./TutorialStatusBadge";
@@ -23,18 +24,18 @@ function toneFor(tutorial: TutorialSummary, index?: number): string {
   return TONES[hash % TONES.length];
 }
 
-function formatDuration(durationMs: number): string {
-  if (!durationMs || durationMs <= 0) return "< 1 min";
-  if (durationMs < 60000) return "< 1 min";
+function formatDuration(durationMs: number, t: ReturnType<typeof useTranslations>): string {
+  if (!durationMs || durationMs <= 0) return t("card.underAMinute");
+  if (durationMs < 60000) return t("card.underAMinute");
   const minutes = Math.round(durationMs / 60000);
-  return `~${minutes} min`;
+  return t("card.aboutMinutes", { minutes });
 }
 
-function formatDate(isoString: string): string {
+function formatDate(isoString: string, locale: string): string {
   try {
     const d = new Date(isoString);
     if (Number.isNaN(d.getTime())) return isoString;
-    return d.toLocaleDateString("en-US", {
+    return d.toLocaleDateString(locale, {
       month: "short",
       day: "numeric",
       year: "numeric",
@@ -47,6 +48,7 @@ function formatDate(isoString: string): string {
 const BADGE = "inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-bold";
 
 function TargetBadge({ target }: { target: TargetPlatform }) {
+  const t = useTranslations("library");
   switch (target) {
     case "github":
       return (
@@ -73,7 +75,7 @@ function TargetBadge({ target }: { target: TargetPlatform }) {
           className={`${BADGE} border-approve/50 bg-approve/15 text-approve`}
         >
           <Globe className="size-3.5" aria-hidden="true" />
-          Custom
+          {t("card.targetCustom")}
         </span>
       );
     case "gitea":
@@ -113,8 +115,10 @@ export function MarkedText({ text }: { text: string }) {
 }
 
 export function TutorialCard({ tutorial, index, onInspectDiff }: TutorialCardProps) {
-  const durationLabel = formatDuration(tutorial.durationMs);
-  const dateLabel = formatDate(tutorial.createdAt);
+  const t = useTranslations("library");
+  const locale = useLocale();
+  const durationLabel = formatDuration(tutorial.durationMs, t);
+  const dateLabel = formatDate(tutorial.createdAt, locale);
   const tone = toneFor(tutorial, index);
 
   return (
@@ -152,13 +156,13 @@ export function TutorialCard({ tutorial, index, onInspectDiff }: TutorialCardPro
 
           {tutorial.snippet ? (
             <p data-testid="tutorial-snippet" className="mt-2 line-clamp-2 text-sm leading-relaxed text-ink-300">
-              {tutorial.matchStep ? <span className="font-mono text-xs text-ink-400">Step {tutorial.matchStep}: </span> : null}
+              {tutorial.matchStep ? <span className="font-mono text-xs text-ink-400">{t("card.matchStep", { step: tutorial.matchStep })} </span> : null}
               <MarkedText text={tutorial.snippet} />
             </p>
           ) : tutorial.description ? (
             <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-ink-300">{tutorial.description}</p>
           ) : tutorial.taskPrompt ? (
-            <p className="mt-2 line-clamp-2 text-sm italic text-ink-400">&ldquo;{tutorial.taskPrompt}&rdquo;</p>
+            <p className="mt-2 line-clamp-2 text-sm italic text-ink-400">{t("card.quoted", { text: tutorial.taskPrompt })}</p>
           ) : null}
         </div>
 
@@ -169,7 +173,7 @@ export function TutorialCard({ tutorial, index, onInspectDiff }: TutorialCardPro
           >
             <span className="flex items-center gap-1.5 font-semibold">
               <Layers className="size-3.5" style={{ color: "var(--kr-tone)" }} aria-hidden="true" />
-              {tutorial.stepCount} {tutorial.stepCount === 1 ? "step" : "steps"} · {durationLabel}
+              {t("card.meta", { count: tutorial.stepCount, duration: durationLabel })}
             </span>
             <span className="flex items-center gap-1 text-ink-400">
               <Clock className="size-3" aria-hidden="true" />
@@ -182,7 +186,7 @@ export function TutorialCard({ tutorial, index, onInspectDiff }: TutorialCardPro
             data-testid="tutorial-card-open"
             className="kr-btn kr-btn-tone w-full px-3.5 py-2.5 text-xs"
           >
-            <span>Open Tutorial</span>
+            <span>{t("card.open")}</span>
             <ArrowUpRight
               aria-hidden="true"
               className="size-4 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5"

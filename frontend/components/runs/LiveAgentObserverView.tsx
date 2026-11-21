@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useRunStream, type StreamStep } from "@/hooks/useRunStream";
 import { LiveViewportStream } from "./LiveViewportStream";
 import { StepChecklist } from "./StepChecklist";
@@ -25,6 +26,7 @@ export function LiveAgentObserverView({
   autoConnect = true,
   className = "",
 }: LiveAgentObserverViewProps) {
+  const t = useTranslations("runs");
   const {
     status,
     steps,
@@ -62,7 +64,7 @@ export function LiveAgentObserverView({
               data-testid="observer-back-to-runs"
               className="hover:text-white font-medium transition-colors"
             >
-              ← All Runs
+              ← {t("observer.allRuns")}
             </Link>
             <span>/</span>
             <span
@@ -77,7 +79,7 @@ export function LiveAgentObserverView({
             data-testid="run-detail-prompt"
             className="kr-display mt-1 text-3xl font-extrabold text-white sm:text-4xl"
           >
-            {prompt || "Live Agent Headless Execution"}
+            {prompt || t("observer.defaultTitle")}
           </h1>
         </div>
 
@@ -98,10 +100,10 @@ export function LiveAgentObserverView({
             />
             <span>
               {isConnected
-                ? "SSE Stream Connected"
+                ? t("observer.connected")
                 : isReconnecting
-                  ? "Reconnecting Stream…"
-                  : "Stream Standby"}
+                  ? t("observer.reconnecting")
+                  : t("observer.standby")}
             </span>
           </div>
         </div>
@@ -114,7 +116,7 @@ export function LiveAgentObserverView({
           className="kr-plan kr-tone-card flex items-center gap-2 rounded-2xl px-4 py-2.5 text-xs font-semibold text-plan"
         >
           <div className="kr-dot kr-dot-live !size-2" />
-          <span>Stream connection lost. Reconnecting to live observer stream…</span>
+          <span>{t("observer.connectionLost")}</span>
         </div>
       )}
 
@@ -153,13 +155,13 @@ export function LiveAgentObserverView({
             className="kr-approve kr-tone-card rounded-3xl p-4 text-xs"
           >
             <h3 className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-approve">
-              Observer Stream Activity
+              {t("observer.activityTitle")}
             </h3>
             <div className="space-y-1.5 font-mono text-[11px] text-ink-400">
-              <p>• Run: {runId}</p>
-              <p>• Status: <span className="font-semibold uppercase">{status}</span></p>
-              {currentStepSeq && <p>• Active Step: {currentStepSeq}</p>}
-              {effectiveTargetUrl && <p className="truncate">• Target: {effectiveTargetUrl}</p>}
+              <p>• {t("observer.activityRun", { runId })}</p>
+              <p>• {t("observer.activityStatus")} <span className="font-semibold uppercase">{status}</span></p>
+              {currentStepSeq && <p>• {t("observer.activityStep", { seq: currentStepSeq })}</p>}
+              {effectiveTargetUrl && <p className="truncate">• {t("observer.activityTarget", { url: effectiveTargetUrl })}</p>}
             </div>
           </div>
         </div>

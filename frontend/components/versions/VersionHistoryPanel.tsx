@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import type { WorkflowVersion } from "@krama/contracts-ts";
 import { type ApiClient, errorMessage, getApiClient } from "@/lib/api";
 import type { WorkflowVersionRecord } from "@/types/tutorial";
@@ -28,17 +29,17 @@ export function VersionHistoryPanel({
   apiClient,
   readOnly = false,
 }: VersionHistoryPanelProps) {
+  const t = useTranslations("tutorial");
   const [client] = useState<ApiClient>(() => apiClient ?? getApiClient());
-  const [fetchedVersions, setFetchedVersions] = useState<WorkflowVersionRecord[] | null>(null);
+  // Kept as the API sent them: their summaries are written (translated) when shown.
+  const [fetchedVersions, setFetchedVersions] = useState<WorkflowVersion[] | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(!initialVersions && !!workflowId);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<{ cause: unknown } | null>(null);
 
   const versionList = useMemo(() => {
-    if (initialVersions) {
-      return initialVersions.map(normalizeVersionRecord);
-    }
-    return fetchedVersions;
-  }, [initialVersions, fetchedVersions]);
+    const raw = initialVersions ?? fetchedVersions;
+    return raw ? raw.map((v) => normalizeVersionRecord(v, t)) : null;
+  }, [initialVersions, fetchedVersions, t]);
 
   // Wording-only versions collapsed by default (D11)
   const [showWordingChanges, setShowWordingChanges] = useState<boolean>(false);
@@ -58,13 +59,12 @@ export function VersionHistoryPanel({
       .getWorkflowVersions(workflowId)
       .then((res) => {
         if (!isMounted) return;
-        const normalized = res.items.map(normalizeVersionRecord);
-        setFetchedVersions(normalized);
+        setFetchedVersions(res.items);
         setIsLoading(false);
       })
       .catch((err) => {
         if (!isMounted) return;
-        setError(errorMessage(err, "Failed to load version history."));
+        setError({ cause: err });
         setIsLoading(false);
       });
 
@@ -131,7 +131,7 @@ export function VersionHistoryPanel({
           className="flex flex-col items-center gap-3 text-sm text-zinc-500 dark:text-zinc-400"
         >
           <div className="size-6 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin" />
-          <span>Loading version history…</span>
+          <span>{t("history.loading")}</span>
         </div>
       </div>
     );
@@ -159,9 +159,9 @@ export function VersionHistoryPanel({
                 d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
               />
             </svg>
-            <span>Unable to load version history</span>
+            <span>{t("history.errorTitle")}</span>
           </div>
-          <p className="text-xs text-rose-600 dark:text-rose-300">{error}</p>
+          <p className="text-xs text-rose-600 dark:text-rose-300">{errorMessage(error.cause, t("history.loadFailed"))}</p>
         </div>
       </div>
     );
@@ -189,12 +189,12 @@ export function VersionHistoryPanel({
             />
           </svg>
           <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
-            Version History
+            {t("history.title")}
           </h3>
         </div>
         {versionList && (
           <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
-            {versionList.length} {versionList.length === 1 ? "version" : "versions"}
+            {t("history.count", { count: versionList.length })}
           </span>
         )}
       </div>
@@ -206,10 +206,10 @@ export function VersionHistoryPanel({
           className="rounded-lg border border-dashed border-zinc-200 bg-zinc-50/70 p-4 text-xs text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900/40 dark:text-zinc-400"
         >
           <p className="font-semibold text-zinc-900 dark:text-zinc-200">
-            Baseline version (v1.0)
+            {t("history.baselineTitle")}
           </p>
           <p className="mt-1 text-zinc-500 dark:text-zinc-400">
-            This is the initial recorded version. No prior revisions or healed step deltas exist.
+            {t("history.baselineBody")}
           </p>
         </div>
       )}
@@ -242,15 +242,15 @@ export function VersionHistoryPanel({
                       className="inline-flex items-center gap-1 rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-semibold text-sky-800 dark:bg-sky-900/60 dark:text-sky-200"
                     >
                       <span className="size-1.5 rounded-full bg-sky-500" />
-                      Auto-Updated
+                      {t("history.autoUpdated")}
                     </span>
                   ) : isActive ? (
                     <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-200">
-                      Active
+                      {t("history.active")}
                     </span>
                   ) : (
                     <span className="inline-flex items-center rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-medium text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
-                      Archived
+                      {t("history.archived")}
                     </span>
                   )}
                 </div>
@@ -263,7 +263,7 @@ export function VersionHistoryPanel({
                       onClick={() => onSelectVersion(ver.id)}
                       className="rounded px-2 py-1 text-xs font-semibold text-indigo-600 hover:bg-indigo-50 dark:text-indigo-400 dark:hover:bg-indigo-950/50 transition-colors"
                     >
-                      Switch to {ver.version}
+                      {t("history.switchTo", { version: ver.version })}
                     </button>
                   )}
                   {ver.stepDiffs.length > 0 && (
@@ -273,7 +273,7 @@ export function VersionHistoryPanel({
                       onClick={() => handleInspectDiff(ver)}
                       className="inline-flex items-center gap-1 rounded border border-zinc-200 bg-zinc-50 px-2.5 py-1 text-xs font-semibold text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700 transition-colors"
                     >
-                      Inspect Step Diff
+                      {t("history.inspectDiff")}
                     </button>
                   )}
                 </div>
@@ -305,13 +305,13 @@ export function VersionHistoryPanel({
             className="flex w-full items-center justify-between rounded-lg bg-zinc-50 px-3 py-2 text-xs font-semibold text-zinc-700 hover:bg-zinc-100 dark:bg-zinc-900/60 dark:text-zinc-300 dark:hover:bg-zinc-900 transition-colors"
           >
             <div className="flex items-center gap-1.5">
-              <span>Wording-only changes ({wordingVersions.length})</span>
+              <span>{t("history.wordingChanges", { count: wordingVersions.length })}</span>
               <span className="text-[10px] text-zinc-400 font-normal">
-                (captions & descriptions)
+                {t("history.wordingHint")}
               </span>
             </div>
             <span className="text-zinc-400 text-xs">
-              {showWordingChanges ? "▲ Hide" : "▼ Show"}
+              {showWordingChanges ? t("history.hide") : t("history.show")}
             </span>
           </button>
 
@@ -338,7 +338,7 @@ export function VersionHistoryPanel({
                         onClick={() => handleInspectDiff(wVer)}
                         className="text-[11px] font-semibold text-indigo-600 hover:underline dark:text-indigo-400"
                       >
-                        View diff
+                        {t("history.viewDiff")}
                       </button>
                     )}
                   </div>
@@ -361,10 +361,10 @@ export function VersionHistoryPanel({
           <div className="rounded-lg border border-amber-200 bg-amber-50/60 p-3.5 text-xs text-amber-900 dark:border-amber-800/60 dark:bg-amber-950/30 dark:text-amber-200">
             <div className="flex items-center gap-2 font-semibold">
               <span className="size-2 rounded-full bg-amber-500 animate-pulse" />
-              <span>Pending Review ({pendingReviewVersions.length})</span>
+              <span>{t("history.pendingReview", { count: pendingReviewVersions.length })}</span>
             </div>
             <p className="mt-1 text-[11px] text-amber-800 dark:text-amber-300/90">
-              Healed versions awaiting creator confirmation in the Review Queue. They are locked from viewer playback until accepted.
+              {t("history.pendingHint")}
             </p>
             <div className="mt-3 flex flex-col gap-2">
               {pendingReviewVersions.map((pVer) => (
@@ -379,7 +379,7 @@ export function VersionHistoryPanel({
                       data-testid="pending-review-badge"
                       className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800 dark:bg-amber-900/60 dark:text-amber-200"
                     >
-                      Locked (Pending Review)
+                      {t("history.locked")}
                     </span>
                   </div>
                   {pVer.stepDiffs.length > 0 && (
@@ -389,7 +389,7 @@ export function VersionHistoryPanel({
                       onClick={() => handleInspectDiff(pVer)}
                       className="text-xs font-semibold text-amber-900 underline hover:no-underline dark:text-amber-200"
                     >
-                      Review diff
+                      {t("history.reviewDiff")}
                     </button>
                   )}
                 </div>
@@ -408,14 +408,14 @@ export function VersionHistoryPanel({
           <div className="flex max-h-[85vh] w-full max-w-2xl flex-col rounded-2xl bg-white shadow-2xl dark:bg-zinc-950 overflow-hidden border border-zinc-200 dark:border-zinc-800">
             <div className="flex items-center justify-between border-b border-zinc-200 px-5 py-4 dark:border-zinc-800">
               <h4 className="text-base font-bold text-zinc-900 dark:text-zinc-100">
-                Step-by-Step Diff ({inspectingVersion.version})
+                {t("history.diffTitle", { version: inspectingVersion.version })}
               </h4>
               <button
                 type="button"
                 data-testid="close-diff-modal-btn"
                 onClick={() => setInspectingVersion(null)}
                 className="rounded-lg p-1 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
-                aria-label="Close diff preview"
+                aria-label={t("history.closeDiff")}
               >
                 <svg className="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { GraduationCap, Loader2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { TaskInput } from "@/components/task-input";
 import { MyTutorialsList } from "@/components/dashboard/MyTutorialsList";
 import { STAGES } from "@/components/ui";
@@ -11,6 +12,8 @@ import type { TutorialSummary } from "@/types/tutorial";
 
 /** The signed-in home (#318): ask for a tutorial in plain words, and get back to recent ones. PRD §41. */
 export function HomeScreen({ client, initialPrompt }: { client?: ApiClient; initialPrompt?: string }) {
+  const t = useTranslations("home");
+  const tStage = useTranslations("common.ui.stages");
   const [apiClient] = useState<ApiClient>(() => client ?? getApiClient());
   const [recent, setRecent] = useState<TutorialSummary[] | null>(null);
 
@@ -31,17 +34,16 @@ export function HomeScreen({ client, initialPrompt }: { client?: ApiClient; init
         <div className="kr-slide flex flex-col items-start gap-4">
           <span className="kr-chip kr-ask">
             <span className="kr-dot kr-dot-live !size-1.5" />
-            Ask anything about a website
+            {t("hero.chip")}
           </span>
           <h1
-            aria-label="Learn any task by watching it done"
+            aria-label={t("hero.titleLabel")}
             className="kr-display text-4xl font-extrabold leading-[1.02] text-white sm:text-6xl"
           >
-            Learn any task by <span className="kr-gradient-text">watching it done</span>
+            {t.rich("hero.title", { gradient: (chunks) => <span className="kr-gradient-text">{chunks}</span> })}
           </h1>
           <p className="max-w-2xl text-base text-ink-300 sm:text-lg">
-            Describe what you want to do. Krama plans the steps, you approve them, then it does the task in a real
-            browser, checks every step and turns it into an interactive tutorial.
+            {t("hero.intro")}
           </p>
           {/* the pipeline, as a row of coloured beads */}
           <div aria-hidden="true" className="flex flex-wrap items-center gap-1.5">
@@ -58,7 +60,7 @@ export function HomeScreen({ client, initialPrompt }: { client?: ApiClient; init
                     }}
                   >
                     <Icon className="size-3" />
-                    {stage.label}
+                    {tStage(`${stage.key}.label`)}
                   </span>
                   {i < STAGES.length - 1 && <span className="h-px w-3 bg-white/25" />}
                 </span>
@@ -84,25 +86,25 @@ export function HomeScreen({ client, initialPrompt }: { client?: ApiClient; init
               <GraduationCap className="size-5" />
             </span>
             <h2 id="recent-heading" className="kr-display text-2xl font-extrabold text-white sm:text-3xl">
-              Recent tutorials
+              {t("recent.title")}
             </h2>
           </div>
           <Link href="/tutorials" className="text-sm font-bold text-learn transition-colors hover:text-white">
-            See all →
+            {t("recent.seeAll")}
           </Link>
         </div>
         <div aria-hidden="true" className="h-px w-full bg-gradient-to-r from-learn via-ask/40 to-transparent" />
         {recent === null ? (
           <p className="flex items-center gap-2 text-sm text-ink-400">
             <Loader2 aria-hidden="true" className="size-4 animate-spin text-learn" />
-            Loading…
+            {t("recent.loading")}
           </p>
         ) : recent.length === 0 ? (
           <p
             data-testid="home-no-tutorials"
             className="rounded-3xl border border-dashed border-white/15 bg-white/[0.02] px-6 py-10 text-center text-sm text-ink-400"
           >
-            No tutorials yet. Your first one will show up here.
+            {t("recent.empty")}
           </p>
         ) : (
           <MyTutorialsList tutorials={recent} />

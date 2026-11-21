@@ -1,6 +1,7 @@
 "use client";
 
 import type { Scene, TutorialSpec } from "@krama/tutorial-compiler";
+import { useTranslations } from "next-intl";
 import { ListOrdered, Pause, Play, RotateCcw, SkipBack, SkipForward, Volume2, VolumeX, ZoomIn, ZoomOut } from "lucide-react";
 import { stepColor } from "./spectrum";
 
@@ -64,6 +65,7 @@ export function TutorialControls({
   isDrawerOpen = false,
   className = "",
 }: TutorialControlsProps) {
+  const t = useTranslations("player");
   const totalScenes = spec.scenes?.length ?? 0;
   const currentDurationMs = currentScene?.duration_ms ?? 1000;
 
@@ -98,7 +100,7 @@ export function TutorialControls({
     <div
       data-testid="tutorial-controls"
       role="region"
-      aria-label="Tutorial playback controls"
+      aria-label={t("controls.region")}
       className={`kr-glass flex flex-col gap-3 rounded-3xl p-3 sm:p-4 ${className}`}
     >
       {/* Timeline Scrubbing Bar: a spectrum rail, one coloured segment per scene */}
@@ -110,8 +112,8 @@ export function TutorialControls({
         aria-valuenow={Math.round(sceneProgress * 100)}
         aria-valuemin={0}
         aria-valuemax={100}
-        aria-label="Scene playback progress"
-        aria-valuetext={`Step ${currentSceneIndex + 1} of ${totalScenes}: ${currentScene?.title || ""}`}
+        aria-label={t("controls.progress")}
+        aria-valuetext={t("controls.progressValue", { current: currentSceneIndex + 1, total: totalScenes, title: currentScene?.title || "" })}
         className="group relative h-3 w-full cursor-pointer overflow-hidden rounded-full bg-white/10 transition-all hover:h-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-learn focus-visible:ring-offset-2 focus-visible:ring-offset-ink-950"
       >
         <div
@@ -148,8 +150,8 @@ export function TutorialControls({
             onClick={onPrevStep}
             disabled={isFirstStep && currentTimeMs === 0}
             data-testid="control-prev-step"
-            aria-label="Previous step"
-            title="Previous step (ArrowLeft or J)"
+            aria-label={t("controls.prev")}
+            title={t("controls.prevTitle")}
             className={ICON_BTN}
           >
             <SkipBack aria-hidden="true" className="size-5" />
@@ -160,8 +162,8 @@ export function TutorialControls({
             type="button"
             onClick={onTogglePlay}
             data-testid="control-play-pause"
-            aria-label={isPlaying ? "Pause tutorial" : "Play tutorial"}
-            title={isPlaying ? "Pause (Space or K)" : "Play (Space or K)"}
+            aria-label={isPlaying ? t("controls.pause") : t("controls.play")}
+            title={isPlaying ? t("controls.pauseTitle") : t("controls.playTitle")}
             className="kr-btn kr-btn-primary size-14 min-h-[44px] min-w-[44px] !rounded-full"
           >
             {isPlaying ? (
@@ -176,8 +178,8 @@ export function TutorialControls({
             type="button"
             onClick={onReplayCurrentStep}
             data-testid="control-replay-step"
-            aria-label="Replay current step"
-            title="Replay step (R)"
+            aria-label={t("controls.replay")}
+            title={t("controls.replayTitle")}
             className={ICON_BTN}
           >
             <RotateCcw aria-hidden="true" className="size-5" />
@@ -189,8 +191,8 @@ export function TutorialControls({
             onClick={onNextStep}
             disabled={isLastStep}
             data-testid="control-next-step"
-            aria-label="Next step"
-            title="Next step (ArrowRight or L)"
+            aria-label={t("controls.next")}
+            title={t("controls.nextTitle")}
             className={ICON_BTN}
           >
             <SkipForward aria-hidden="true" className="size-5" />
@@ -202,7 +204,7 @@ export function TutorialControls({
               className="rounded-full px-2.5 py-1 font-bold text-oncolor"
               style={{ background: sceneColor, boxShadow: `0 0 16px -4px ${sceneColor}` }}
             >
-              Step {currentSceneIndex + 1} of {totalScenes}
+              {t("controls.stepOf", { current: currentSceneIndex + 1, total: totalScenes })}
             </span>
             <span className="hidden font-mono sm:inline">
               {formatTime(currentTimeMs)} / {formatTime(currentDurationMs)}
@@ -222,8 +224,8 @@ export function TutorialControls({
               onClick={onToggleMute}
               data-testid="control-toggle-mute"
               aria-pressed={!isMuted}
-              aria-label={isMuted ? "Unmute narration" : "Mute narration"}
-              title={`Toggle narration (M) - Currently ${isMuted ? "Muted" : "Active"}`}
+              aria-label={isMuted ? t("controls.unmute") : t("controls.mute")}
+              title={isMuted ? t("controls.muteTitleMuted") : t("controls.muteTitleActive")}
               className={ICON_BTN}
               style={toggle(!isMuted, "var(--ask)")}
             >
@@ -241,8 +243,8 @@ export function TutorialControls({
             onClick={onToggleZoom}
             data-testid="control-toggle-zoom"
             aria-pressed={isZoomEnabled}
-            aria-label={isZoomEnabled ? "Disable auto-zoom" : "Enable auto-zoom"}
-            title={`Toggle zoom (Z) - Currently ${isZoomEnabled ? "Auto-Zoom" : "Overview (1.0x)"}`}
+            aria-label={isZoomEnabled ? t("controls.zoomOff") : t("controls.zoomOn")}
+            title={isZoomEnabled ? t("controls.zoomTitleAuto") : t("controls.zoomTitleOverview")}
             className={`${ICON_BTN} gap-1.5 px-3 text-xs font-bold`}
             style={toggle(isZoomEnabled, "var(--run)")}
           >
@@ -251,7 +253,7 @@ export function TutorialControls({
             ) : (
               <ZoomIn aria-hidden="true" className="size-4 shrink-0" />
             )}
-            <span className="hidden sm:inline">{isZoomEnabled ? "Zoom Active" : "Overview"}</span>
+            <span className="hidden sm:inline">{isZoomEnabled ? t("controls.zoomActive") : t("controls.overview")}</span>
           </button>
 
           {/* Captions Toggle */}
@@ -260,12 +262,12 @@ export function TutorialControls({
             onClick={onToggleCaptions}
             data-testid="control-toggle-captions"
             aria-pressed={isCaptionsEnabled}
-            aria-label={isCaptionsEnabled ? "Hide captions" : "Show captions"}
-            title="Toggle captions (C)"
+            aria-label={isCaptionsEnabled ? t("controls.hideCaptions") : t("controls.showCaptions")}
+            title={t("controls.captionsTitle")}
             className={`${ICON_BTN} px-3 text-xs font-extrabold`}
             style={toggle(isCaptionsEnabled, "var(--verify)")}
           >
-            CC
+            {t("controls.captionsShort")}
           </button>
 
           {/* Mobile Step Drawer Toggle (only visible on small screens < 1024px) */}
@@ -275,8 +277,8 @@ export function TutorialControls({
               onClick={onToggleDrawer}
               data-testid="mobile-step-drawer-toggle"
               aria-expanded={isDrawerOpen}
-              aria-label={isDrawerOpen ? "Close step list" : "Open step list"}
-              title="Toggle step list"
+              aria-label={isDrawerOpen ? t("controls.closeStepList") : t("controls.openStepList")}
+              title={t("controls.toggleStepList")}
               className={`${ICON_BTN} lg:hidden`}
             >
               <ListOrdered aria-hidden="true" className="size-5" />

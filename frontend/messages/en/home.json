@@ -1,0 +1,23 @@
+{
+  "hero": {
+    "chip": "Ask anything about a website",
+    "titleLabel": "Learn any task by watching it done",
+    "title": "Learn any task by <gradient>watching it done</gradient>",
+    "intro": "Describe what you want to do. Krama plans the steps, you approve them, then it does the task in a real browser, checks every step and turns it into an interactive tutorial."
+  },
+  "recent": {
+    "title": "Recent tutorials",
+    "seeAll": "See all →",
+    "loading": "Loading…",
+    "empty": "No tutorials yet. Your first one will show up here."
+  },
+  "myTutorials": {
+    "loading": "Loading your tutorials…",
+    "loadFailed": "Failed to load tutorials.",
+    "empty": "No tutorials recorded yet. Create a new task to generate your first tutorial.",
+    "diffTitle": "Step Diff: {title}",
+    "closeDiff": "Close diff preview",
+    "diffLoading": "Loading step differences…",
+    "noDiff": "No step diff available for this tutorial."
+  }
+}

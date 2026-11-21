@@ -10,6 +10,7 @@ import {
   type WordTiming,
 } from "@krama/tutorial-compiler";
 import type { eventWithTime } from "@rrweb/types";
+import { useTranslations } from "next-intl";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 import { RecordedPage } from "./RecordedPage";
 
@@ -37,6 +38,7 @@ export function TutorialStage({
   className = "",
   recording = null,
 }: TutorialStageProps) {
+  const t = useTranslations("player");
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState<number>(0);
 
@@ -213,13 +215,13 @@ export function TutorialStage({
               <div className="flex flex-1 items-center justify-center">
                 <div className="flex h-6 w-full max-w-md items-center justify-between rounded-full border border-white/10 bg-white/5 px-3 font-mono text-xs text-ink-300">
                   <span className="truncate">
-                    https://git.local/{spec.title.toLowerCase().replace(/\s+/g, "-")}
+                    {t("stage.fakeUrl", { slug: spec.title.toLowerCase().replace(/\s+/g, "-") })}
                   </span>
-                  <span className="text-[10px] text-verify">🔒 SSL</span>
+                  <span className="text-[10px] text-verify">{t("stage.secure")}</span>
                 </div>
               </div>
               <div className="flex items-center gap-2 text-xs text-ink-300">
-                <span className="font-bold text-learn">Krama Tutorial</span>
+                <span className="font-bold text-learn">{t("stage.brand")}</span>
               </div>
             </div>
 
@@ -233,12 +235,12 @@ export function TutorialStage({
                       {spec.title}
                     </h1>
                     <p className="text-xs text-ink-300 mt-1">
-                      {spec.description || "Follow the highlighted steps to complete the workflow."}
+                      {spec.description || t("stage.descriptionFallback")}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="h-8 w-24 rounded-lg border border-ask/50 bg-ask/25 flex items-center justify-center text-xs font-bold text-ask">
-                      + New
+                      {t("stage.newButton")}
                     </div>
                   </div>
                 </div>

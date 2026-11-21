@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import type { TutorialFreshnessStatus } from "@/types/tutorial";
 
 export interface TutorialStatusBadgeProps {
@@ -20,6 +21,7 @@ export function TutorialStatusBadge({
   size = "md",
   "data-testid": testId,
 }: TutorialStatusBadgeProps) {
+  const t = useTranslations("library");
   const sizeClasses =
     size === "sm"
       ? "px-2 py-0.5 text-[11px]"
@@ -33,11 +35,11 @@ export function TutorialStatusBadge({
           data-status="verified"
           data-tutorial-status="verified"
           role="status"
-          aria-label="Freshness status: Verified"
+          aria-label={t("statusBadge.aria", { status: t("statusBadge.verified") })}
           className={`inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 font-semibold text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 ${sizeClasses} ${className}`}
         >
           <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" aria-hidden="true" />
-          <span>Verified</span>
+          <span>{t("statusBadge.verified")}</span>
         </span>
       );
 
@@ -48,7 +50,7 @@ export function TutorialStatusBadge({
           data-status="auto-updated"
           data-tutorial-status="auto-updated"
           role="status"
-          aria-label="Freshness status: Auto-Updated"
+          aria-label={t("statusBadge.aria", { status: t("statusBadge.autoUpdated") })}
           className={`inline-flex items-center gap-1.5 rounded-full border border-sky-200 bg-sky-50 font-semibold text-sky-700 dark:border-sky-800 dark:bg-sky-950/40 dark:text-sky-300 ${sizeClasses} ${className}`}
         >
           <svg
@@ -62,7 +64,7 @@ export function TutorialStatusBadge({
               d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
             />
           </svg>
-          <span>Auto-Updated</span>
+          <span>{t("statusBadge.autoUpdated")}</span>
           {onInspectDiff ? (
             <button
               type="button"
@@ -72,20 +74,20 @@ export function TutorialStatusBadge({
                 e.preventDefault();
                 onInspectDiff();
               }}
-              aria-label="View healed step diff"
+              aria-label={t("statusBadge.viewDiff")}
               className="ml-1 inline-flex items-center gap-0.5 rounded px-1.5 py-0.2 text-[10px] font-medium bg-sky-200/80 hover:bg-sky-300/80 text-sky-900 dark:bg-sky-900/60 dark:hover:bg-sky-800 dark:text-sky-200 transition-colors"
             >
-              Diff
+              {t("statusBadge.diff")}
             </button>
           ) : diffHref ? (
             <Link
               href={diffHref}
               data-testid="inspect-diff-button"
               onClick={(e) => e.stopPropagation()}
-              aria-label="View healed step diff"
+              aria-label={t("statusBadge.viewDiff")}
               className="ml-1 inline-flex items-center gap-0.5 rounded px-1.5 py-0.2 text-[10px] font-medium bg-sky-200/80 hover:bg-sky-300/80 text-sky-900 dark:bg-sky-900/60 dark:hover:bg-sky-800 dark:text-sky-200 transition-colors"
             >
-              Diff
+              {t("statusBadge.diff")}
             </Link>
           ) : null}
         </span>
@@ -98,11 +100,11 @@ export function TutorialStatusBadge({
           data-status="outdated"
           data-tutorial-status="outdated"
           role="status"
-          aria-label="Freshness status: Outdated"
+          aria-label={t("statusBadge.aria", { status: t("statusBadge.outdated") })}
           className={`inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 font-semibold text-amber-700 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300 ${sizeClasses} ${className}`}
         >
           <span className="size-1.5 rounded-full bg-amber-500" aria-hidden="true" />
-          <span>Outdated</span>
+          <span>{t("statusBadge.outdated")}</span>
         </span>
       );
 
@@ -113,7 +115,7 @@ export function TutorialStatusBadge({
           data-status="not_auto_checked"
           data-tutorial-status="not_auto_checked"
           role="status"
-          aria-label="Freshness status: Not Auto-Checked"
+          aria-label={t("statusBadge.aria", { status: t("statusBadge.notAutoChecked") })}
           className={`inline-flex items-center gap-1.5 rounded-full border border-zinc-300 bg-zinc-100 font-semibold text-zinc-700 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 ${sizeClasses} ${className}`}
         >
           <svg
@@ -124,7 +126,7 @@ export function TutorialStatusBadge({
             <circle cx="12" cy="12" r="9" />
             <path strokeLinecap="round" d="M9 12h6" />
           </svg>
-          <span>Not Auto-Checked</span>
+          <span>{t("statusBadge.notAutoChecked")}</span>
         </span>
       );
 

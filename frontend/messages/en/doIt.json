@@ -1,0 +1,32 @@
+{
+  "refusal": {
+    "notVerified": "Only a verified tutorial can run for you. Check it again first.",
+    "pendingReview": "A new version of this tutorial waits for your review. Review it first.",
+    "stepN": "Step {step}",
+    "aStep": "A step",
+    "secretNotStored": "{step} types a password or another secret. Krama never stores secrets, so it can't do this for you.",
+    "staleRevision": "This tutorial changed since you opened it. Reload the page to see the new steps.",
+    "signInNeeded": "Sign in to {site} first: Krama acts in your own account.",
+    "theSite": "the site",
+    "fallback": "This tutorial can't run for you right now."
+  },
+  "modal": {
+    "valueUnsafe": "This value can't be used",
+    "title": "Do it for me",
+    "subtitleFallback": "Krama runs these steps for you",
+    "closeDialog": "Close dialog",
+    "loading": "Loading the steps…",
+    "signInFirst": "Sign in to {site} first",
+    "signInHint": "Krama acts in your own account. You sign in yourself in Krama's browser; Krama keeps the session encrypted and never sees your password.",
+    "signInButton": "Sign in to {site}",
+    "actsInAccount": "Krama acts in <strong>your {account} account</strong> on this site.",
+    "actsInSignedIn": "Krama acts in the account it is signed in to on this site.",
+    "placeholder": "for example {example}",
+    "noValues": "This tutorial needs no values from you.",
+    "previewTitle": "What Krama will do",
+    "asksFirst": "Asks you first",
+    "safetyNote": "Krama also stops and asks you before any step that could delete, publish or change settings. If a step fails, it stops there; nothing is retried.",
+    "cancel": "Cancel",
+    "run": "Run it"
+  }
+}

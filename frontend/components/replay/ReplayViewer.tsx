@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useSyncExternalStore, useRef, useEffect, useState, useMemo } from 'react';
+import { useTranslations } from 'next-intl';
 import type { ReplayViewerProps } from './types';
 import { extractRecordedDimensions } from './coordinateTransform';
 import { useCoordinateTransform } from './useCoordinateTransform';
@@ -49,6 +50,7 @@ export function ReplayViewer({
   showControls = true,
   showOverlay = true,
 }: ReplayViewerProps) {
+  const t = useTranslations('runs');
   const containerRef = useRef<HTMLDivElement>(null);
   const playerMountRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<PlayerInstance | null>(null);
@@ -182,7 +184,7 @@ export function ReplayViewer({
         className={`flex items-center justify-center bg-white/[0.04] text-ink-400 rounded-lg ${className}`}
         style={{ width, height }}
       >
-        <span className="text-sm font-medium">Initializing replay environment...</span>
+        <span className="text-sm font-medium">{t('replay.initializing')}</span>
       </div>
     );
   }
@@ -194,8 +196,8 @@ export function ReplayViewer({
         style={{ width, height }}
         data-testid="replay-empty-state"
       >
-        <p className="text-sm font-medium">No recorded session events available for replay.</p>
-        <p className="text-xs text-ink-400 mt-1">Provide a valid rrweb event stream to inspect execution.</p>
+        <p className="text-sm font-medium">{t('replay.emptyTitle')}</p>
+        <p className="text-xs text-ink-400 mt-1">{t('replay.emptyBody')}</p>
       </div>
     );
   }
@@ -230,7 +232,7 @@ export function ReplayViewer({
           transformedRect={transformedRect}
           transformedCursor={transformedCursor}
           label={currentStep?.instruction}
-          badgeText={currentStep ? `Step ${currentStep.seq ?? activeIndex + 1}` : undefined}
+          badgeText={currentStep ? t('replay.stepBadge', { seq: currentStep.seq ?? activeIndex + 1 }) : undefined}
           status={currentStep?.status ?? 'active'}
           containerWidth={containerSize.width}
           containerHeight={containerSize.height}
@@ -244,7 +246,7 @@ export function ReplayViewer({
           data-testid="step-navigation-bar"
           tabIndex={0}
           role="region"
-          aria-label="Step timeline navigation"
+          aria-label={t('replay.timelineAria')}
           onKeyDown={handleTimelineKeyDown}
         >
           <div className="flex items-center space-x-2">
@@ -255,10 +257,10 @@ export function ReplayViewer({
               className="px-2 py-1 rounded bg-white/10 hover:bg-learn/30 disabled:opacity-40 disabled:hover:bg-white/10 transition font-medium focus-visible:ring-2 focus-visible:ring-run/40 focus-visible:outline-hidden"
               data-testid="prev-step-btn"
             >
-              &larr; Prev
+              ← {t('replay.prev')}
             </button>
             <span className="font-semibold text-white">
-              Step {activeIndex + 1} of {steps.length}
+              {t('replay.stepOf', { current: activeIndex + 1, total: steps.length })}
             </span>
             <button
               type="button"
@@ -267,13 +269,13 @@ export function ReplayViewer({
               className="px-2 py-1 rounded bg-white/10 hover:bg-learn/30 disabled:opacity-40 disabled:hover:bg-white/10 transition font-medium focus-visible:ring-2 focus-visible:ring-run/40 focus-visible:outline-hidden"
               data-testid="next-step-btn"
             >
-              Next &rarr;
+              {t('replay.next')} →
             </button>
           </div>
 
           {currentStep && (
             <div className="hidden sm:block truncate max-w-[50%] text-ink-400 font-mono text-[11px]" data-testid="current-step-label">
-              {currentStep.instruction ?? `Step ${activeIndex + 1}`}
+              {currentStep.instruction ?? t('replay.stepBadge', { seq: activeIndex + 1 })}
             </div>
           )}
 
@@ -289,9 +291,9 @@ export function ReplayViewer({
                     ? 'bg-blue-500 ring-2 ring-blue-400/50 scale-110'
                     : 'bg-white/20 hover:bg-learn/60'
                 }`}
-                title={`Jump to step ${idx + 1}: ${step.instruction ?? ''}`}
+                title={t('replay.jumpTitle', { seq: idx + 1, instruction: step.instruction ?? '' })}
                 data-testid={`step-pill-${idx}`}
-                aria-label={`Jump to step ${idx + 1}`}
+                aria-label={t('replay.jumpAria', { seq: idx + 1 })}
               />
             ))}
           </div>

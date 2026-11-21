@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import type { RunDetails } from "@/lib/types";
 import { RunStatusBadge } from "./RunStatusBadge";
 import { formatDateTime, formatDuration } from "./RunListTable";
@@ -9,6 +10,7 @@ export interface RunDetailHeaderProps {
 }
 
 export function RunDetailHeader({ runDetails, className = "" }: RunDetailHeaderProps) {
+  const t = useTranslations("runs");
   const { run, summary, targetUrl } = runDetails;
 
   return (
@@ -23,7 +25,7 @@ export function RunDetailHeader({ runDetails, className = "" }: RunDetailHeaderP
           <svg className="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
-          Runs
+          {t("detailHeader.back")}
         </Link>
         {/* The id stays available to tests and screen readers, not as visible jargon (#318) */}
         <span data-testid="run-detail-id" className="sr-only">
@@ -39,7 +41,7 @@ export function RunDetailHeader({ runDetails, className = "" }: RunDetailHeaderP
               data-testid="run-detail-prompt"
               className="kr-display text-2xl font-extrabold text-white sm:text-3xl"
             >
-              {run.prompt ?? "(prompt unavailable)"}
+              {run.prompt ?? t("detailHeader.promptUnavailable")}
             </h1>
             <RunStatusBadge status={run.status} size="md" />
           </div>
@@ -48,7 +50,7 @@ export function RunDetailHeader({ runDetails, className = "" }: RunDetailHeaderP
               data-testid="stat-target-url"
               className="text-xs text-ink-400 truncate"
             >
-              Website: <span className="font-mono text-run">{targetUrl.replace(/^https?:\/\//, "").replace(/\/$/, "")}</span>
+              {t("detailHeader.website")} <span className="font-mono text-run">{targetUrl.replace(/^https?:\/\//, "").replace(/\/$/, "")}</span>
             </p>
           )}
         </div>
@@ -60,12 +62,12 @@ export function RunDetailHeader({ runDetails, className = "" }: RunDetailHeaderP
               data-testid="watch-tutorial-link"
               className="kr-btn kr-btn-primary px-4 py-1.5 text-xs"
             >
-              &#9654; Watch the tutorial
+              &#9654; {t("detailHeader.watchTutorial")}
             </Link>
           )}
-          <div>Started: <span className="font-medium text-ink-300">{formatDateTime(run.startedAt || run.createdAt)}</span></div>
+          <div>{t("detailHeader.started")} <span className="font-medium text-ink-300">{formatDateTime(run.startedAt || run.createdAt)}</span></div>
           {run.finishedAt && (
-            <div>Finished: <span className="font-medium text-ink-300">{formatDateTime(run.finishedAt)}</span></div>
+            <div>{t("detailHeader.finished")} <span className="font-medium text-ink-300">{formatDateTime(run.finishedAt)}</span></div>
           )}
         </div>
       </div>
@@ -73,7 +75,7 @@ export function RunDetailHeader({ runDetails, className = "" }: RunDetailHeaderP
       {/* Summary KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="kr-tone-card rounded-2xl p-4" style={{ ["--kr-tone" as string]: "var(--approve)" }}>
-          <span className="mb-1 block text-[11px] font-bold uppercase tracking-[0.16em] text-ink-400">Total Steps</span>
+          <span className="mb-1 block text-[11px] font-bold uppercase tracking-[0.16em] text-ink-400">{t("detailHeader.totalSteps")}</span>
           <span
             data-testid="stat-total-steps"
             className="kr-display text-3xl font-extrabold text-white"
@@ -83,7 +85,7 @@ export function RunDetailHeader({ runDetails, className = "" }: RunDetailHeaderP
         </div>
 
         <div className="kr-tone-card rounded-2xl p-4" style={{ ["--kr-tone" as string]: "var(--verify)" }}>
-          <span className="mb-1 block text-[11px] font-bold uppercase tracking-[0.16em] text-ink-400">Verified Steps</span>
+          <span className="mb-1 block text-[11px] font-bold uppercase tracking-[0.16em] text-ink-400">{t("detailHeader.verifiedSteps")}</span>
           <span
             data-testid="stat-verified-steps"
             className="kr-display text-3xl font-extrabold text-verify [text-shadow:0_0_18px_var(--verify)]"
@@ -93,7 +95,7 @@ export function RunDetailHeader({ runDetails, className = "" }: RunDetailHeaderP
         </div>
 
         <div className="kr-tone-card rounded-2xl p-4" style={{ ["--kr-tone" as string]: "var(--danger)" }}>
-          <span className="mb-1 block text-[11px] font-bold uppercase tracking-[0.16em] text-ink-400">Failed Steps</span>
+          <span className="mb-1 block text-[11px] font-bold uppercase tracking-[0.16em] text-ink-400">{t("detailHeader.failedSteps")}</span>
           <span
             data-testid="stat-failed-steps"
             className={`kr-display text-3xl font-extrabold ${
@@ -107,7 +109,7 @@ export function RunDetailHeader({ runDetails, className = "" }: RunDetailHeaderP
         </div>
 
         <div className="kr-tone-card rounded-2xl p-4" style={{ ["--kr-tone" as string]: "var(--plan)" }}>
-          <span className="mb-1 block text-[11px] font-bold uppercase tracking-[0.16em] text-ink-400">Duration</span>
+          <span className="mb-1 block text-[11px] font-bold uppercase tracking-[0.16em] text-ink-400">{t("detailHeader.duration")}</span>
           <span
             data-testid="stat-duration"
             className="font-mono text-3xl font-bold text-plan [text-shadow:0_0_18px_var(--plan)]"
