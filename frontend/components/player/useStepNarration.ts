@@ -16,6 +16,8 @@ export interface UseStepNarrationOptions {
    * player can hold the step until the voice is done instead of cutting it off mid-word (#83).
    */
   narratingRef?: MutableRefObject<boolean>;
+  /** The tutorial's language (#427): the voice must speak it. Without one on this device, captions only. */
+  language?: string;
 }
 
 /** Pause after the last word before the player may move on, so steps don't run into each other. */
@@ -48,8 +50,14 @@ export function calculateWordIndex(text: string, charIndex: number): number {
  */
 export function selectOptimalVoice(
   voices: SpeechSynthesisVoice[],
+  language = "en",
 ): SpeechSynthesisVoice | null {
   if (!voices || voices.length === 0) return null;
+  if (language !== "en") {
+    // Another language (#427): its own voice, natural online ones first; none means captions only.
+    const own = voices.filter((v) => v.lang.toLowerCase().startsWith(language));
+    return own.find((v) => !v.localService) ?? own[0] ?? null;
+  }
 
   // 1. Prioritize Microsoft Natural Online English voices
   const natural = voices.find(
@@ -89,6 +97,7 @@ export function useStepNarration({
   onWordBoundary,
   onNarrationEnd,
   narratingRef,
+  language = "en",
 }: UseStepNarrationOptions): UseStepNarrationReturn {
   const isSupported =
     typeof window !== "undefined" &&
@@ -164,7 +173,9 @@ export function useStepNarration({
     };
   }, [isSupported]);
 
-  const selectedVoice = selectOptimalVoice(voices);
+  const selectedVoice = selectOptimalVoice(voices, language);
+  // A translated tutorial is never read out in another language's voice (#427, L7).
+  const canSpeak = language === "en" || selectedVoice !== null;
 
   const cancel = useCallback(() => {
     if (!isSupported) return;
@@ -179,7 +190,7 @@ export function useStepNarration({
   }, [isSupported, stopNarrating]);
 
   const speak = useCallback(() => {
-    if (!isSupported || isMutedRef.current || !text || text.trim() === "") {
+    if (!isSupported || !canSpeak || isMutedRef.current || !text || text.trim() === "") {
       return;
     }
 
@@ -194,6 +205,7 @@ export function useStepNarration({
       if (selectedVoice) {
         utterance.voice = selectedVoice;
       }
+      utterance.lang = selectedVoice?.lang ?? language;
       utterance.rate = rate;
       utterance.pitch = pitch;
 
@@ -240,6 +252,8 @@ export function useStepNarration({
     isSupported,
     text,
     selectedVoice,
+    canSpeak,
+    language,
     rate,
     pitch,
     onWordBoundary,

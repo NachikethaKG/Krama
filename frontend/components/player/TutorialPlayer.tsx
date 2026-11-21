@@ -37,6 +37,10 @@ export interface TutorialPlayerProps {
   recording?: eventWithTime[] | null;
   /** When true, edit, delete, re-run, or sharing management controls are omitted. */
   readOnly?: boolean;
+  /** The tutorial's language (#427): narration speaks it, and the export dialog starts with it. */
+  language?: string;
+  /** Shown in the header, e.g. the tutorial-language switch. */
+  headerExtra?: React.ReactNode;
 }
 
 export function TutorialPlayer({
@@ -53,6 +57,8 @@ export function TutorialPlayer({
   onComplete,
   recording = null,
   readOnly = false,
+  language,
+  headerExtra,
 }: TutorialPlayerProps) {
   // The narration sets this while it talks; the player holds the step's end until it's done (#83).
   const t = useTranslations("player");
@@ -92,6 +98,7 @@ export function TutorialPlayer({
     currentStepIndex: player.currentSceneIndex,
     initialMuted,
     narratingRef,
+    language,
   });
 
   // WCAG Keyboard Navigation Shortcuts
@@ -166,6 +173,8 @@ export function TutorialPlayer({
               <span>{t("player.doItForMe")}</span>
             </button>
           )}
+
+          {headerExtra}
 
           {!readOnly && effectiveWorkflowId && (
             <button
@@ -438,6 +447,7 @@ export function TutorialPlayer({
           workflowId={effectiveWorkflowId}
           tutorialTitle={spec.title}
           stepCount={spec.scenes.length}
+          initialLanguage={language}
         />
       )}
     </section>

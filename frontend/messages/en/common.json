@@ -5,7 +5,11 @@
   },
   "ui": {
     "stages": {
-      "ask": { "label": "Ask", "verb": "You ask", "blurb": "Type what you want to learn, in plain words." },
+      "ask": {
+        "label": "Ask",
+        "verb": "You ask",
+        "blurb": "Type what you want to learn, in plain words."
+      },
       "plan": {
         "label": "Plan",
         "verb": "Krama plans",
@@ -16,7 +20,11 @@
         "verb": "You approve",
         "blurb": "Nothing runs until you say so. Risky steps ask again."
       },
-      "run": { "label": "Run", "verb": "The agent runs", "blurb": "A real browser does the task while you watch live." },
+      "run": {
+        "label": "Run",
+        "verb": "The agent runs",
+        "blurb": "A real browser does the task while you watch live."
+      },
       "verify": {
         "label": "Verify",
         "verb": "Every step is checked",
@@ -32,5 +40,13 @@
       "toLight": "Switch to light theme",
       "toDark": "Switch to dark theme"
     }
+  },
+  "tutorialLanguages": {
+    "en": "English",
+    "hi": "हिन्दी",
+    "kn": "ಕನ್ನಡ",
+    "de": "Deutsch",
+    "es": "Español",
+    "fr": "Français"
   }
 }

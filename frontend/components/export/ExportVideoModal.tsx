@@ -14,7 +14,8 @@ import {
   X,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
-import type { Export, ExportPreset } from "@krama/contracts-ts";
+import type { Export, ExportPreset, Language } from "@krama/contracts-ts";
+import { TUTORIAL_LANGUAGES, TutorialLanguageSelect } from "@/components/player/TutorialLanguageSelect";
 import { getApiClient } from "@/lib/api";
 
 export interface ExportVideoModalProps {
@@ -23,6 +24,8 @@ export interface ExportVideoModalProps {
   workflowId: string;
   tutorialTitle?: string;
   stepCount?: number;
+  /** The language the tutorial is shown in (#427): the export starts in it. */
+  initialLanguage?: string;
 }
 
 function formatBytes(bytes?: number | null): string {
@@ -49,9 +52,13 @@ export function ExportVideoModal({
   workflowId,
   tutorialTitle,
   stepCount = 1,
+  initialLanguage,
 }: ExportVideoModalProps) {
   const t = useTranslations("export");
   const [preset, setPreset] = useState<ExportPreset>("landscape");
+  const [language, setLanguage] = useState<Language>(
+    TUTORIAL_LANGUAGES.includes(initialLanguage as Language) ? (initialLanguage as Language) : "en",
+  );
   const [currentExport, setCurrentExport] = useState<Export | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   // The server's message, or which of our own messages to show (translated when shown).
@@ -99,7 +106,7 @@ export function ExportVideoModal({
     setIsSubmitting(true);
     setError(null);
     try {
-      const exp = await getApiClient().createExport(workflowId, preset);
+      const exp = await getApiClient().createExport(workflowId, preset, language);
       setCurrentExport(exp);
     } catch (err: unknown) {
       setError({ message: err instanceof Error ? err.message : null, fallback: "startFailed" });
@@ -230,6 +237,18 @@ export function ExportVideoModal({
                   </button>
                 </div>
               </div>
+
+              <TutorialLanguageSelect
+                value={language}
+                onChange={setLanguage}
+                label={t("modal.language")}
+                testId="export-language-select"
+              />
+              {language === "hi" || language === "kn" ? (
+                <p data-testid="export-captions-only" className="text-xs text-ink-300">
+                  {t("modal.captionsOnly")}
+                </p>
+              ) : null}
 
               {/* Feature Highlights */}
               <div className="rounded-xl border border-ink-800 bg-ink-950/40 p-3.5 text-xs text-ink-300 space-y-1.5 font-mono">

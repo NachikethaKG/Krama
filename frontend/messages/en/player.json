@@ -90,5 +90,11 @@
     "stepsDrawer": "Steps drawer",
     "versionHistoryTitle": "Workflow Version History & Step Diffs",
     "closeVersionHistory": "Close version history"
+  },
+  "language": {
+    "label": "Tutorial language",
+    "translating": "Translating the tutorial…",
+    "failed": "This tutorial couldn't be translated right now. Showing it in English.",
+    "partly": "Some steps are still in English: their translation didn't keep the page's labels exact."
   }
 }

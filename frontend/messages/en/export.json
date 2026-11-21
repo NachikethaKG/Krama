@@ -39,6 +39,8 @@
     "expiredBody": "This export has expired after retention limits. Click below to render again.",
     "failedBody": "Video rendering could not be completed.",
     "close": "Close",
-    "tryAgain": "Try Again"
+    "tryAgain": "Try Again",
+    "language": "Video language",
+    "captionsOnly": "Captions only: there is no narration voice for this language yet."
   }
 }
