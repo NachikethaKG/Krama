@@ -24,7 +24,8 @@ from app.ports.translation import TranslationError, TranslationItem, Translator
 
 logger = logging.getLogger(__name__)
 
-_QUOTED = re.compile(r"“[^”]*”")
+# Labels in curly or straight quotes: older recordings wrote "Label" (#431 gate).
+_QUOTED = re.compile(r'“[^”]*”|"[^"\n]*"')
 
 
 def labels_of(text: str, target_name: str | None) -> tuple[str, ...]:

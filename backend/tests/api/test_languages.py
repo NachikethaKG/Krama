@@ -47,6 +47,7 @@ def test_labels_become_tokens_and_come_back_byte_for_byte() -> None:
 def test_a_step_without_quotes_protects_its_target_name() -> None:
     assert labels_of("Click New Repository in the menu.", "New Repository") == ("New Repository",)
     assert labels_of("Click “Settings”.", "Settings") == ("“Settings”",)
+    assert labels_of('Go to the "New repository" page.', None) == ('"New repository"',)
 
 
 async def test_the_model_never_sees_a_label_and_a_broken_reply_keeps_english() -> None:

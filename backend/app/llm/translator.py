@@ -18,7 +18,7 @@ from app.llm.untrusted import UNTRUSTED_DATA_RULE, untrusted_block
 from app.ports.translation import TranslationError, TranslationItem
 
 LANGUAGES = {"hi": "Hindi", "kn": "Kannada", "de": "German", "es": "Spanish", "fr": "French"}
-PROMPT_VERSION = "tokens-1"
+PROMPT_VERSION = "tokens-2"
 _TOKEN = re.compile(r"\[\[Q(\d+)\]\]")
 
 SYSTEM = "\n".join(
