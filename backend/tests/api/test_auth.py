@@ -149,6 +149,7 @@ async def test_sessions_end_when_idle_or_too_old(sessions: Sessions) -> None:
     ("headers", "allowed"),
     [
         ({"X-Krama": "1", "Origin": "http://localhost:3000"}, True),
+        ({"X-Krama": "1", "Origin": "http://127.0.0.1:3000"}, True),  # the Windows dev URL
         ({"X-Krama": "1"}, True),  # server-side calls from Next.js send no Origin
         ({}, False),  # no custom header: what a forged form or <img> would send
         ({"X-Krama": "1", "Origin": "http://evil.test"}, False),
