@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 export interface LatencySparklineProps {
   p50Ms: number;
   p90Ms: number;
@@ -26,6 +28,7 @@ export function LatencySparkline({
   width = 140,
   height = 20,
 }: LatencySparklineProps) {
+  const t = useTranslations("metrics.sparkline");
   // Target budget is 60s per PRD §33
   const targetBudgetMs = 60000;
   const effectiveMax = Math.max(maxMs, p90Ms * 1.15, targetBudgetMs * 1.25);
@@ -45,7 +48,7 @@ export function LatencySparkline({
     <div
       className="inline-flex flex-col gap-1 items-start"
       role="img"
-      aria-label={`Latency profile: P50 ${formatMs(p50Ms)}, P90 ${formatMs(p90Ms)} (Target budget: 60s)`}
+      aria-label={t("label", { p50: formatMs(p50Ms), p90: formatMs(p90Ms) })}
     >
       <svg
         width={width}

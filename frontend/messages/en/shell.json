@@ -1,1 +1,70 @@
-{}
+{
+  "header": {
+    "homeLabel": "Krama home",
+    "mainNav": "Main",
+    "nav": {
+      "new": { "label": "New tutorial", "short": "New" },
+      "tutorials": { "label": "My tutorials", "short": "Tutorials" },
+      "reviews": { "label": "Review Queue", "short": "Reviews" },
+      "runs": { "label": "Runs", "short": "Runs" }
+    },
+    "pendingReviews": "{count, plural, one {# pending review} other {# pending reviews}}",
+    "signOut": "Sign out",
+    "signingOut": "Signing out…"
+  },
+  "dashboardNav": {
+    "label": "Dashboard sections",
+    "overview": "My Tutorials",
+    "reviews": "Review Queue",
+    "metrics": "Metrics"
+  },
+  "runsPage": {
+    "eyebrow": "Run history",
+    "title": "Runs",
+    "subtitle": "Every time Krama did a task for you, with what it checked at each step.",
+    "refresh": "Refresh",
+    "benchmarkMetrics": "Benchmark metrics"
+  },
+  "runDetail": {
+    "loading": "Loading Run…",
+    "notFound": "Run Not Found",
+    "notFoundBody": "The requested run \"{runId}\" does not exist.",
+    "backToRuns": "Back to runs",
+    "watchLive": "Watch live",
+    "showChecks": "Show each step's checks →"
+  },
+  "tutorialPage": {
+    "loading": "Loading tutorial…"
+  },
+  "meta": {
+    "root": { "title": "Krama", "description": "Verified, interactive software tutorials" },
+    "welcome": {
+      "title": "Krama · Interactive tutorials recorded from real UI actions",
+      "description": "Tell Krama what you want to learn; it does the task on the real website, checks every step and turns it into an interactive tutorial."
+    },
+    "tutorials": {
+      "title": "My tutorials · Krama",
+      "description": "Your interactive tutorials, recorded from tasks Krama did and checked."
+    },
+    "reviews": {
+      "title": "Review Queue · Krama",
+      "description": "Owner review queue for outdated and self-healing tutorials."
+    },
+    "metrics": {
+      "title": "Technical Metrics & Multi-Target Benchmark · Krama",
+      "description": "PRD §33 technical metrics dashboard covering Task Success Rate, Verifier Accuracy, Recovery Rate, and Latency Profile across Gitea and GitHub."
+    },
+    "login": {
+      "title": "Sign In · Krama",
+      "description": "Sign in to access your Krama dashboard and interactive tutorials."
+    },
+    "signup": {
+      "title": "Registration Access · Krama",
+      "description": "Public registration is currently closed for the MVP phase."
+    },
+    "share": {
+      "title": "Shared Tutorial · Krama",
+      "description": "Public interactive tutorial replay."
+    }
+  }
+}

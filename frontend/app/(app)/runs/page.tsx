@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { getApiClient } from "@/lib/api";
 import type { RunListItem } from "@/lib/types";
 import { BarChart3, RefreshCw } from "lucide-react";
@@ -11,6 +12,7 @@ import { PageHero } from "@/components/ui";
 const PAGE_SIZE = 20;
 
 export default function RunsPage() {
+  const t = useTranslations("shell.runsPage");
   const [runs, setRuns] = useState<RunListItem[]>([]);
   // cursors[i] is the cursor that loads page i + 1 (page 1 has none). GET /runs only gives `next_cursor`.
   const [cursors, setCursors] = useState<(string | null)[]>([null]);
@@ -66,9 +68,9 @@ export default function RunsPage() {
     <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-4 py-10 sm:px-6">
       <PageHero
         stage="run"
-        eyebrow="Run history"
-        title="Runs"
-        subtitle="Every time Krama did a task for you, with what it checked at each step."
+        eyebrow={t("eyebrow")}
+        title={t("title")}
+        subtitle={t("subtitle")}
         actions={
           <>
             <button
@@ -79,7 +81,7 @@ export default function RunsPage() {
               className="kr-btn kr-btn-ghost kr-run px-4 py-2 text-xs"
             >
               <RefreshCw aria-hidden="true" className={`size-3.5 ${isLoading ? "animate-spin" : ""}`} />
-              Refresh
+              {t("refresh")}
             </button>
             <Link
               href="/dashboard/metrics"
@@ -87,7 +89,7 @@ export default function RunsPage() {
               className="kr-btn kr-btn-ghost kr-plan px-4 py-2 text-xs"
             >
               <BarChart3 aria-hidden="true" className="size-3.5 text-plan" />
-              Benchmark metrics
+              {t("benchmarkMetrics")}
             </Link>
           </>
         }

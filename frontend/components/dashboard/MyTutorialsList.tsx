@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { type ApiClient, errorMessage, getApiClient } from "@/lib/api";
 import { TutorialCard } from "@/components/tutorials/TutorialCard";
 import { TutorialStatusBadge } from "@/components/tutorials/TutorialStatusBadge";
@@ -20,6 +21,7 @@ export function MyTutorialsList({
   onInspectDiff,
   className = "",
 }: MyTutorialsListProps) {
+  const t = useTranslations("home.myTutorials");
   const [apiClient] = useState<ApiClient>(() => client ?? getApiClient());
   const [fetchedTutorials, setFetchedTutorials] = useState<TutorialSummary[] | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(!initialTutorials);
@@ -46,7 +48,7 @@ export function MyTutorialsList({
       })
       .catch((err) => {
         if (!isMounted) return;
-        setError(errorMessage(err, "Failed to load tutorials."));
+        setError(errorMessage(err, "")); // "" = no message of its own: shown as loadFailed
         setIsLoading(false);
       });
 
@@ -94,18 +96,18 @@ export function MyTutorialsList({
         className={`flex flex-col items-center justify-center p-8 text-center text-sm text-zinc-500 dark:text-zinc-400 ${className}`}
       >
         <div className="size-6 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin mb-2" />
-        <span>Loading your tutorials…</span>
+        <span>{t("loading")}</span>
       </div>
     );
   }
 
-  if (error) {
+  if (error !== null) {
     return (
       <div
         data-testid="my-tutorials-list"
         className={`rounded-xl border border-rose-200 bg-rose-50/60 p-6 text-sm text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/20 dark:text-rose-400 ${className}`}
       >
-        <p>{error}</p>
+        <p>{error || t("loadFailed")}</p>
       </div>
     );
   }
@@ -117,7 +119,7 @@ export function MyTutorialsList({
         className={`rounded-xl border border-dashed border-zinc-200 bg-zinc-50/50 p-8 text-center dark:border-zinc-800 dark:bg-zinc-900/30 ${className}`}
       >
         <p data-testid="empty-my-tutorials" className="text-sm text-zinc-500 dark:text-zinc-400">
-          No tutorials recorded yet. Create a new task to generate your first tutorial.
+          {t("empty")}
         </p>
       </div>
     );
@@ -148,7 +150,7 @@ export function MyTutorialsList({
             <div className="flex items-center justify-between border-b border-zinc-200 px-5 py-4 dark:border-zinc-800">
               <div>
                 <h4 className="text-base font-bold text-zinc-900 dark:text-zinc-100">
-                  Step Diff: {diffPreviewTutorial.title}
+                  {t("diffTitle", { title: diffPreviewTutorial.title })}
                 </h4>
                 <div className="mt-1 flex items-center gap-2">
                   <TutorialStatusBadge status={diffPreviewTutorial.status} size="sm" />
@@ -162,7 +164,7 @@ export function MyTutorialsList({
                   setDiffVersions(null);
                 }}
                 className="rounded-lg p-1 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
-                aria-label="Close diff preview"
+                aria-label={t("closeDiff")}
               >
                 <svg className="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
@@ -172,7 +174,7 @@ export function MyTutorialsList({
             <div className="flex-1 overflow-y-auto p-5">
               {isDiffLoading ? (
                 <div className="py-12 text-center text-sm text-zinc-500">
-                  Loading step differences…
+                  {t("diffLoading")}
                 </div>
               ) : diffVersions && diffVersions.stepDiffs.length > 0 ? (
                 <StepDiffViewer
@@ -183,7 +185,7 @@ export function MyTutorialsList({
                 />
               ) : (
                 <p className="py-8 text-center text-xs text-zinc-500">
-                  No step diff available for this tutorial.
+                  {t("noDiff")}
                 </p>
               )}
             </div>

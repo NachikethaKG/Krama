@@ -1,1 +1,113 @@
-{}
+{
+  "nav": {
+    "homeLabel": "Krama home",
+    "chip": "Verified UI Tutorial Engine",
+    "howItWorks": "How it works",
+    "openKrama": "Open Krama",
+    "signIn": "Sign in"
+  },
+  "hero": {
+    "chip": "Recorded and checked on real websites",
+    "titleLabel": "Interactive Tutorials Recorded From Real UI Actions",
+    "titleLine1": "Interactive Tutorials ",
+    "titleLine2": "Recorded From ",
+    "titleLine3": "Real UI Actions",
+    "intro": "Tell Krama what you want to learn. It plans the steps, does the task in a real browser, checks every step, and turns it into an interactive guide with narration and focal zoom.",
+    "signInToStart": "Sign in to start",
+    "seeHow": "See how it works"
+  },
+  "stats": {
+    "fakeUis": "fake UIs",
+    "stepsChecked": "steps checked",
+    "clickToReplay": "click to replay"
+  },
+  "signalsLabel": "What Krama checks",
+  "signals": {
+    "url": "url matches /new",
+    "button": "button “Create” visible",
+    "network": "POST → 302 redirect",
+    "field": "field value = bench-new",
+    "checkbox": "checkbox [checked]",
+    "masked": "password masked ***",
+    "confidence": "confidence 1.0",
+    "destructive": "destructive step → paused"
+  },
+  "features": {
+    "realSite": {
+      "title": "Done on the real site",
+      "text": "Krama drives a real browser on the real website, so the tutorial shows exactly what you will see."
+    },
+    "checked": {
+      "title": "Every step checked",
+      "text": "After each step Krama checks the page really changed, so a tutorial never teaches a step that failed."
+    },
+    "replay": {
+      "title": "Interactive replay",
+      "text": "Step-by-step guides with narration, captions, highlights and zoom. Passwords and private fields are masked."
+    },
+    "safety": {
+      "title": "Hands off the red button",
+      "text": "Deleting, transferring or publishing always waits for your OK, right before the click. CAPTCHAs stop the run."
+    },
+    "drift": {
+      "title": "Tutorials that notice change",
+      "text": "Krama re-checks saved tutorials, heals renamed buttons and flags flows that changed."
+    }
+  },
+  "how": {
+    "chip": "From a question to a tutorial in about a minute",
+    "title": "How it works",
+    "steps": {
+      "ask": {
+        "title": "Ask",
+        "text": "Write what you want to learn, e.g. “Show me how to create a GitHub repository”."
+      },
+      "approve": {
+        "title": "Approve the plan",
+        "text": "Krama lists every step first. Nothing runs until you approve it."
+      },
+      "run": {
+        "title": "Watch it done",
+        "text": "Krama does the task in a real browser and checks that every step worked."
+      },
+      "learn": {
+        "title": "Learn from the tutorial",
+        "text": "Replay it step by step with narration, highlights and zoom, at your own pace."
+      }
+    },
+    "cta": "Stop reading stale docs. <gradient>Watch it done.</gradient>",
+    "makeTutorial": "Make a tutorial",
+    "signInToTry": "Sign in to try it"
+  },
+  "footer": {
+    "tagline": "Krama • Verified interactive tutorials"
+  },
+  "demo": {
+    "live": "LIVE",
+    "newRepository": "New repository",
+    "private": "Private",
+    "createRepository": "Create repository",
+    "stepCount": "step {current}/{total}",
+    "steps": {
+      "clickNew": "Click “New repository”",
+      "typeName": "Type “{value}”",
+      "choosePrivate": "Choose “Private”",
+      "clickCreate": "Click “Create repository”"
+    },
+    "evidence": {
+      "url": "url",
+      "aria": "aria",
+      "fieldValue": "field value",
+      "checked": "checked",
+      "network3xx": "network 3xx"
+    }
+  },
+  "apiStatus": {
+    "label": "System Status",
+    "online": "Systems Operational",
+    "offline": "API Offline",
+    "checking": "Connecting...",
+    "offlineLabel": "Backend offline notification",
+    "offlineBanner": "Backend service offline. Cached workflows and mock mode remain available."
+  }
+}

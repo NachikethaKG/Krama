@@ -3,6 +3,7 @@
 import { type MouseEvent, useSyncExternalStore } from "react";
 import { flushSync } from "react-dom";
 import { Moon, Sun } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { applyTheme, currentTheme, subscribeTheme, type Theme } from "@/lib/theme";
 
 type ViewTransitionDocument = Document & {
@@ -14,6 +15,7 @@ type ViewTransitionDocument = Document & {
  * the new theme spreads out as a circle from the button; otherwise (or with reduced motion) it just swaps.
  */
 export function ThemeToggle({ className = "" }: { className?: string }) {
+  const t = useTranslations("common.ui.theme");
   const theme = useSyncExternalStore<Theme>(subscribeTheme, currentTheme, () => "dark");
   const next: Theme = theme === "dark" ? "light" : "dark";
 
@@ -39,7 +41,7 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
       .catch(() => undefined);
   };
 
-  const label = next === "light" ? "Switch to light theme" : "Switch to dark theme";
+  const label = next === "light" ? t("toLight") : t("toDark");
 
   return (
     <button

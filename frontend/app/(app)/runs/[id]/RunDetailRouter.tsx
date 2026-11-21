@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { getApiClient, type ApiClient } from "@/lib/api";
 import type { RunDetails } from "@/lib/types";
 import { LiveAgentObserverView, RunDetailView } from "@/components/runs";
@@ -17,6 +18,7 @@ export function RunDetailRouter({
   viewParam,
   client,
 }: RunDetailRouterProps) {
+  const t = useTranslations("shell.runDetail");
   const [details, setDetails] = useState<RunDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -73,7 +75,7 @@ export function RunDetailRouter({
         >
           <div className="mb-4 size-12 animate-spin rounded-full border-4 border-white/10 border-t-run shadow-[0_0_30px_-4px_var(--run)]" />
           <h2 className="font-mono text-sm font-semibold text-run">
-            Loading Run…
+            {t("loading")}
           </h2>
         </div>
       </main>
@@ -93,10 +95,10 @@ export function RunDetailRouter({
             </svg>
           </div>
           <h2 className="kr-display text-2xl font-extrabold text-white">
-            Run Not Found
+            {t("notFound")}
           </h2>
           <p className="text-xs sm:text-sm text-ink-400 mt-1 max-w-md mx-auto">
-            {error || `The requested run "${runId}" does not exist.`}
+            {error || t("notFoundBody", { runId })}
           </p>
           <div className="mt-6 flex items-center justify-center gap-3">
             <Link
@@ -104,7 +106,7 @@ export function RunDetailRouter({
               data-testid="back-to-runs-button"
               className="kr-btn kr-btn-primary px-4 py-2 text-xs"
             >
-              Back to runs
+              {t("backToRuns")}
             </Link>
           </div>
         </div>
@@ -124,7 +126,7 @@ export function RunDetailRouter({
               onClick={() => setActiveTab("live")}
               className="kr-btn kr-btn-tone kr-run px-4 py-1.5 text-xs"
             >
-              Watch live
+              {t("watchLive")}
             </button>
           </div>
         )}
@@ -143,7 +145,7 @@ export function RunDetailRouter({
             onClick={() => setActiveTab("evidence")}
             className="kr-btn kr-btn-ghost kr-verify px-4 py-1.5 text-xs"
           >
-            Show each step&apos;s checks →
+            {t("showChecks")}
           </button>
         </div>
       )}

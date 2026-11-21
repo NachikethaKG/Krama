@@ -1,4 +1,5 @@
 import { Suspense, use } from "react";
+import { getTranslations } from "next-intl/server";
 import { compileWorkflow, type TutorialSpec } from "@krama/tutorial-compiler";
 import { TutorialPlayer, WorkflowTutorial } from "@/components/player";
 import {
@@ -48,7 +49,8 @@ function TutorialDetailInner({ params }: TutorialDetailPageProps) {
   );
 }
 
-export default function TutorialDetailPage({ params }: TutorialDetailPageProps) {
+export default async function TutorialDetailPage({ params }: TutorialDetailPageProps) {
+  const t = await getTranslations("shell.tutorialPage");
   return (
     <Suspense
       fallback={
@@ -56,7 +58,7 @@ export default function TutorialDetailPage({ params }: TutorialDetailPageProps) 
           <div className="flex flex-col items-center justify-center p-10 text-center">
             <div className="kr-spectrum-border mb-5 size-14 animate-spin rounded-full bg-ink-900 [animation-duration:2.5s]" />
             <h2 className="kr-display text-lg font-bold text-white">
-              Loading tutorial…
+              {t("loading")}
             </h2>
           </div>
         </main>

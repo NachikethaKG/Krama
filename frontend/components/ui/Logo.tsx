@@ -12,13 +12,17 @@ export function LogoMark({ size = 34 }: { size?: number }) {
   );
 }
 
+/** The wordmark is the product name: the same in every language. */
+const WORDMARK = "krama";
+
 export function Logo({ size = 34, showWord = true }: { size?: number; showWord?: boolean }) {
   return (
     <span className="inline-flex items-center gap-2.5">
       <LogoMark size={size} />
       {showWord && (
         <span className="kr-display text-xl font-extrabold tracking-tight text-white">
-          krama<span className="text-ask">.</span>
+          {WORDMARK}
+          <span className="text-ask">.</span>
         </span>
       )}
     </span>

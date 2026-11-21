@@ -1,1 +1,62 @@
-{}
+{
+  "dashboard": {
+    "breadcrumbRuns": "← Runs",
+    "breadcrumbHome": "← Krama Home",
+    "runs": "Runs",
+    "technicalMetrics": "Technical Metrics",
+    "emptyTitle": "No Benchmark Summary Available",
+    "emptyBody": "Run the multi-target benchmark collector across Gitea and GitHub to generate real metrics data.",
+    "emptyGenerates": "Generates <code>{path}</code> adhering to PRD §33.",
+    "generated": "Generated:",
+    "notAvailable": "Not available",
+    "title": "PRD §33 Technical Metrics",
+    "workflowCount": "{count, plural, one {# Benchmark Workflow} other {# Benchmark Workflows}}",
+    "subtitle": "Multi-target reliability matrix evaluating Task Success Rate, Verifier Accuracy, Recovery Rate, and Latency Profile across Gitea & GitHub.",
+    "launchRun": "+ Launch Real Run",
+    "kpiHeading": "Key Performance Indicators",
+    "breakdownTitle": "Task Matrix Breakdown",
+    "breakdownBody": "Granular trial counts, verification accuracy, and execution latency profiles per workflow",
+    "filterLabel": "Filter workflows by target platform",
+    "allWorkflows": "All Workflows ({count})"
+  },
+  "kpi": {
+    "successRate": {
+      "label": "Task Success Rate",
+      "target": "Target ≥ 80%",
+      "unit": "({successful}/{total} runs)",
+      "body": "Workflows executing end-to-end to verified state"
+    },
+    "verifierAccuracy": {
+      "label": "Verifier Accuracy",
+      "target": "Target ≥ 90%",
+      "unit": "precision",
+      "body": "Layered verifier (DOM + visual + network) without false alarms"
+    },
+    "recoveryRate": {
+      "label": "Recovery Rate",
+      "target": "Target ≥ 50%",
+      "unit": "replan success",
+      "notMeasured": "Not measured",
+      "body": "Automatic recovery from transient DOM drift and step failures"
+    },
+    "latency": {
+      "label": "Latency Profile",
+      "target": "Target < 60s",
+      "unit": "mean total",
+      "plan": "Plan: {value} (< 15s)",
+      "notMeasured": "not measured"
+    }
+  },
+  "table": {
+    "empty": "No workflow tasks found matching the selected filter.",
+    "task": "Workflow Task",
+    "platform": "Platform",
+    "trials": "Trials (Pass/Fail)",
+    "successRate": "Success Rate",
+    "verifierAccuracy": "Verifier Accuracy",
+    "latency": "Latency Profile (P50 / P90)"
+  },
+  "sparkline": {
+    "label": "Latency profile: P50 {p50}, P90 {p90} (Target budget: 60s)"
+  }
+}

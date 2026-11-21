@@ -5,42 +5,39 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { History, LibraryBig, LogOut, ShieldAlert, Sparkles } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { useTranslations } from "next-intl";
 import type { User } from "@krama/contracts-ts";
 import { Logo, ThemeToggle } from "@/components/ui";
 import { LanguagePicker } from "./LanguagePicker";
 import { type ApiClient, getApiClient } from "@/lib/api";
 
-// `short` is shown on phones, where the full labels don't fit next to the logo and Sign out.
+// `short` is shown on phones, where the full labels don't fit next to the logo and Sign out (shell.header.nav.<key>).
 // Each section wears the colour of its pipeline stage: asking (pink), learning (orange), running (cyan).
 const NAV: {
   href: string;
-  label: string;
-  short: string;
+  key: "new" | "tutorials" | "reviews" | "runs";
   color: string;
   icon: LucideIcon;
   match: (p: string) => boolean;
 }[] = [
-  { href: "/", label: "New tutorial", short: "New", color: "var(--ask)", icon: Sparkles, match: (p) => p === "/" },
+  { href: "/", key: "new", color: "var(--ask)", icon: Sparkles, match: (p) => p === "/" },
   {
     href: "/tutorials",
-    label: "My tutorials",
-    short: "Tutorials",
+    key: "tutorials",
     color: "var(--learn)",
     icon: LibraryBig,
     match: (p) => p.startsWith("/tutorials"),
   },
   {
     href: "/dashboard/reviews",
-    label: "Review Queue",
-    short: "Reviews",
+    key: "reviews",
     color: "var(--plan)",
     icon: ShieldAlert,
     match: (p) => p.startsWith("/dashboard/reviews"),
   },
   {
     href: "/runs",
-    label: "Runs",
-    short: "Runs",
+    key: "runs",
     color: "var(--run)",
     icon: History,
     match: (p) => p.startsWith("/runs") || p.startsWith("/workflows"),
@@ -49,6 +46,7 @@ const NAV: {
 
 /** The one header of every signed-in page (#318): the app's sections and the account, nothing else. */
 export function AppHeader({ client }: { client?: ApiClient }) {
+  const t = useTranslations("shell.header");
   const pathname = usePathname() ?? "/";
   const router = useRouter();
   const [apiClient] = useState<ApiClient>(() => client ?? getApiClient());
@@ -103,7 +101,7 @@ export function AppHeader({ client }: { client?: ApiClient }) {
   return (
     <header data-testid="app-header" className="sticky top-3 z-30 mx-auto mt-3 w-[min(72rem,calc(100%-1.5rem))]">
       <div className="kr-glass flex h-14 items-center gap-2 rounded-full px-2 pl-3 sm:gap-4">
-        <Link href="/" className="flex shrink-0 items-center rounded-full" aria-label="Krama home">
+        <Link href="/" className="flex shrink-0 items-center rounded-full" aria-label={t("homeLabel")}>
           <span className="sm:hidden">
             <Logo size={30} showWord={false} />
           </span>
@@ -111,7 +109,7 @@ export function AppHeader({ client }: { client?: ApiClient }) {
             <Logo size={30} />
           </span>
         </Link>
-        <nav className="flex min-w-0 items-center gap-0.5 text-sm sm:gap-1" aria-label="Main">
+        <nav className="flex min-w-0 items-center gap-0.5 text-sm sm:gap-1" aria-label={t("mainNav")}>
           {NAV.map((item) => {
             const active = item.match(pathname);
             const Icon = item.icon;
@@ -135,13 +133,13 @@ export function AppHeader({ client }: { client?: ApiClient }) {
                   className="hidden size-4 transition-transform group-hover:-rotate-12 sm:block"
                   style={active ? undefined : { color: item.color }}
                 />
-                <span className="sm:hidden">{item.short}</span>
-                <span className="hidden sm:inline">{item.label}</span>
+                <span className="sm:hidden">{t(`nav.${item.key}.short`)}</span>
+                <span className="hidden sm:inline">{t(`nav.${item.key}.label`)}</span>
                 {item.href === "/dashboard/reviews" && reviewCount !== null && (
                   reviewCount > 0 ? (
                     <span
                       data-testid="review-queue-badge"
-                      aria-label={`${reviewCount} pending reviews`}
+                      aria-label={t("pendingReviews", { count: reviewCount })}
                       className="ml-1 inline-flex size-5 items-center justify-center rounded-full bg-rose-500 text-[10px] font-extrabold text-white shadow-xs"
                     >
                       {reviewCount}
@@ -179,7 +177,7 @@ export function AppHeader({ client }: { client?: ApiClient }) {
             className="kr-btn kr-btn-ghost kr-danger whitespace-nowrap px-3 py-1.5 text-xs"
           >
             <LogOut aria-hidden="true" className="size-3.5" />
-            {signingOut ? "Signing out…" : "Sign out"}
+            {signingOut ? t("signingOut") : t("signOut")}
           </button>
         </div>
       </div>

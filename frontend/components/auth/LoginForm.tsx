@@ -3,11 +3,14 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { type ApiClient, errorMessage, getApiClient, isApiError } from "@/lib/api";
 import type { User } from "@krama/contracts-ts";
 
 
 const IS_MOCK = process.env.NEXT_PUBLIC_API_MODE !== "http";
+const DEMO_EMAIL = "demo@krama.dev";
+const DEMO_PASSWORD = "krama-demo-pass";
 
 export interface LoginFormProps {
   client?: ApiClient;
@@ -16,6 +19,7 @@ export interface LoginFormProps {
 }
 
 export function LoginForm({ client, from: propFrom, onSuccess }: LoginFormProps) {
+  const t = useTranslations("auth.login");
   const router = useRouter();
   const searchParams = useSearchParams();
   const [apiClient] = useState<ApiClient>(() => client ?? getApiClient());
@@ -35,7 +39,7 @@ export function LoginForm({ client, from: propFrom, onSuccess }: LoginFormProps)
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!email || !password) {
-      setError("Please enter both email and password.");
+      setError(t("missingFields"));
       return;
     }
 
@@ -57,9 +61,9 @@ export function LoginForm({ client, from: propFrom, onSuccess }: LoginFormProps)
       }
     } catch (err) {
       if (isApiError(err, undefined, 401) || isApiError(err, "unauthorized")) {
-        setError("Invalid email or password. Please try again.");
+        setError(t("invalid"));
       } else {
-        setError(errorMessage(err, "Invalid email or password. Please try again."));
+        setError(errorMessage(err, t("invalid")));
       }
     } finally {
       setIsLoading(false);
@@ -67,8 +71,8 @@ export function LoginForm({ client, from: propFrom, onSuccess }: LoginFormProps)
   };
 
   const handleFillDemo = () => {
-    setEmail("demo@krama.dev");
-    setPassword("krama-demo-pass");
+    setEmail(DEMO_EMAIL);
+    setPassword(DEMO_PASSWORD);
     setError(null);
   };
 
@@ -76,10 +80,10 @@ export function LoginForm({ client, from: propFrom, onSuccess }: LoginFormProps)
     <div className="kr-spectrum-border kr-ask rounded-[2rem] bg-ink-900/85 px-6 py-9 backdrop-blur-xl sm:px-10">
       <div className="mb-6 text-center">
         <h1 className="kr-display text-3xl font-extrabold text-white sm:text-4xl">
-          Sign in to <span className="kr-gradient-text">Krama</span>
+          {t.rich("title", { brand: (chunks) => <span className="kr-gradient-text">{chunks}</span> })}
         </h1>
         <p className="mt-2 text-sm text-ink-300">
-          Access your interactive tutorials, dashboard, and execution runs
+          {t("subtitle")}
         </p>
       </div>
 
@@ -113,7 +117,7 @@ export function LoginForm({ client, from: propFrom, onSuccess }: LoginFormProps)
             htmlFor="email"
             className="block text-xs font-bold uppercase tracking-wider text-ink-300"
           >
-            Email address
+            {t("email")}
           </label>
           <div className="mt-1">
             <input
@@ -125,7 +129,7 @@ export function LoginForm({ client, from: propFrom, onSuccess }: LoginFormProps)
               data-testid="login-email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="demo@krama.dev"
+              placeholder={DEMO_EMAIL}
               className="kr-input w-full px-4 py-3 text-sm"
             />
           </div>
@@ -136,7 +140,7 @@ export function LoginForm({ client, from: propFrom, onSuccess }: LoginFormProps)
             htmlFor="password"
             className="block text-xs font-bold uppercase tracking-wider text-ink-300"
           >
-            Password
+            {t("password")}
           </label>
           <div className="mt-1">
             <input
@@ -163,10 +167,10 @@ export function LoginForm({ client, from: propFrom, onSuccess }: LoginFormProps)
           {isLoading ? (
             <>
               <div className="size-4 rounded-full border-2 border-ink-950 border-t-transparent animate-spin" />
-              <span>Signing in…</span>
+              <span>{t("submitting")}</span>
             </>
           ) : (
-            <span>Sign In</span>
+            <span>{t("submit")}</span>
           )}
         </button>
       </form>
@@ -178,7 +182,7 @@ export function LoginForm({ client, from: propFrom, onSuccess }: LoginFormProps)
         <div className="flex items-center justify-between mb-1.5">
           <span className="text-[11px] font-bold text-plan flex items-center gap-1.5">
             <span className="kr-dot !size-1.5" />
-            Seeded MVP Evaluation Account
+            {t("demoTitle")}
           </span>
           <button
             type="button"
@@ -186,23 +190,27 @@ export function LoginForm({ client, from: propFrom, onSuccess }: LoginFormProps)
             onClick={handleFillDemo}
             className="text-[11px] font-bold text-plan underline decoration-plan/50 underline-offset-2 hover:text-white"
           >
-            Fill credentials
+            {t("fillDemo")}
           </button>
         </div>
         <p className="text-[11px] text-ink-300">
-          Email: <code className="font-mono text-white">demo@krama.dev</code> · Password: <code className="font-mono text-white">krama-demo-pass</code>
+          {t.rich("demoCreds", {
+            email: DEMO_EMAIL,
+            password: DEMO_PASSWORD,
+            code: (chunks) => <code className="font-mono text-white">{chunks}</code>,
+          })}
         </p>
       </div>
       )}
 
       <div className="mt-6 border-t border-white/10 pt-4 text-center">
         <p className="text-xs text-ink-400">
-          Need an account?{" "}
+          {t("needAccount")}{" "}
           <Link
             href="/signup"
             className="font-bold text-ask hover:text-white"
           >
-            Learn about access →
+            {t("learnAccess")}
           </Link>
         </p>
       </div>
