@@ -16,7 +16,7 @@
 | Do it for me | ≥ 8/10 Gitea replays with new values, checked in Gitea | ✅ 8/10, plus 2/2 extra |
 | Do it for me | every destructive step pauses | ✅ each of 38 attempts at the delete step paused before acting |
 | Do it for me | no secrets in artifacts | ✅ no demo password in any file of the 12 runs |
-| Do it for me | one GitHub checkpoint run | see below |
+| Do it for me | one GitHub checkpoint run | ✅ branch created in `krama-bench/bench-practice`, checked through the GitHub API |
 | Takeover | a run paused at a Gitea login wall is finished by hand, resumes, completes | ✅ the sign-in run, after fixes 8–12 |
 | Takeover | the human-done step shows as "do it yourself" | ⚠️ not shown: see "Not covered" |
 | Takeover | screencast ≤ 300 MB extra RAM | ✅ about 225 MB (the takeover browser: 4 processes); the API process stayed at about 138 MB in total |
@@ -56,6 +56,10 @@ Krama.
   and the modal says "Delete This Repository". So the verifier failed a step that had worked, and Krama never
   retried the high-risk step on its own. Filed as #449.
 
+**GitHub checkpoint.** The owner signed in to the GitHub test account by hand in a takeover; the session was
+stored for that account. Then one do-it-for-me replay of "Create a branch" with a new name (`gate-v13-…`): verified in
+19 s, and the GitHub API returned the new branch (200).
+
 ## Fixes found by the gate (PR for #431)
 
 1. Search: rank first, then find the snippet step only for the page (it ran for every candidate).
@@ -87,7 +91,8 @@ screenshots in English, Hindi and Kannada at 900–1440 px.
 - **Sign-in UX** (seen during the gate):
   - The sign-in pause shows "Continue" and "Waiting for you to confirm a step". It should say: sign in here, in
     Krama's browser, then press I'm done.
-  - The finished sign-in run looks like a failed task.
+  - The finished sign-in run looks like a failed task: its one step stays "Pending" with "0 verified steps", although
+    the run is verified (the sign-in never sends `step.verified`).
   - After signing in, the user is not taken back to the task.
   - A new run waits silently behind a paused one (`MAX_CONCURRENT_RUNS=1`).
 - #448: stored translations aren't refreshed when the prompt version changes.
