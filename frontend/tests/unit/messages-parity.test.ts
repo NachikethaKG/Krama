@@ -29,17 +29,43 @@ function leaves(tree: Tree, prefix = ""): Map<string, string> {
   return out;
 }
 
-/** The ICU arguments and tags a message uses: {name}, {count, plural, ...}, <b>...</b>. */
+/** The ICU arguments and tags a message uses: {name}, {count, plural, ...}, <b>...</b>. Branch text inside a
+ * plural/select (`one {step}`) is not an argument: it is translated. */
 function shape(message: string): string[] {
-  // `{name}` or `{name, plural, ...}` only: branch text like `one {step}` isn't an argument (it may be translated).
-  const args = [
-    ...message.matchAll(/\{\s*([A-Za-z_]\w*)\s*(?:,\s*(plural|select|selectordinal|number|date|time)|(?=\}))/g),
-  ].map((m) => `${m[1]}:${m[2] ?? ""}`);
+  const args = new Set<string>();
+  const text = (i: number): number => {
+    while (i < message.length && message[i] !== "}") i = message[i] === "{" ? argument(i + 1) : i + 1;
+    return i;
+  };
+  const argument = (i: number): number => {
+    const head = /^\s*([A-Za-z_]\w*)\s*(?:,\s*(\w+)\s*)?/.exec(message.slice(i));
+    if (!head) return text(i) + 1;
+    i += head[0].length;
+    args.add(`${head[1]}:${head[2] ?? ""}`);
+    if (message[i] !== ",") return i + 1; // `{name}` or `{name, number}`
+    i += 1;
+    while (i < message.length) {
+      const branch = /^\s*([^\s{}]+)\s*\{/.exec(message.slice(i)); // `one {`, `=0 {`, `other {`
+      if (!branch) break;
+      i = text(i + branch[0].length) + 1;
+    }
+    const close = message.indexOf("}", i);
+    return close < 0 ? message.length : close + 1;
+  };
+  text(0);
   const tags = [...message.matchAll(/<\/?([A-Za-z][\w-]*)>/g)].map((m) => `<${m[1]}>`);
   return [...new Set([...args, ...tags])].sort();
 }
 
 describe("translated messages fit the English ones (#425, #426)", () => {
+  it("reads arguments and tags, not plural branch text", () => {
+    expect(shape("{count, plural, one {step} other {steps}}")).toEqual(["count:plural"]);
+    expect(shape("{count, plural, one {# चरण} other {# चरण}}")).toEqual(["count:plural"]);
+    expect(shape("Run {name} now")).toEqual(["name:"]);
+    expect(shape("{n, plural, =0 {none} one {# by {user}} other {# items}}")).toEqual(["n:plural", "user:"]);
+    expect(shape("Hi <b>{name}</b>, {when, date}")).toEqual(["<b>", "name:", "when:date"]);
+  });
+
   it("every message file exists for every UI language", () => {
     for (const locale of LOCALES) {
       const files = readdirSync(path.join(DIR, locale));
