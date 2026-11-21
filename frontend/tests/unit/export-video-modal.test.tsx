@@ -123,7 +123,7 @@ describe("ExportVideoModal", () => {
     fireEvent.click(screen.getByTestId("start-export-btn"));
 
     await waitFor(() => {
-      expect(createSpy).toHaveBeenCalledWith(mockWorkflowId, "landscape");
+      expect(createSpy).toHaveBeenCalledWith(mockWorkflowId, "landscape", "en");
     });
 
     // Rendering container should appear with progress
