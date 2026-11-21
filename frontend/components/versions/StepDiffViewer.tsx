@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useTranslations } from "next-intl";
 import type { StepDiffItem } from "@/types/tutorial";
 
 export interface StepDiffViewerProps {
@@ -18,6 +19,7 @@ export function StepDiffViewer({
   changeSummary,
   className = "",
 }: StepDiffViewerProps) {
+  const t = useTranslations("tutorial");
   const modifiedCount = diffs.filter((d) => d.changeType !== "unchanged").length;
   const unchangedCount = diffs.filter((d) => d.changeType === "unchanged").length;
 
@@ -28,7 +30,7 @@ export function StepDiffViewer({
         className={`rounded-xl border border-zinc-200 bg-white p-6 text-center text-sm text-zinc-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-400 ${className}`}
       >
         <p data-testid="step-diff-empty">
-          No differences found. Both versions share identical steps and locators.
+          {t("diff.empty")}
         </p>
       </div>
     );
@@ -44,7 +46,7 @@ export function StepDiffViewer({
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <span className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
-              Diff Comparison
+              {t("diff.title")}
             </span>
             {fromVersion && toVersion && (
               <span
@@ -59,10 +61,10 @@ export function StepDiffViewer({
           </div>
           <div className="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
             <span className="text-emerald-600 dark:text-emerald-400 font-medium">
-              {modifiedCount} {modifiedCount === 1 ? "step modified" : "steps modified"}
+              {t("diff.modified", { count: modifiedCount })}
             </span>
             <span>·</span>
-            <span>{unchangedCount} unchanged</span>
+            <span>{t("diff.unchangedCount", { count: unchangedCount })}</span>
           </div>
         </div>
 
@@ -94,7 +96,7 @@ export function StepDiffViewer({
                   <span className="truncate">{step.stepTitle}</span>
                 </div>
                 <span className="rounded px-1.5 py-0.5 text-[10px] font-medium text-zinc-400 uppercase tracking-wider">
-                  Unchanged
+                  {t("diff.unchanged")}
                 </span>
               </div>
             );
@@ -136,7 +138,7 @@ export function StepDiffViewer({
                       : "bg-sky-100 text-sky-800 dark:bg-sky-900/60 dark:text-sky-200"
                   }`}
                 >
-                  {isHealed ? "Locator Healed" : "Wording Changed"}
+                  {isHealed ? t("diff.locatorHealed") : t("diff.wordingChanged")}
                 </span>
               </div>
 
@@ -147,7 +149,7 @@ export function StepDiffViewer({
                   {(step.oldSelector || step.newSelector) && (
                     <div className="flex flex-col gap-1">
                       <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">
-                        Target Selector
+                        {t("diff.targetSelector")}
                       </span>
                       <div className="flex flex-wrap items-center gap-2 font-mono">
                         {step.oldSelector && (
@@ -175,7 +177,7 @@ export function StepDiffViewer({
                   {(step.oldLabel || step.newLabel) && (
                     <div className="flex flex-col gap-1 mt-1">
                       <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">
-                        Element Label
+                        {t("diff.elementLabel")}
                       </span>
                       <div className="flex flex-wrap items-center gap-2">
                         {step.oldLabel && (
@@ -183,7 +185,7 @@ export function StepDiffViewer({
                             data-testid="diff-old-label"
                             className="rounded border border-rose-200 bg-rose-50 px-2 py-0.5 text-rose-700 line-through dark:border-rose-900/70 dark:bg-rose-950/50 dark:text-rose-300"
                           >
-                            &ldquo;{step.oldLabel}&rdquo;
+                            {t("diff.quoted", { text: step.oldLabel })}
                           </span>
                         )}
                         <span className="text-zinc-400">→</span>
@@ -192,7 +194,7 @@ export function StepDiffViewer({
                             data-testid="diff-new-label"
                             className="rounded border border-emerald-200 bg-emerald-50 px-2 py-0.5 font-semibold text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-200"
                           >
-                            &ldquo;{step.newLabel}&rdquo;
+                            {t("diff.quoted", { text: step.newLabel })}
                           </span>
                         )}
                       </div>
@@ -205,7 +207,7 @@ export function StepDiffViewer({
               {(step.oldCaption || step.newCaption) && (
                 <div className="flex flex-col gap-1.5 rounded-md bg-white/80 p-3 text-xs dark:bg-zinc-900/60">
                   <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">
-                    Instruction / Caption
+                    {t("diff.instructionCaption")}
                   </span>
                   <div className="flex flex-col gap-1">
                     {step.oldCaption && (

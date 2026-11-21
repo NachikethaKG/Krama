@@ -9,8 +9,11 @@ vi.mock("next/navigation", () => ({
 }));
 
 import { DoItForMeModal, previewText, refusalMessage } from "@/components/do-it";
+import type { DoItText } from "@/components/do-it/DoItForMeModal";
 import { FailureBanner } from "@/components/execution/failure-banner";
+import { createTranslator } from "next-intl";
 import { ApiRequestError, HttpApiClient, MockApiClient, inputProblem } from "@/lib/api";
+import doItMessages from "@/messages/en/doIt.json";
 import { giteaWorkflowFixture, giteaWorkflowInputsFixture } from "@/lib/fixtures";
 
 const WORKFLOW_ID = giteaWorkflowFixture.id;
@@ -129,7 +132,10 @@ describe("do it for me helpers", () => {
 
   it("words each refusal reason", () => {
     const refused = (details: Record<string, unknown>) =>
-      refusalMessage(new ApiRequestError("409", 409, { code: "conflict", message: "x", details }));
+      refusalMessage(
+        new ApiRequestError("409", 409, { code: "conflict", message: "x", details }),
+        createTranslator({ locale: "en", messages: { doIt: doItMessages }, namespace: "doIt" }) as unknown as DoItText,
+      );
     expect(refused({ reason: "secret_not_stored", step_seq: 2 })).toMatch(/^Step 2 types a password/);
     expect(refused({ reason: "pending_review" })).toMatch(/waits for your review/);
     expect(refused({ reason: "stale_revision" })).toMatch(/changed since you opened it/);

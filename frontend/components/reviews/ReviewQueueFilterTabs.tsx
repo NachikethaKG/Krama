@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useTranslations } from "next-intl";
 import type { ReviewFilterCategory } from "@/types/review";
 
 export interface ReviewQueueCounts {
@@ -20,17 +21,18 @@ export interface ReviewQueueFilterTabsProps {
 
 interface TabDef {
   key: ReviewFilterCategory;
-  label: string;
+  /** Key under "reviews.tabs". */
+  labelKey: string;
   testId: string;
   color: string;
 }
 
 const TABS: TabDef[] = [
-  { key: "all", label: "All", testId: "filter-tab-all", color: "var(--learn)" },
-  { key: "outdated", label: "Outdated", testId: "filter-tab-outdated", color: "var(--plan)" },
-  { key: "heal_pending", label: "Pending Heal", testId: "filter-tab-heal_pending", color: "#a855f7" },
-  { key: "unstable", label: "Unstable", testId: "filter-tab-unstable", color: "#f97316" },
-  { key: "cant_check", label: "Can't Check", testId: "filter-tab-cant_check", color: "#f43f5e" },
+  { key: "all", labelKey: "all", testId: "filter-tab-all", color: "var(--learn)" },
+  { key: "outdated", labelKey: "outdated", testId: "filter-tab-outdated", color: "var(--plan)" },
+  { key: "heal_pending", labelKey: "healPending", testId: "filter-tab-heal_pending", color: "#a855f7" },
+  { key: "unstable", labelKey: "unstable", testId: "filter-tab-unstable", color: "#f97316" },
+  { key: "cant_check", labelKey: "cantCheck", testId: "filter-tab-cant_check", color: "#f43f5e" },
 ];
 
 export function ReviewQueueFilterTabs({
@@ -39,10 +41,11 @@ export function ReviewQueueFilterTabs({
   counts,
   className = "",
 }: ReviewQueueFilterTabsProps) {
+  const t = useTranslations("reviews");
   return (
     <div
       role="tablist"
-      aria-label="Filter review queue by category"
+      aria-label={t("tabs.label")}
       className={`kr-glass flex flex-wrap items-center gap-1.5 rounded-full p-1.5 ${className}`}
     >
       {TABS.map((tab) => {
@@ -73,7 +76,7 @@ export function ReviewQueueFilterTabs({
                 style={{ background: tab.color }}
               />
             )}
-            <span>{tab.label}</span>
+            <span>{t(`tabs.${tab.labelKey}`)}</span>
             <span
               className={`rounded-full px-1.5 py-0.2 text-[10px] font-extrabold ${
                 isSelected ? "bg-ink-950/30 text-oncolor" : "bg-white/10 text-ink-300"

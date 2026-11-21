@@ -1,1 +1,46 @@
-{}
+{
+  "tabs": {
+    "label": "Filter review queue by category",
+    "all": "All",
+    "outdated": "Outdated",
+    "healPending": "Pending Heal",
+    "unstable": "Unstable",
+    "cantCheck": "Can't Check"
+  },
+  "card": {
+    "healPending": "Heal Pending",
+    "outdated": "Outdated",
+    "unstable": "Unstable",
+    "cantCheck": "Can't check: {reason}",
+    "triggerReason": "Trigger reason:",
+    "failedStep": "(Step {step})",
+    "hideDiff": "Hide Step-by-Step Diff",
+    "inspectDiff": "Inspect Step-by-Step Diff",
+    "currentVersion": "current",
+    "pendingVersion": "pending",
+    "reject": "Reject",
+    "accept": "Accept",
+    "retryAiFix": "Retry AI Fix",
+    "regenerate": "Regenerate",
+    "reauth": "Re-authenticate Session",
+    "retryCheck": "Retry Check"
+  },
+  "queue": {
+    "loadFailed": "Failed to load review queue.",
+    "acceptFailed": "Failed to accept healed version.",
+    "rejectFailed": "Failed to reject healed version.",
+    "regenerateFailed": "Failed to start workflow regeneration.",
+    "retryCheckFailed": "Failed to trigger retry check.",
+    "acceptedToast": "Healed version is now live",
+    "rejectedReason": "Pending heal rejected. Workflow requires regeneration or replanning.",
+    "rejectedToast": "Pending heal rejected. Workflow marked outdated.",
+    "aiFixToast": "AI Fix initiated. Checking workflow in background...",
+    "quotaReached": "Daily AI fix limit reached (5/day). Please regenerate the workflow or retry tomorrow.",
+    "title": "Owner Review Queue",
+    "subtitle": "Inspect and resolve workflows requiring human review, heal acceptance, or regeneration.",
+    "loading": "Loading review queue items…",
+    "emptyTitle": "All tutorials are healthy — nothing needs review",
+    "emptyBody": "No workflows currently have broken locators, outdated steps, or validation blocks.",
+    "filterEmpty": "No review items match this category filter."
+  }
+}

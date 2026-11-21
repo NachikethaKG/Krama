@@ -2,6 +2,7 @@
 
 import { FileText } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { compileWorkflow, type TutorialSpec } from "@krama/tutorial-compiler";
 import type { Workflow } from "@krama/contracts-ts";
 import type { eventWithTime } from "@rrweb/types";
@@ -13,7 +14,7 @@ import { TutorialPlayer } from "./TutorialPlayer";
 
 type Loaded =
   | { state: "loading" }
-  | { state: "error"; message: string }
+  | { state: "error"; cause: unknown }
   | { state: "ready"; workflow: Workflow; spec: TutorialSpec; recording: eventWithTime[] | null };
 
 /** A recording can drive the stage only if the steps say where in it they happened (workflow_steps.start_ms). */
@@ -41,6 +42,7 @@ async function loadRecording(workflow: Workflow): Promise<eventWithTime[] | null
  * the run's real rrweb recording when the steps carry their timing.
  */
 export function WorkflowTutorial({ workflowId }: { workflowId: string }) {
+  const t = useTranslations("player");
   const [loaded, setLoaded] = useState<Loaded>({ state: "loading" });
 
   useEffect(() => {
@@ -53,10 +55,7 @@ export function WorkflowTutorial({ workflowId }: { workflowId: string }) {
         if (!cancelled) setLoaded({ state: "ready", workflow, spec, recording });
       } catch (err) {
         if (cancelled) return;
-        const message = isApiError(err, "not_found")
-          ? "There is no stored workflow with this id."
-          : errorMessage(err, "The tutorial could not be loaded.");
-        setLoaded({ state: "error", message });
+        setLoaded({ state: "error", cause: err });
       }
     })();
     return () => {
@@ -68,14 +67,16 @@ export function WorkflowTutorial({ workflowId }: { workflowId: string }) {
     return (
       <p role="status" data-testid="workflow-tutorial-loading" className="flex flex-col items-center gap-4 py-24 text-center text-sm text-ink-300">
         <span aria-hidden="true" className="kr-spectrum-border size-14 animate-spin rounded-full bg-ink-900 [animation-duration:2.5s]" />
-        Loading the tutorial…
+        {t("workflowTutorial.loading")}
       </p>
     );
   }
   if (loaded.state === "error") {
     return (
       <p role="alert" data-testid="workflow-tutorial-error" className="mx-auto my-16 max-w-lg rounded-3xl border border-danger/40 bg-danger/10 px-6 py-8 text-center text-sm font-semibold text-danger">
-        {loaded.message}
+        {isApiError(loaded.cause, "not_found")
+          ? t("workflowTutorial.notFound")
+          : errorMessage(loaded.cause, t("workflowTutorial.loadError"))}
       </p>
     );
   }
@@ -85,7 +86,7 @@ export function WorkflowTutorial({ workflowId }: { workflowId: string }) {
       <div className="mx-auto mb-3 flex max-w-7xl items-center justify-end px-4">
         <a href={guideUrl} className="kr-btn kr-btn-ghost kr-learn px-3.5 py-1.5 text-xs">
           <FileText aria-hidden="true" className="size-3.5" />
-          Read as text
+          {t("workflowTutorial.readAsText")}
         </a>
       </div>
       <TutorialPlayer

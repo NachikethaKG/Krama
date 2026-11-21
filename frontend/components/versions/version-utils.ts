@@ -1,5 +1,17 @@
 import type { StepDiff, WorkflowVersion } from "@krama/contracts-ts";
+import { createTranslator } from "next-intl";
 import type { StepDiffItem, WorkflowVersionRecord } from "@/types/tutorial";
+import englishTutorial from "@/messages/en/tutorial.json";
+
+/** Formats one "tutorial" namespace message: a component passes its `useTranslations("tutorial")`. */
+export type TutorialText = (key: string, values?: Record<string, string | number>) => string;
+
+/** English, for callers outside a component (the API client). */
+const englishText: TutorialText = createTranslator({
+  locale: "en",
+  messages: { tutorial: englishTutorial },
+  namespace: "tutorial",
+}) as unknown as TutorialText;
 
 function extractFieldValue(val: unknown): string | undefined {
   if (val === undefined || val === null) return undefined;
@@ -15,7 +27,7 @@ function extractFieldValue(val: unknown): string | undefined {
   return String(val);
 }
 
-export function parseStepDiffs(changeSummary?: StepDiff | null): StepDiffItem[] {
+export function parseStepDiffs(changeSummary?: StepDiff | null, t: TutorialText = englishText): StepDiffItem[] {
   if (!changeSummary || !Array.isArray(changeSummary.steps)) {
     return [];
   }
@@ -58,7 +70,13 @@ export function parseStepDiffs(changeSummary?: StepDiff | null): StepDiffItem[] 
 
     return {
       stepIndex,
-      stepTitle: step.summary || (isUnchanged ? `Step ${stepIndex} (Verified)` : `Step ${stepIndex} (${isWording ? "Wording Updated" : "Locator Healed"})`),
+      stepTitle:
+        step.summary ||
+        (isUnchanged
+          ? t("versions.stepVerified", { step: stepIndex })
+          : isWording
+            ? t("versions.stepWordingUpdated", { step: stepIndex })
+            : t("versions.stepLocatorHealed", { step: stepIndex })),
       changeType,
       oldLabel,
       newLabel,
@@ -71,7 +89,8 @@ export function parseStepDiffs(changeSummary?: StepDiff | null): StepDiffItem[] 
 }
 
 export function normalizeVersionRecord(
-  raw: WorkflowVersion | WorkflowVersionRecord
+  raw: WorkflowVersion | WorkflowVersionRecord,
+  t: TutorialText = englishText,
 ): WorkflowVersionRecord {
   // If it's already a full WorkflowVersionRecord
   if ("version" in raw && typeof raw.version === "string" && "stepDiffs" in raw && Array.isArray(raw.stepDiffs)) {
@@ -79,22 +98,26 @@ export function normalizeVersionRecord(
   }
 
   const wv = raw as WorkflowVersion;
-  const stepDiffs = parseStepDiffs(wv.change_summary);
+  const stepDiffs = parseStepDiffs(wv.change_summary, t);
   const changedSteps = stepDiffs.filter((s) => s.changeType !== "unchanged");
 
   const isWordingOnly =
     changedSteps.length > 0 && changedSteps.every((s) => s.changeType === "wording_only");
 
-  let changeSummaryText = "Baseline version. No prior changes.";
+  let changeSummaryText = t("versions.summaryBaseline");
   if (wv.change_summary) {
     if (changedSteps.length === 0) {
-      changeSummaryText = "Identical verification pass without step alterations.";
+      changeSummaryText = t("versions.summaryIdentical");
     } else {
       const summaryParts = changedSteps.map((s) => {
         if (s.changeType === "locator_healed") {
-          return `Step ${s.stepIndex}: locator healed (${s.oldLabel || s.oldSelector || "target"} → ${s.newLabel || s.newSelector || "healed"})`;
+          return t("versions.summaryLocatorHealed", {
+            step: s.stepIndex,
+            from: s.oldLabel || s.oldSelector || t("versions.summaryTargetFallback"),
+            to: s.newLabel || s.newSelector || t("versions.summaryHealedFallback"),
+          });
         }
-        return `Step ${s.stepIndex}: wording updated`;
+        return t("versions.summaryWordingUpdated", { step: s.stepIndex });
       });
       changeSummaryText = summaryParts.join("; ");
     }

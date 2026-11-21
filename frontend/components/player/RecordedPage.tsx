@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { eventWithTime } from "@rrweb/types";
+import { useTranslations } from "next-intl";
 
 export interface RecordedPageProps {
   /** The workflow's rrweb recording (GET /api/v1/artifacts/<recording_path>). */
@@ -37,6 +38,7 @@ interface ReplayerLike {
  * on top line up after subtracting the step's scroll. It is never interactive: the tutorial controls it.
  */
 export function RecordedPage({ events, timeOffsetMs, viewport, scroll = null }: RecordedPageProps) {
+  const t = useTranslations("player");
   const rootRef = useRef<HTMLDivElement>(null);
   const replayerRef = useRef<ReplayerLike | null>(null);
   const [ready, setReady] = useState(false);
@@ -99,7 +101,7 @@ export function RecordedPage({ events, timeOffsetMs, viewport, scroll = null }: 
       <div ref={rootRef} className="krama-replay-root" />
       {failed && (
         <p className="absolute inset-0 flex items-center justify-center bg-ink-900 text-sm text-ink-300">
-          The recording could not be shown.
+          {t("recordedPage.failed")}
         </p>
       )}
     </div>

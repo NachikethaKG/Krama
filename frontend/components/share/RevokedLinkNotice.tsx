@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowLeft, Unlink } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 export interface RevokedLinkNoticeProps {
   status?: number;
@@ -8,8 +9,9 @@ export interface RevokedLinkNoticeProps {
 
 export function RevokedLinkNotice({
   status = 404,
-  message = "This tutorial link is invalid or has been revoked by the creator.",
+  message,
 }: RevokedLinkNoticeProps) {
+  const t = useTranslations("share");
   return (
     <div
       data-testid="revoked-link-notice"
@@ -24,21 +26,21 @@ export function RevokedLinkNotice({
         </div>
 
         <span className="mb-2 font-mono text-xs font-bold uppercase tracking-[0.2em] text-danger">
-          {status === 404 ? "Link Not Found (404)" : `Unavailable (${status})`}
+          {status === 404 ? t("revoked.notFound") : t("revoked.unavailable", { status })}
         </span>
 
-        <h1 className="kr-display text-3xl font-extrabold text-white">Tutorial Link Unavailable</h1>
+        <h1 className="kr-display text-3xl font-extrabold text-white">{t("revoked.title")}</h1>
 
-        <p className="mt-3 text-sm text-ink-300">{message}</p>
+        <p className="mt-3 text-sm text-ink-300">{message ?? t("revoked.message")}</p>
 
         <p className="mt-1 text-xs text-ink-400">
-          This tutorial may have been removed, or the share link was revoked by the creator.
+          {t("revoked.hint")}
         </p>
 
         <div className="mt-7 flex items-center gap-3">
           <Link href="/" data-testid="revoked-home-link" className="kr-btn kr-btn-primary px-5 py-2.5 text-sm">
             <ArrowLeft aria-hidden="true" className="size-4" />
-            Return to Homepage
+            {t("revoked.home")}
           </Link>
         </div>
       </div>

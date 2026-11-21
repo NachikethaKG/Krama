@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Eye, Share2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Logo, ThemeToggle } from "@/components/ui";
 import type { TutorialFreshnessStatus } from "@/types/tutorial";
 import { TutorialStatusBadge } from "@/components/tutorials/TutorialStatusBadge";
@@ -10,6 +11,7 @@ export interface SharedPageHeaderProps {
 }
 
 export function SharedPageHeader({ title, status }: SharedPageHeaderProps) {
+  const t = useTranslations("share");
   return (
     <header
       data-testid="shared-page-header"
@@ -17,7 +19,7 @@ export function SharedPageHeader({ title, status }: SharedPageHeaderProps) {
     >
       <div className="kr-glass flex items-center justify-between gap-4 rounded-full px-3 py-2 pl-4">
         <div className="flex min-w-0 items-center gap-3">
-          <Link href="/" className="shrink-0" aria-label="Krama home">
+          <Link href="/" className="shrink-0" aria-label={t("header.home")}>
             <Logo size={28} />
           </Link>
 
@@ -25,7 +27,7 @@ export function SharedPageHeader({ title, status }: SharedPageHeaderProps) {
 
           <span data-testid="shared-mode-indicator" className="kr-chip kr-ask shrink-0">
             <Share2 aria-hidden="true" className="size-3" />
-            Viewing shared tutorial
+            {t("header.viewing")}
           </span>
 
           {title && (
@@ -43,7 +45,7 @@ export function SharedPageHeader({ title, status }: SharedPageHeaderProps) {
           ) : null}
           <span className="kr-chip kr-run hidden sm:inline-flex">
             <Eye aria-hidden="true" className="size-3" />
-            Read-only preview
+            {t("header.readOnly")}
           </span>
           <ThemeToggle />
         </div>

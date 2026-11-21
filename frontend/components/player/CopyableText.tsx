@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import { useTranslations } from "next-intl";
 
 export interface CopyableTextProps {
   text: string;
@@ -15,6 +16,7 @@ export function CopyableText({
   className = "",
   code = true,
 }: CopyableTextProps) {
+  const t = useTranslations("player");
   const [copied, setCopied] = useState(false);
 
   const handleCopy = useCallback(async () => {
@@ -73,7 +75,7 @@ export function CopyableText({
         type="button"
         onClick={handleCopy}
         data-testid="copy-button"
-        aria-label={copied ? "Copied to clipboard" : `Copy ${text} to clipboard`}
+        aria-label={copied ? t("copyable.copiedAria") : t("copyable.copyAria", { text })}
         className="flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center gap-1.5 rounded-xl px-2.5 py-2 text-xs font-bold text-ink-300 transition-colors hover:bg-white/10 hover:text-white"
       >
         {copied ? (
@@ -88,7 +90,7 @@ export function CopyableText({
             >
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
             </svg>
-            <span className="text-verify">Copied!</span>
+            <span className="text-verify">{t("copyable.copied")}</span>
           </>
         ) : (
           <>
@@ -106,7 +108,7 @@ export function CopyableText({
                 d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
               />
             </svg>
-            <span>Copy</span>
+            <span>{t("copyable.copy")}</span>
           </>
         )}
       </button>

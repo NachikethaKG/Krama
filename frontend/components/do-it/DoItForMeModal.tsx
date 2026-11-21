@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AlertCircle, Loader2, PauseCircle, Play, UserRound, X, Zap } from "lucide-react";
+import { useTranslations } from "next-intl";
 import type { Workflow, WorkflowInputList } from "@krama/contracts-ts";
 import { type ApiClient, errorMessage, getApiClient, inputProblem, isApiError } from "@/lib/api";
 
@@ -16,28 +17,32 @@ export interface DoItForMeModalProps {
 
 type Loaded =
   | { state: "loading" }
-  | { state: "refused"; message: string }
+  | { state: "refused"; cause: unknown }
   | { state: "ready"; list: WorkflowInputList; workflow: Workflow };
 
+/** Formats one "doIt" namespace message: pass the component's `useTranslations("doIt")`. */
+export type DoItText = (key: string, values?: Record<string, string | number>) => string;
+
 /** Why the workflow can't run for the user, in plain words (409 reasons in docs/api-contract.md). */
-export function refusalMessage(err: unknown): string {
+export function refusalMessage(err: unknown, t: DoItText): string {
   const details = isApiError(err) ? err.details : undefined;
   switch (details?.reason) {
     case "not_verified":
-      return "Only a verified tutorial can run for you. Check it again first.";
+      return t("refusal.notVerified");
     case "pending_review":
-      return "A new version of this tutorial waits for your review. Review it first.";
+      return t("refusal.pendingReview");
     case "secret_not_stored": {
-      const step = typeof details.step_seq === "number" ? `Step ${details.step_seq}` : "A step";
-      return `${step} types a password or another secret. Krama never stores secrets, so it can't do this for you.`;
+      const step =
+        typeof details.step_seq === "number" ? t("refusal.stepN", { step: details.step_seq }) : t("refusal.aStep");
+      return t("refusal.secretNotStored", { step });
     }
     case "stale_revision":
-      return "This tutorial changed since you opened it. Reload the page to see the new steps.";
+      return t("refusal.staleRevision");
     case "site_sign_in_needed":
-      return `Sign in to ${String(details.site ?? "the site")} first: Krama acts in your own account.`;
+      return t("refusal.signInNeeded", { site: String(details.site ?? t("refusal.theSite")) });
     default:
       if (isApiError(err) && err.apiMessage) return err.apiMessage;
-      return errorMessage(err, "This tutorial can't run for you right now.");
+      return errorMessage(err, t("refusal.fallback"));
   }
 }
 
@@ -63,6 +68,7 @@ export function DoItForMeModal({ isOpen, ...props }: DoItForMeModalProps) {
 }
 
 function DoItForMeDialog({ onClose, workflowId, tutorialTitle, client }: Omit<DoItForMeModalProps, "isOpen">) {
+  const t = useTranslations("doIt");
   const router = useRouter();
   const api = useMemo(() => client ?? getApiClient(), [client]);
   const [loaded, setLoaded] = useState<Loaded>({ state: "loading" });
@@ -79,7 +85,7 @@ function DoItForMeDialog({ onClose, workflowId, tutorialTitle, client }: Omit<Do
         const [list, workflow] = await Promise.all([api.getWorkflowInputs(workflowId), api.getWorkflow(workflowId)]);
         if (!cancelled) setLoaded({ state: "ready", list, workflow });
       } catch (err) {
-        if (!cancelled) setLoaded({ state: "refused", message: refusalMessage(err) });
+        if (!cancelled) setLoaded({ state: "refused", cause: err });
       }
     })();
     return () => {
@@ -100,7 +106,7 @@ function DoItForMeDialog({ onClose, workflowId, tutorialTitle, client }: Omit<Do
       const run = await api.startSignIn(site);
       router.push(`/runs/${encodeURIComponent(run.id)}/live`);
     } catch (err) {
-      setError(refusalMessage(err));
+      setError(refusalMessage(err, t));
     }
   };
 
@@ -115,10 +121,10 @@ function DoItForMeDialog({ onClose, workflowId, tutorialTitle, client }: Omit<Do
     } catch (err) {
       const details = isApiError(err) ? err.details : undefined;
       if (details?.reason === "input_unsafe" && typeof details.key === "string") {
-        const message = isApiError(err) && err.apiMessage ? err.apiMessage : "This value can't be used";
+        const message = isApiError(err) && err.apiMessage ? err.apiMessage : t("modal.valueUnsafe");
         setServerErrors({ [details.key]: message });
       } else {
-        setError(refusalMessage(err));
+        setError(refusalMessage(err, t));
       }
       setSubmitting(false);
     }
@@ -139,9 +145,9 @@ function DoItForMeDialog({ onClose, workflowId, tutorialTitle, client }: Omit<Do
             </div>
             <div>
               <h2 id="do-it-dialog-title" className="kr-display text-lg font-bold text-white">
-                Do it for me
+                {t("modal.title")}
               </h2>
-              <p className="text-xs text-ink-300">{tutorialTitle || "Krama runs these steps for you"}</p>
+              <p className="text-xs text-ink-300">{tutorialTitle || t("modal.subtitleFallback")}</p>
             </div>
           </div>
           <button
@@ -149,7 +155,7 @@ function DoItForMeDialog({ onClose, workflowId, tutorialTitle, client }: Omit<Do
             data-testid="close-do-it-modal-btn"
             onClick={onClose}
             className="rounded-lg p-1.5 text-ink-400 transition-colors hover:bg-ink-800 hover:text-white"
-            aria-label="Close dialog"
+            aria-label={t("modal.closeDialog")}
           >
             <X aria-hidden="true" className="size-5" />
           </button>
@@ -159,7 +165,7 @@ function DoItForMeDialog({ onClose, workflowId, tutorialTitle, client }: Omit<Do
           {loaded.state === "loading" && (
             <p role="status" data-testid="do-it-loading" className="flex items-center gap-2 text-sm text-ink-300">
               <Loader2 aria-hidden="true" className="size-4 animate-spin" />
-              Loading the steps…
+              {t("modal.loading")}
             </p>
           )}
 
@@ -170,7 +176,7 @@ function DoItForMeDialog({ onClose, workflowId, tutorialTitle, client }: Omit<Do
               className="flex items-start gap-3 rounded-xl border border-fail/30 bg-fail/10 p-3.5 text-sm text-ink-100"
             >
               <AlertCircle aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-fail" />
-              {loaded.message}
+              {refusalMessage(loaded.cause, t)}
             </p>
           )}
 
@@ -178,10 +184,9 @@ function DoItForMeDialog({ onClose, workflowId, tutorialTitle, client }: Omit<Do
             <>
               {loaded.list.sign_in_site ? (
                 <div data-testid="do-it-sign-in" className="rounded-xl border border-run/30 bg-run/10 p-3 text-xs text-ink-200">
-                  <p className="font-semibold text-white">Sign in to {loaded.list.sign_in_site} first</p>
+                  <p className="font-semibold text-white">{t("modal.signInFirst", { site: loaded.list.sign_in_site })}</p>
                   <p className="mt-1">
-                    Krama acts in your own account. You sign in yourself in Krama&apos;s browser; Krama keeps the
-                    session encrypted and never sees your password.
+                    {t("modal.signInHint")}
                   </p>
                   <button
                     type="button"
@@ -189,20 +194,19 @@ function DoItForMeDialog({ onClose, workflowId, tutorialTitle, client }: Omit<Do
                     onClick={() => signIn(loaded.list.sign_in_site as string)}
                     className="kr-btn kr-btn-tone mt-2 px-3.5 py-1.5 text-xs"
                   >
-                    Sign in to {loaded.list.sign_in_site}
+                    {t("modal.signInButton", { site: loaded.list.sign_in_site })}
                   </button>
                 </div>
               ) : (
                 <p data-testid="do-it-account" className="flex items-start gap-2 text-xs text-ink-300">
                   <UserRound aria-hidden="true" className="mt-0.5 size-3.5 shrink-0 text-run" />
                   <span>
-                    Krama acts in{" "}
-                    {loaded.list.account ? (
-                      <strong className="text-white">your {loaded.list.account} account</strong>
-                    ) : (
-                      "the account it is signed in to"
-                    )}{" "}
-                    on this site.
+                    {loaded.list.account
+                      ? t.rich("modal.actsInAccount", {
+                          account: loaded.list.account,
+                          strong: (chunks) => <strong className="text-white">{chunks}</strong>,
+                        })
+                      : t("modal.actsInSignedIn")}
                   </span>
                 </p>
               )}
@@ -224,7 +228,7 @@ function DoItForMeDialog({ onClose, workflowId, tutorialTitle, client }: Omit<Do
                           type="text"
                           autoComplete="off"
                           value={values[input.key] ?? ""}
-                          placeholder={`for example ${input.example}`}
+                          placeholder={t("modal.placeholder", { example: input.example })}
                           aria-invalid={show ? true : undefined}
                           aria-describedby={show ? `${id}-error` : undefined}
                           onChange={(e) => {
@@ -248,11 +252,11 @@ function DoItForMeDialog({ onClose, workflowId, tutorialTitle, client }: Omit<Do
                   })}
                 </div>
               ) : (
-                <p className="text-xs text-ink-300">This tutorial needs no values from you.</p>
+                <p className="text-xs text-ink-300">{t("modal.noValues")}</p>
               )}
 
               <div>
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-ink-300">What Krama will do</p>
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-ink-300">{t("modal.previewTitle")}</p>
                 <ol data-testid="do-it-preview" className="space-y-1.5">
                   {[...loaded.workflow.steps]
                     .sort((a, b) => a.seq - b.seq)
@@ -270,15 +274,14 @@ function DoItForMeDialog({ onClose, workflowId, tutorialTitle, client }: Omit<Do
                             className="flex shrink-0 items-center gap-1 rounded-md bg-plan/15 px-1.5 py-0.5 font-semibold text-plan"
                           >
                             <PauseCircle aria-hidden="true" className="size-3" />
-                            Asks you first
+                            {t("modal.asksFirst")}
                           </span>
                         ) : null}
                       </li>
                     ))}
                 </ol>
                 <p className="mt-2 text-[11px] text-ink-400">
-                  Krama also stops and asks you before any step that could delete, publish or change settings. If a
-                  step fails, it stops there; nothing is retried.
+                  {t("modal.safetyNote")}
                 </p>
               </div>
             </>
@@ -293,7 +296,7 @@ function DoItForMeDialog({ onClose, workflowId, tutorialTitle, client }: Omit<Do
 
         <div className="flex items-center justify-end gap-3 border-t border-ink-800 pt-4">
           <button type="button" onClick={onClose} className="kr-btn kr-btn-secondary px-4 py-2 text-sm">
-            Cancel
+            {t("modal.cancel")}
           </button>
           <button
             type="button"
@@ -308,7 +311,7 @@ function DoItForMeDialog({ onClose, workflowId, tutorialTitle, client }: Omit<Do
             ) : (
               <Play aria-hidden="true" className="size-4" />
             )}
-            Run it
+            {t("modal.run")}
           </button>
         </div>
       </div>
