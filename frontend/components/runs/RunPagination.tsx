@@ -1,3 +1,5 @@
+import { useTranslations } from "next-intl";
+
 /**
  * Cursor pagination for GET /runs (newest first). The API returns an opaque `next_cursor` and no total, so the
  * page keeps a stack of cursors: "Older" follows `next_cursor`, "Newer" pops back to the previous cursor.
@@ -27,26 +29,32 @@ export function RunPagination({
   disabled = false,
   className = "",
 }: RunPaginationProps) {
+  const t = useTranslations("runs");
   const startItem = itemCount === 0 ? 0 : (page - 1) * pageSize + 1;
   const endItem = (page - 1) * pageSize + itemCount;
 
   return (
     <nav
       role="navigation"
-      aria-label="Pagination Navigation"
+      aria-label={t("pagination.ariaLabel")}
       className={`flex flex-col sm:flex-row items-center justify-between gap-4 py-4 px-2 ${className}`}
     >
       <div data-testid="pagination-info" className="text-xs sm:text-sm text-ink-400">
         {itemCount === 0 ? (
-          <span>No runs to display</span>
+          <span>{t("pagination.empty")}</span>
         ) : (
           <span>
-            Showing <span className="font-medium text-white">{startItem}</span> to{" "}
-            <span className="font-medium text-white">{endItem}</span> (Page{" "}
-            <span data-testid="current-page-num" className="font-semibold text-white">
-              {page}
-            </span>
-            {hasNext ? ", older runs available" : ", oldest runs"})
+            {t.rich(hasNext ? "pagination.showingMore" : "pagination.showingLast", {
+              start: startItem,
+              end: endItem,
+              page,
+              num: (chunks) => <span className="font-medium text-white">{chunks}</span>,
+              current: (chunks) => (
+                <span data-testid="current-page-num" className="font-semibold text-white">
+                  {chunks}
+                </span>
+              ),
+            })}
           </span>
         )}
       </div>
@@ -55,12 +63,12 @@ export function RunPagination({
         <button
           type="button"
           data-testid="pagination-prev"
-          aria-label="Newer runs"
+          aria-label={t("pagination.newerAria")}
           disabled={!hasPrevious || disabled}
           onClick={onPrevious}
           className="kr-btn kr-btn-ghost kr-run px-4 py-1.5 text-xs sm:text-sm"
         >
-          &larr; Newer
+          ← {t("pagination.newer")}
         </button>
 
         <span
@@ -74,12 +82,12 @@ export function RunPagination({
         <button
           type="button"
           data-testid="pagination-next"
-          aria-label="Older runs"
+          aria-label={t("pagination.olderAria")}
           disabled={!hasNext || disabled}
           onClick={onNext}
           className="kr-btn kr-btn-ghost kr-run px-4 py-1.5 text-xs sm:text-sm"
         >
-          Older &rarr;
+          {t("pagination.older")} →
         </button>
       </div>
     </nav>

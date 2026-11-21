@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { type ApiClient, errorMessage, getApiClient, type SessionStatus } from "@/lib/api";
 
 export interface ManualLoginGuideProps {
@@ -22,6 +23,7 @@ export function ManualLoginGuide({
   onSessionActive,
   className = "",
 }: ManualLoginGuideProps) {
+  const t = useTranslations("takeover");
   const [apiClient] = useState<ApiClient>(() => client ?? getApiClient());
   const [phase, setPhase] = useState<Phase>("checking");
   const [session, setSession] = useState<SessionStatus | null>(null);
@@ -89,7 +91,7 @@ export function ManualLoginGuide({
       if (Date.now() - startTime > timeoutMs) {
         clearPolling();
         setPhase("error");
-        setError("Login timed out or browser was closed before completing sign-in.");
+        setError(t("manualLogin.timedOut"));
         return;
       }
 
@@ -105,7 +107,7 @@ export function ManualLoginGuide({
       } catch (err) {
         clearPolling();
         setPhase("error");
-        setError(errorMessage(err, "Failed checking session status"));
+        setError(errorMessage(err, t("manualLogin.statusFailed")));
       }
     }, pollIntervalMs);
   };
@@ -121,7 +123,7 @@ export function ManualLoginGuide({
     } catch (err) {
       if (!aliveRef.current) return;
       setPhase("error");
-      setError(errorMessage(err, "Failed to launch manual login session"));
+      setError(errorMessage(err, t("manualLogin.launchFailed")));
     }
   };
 
@@ -150,13 +152,13 @@ export function ManualLoginGuide({
           </div>
           <div className="flex flex-col gap-0.5">
             <h4 className="kr-display text-base font-bold text-white">
-              One-Time Manual Authentication
+              {t("manualLogin.title")}
             </h4>
             <p
               data-testid="manual-login-explainer"
               className="text-xs text-ink-300"
             >
-              You will log in directly in a separate browser window. Krama only saves an encrypted session cookie, never your password.
+              {t("manualLogin.explainer")}
             </p>
           </div>
         </div>
@@ -178,10 +180,10 @@ export function ManualLoginGuide({
               >
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
               </svg>
-              <span>Session Active (Encrypted Storage State Saved)</span>
+              <span>{t("manualLogin.active")}</span>
               {session?.expires_at && (
                 <span className="text-[10px] font-normal text-verify/80">
-                  (Expires {new Date(session.expires_at).toLocaleDateString()})
+                  {t("manualLogin.expires", { date: new Date(session.expires_at).toLocaleDateString() })}
                 </span>
               )}
             </div>
@@ -191,7 +193,7 @@ export function ManualLoginGuide({
               onClick={handleLaunch}
               className="text-xs font-medium text-ink-400 underline hover:text-white"
             >
-              Re-authenticate
+              {t("manualLogin.reauth")}
             </button>
           </div>
         )}
@@ -211,7 +213,7 @@ export function ManualLoginGuide({
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
             </svg>
-            <span>Waiting for you to complete sign-in in the open browser...</span>
+            <span>{t("manualLogin.pending")}</span>
           </div>
         )}
 
@@ -222,7 +224,7 @@ export function ManualLoginGuide({
             role="alert"
             className="kr-danger kr-tone-card flex flex-col gap-2 rounded-2xl p-3 text-xs text-danger"
           >
-            <p>{error || "Authentication could not be completed."}</p>
+            <p>{error || t("manualLogin.defaultError")}</p>
             <div className="flex justify-end">
               <button
                 type="button"
@@ -230,7 +232,7 @@ export function ManualLoginGuide({
                 onClick={handleLaunch}
                 className="kr-btn kr-btn-tone kr-danger px-3.5 py-1.5 text-xs"
               >
-                Retry Manual Login
+                {t("manualLogin.retry")}
               </button>
             </div>
           </div>
@@ -245,7 +247,7 @@ export function ManualLoginGuide({
               onClick={handleLaunch}
               className="kr-btn kr-btn-tone kr-approve px-5 py-2 text-xs"
             >
-              <span>Launch Manual Login</span>
+              <span>{t("manualLogin.launch")}</span>
             </button>
           </div>
         )}

@@ -1,1 +1,204 @@
-{}
+{
+  "statusBadge": {
+    "ariaLabel": "Run status: {label}",
+    "verified": "Verified",
+    "failed": "Failed",
+    "paused": "Paused",
+    "cancelled": "Cancelled",
+    "queued": "Queued",
+    "running": "Running"
+  },
+  "pagination": {
+    "ariaLabel": "Pagination Navigation",
+    "empty": "No runs to display",
+    "showingMore": "Showing <num>{start}</num> to <num>{end}</num> (Page <current>{page}</current>, older runs available)",
+    "showingLast": "Showing <num>{start}</num> to <num>{end}</num> (Page <current>{page}</current>, oldest runs)",
+    "newerAria": "Newer runs",
+    "olderAria": "Older runs",
+    "newer": "Newer",
+    "older": "Older"
+  },
+  "liveViewport": {
+    "badge": "LIVE HEADLESS",
+    "waiting": "Waiting for browser viewport frame…",
+    "waitingHint": "Live headless screenshots will render here as the agent acts",
+    "imageAlt": "Headless browser live stream"
+  },
+  "detailHeader": {
+    "back": "Runs",
+    "promptUnavailable": "(prompt unavailable)",
+    "website": "Website:",
+    "watchTutorial": "Watch the tutorial",
+    "started": "Started:",
+    "finished": "Finished:",
+    "totalSteps": "Total Steps",
+    "verifiedSteps": "Verified Steps",
+    "failedSteps": "Failed Steps",
+    "duration": "Duration"
+  },
+  "detailView": {
+    "loading": "Loading Run Verification Evidence…",
+    "loadingHint": "Fetching step screenshots and multi-layer verification scores from artifact store",
+    "notFound": "Run Not Found",
+    "notFoundBody": "The requested run \"{runId}\" does not exist or its execution artifacts were deleted.",
+    "backToRuns": "Back to runs",
+    "openLive": "Open the live view",
+    "title": "What Krama did and <em>checked</em>",
+    "subtitle": "Each step, how it was checked, and a screenshot of the page right after it.",
+    "stepCount": "{count, plural, one {# Step} other {# Steps}}",
+    "noSteps": "No steps executed for this workflow run yet."
+  },
+  "observer": {
+    "allRuns": "All Runs",
+    "defaultTitle": "Live Agent Headless Execution",
+    "connected": "SSE Stream Connected",
+    "reconnecting": "Reconnecting Stream…",
+    "standby": "Stream Standby",
+    "connectionLost": "Stream connection lost. Reconnecting to live observer stream…",
+    "activityTitle": "Observer Stream Activity",
+    "activityRun": "Run: {runId}",
+    "activityStatus": "Status:",
+    "activityStep": "Active Step: {seq}",
+    "activityTarget": "Target: {url}"
+  },
+  "list": {
+    "loading": "Loading runs…",
+    "loadError": "Couldn't load your runs",
+    "emptyTitle": "No runs yet",
+    "emptyBody": "Each time Krama does a task for you, it shows up here.",
+    "newTutorial": "New tutorial",
+    "colTask": "Task",
+    "colResult": "Result",
+    "colStarted": "Started",
+    "colTook": "Took",
+    "colOpen": "Open",
+    "promptUnavailable": "(task text unavailable)",
+    "retried": "{count, plural, one {Retried once} other {Retried # times}}",
+    "details": "Details"
+  },
+  "banners": {
+    "pausedTitle": "Execution Paused: Action requires manual approval / bot barrier detected",
+    "pausedDefault": "Execution paused for safety policy review.",
+    "context": "Context:",
+    "atStep": " at Step {seq}",
+    "processing": "Processing…",
+    "abort": "Abort Run",
+    "resuming": "Resuming…",
+    "allowResume": "Allow & Resume",
+    "failedDefault": "Workflow execution halted unexpectedly",
+    "failedTitle": "Execution Failed at Step {step}: {error}",
+    "failedBody": "The agent stopped because the observed environment did not match expectations or encountered a policy restriction.",
+    "mismatch": "State Verification Mismatch",
+    "expected": "Expected",
+    "observed": "Observed",
+    "completeTitle": "Workflow Execution Complete",
+    "completeBody": "All planned steps have been successfully executed and verified.",
+    "openTutorial": "Open Interactive Tutorial"
+  },
+  "checklist": {
+    "title": "Execution Steps",
+    "current": "Current: Step {seq}",
+    "waiting": "Waiting for execution plan…",
+    "ariaLabel": "Planned execution steps",
+    "pendingAria": "Pending step",
+    "runningAria": "Running step",
+    "completedAria": "Completed step",
+    "pausedAria": "Paused step",
+    "failedAria": "Failed step",
+    "status": {
+      "pending": "pending",
+      "running": "running",
+      "completed": "completed",
+      "paused": "paused",
+      "failed": "failed"
+    }
+  },
+  "evidence": {
+    "method": {
+      "url_dom": {
+        "label": "Page address",
+        "description": "Krama checked the page it landed on after this step."
+      },
+      "aria": {
+        "label": "Page content",
+        "description": "Krama checked that the page shows the expected button, field or text."
+      },
+      "network": {
+        "label": "Site's answer",
+        "description": "The website confirmed the change."
+      },
+      "vision": {
+        "label": "Screenshot",
+        "description": "A look at the screenshot confirmed the step."
+      }
+    },
+    "confidence": {
+      "sure": "Sure",
+      "fairlySure": "Fairly sure",
+      "unsure": "Unsure"
+    },
+    "verified": "Verified",
+    "failed": "Failed",
+    "pending": "Pending",
+    "howChecked": "How it was checked",
+    "howSure": "How sure",
+    "notApplicable": "n/a",
+    "notVerified": "Not verified yet",
+    "screenshotAfter": "Screenshot after this step",
+    "duration": "Duration: {ms}ms",
+    "screenshotAlt": "Verification screenshot for step {seq}: {instruction}",
+    "screenshotFailed": "Screenshot failed to load from artifact store",
+    "noScreenshot": "No screenshot captured for this step",
+    "recordedVia": "Verification was recorded via {method}",
+    "showDetails": "Show technical details",
+    "hideDetails": "Hide technical details",
+    "expectedState": "Expected State",
+    "observedState": "Observed State",
+    "urlMatches": "URL matches:",
+    "visible": "Visible:",
+    "url": "URL:",
+    "title": "Title:",
+    "action": {
+      "navigate": "Opened a page",
+      "click": "Clicked",
+      "fill": "Typed into",
+      "select": "Chose an option in",
+      "press": "Pressed a key in",
+      "wait": "Waited for",
+      "scroll": "Scrolled to"
+    },
+    "role": {
+      "textbox": "the field",
+      "searchbox": "the search field",
+      "combobox": "the field",
+      "button": "the button",
+      "link": "the link",
+      "checkbox": "the checkbox",
+      "radio": "the option",
+      "tab": "the tab",
+      "menuitem": "the menu item",
+      "other": "the {role}"
+    },
+    "actionTarget": "{verb} {what} “{name}”",
+    "methodLabel": {
+      "page": "page address",
+      "content": "page content",
+      "site": "site's answer",
+      "screenshot": "screenshot"
+    },
+    "visibleElement": "[{role}: \"{name}\"]"
+  },
+  "replay": {
+    "overlayAria": "Replay Step Highlight Overlay",
+    "initializing": "Initializing replay environment...",
+    "emptyTitle": "No recorded session events available for replay.",
+    "emptyBody": "Provide a valid rrweb event stream to inspect execution.",
+    "stepBadge": "Step {seq}",
+    "timelineAria": "Step timeline navigation",
+    "prev": "Prev",
+    "next": "Next",
+    "stepOf": "Step {current} of {total}",
+    "jumpTitle": "Jump to step {seq}: {instruction}",
+    "jumpAria": "Jump to step {seq}"
+  }
+}

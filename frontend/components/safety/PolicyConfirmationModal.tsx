@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef } from "react";
 import type { Risk } from "@krama/contracts-ts";
+import { useTranslations } from "next-intl";
 import { RiskBadge } from "@/components/risk-badge";
 
 export interface PolicyConfirmationModalProps {
@@ -20,10 +21,13 @@ export interface PolicyConfirmationModalProps {
   className?: string;
 }
 
+/** Reasons with their own flag label and rationale in messages (safety: policyModal.flag / .rationale). */
+const POLICY_REASONS = new Set(["destructive_action", "sensitive_data", "prompt_injection"]);
+
 export function PolicyConfirmationModal({
   isOpen,
   stepSeq,
-  stepInstruction = "Execute proposed action",
+  stepInstruction,
   actionType,
   targetRole,
   targetName,
@@ -35,6 +39,7 @@ export function PolicyConfirmationModal({
   isConfirming = false,
   className = "",
 }: PolicyConfirmationModalProps) {
+  const t = useTranslations("safety");
   const dialogRef = useRef<HTMLDivElement>(null);
 
   // Move focus into the dialog (not onto Allow: Enter must never approve a destructive step by accident).
@@ -53,17 +58,14 @@ export function PolicyConfirmationModal({
     return null;
   }
 
-  // Format reason label
-  const formattedReason = reason.replace(/_/g, " ").toUpperCase();
+  // Policy pauses have their own label and rationale (policyModal.flag / .rationale); any other reason code is
+  // shown as-is.
+  const knownReason = POLICY_REASONS.has(reason);
+  const formattedReason = knownReason
+    ? t(`policyModal.flag.${reason}`)
+    : reason.replace(/_/g, " ").toUpperCase();
   const explicitRationale =
-    rationale ||
-    (reason === "destructive_action"
-      ? "This action is flagged as destructive and may permanently modify or remove resources. Human approval is required to proceed."
-      : reason === "sensitive_data"
-        ? "This step involves sensitive data exposure or credentials entry and requires explicit confirmation."
-        : reason === "prompt_injection"
-          ? "Potential adversarial instructions were detected in the web page DOM. Automated execution is held for human confirmation."
-          : "A safety policy rule requires manual verification before this step can execute.");
+    rationale || (knownReason ? t(`policyModal.rationale.${reason}`) : t("policyModal.rationale.default"));
 
   const effectiveRisk = risk || "high";
 
@@ -113,14 +115,17 @@ export function PolicyConfirmationModal({
                 id="policy-modal-title"
                 className="kr-display text-2xl font-extrabold text-white"
               >
-                Policy Confirmation Required
+                {t("policyModal.title")}
               </h2>
             </div>
             <p
               id="policy-modal-desc"
               className="mt-1 text-xs text-ink-300"
             >
-              Execution paused at <span className="font-bold text-danger">Step {stepSeq}</span> awaiting explicit human authorization.
+              {t.rich("policyModal.description", {
+                seq: stepSeq,
+                step: (chunks) => <span className="font-bold text-danger">{chunks}</span>,
+              })}
             </p>
           </div>
         </div>
@@ -133,7 +138,7 @@ export function PolicyConfirmationModal({
                 {stepSeq}
               </span>
               <span className="text-xs font-bold uppercase tracking-widest text-ink-400">
-                Target Step
+                {t("policyModal.targetStep")}
               </span>
             </div>
 
@@ -142,24 +147,24 @@ export function PolicyConfirmationModal({
 
           <div className="mt-3">
             <p className="text-base font-semibold leading-snug text-white">
-              {stepInstruction}
+              {stepInstruction ?? t("policyModal.defaultInstruction")}
             </p>
 
             {(actionType || targetRole || targetName) && (
               <div className="mt-2.5 flex flex-wrap items-center gap-1.5 font-mono text-[11px] text-ink-300">
                 {actionType && (
                   <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-ink-300">
-                    action: {actionType}
+                    {t("policyModal.action", { value: actionType })}
                   </span>
                 )}
                 {targetRole && (
                   <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-ink-300">
-                    role: {targetRole}
+                    {t("policyModal.role", { value: targetRole })}
                   </span>
                 )}
                 {targetName && (
                   <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-ink-300">
-                    target: &ldquo;{targetName}&rdquo;
+                    {t("policyModal.target", { value: targetName })}
                   </span>
                 )}
               </div>
@@ -171,7 +176,7 @@ export function PolicyConfirmationModal({
         <div className="kr-plan kr-tone-card mt-4 rounded-2xl p-3.5">
           <div className="flex items-center justify-between gap-2">
             <span className="text-xs font-bold uppercase tracking-wider text-plan">
-              Safety Policy Flag
+              {t("policyModal.flagLabel")}
             </span>
             <span
               data-testid="policy-flag-badge"
@@ -204,7 +209,7 @@ export function PolicyConfirmationModal({
             >
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
-            Deny & Cancel Run
+            {t("policyModal.deny")}
           </button>
 
           <button
@@ -224,7 +229,7 @@ export function PolicyConfirmationModal({
             >
               <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
             </svg>
-            {isConfirming ? "Allowing…" : "Allow & Proceed"}
+            {isConfirming ? t("policyModal.allowing") : t("policyModal.allow")}
           </button>
         </div>
       </div>

@@ -1,1 +1,125 @@
-{}
+{
+  "riskBadge": {
+    "ariaLabel": "Risk level: {level}",
+    "safe": "Safe",
+    "creates": "Creates something",
+    "changes": "Changes or deletes",
+    "dangerous": "Dangerous"
+  },
+  "taskHeader": {
+    "workflowPlan": "Workflow Plan",
+    "defaultTitle": "Here's the plan",
+    "taskPrompt": "Task Prompt",
+    "targetUrl": "Target System URL",
+    "noTargetUrl": "No target URL configured"
+  },
+  "targetPicker": {
+    "label": "Target Environment",
+    "hint": "Choose where the workflow agent executes tasks.",
+    "option": {
+      "gitea": {
+        "name": "Gitea (Local)",
+        "badge": "Local",
+        "description": "Sandbox repository instance for offline testing"
+      },
+      "github": {
+        "name": "GitHub (Real)",
+        "badge": "Live",
+        "description": "github.com repository (uses encrypted browser session)"
+      },
+      "custom": {
+        "name": "Custom Target",
+        "badge": "Custom",
+        "description": "Arbitrary Git server or enterprise web endpoint"
+      }
+    },
+    "customLabel": "Custom Target Base URL",
+    "customPlaceholder": "https://git.example.corp",
+    "urlError": {
+      "required": "Target URL is required.",
+      "protocol": "URL must use http:// or https:// protocol (e.g. https://github.example.com).",
+      "host": "URL must include a valid host name.",
+      "invalid": "Please enter a valid URL (e.g. https://github.example.com)."
+    }
+  },
+  "taskInput": {
+    "examples": {
+      "privateRepo": "Show me how to create a private GitHub repository",
+      "addLabel": "How do I add a label to a GitHub repository?",
+      "newBranch": "Create a new branch on GitHub"
+    },
+    "planningTimeout": "Planning is taking longer than {seconds} s. Try again in a moment.",
+    "planningFailed": "Planning failed",
+    "noPlanId": "The task is planned but has no plan id",
+    "createFailed": "Failed to create the task",
+    "sectionAria": "New tutorial",
+    "statusPlanning": "PLANNING",
+    "statusReady": "READY",
+    "label": "What do you want to learn?",
+    "placeholder": "e.g. Show me how to create a private GitHub repository",
+    "devOptions": "Developer options: choose the target site",
+    "planningStatus": "Planning the steps… {elapsed} Krama is opening {site} and working out each step. This usually takes 15–60 seconds.",
+    "elapsedSeconds": "{seconds} s",
+    "theSite": "the site",
+    "flow": "plan → approve → run → verify → learn",
+    "planningButton": "Planning…",
+    "submit": "Plan the steps",
+    "clarifyDefault": "Krama needs a little more detail to plan this.",
+    "answerLabel": "Your answer",
+    "sendAnswer": "Send answer",
+    "siteUnsupported": "Krama can't do tasks on {name} yet. It works on {sites}.",
+    "website": "Website:",
+    "whichSite": "Which website is this for?",
+    "consoleTitle": "krama://ask"
+  },
+  "screen": {
+    "loadFailed": "Failed to load the plan",
+    "notEditable": "{message} Reload to see its current state.",
+    "genericError": "Something went wrong",
+    "saveFailed": "Failed to save the plan",
+    "reloadFailed": "Failed to reload the plan",
+    "approveFailed": "Approval failed",
+    "rejectFailed": "Rejection failed",
+    "loading": "Loading workflow plan…",
+    "notFound": "Plan Not Found",
+    "goal": "Goal: {goal}",
+    "conflictTitle": "This plan changed in the meantime",
+    "reloadLatest": "Load the latest version"
+  },
+  "summary": {
+    "found": "I found a {count}-step plan.",
+    "risky": "{count, plural, one {# step changes or deletes something: Krama will ask you again before it.} other {# steps change or delete something: Krama will ask you again before each one.}}",
+    "safe": "No destructive actions detected.",
+    "check": "Check the steps, then approve to run them."
+  },
+  "controls": {
+    "approveFailed": "Couldn't approve the plan",
+    "rejectFailed": "Couldn't cancel the plan",
+    "ariaLabel": "Workflow approval controls",
+    "dismiss": "Dismiss",
+    "approved": "Approved. Starting the task…",
+    "goLive": "Go to Live Execution",
+    "cancelled": "Plan cancelled. Nothing was run.",
+    "doneEditing": "Done editing",
+    "editSteps": "Edit steps",
+    "cancel": "Cancel",
+    "saveFirst": "Save your edits before approving",
+    "processing": "Processing…",
+    "approve": "Approve & run"
+  },
+  "stepList": {
+    "empty": "No steps proposed in this workflow plan.",
+    "ariaLabel": "Planned execution steps",
+    "title": "Proposed Steps ({count})",
+    "editing": "Editing step instructions and sequence",
+    "on": "on",
+    "inputLabel": "Step {seq} instruction",
+    "moveUpAria": "Move step {seq} up",
+    "moveUp": "Move step up",
+    "moveDownAria": "Move step {seq} down",
+    "moveDown": "Move step down",
+    "deleteAria": "Delete step {seq}",
+    "delete": "Delete step",
+    "targetName": "\"{name}\""
+  }
+}

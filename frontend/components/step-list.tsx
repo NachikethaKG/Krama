@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 import type { PlannedStep } from "@krama/contracts-ts";
 import { ArrowDown, ArrowUp, PencilLine, Trash2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { RiskBadge } from "./risk-badge";
 
@@ -30,25 +31,26 @@ export function StepList({
   onDeleteStep,
   className = "",
 }: StepListProps) {
+  const t = useTranslations("approval");
   if (!steps || steps.length === 0) {
     return (
       <section
         data-testid="step-list-empty"
         className={`rounded-[2rem] border-2 border-dashed border-white/15 p-10 text-center ${className}`}
       >
-        <p className="text-sm text-ink-400">No steps proposed in this workflow plan.</p>
+        <p className="text-sm text-ink-400">{t("stepList.empty")}</p>
       </section>
     );
   }
 
   return (
-    <section data-testid="step-list" aria-label="Planned execution steps" className={`flex flex-col gap-4 ${className}`}>
+    <section data-testid="step-list" aria-label={t("stepList.ariaLabel")} className={`flex flex-col gap-4 ${className}`}>
       <div className="flex items-center justify-between px-1">
-        <h2 className="kr-display text-xl font-bold text-white">Proposed Steps ({steps.length})</h2>
+        <h2 className="kr-display text-xl font-bold text-white">{t("stepList.title", { count: steps.length })}</h2>
         {isEditing && (
           <span className="kr-chip kr-plan">
             <PencilLine aria-hidden="true" className="size-3.5" />
-            Editing step instructions and sequence
+            {t("stepList.editing")}
           </span>
         )}
       </div>
@@ -104,8 +106,8 @@ export function StepList({
                       </span>
                       {hasTarget && (
                         <span className="text-xs text-ink-400">
-                          on {targetRole && <span className="font-semibold text-ink-300">{targetRole}</span>}
-                          {targetName && <span className="text-white"> &quot;{targetName}&quot;</span>}
+                          {t("stepList.on")} {targetRole && <span className="font-semibold text-ink-300">{targetRole}</span>}
+                          {targetName && <span className="text-white"> {t("stepList.targetName", { name: targetName })}</span>}
                         </span>
                       )}
                     </div>
@@ -114,7 +116,7 @@ export function StepList({
                     {isEditing ? (
                       <div className="flex flex-col gap-1">
                         <label htmlFor={`step-input-${step.seq}`} className="sr-only">
-                          Step {step.seq} instruction
+                          {t("stepList.inputLabel", { seq: step.seq })}
                         </label>
                         <input
                           id={`step-input-${step.seq}`}
@@ -138,35 +140,35 @@ export function StepList({
                       <div className="flex items-center gap-1">
                         <button
                           type="button"
-                          aria-label={`Move step ${step.seq} up`}
+                          aria-label={t("stepList.moveUpAria", { seq: step.seq })}
                           data-testid={`move-step-up-${step.seq}`}
                           disabled={index === 0}
                           onClick={() => onMoveUp?.(step.seq)}
                           className={iconButton}
-                          title="Move step up"
+                          title={t("stepList.moveUp")}
                         >
                           <ArrowUp aria-hidden="true" className="size-4" />
                         </button>
 
                         <button
                           type="button"
-                          aria-label={`Move step ${step.seq} down`}
+                          aria-label={t("stepList.moveDownAria", { seq: step.seq })}
                           data-testid={`move-step-down-${step.seq}`}
                           disabled={index === steps.length - 1}
                           onClick={() => onMoveDown?.(step.seq)}
                           className={iconButton}
-                          title="Move step down"
+                          title={t("stepList.moveDown")}
                         >
                           <ArrowDown aria-hidden="true" className="size-4" />
                         </button>
 
                         <button
                           type="button"
-                          aria-label={`Delete step ${step.seq}`}
+                          aria-label={t("stepList.deleteAria", { seq: step.seq })}
                           data-testid={`delete-step-${step.seq}`}
                           onClick={() => onDeleteStep?.(step.seq)}
                           className="flex size-8 items-center justify-center rounded-full border border-danger/40 bg-danger/10 text-danger transition-all hover:bg-danger hover:text-oncolor"
-                          title="Delete step"
+                          title={t("stepList.delete")}
                         >
                           <Trash2 aria-hidden="true" className="size-4" />
                         </button>

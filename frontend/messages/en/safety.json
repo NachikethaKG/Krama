@@ -1,1 +1,71 @@
-{}
+{
+  "restricted": {
+    "barrier": {
+      "cloudflare_turnstile": {
+        "badge": "Cloudflare Turnstile",
+        "explanation": "A Cloudflare Turnstile challenge was encountered. Automated agents are strictly restricted from attempting to bypass or evade bot verification per Krama safety baseline rules."
+      },
+      "cloudflare_challenge": {
+        "badge": "Cloudflare Challenge",
+        "explanation": "A Cloudflare security challenge or bot interstitial was detected. Automated bypass is strictly prevented per safety policy."
+      },
+      "recaptcha": {
+        "badge": "Google reCAPTCHA",
+        "explanation": "A Google reCAPTCHA challenge was detected on the page. Automated solving is disallowed; manual resolution is required."
+      },
+      "hcaptcha": {
+        "badge": "hCaptcha",
+        "explanation": "An hCaptcha challenge was detected on the page. Automated solving is disallowed; manual resolution is required."
+      },
+      "captcha": {
+        "badge": "CAPTCHA Barrier",
+        "explanation": "A bot detection challenge (CAPTCHA) was encountered. Human intervention is required to complete the verification before automation can continue."
+      },
+      "auth_wall": {
+        "badge": "Login Barrier",
+        "explanation": "A login screen or authentication gate was reached that requires user authentication credentials. Manual sign-in is required before automation can proceed."
+      },
+      "login_wall": {
+        "badge": "Login Barrier",
+        "explanation": "A login screen or authentication gate was reached that requires user authentication credentials. Manual sign-in is required before automation can proceed."
+      }
+    },
+    "unknownExplanation": "An anti-bot challenge or authentication restriction was encountered. Automated bypass is prohibited per safety baseline rules.",
+    "title": "Automation restricted",
+    "titleAction": "Take over manually",
+    "detectionDetail": "Detection Detail:",
+    "targetLocation": "Target Location",
+    "stepSuffix": "(Step {seq})",
+    "openTarget": "Open Target URL",
+    "howTitle": "Manual Takeover Workflow",
+    "how1": "Click <b>“Open Target URL”</b> to view the blocked challenge page in your browser.",
+    "how2": "Complete the CAPTCHA puzzle, check Turnstile verification, or sign into your account manually.",
+    "how3": "Finish the remaining steps yourself. The automated run has stopped and cannot be resumed; start a new task once the site no longer shows the challenge.",
+    "viewRun": "View run evidence",
+    "newTask": "Start a new task"
+  },
+  "policyModal": {
+    "flag": {
+      "destructive_action": "DESTRUCTIVE ACTION",
+      "sensitive_data": "SENSITIVE DATA",
+      "prompt_injection": "PROMPT INJECTION"
+    },
+    "rationale": {
+      "destructive_action": "This action is flagged as destructive and may permanently modify or remove resources. Human approval is required to proceed.",
+      "sensitive_data": "This step involves sensitive data exposure or credentials entry and requires explicit confirmation.",
+      "prompt_injection": "Potential adversarial instructions were detected in the web page DOM. Automated execution is held for human confirmation.",
+      "default": "A safety policy rule requires manual verification before this step can execute."
+    },
+    "title": "Policy Confirmation Required",
+    "description": "Execution paused at <step>Step {seq}</step> awaiting explicit human authorization.",
+    "targetStep": "Target Step",
+    "defaultInstruction": "Execute proposed action",
+    "action": "action: {value}",
+    "role": "role: {value}",
+    "target": "target: “{value}”",
+    "flagLabel": "Safety Policy Flag",
+    "deny": "Deny & Cancel Run",
+    "allowing": "Allowing…",
+    "allow": "Allow & Proceed"
+  }
+}

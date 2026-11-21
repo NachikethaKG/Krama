@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import type { Plan, PlannedStep, Task } from "@krama/contracts-ts";
 
 import { ApprovalControls } from "@/components/approval-controls";
@@ -22,6 +23,7 @@ function renumber(steps: PlannedStep[]): PlannedStep[] {
 }
 
 export function ApprovalScreen({ planId, client, initialPlan, initialTask = null }: ApprovalScreenProps) {
+  const t = useTranslations("approval");
   const router = useRouter();
   const [apiClient] = useState<ApiClient>(() => client ?? getApiClient());
   const [plan, setPlan] = useState<Plan | null>(initialPlan ?? null);
@@ -53,7 +55,8 @@ export function ApprovalScreen({ planId, client, initialPlan, initialTask = null
         }
       } catch (err) {
         if (!active) return;
-        setError(errorMessage(err, "Failed to load the plan"));
+        // No fallback text here (the effect must not depend on `t`): the error screen shows screen.loadFailed.
+        setError(errorMessage(err, ""));
         setIsLoading(false);
       }
     })();
@@ -82,7 +85,7 @@ export function ApprovalScreen({ planId, client, initialPlan, initialTask = null
     if (isApiError(err, "conflict")) {
       setConflictError(errorMessage(err));
     } else if (isApiError(err, "plan_not_editable")) {
-      setError(`${errorMessage(err)} Reload to see its current state.`);
+      setError(t("screen.notEditable", { message: errorMessage(err, t("screen.genericError")) }));
     } else {
       setError(errorMessage(err, fallback));
     }
@@ -104,7 +107,7 @@ export function ApprovalScreen({ planId, client, initialPlan, initialTask = null
       setSteps(updated.steps);
       setIsEditing(false);
     } catch (err) {
-      reportPlanError(err, "Failed to save the plan");
+      reportPlanError(err, t("screen.saveFailed"));
     } finally {
       setIsPending(false);
     }
@@ -120,7 +123,7 @@ export function ApprovalScreen({ planId, client, initialPlan, initialTask = null
       setSteps(fresh.steps);
       setIsEditing(false);
     } catch (err) {
-      setError(errorMessage(err, "Failed to reload the plan"));
+      setError(errorMessage(err, t("screen.reloadFailed")));
     } finally {
       setIsLoading(false);
     }
@@ -138,7 +141,7 @@ export function ApprovalScreen({ planId, client, initialPlan, initialTask = null
       setRunId(run.id);
       router.push(`/runs/${run.id}/live`);
     } catch (err) {
-      reportPlanError(err, "Approval failed");
+      reportPlanError(err, t("screen.approveFailed"));
     } finally {
       setIsPending(false);
     }
@@ -153,7 +156,7 @@ export function ApprovalScreen({ planId, client, initialPlan, initialTask = null
       setPlan(rejected);
       setIsEditing(false);
     } catch (err) {
-      reportPlanError(err, "Rejection failed");
+      reportPlanError(err, t("screen.rejectFailed"));
     } finally {
       setIsPending(false);
     }
@@ -169,7 +172,7 @@ export function ApprovalScreen({ planId, client, initialPlan, initialTask = null
           <div className="absolute inset-0 animate-spin rounded-full border-4 border-white/10 border-t-plan border-r-approve" />
           <div className="absolute inset-3 animate-ping rounded-full bg-plan/40" />
         </div>
-        <p className="kr-display text-lg font-bold text-white">Loading workflow plan…</p>
+        <p className="kr-display text-lg font-bold text-white">{t("screen.loading")}</p>
       </main>
     );
   }
@@ -181,8 +184,8 @@ export function ApprovalScreen({ planId, client, initialPlan, initialTask = null
         className="mx-auto flex w-full max-w-4xl flex-1 flex-col items-center justify-center gap-4 px-4 py-20 text-center"
       >
         <div className="kr-float flex size-16 items-center justify-center rounded-3xl bg-danger/15 text-4xl text-danger" aria-hidden="true">?</div>
-        <h1 className="kr-display text-4xl font-extrabold text-white">Plan Not Found</h1>
-        <p className="max-w-md text-sm text-ink-300">{error}</p>
+        <h1 className="kr-display text-4xl font-extrabold text-white">{t("screen.notFound")}</h1>
+        <p className="max-w-md text-sm text-ink-300">{error || t("screen.loadFailed")}</p>
       </main>
     );
   }
@@ -190,7 +193,7 @@ export function ApprovalScreen({ planId, client, initialPlan, initialTask = null
   return (
     <main data-testid="approval-screen" className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-7 px-4 py-8 sm:py-12">
       <TaskHeader
-        title={plan.expected_result ? `Goal: ${plan.expected_result}` : "Here's the plan"}
+        title={plan.expected_result ? t("screen.goal", { goal: plan.expected_result }) : t("taskHeader.defaultTitle")}
         prompt={task?.prompt ?? plan.expected_result}
         targetUrl={task?.target_url}
         targetApp={task?.interpretation?.app}
@@ -204,7 +207,7 @@ export function ApprovalScreen({ planId, client, initialPlan, initialTask = null
           className="kr-plan kr-tone-card flex flex-col gap-3 rounded-2xl p-4 sm:flex-row sm:items-center sm:justify-between"
         >
           <div>
-            <h3 className="text-sm font-bold text-plan">This plan changed in the meantime</h3>
+            <h3 className="text-sm font-bold text-plan">{t("screen.conflictTitle")}</h3>
             <p className="text-xs text-ink-300">{conflictError}</p>
           </div>
           <button
@@ -213,7 +216,7 @@ export function ApprovalScreen({ planId, client, initialPlan, initialTask = null
             onClick={handleReloadPlan}
             className="kr-btn kr-btn-tone kr-plan shrink-0 px-4 py-2 text-xs"
           >
-            Load the latest version
+            {t("screen.reloadLatest")}
           </button>
         </div>
       )}
@@ -246,17 +249,16 @@ export function ApprovalScreen({ planId, client, initialPlan, initialTask = null
 
 /** One line before the steps: how many, and whether any of them is risky (the policy marks risk per step). */
 function PlanSummary({ steps }: { steps: { risk?: string | null }[] }) {
+  const t = useTranslations("approval");
   const risky = steps.filter((s) => s.risk === "high" || s.risk === "critical").length;
   return (
     <p
       data-testid="plan-summary"
       className={`kr-tone-card rounded-2xl px-5 py-4 text-sm leading-relaxed text-white ${risky ? "kr-learn" : "kr-verify"}`}
     >
-      I found a {steps.length}-step plan.{" "}
-      {risky
-        ? `${risky} ${risky === 1 ? "step changes or deletes something" : "steps change or delete something"}: Krama will ask you again before ${risky === 1 ? "it" : "each one"}.`
-        : "No destructive actions detected."}{" "}
-      Check the steps, then approve to run them.
+      {t("summary.found", { count: steps.length })}{" "}
+      {risky ? t("summary.risky", { count: risky }) : t("summary.safe")}{" "}
+      {t("summary.check")}
     </p>
   );
 }

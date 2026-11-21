@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import type { RunListItem } from "@/lib/types";
 import { RunStatusBadge } from "./RunStatusBadge";
 
@@ -41,6 +42,7 @@ export function RunListTable({
   error = null,
   className = "",
 }: RunListTableProps) {
+  const t = useTranslations("runs");
   if (isLoading) {
     return (
       <div
@@ -48,7 +50,7 @@ export function RunListTable({
         className="kr-glass flex flex-col items-center justify-center rounded-3xl p-12 text-center"
       >
         <div className="mb-3 size-10 animate-spin rounded-full border-4 border-white/10 border-t-run shadow-[0_0_24px_-4px_var(--run)]" />
-        <p className="text-sm text-ink-400">Loading runs…</p>
+        <p className="text-sm text-ink-400">{t("list.loading")}</p>
       </div>
     );
   }
@@ -63,7 +65,7 @@ export function RunListTable({
           <svg className="size-5 text-danger" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-          Couldn&apos;t load your runs
+          {t("list.loadError")}
         </div>
         <p className="text-xs text-danger">{error}</p>
       </div>
@@ -81,15 +83,15 @@ export function RunListTable({
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
           </svg>
         </div>
-        <h3 className="kr-display text-xl font-bold text-white">No runs yet</h3>
+        <h3 className="kr-display text-xl font-bold text-white">{t("list.emptyTitle")}</h3>
         <p className="text-xs text-ink-400 mt-1 max-w-sm">
-          Each time Krama does a task for you, it shows up here.
+          {t("list.emptyBody")}
         </p>
         <Link
           href="/"
           className="kr-btn kr-btn-primary mt-5 px-5 py-2 text-xs"
         >
-          New tutorial
+          {t("list.newTutorial")}
         </Link>
       </div>
     );
@@ -104,12 +106,12 @@ export function RunListTable({
         <table className="w-full text-left text-sm">
           <thead className="border-b border-white/10 bg-white/[0.03] text-[11px] font-bold uppercase tracking-[0.18em] text-ink-400">
             <tr>
-              <th scope="col" className="py-3.5 px-4">Task</th>
-              <th scope="col" className="py-3.5 px-4">Result</th>
-              <th scope="col" className="py-3.5 px-4">Started</th>
-              <th scope="col" className="py-3.5 px-4">Took</th>
+              <th scope="col" className="py-3.5 px-4">{t("list.colTask")}</th>
+              <th scope="col" className="py-3.5 px-4">{t("list.colResult")}</th>
+              <th scope="col" className="py-3.5 px-4">{t("list.colStarted")}</th>
+              <th scope="col" className="py-3.5 px-4">{t("list.colTook")}</th>
               <th scope="col" className="py-3.5 px-4 text-right">
-                <span className="sr-only">Open</span>
+                <span className="sr-only">{t("list.colOpen")}</span>
               </th>
             </tr>
           </thead>
@@ -127,7 +129,7 @@ export function RunListTable({
                     className="block truncate font-semibold text-white transition-colors group-hover:text-run"
                     title={run.prompt ?? undefined}
                   >
-                    <span data-testid="run-prompt">{run.prompt ?? "(task text unavailable)"}</span>
+                    <span data-testid="run-prompt">{run.prompt ?? t("list.promptUnavailable")}</span>
                     <span data-testid="run-id" className="sr-only">
                       {run.id}
                     </span>
@@ -137,7 +139,7 @@ export function RunListTable({
                       data-testid="run-retries"
                       className="inline-block text-[11px] text-plan mt-0.5"
                     >
-                      {run.retryCount === 1 ? "Retried once" : `Retried ${run.retryCount} times`}
+                      {t("list.retried", { count: run.retryCount })}
                     </span>
                   ) : null}
                 </td>
@@ -162,7 +164,7 @@ export function RunListTable({
                     data-testid="run-view-button"
                     className="kr-btn kr-btn-ghost kr-run px-3 py-1 text-xs"
                   >
-                    Details
+                    {t("list.details")}
                     <svg className="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>

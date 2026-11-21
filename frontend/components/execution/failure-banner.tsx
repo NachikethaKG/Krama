@@ -1,4 +1,5 @@
 import type { ApiError } from "@krama/contracts-ts";
+import { useTranslations } from "next-intl";
 
 export interface FailureBannerProps {
   error?: ApiError | null;
@@ -21,10 +22,9 @@ export function FailureBanner({
   doIt,
   className = "",
 }: FailureBannerProps) {
+  const t = useTranslations("execution");
   const errorCode = error?.code || "validation_error";
-  const errorMessage =
-    error?.message ||
-    "An unrecoverable failure occurred during workflow execution.";
+  const errorMessage = error?.message || t("failureBanner.defaultMessage");
 
   return (
     <div
@@ -53,7 +53,7 @@ export function FailureBanner({
           <div className="flex flex-col gap-1.5">
             <div className="flex flex-wrap items-center gap-2">
               <h3 className="kr-display text-lg font-bold text-white">
-                Workflow Execution Failed
+                {t("failureBanner.title")}
               </h3>
               <span
                 data-testid="failure-code-badge"
@@ -69,7 +69,7 @@ export function FailureBanner({
                 className="flex items-center gap-1.5 text-xs font-medium text-white"
               >
                 <span className="rounded-md bg-danger/25 px-1.5 py-0.5 font-mono text-[10px] text-danger">
-                  Step {failedStep.seq}
+                  {t("failureBanner.step", { seq: failedStep.seq })}
                 </span>
                 <span className="truncate">{failedStep.instructionText}</span>
               </div>
@@ -81,16 +81,13 @@ export function FailureBanner({
 
             {doIt ? (
               <p data-testid="do-it-progress" className="text-xs font-medium text-white">
-                {doIt.done} of {doIt.total} {doIt.total === 1 ? "step" : "steps"} ran; Krama stopped and did not
-                run the rest. Anything those steps created is still there.
+                {t("failureBanner.doItProgress", { done: doIt.done, total: doIt.total })}
               </p>
             ) : null}
 
             <div className="mt-1 flex items-start gap-1.5 text-xs text-ink-400">
-              <span className="font-bold text-plan">Remediation:</span>
-              <span>
-                Verify target system state and inspect the failed step verification assertions.
-              </span>
+              <span className="font-bold text-plan">{t("failureBanner.remediationLabel")}</span>
+              <span>{t("failureBanner.remediation")}</span>
             </div>
           </div>
         </div>
@@ -103,7 +100,7 @@ export function FailureBanner({
               data-testid="plan-it-fresh-btn"
               className="kr-btn kr-btn-ghost kr-approve px-3.5 py-2 text-xs"
             >
-              Plan it fresh
+              {t("failureBanner.planFresh")}
             </a>
           ) : onBackToPlan ? (
             <button
@@ -112,7 +109,7 @@ export function FailureBanner({
               onClick={onBackToPlan}
               className="kr-btn kr-btn-ghost kr-approve px-3.5 py-2 text-xs"
             >
-              Back to Plan
+              {t("failureBanner.backToPlan")}
             </button>
           ) : (
             <a
@@ -120,7 +117,7 @@ export function FailureBanner({
               data-testid="back-to-plan-btn"
               className="kr-btn kr-btn-ghost kr-approve px-3.5 py-2 text-xs"
             >
-              Back to Plan
+              {t("failureBanner.backToPlan")}
             </a>
           )}
 
@@ -144,7 +141,7 @@ export function FailureBanner({
                   d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"
                 />
               </svg>
-              Retry Workflow
+              {t("failureBanner.retry")}
             </button>
           )}
         </div>

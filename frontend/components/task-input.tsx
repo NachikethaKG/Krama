@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import type { Task } from "@krama/contracts-ts";
 import { AlertTriangle, CornerDownLeft, Globe, HelpCircle, Loader2, Sparkles, Terminal, Wrench } from "lucide-react";
 
@@ -25,11 +26,8 @@ export interface TaskInputProps {
   initialPrompt?: string;
 }
 
-const EXAMPLES = [
-  "Show me how to create a private GitHub repository",
-  "How do I add a label to a GitHub repository?",
-  "Create a new branch on GitHub",
-];
+/** Example prompts: taskInput.examples.<key> in the "approval" namespace. */
+const EXAMPLES = ["privateRepo", "addLabel", "newBranch"] as const;
 
 /** Each example chip wears a different spectrum colour. */
 const EXAMPLE_TONES = ["kr-plan", "kr-run", "kr-verify"];
@@ -47,6 +45,7 @@ export function TaskInput({
   devTargets = process.env.NEXT_PUBLIC_DEV_TARGETS === "1",
   initialPrompt = "",
 }: TaskInputProps) {
+  const t = useTranslations("approval");
   const router = useRouter();
   const [apiClient] = useState<ApiClient>(() => client ?? getApiClient());
   const [prompt, setPrompt] = useState(initialPrompt);
@@ -93,9 +92,7 @@ export function TaskInput({
     let latest = current;
     while (latest.status === "planning") {
       if (Date.now() > deadline) {
-        throw new Error(
-          `Planning is taking longer than ${Math.round(planningTimeoutMs / 1000)} s. Try again in a moment.`,
-        );
+        throw new Error(t("taskInput.planningTimeout", { seconds: Math.round(planningTimeoutMs / 1000) }));
       }
       await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
       if (!aliveRef.current) return;
@@ -111,10 +108,10 @@ export function TaskInput({
       return;
     }
     if (latest.status === "failed") {
-      throw new Error(latest.error?.message || "Planning failed");
+      throw new Error(latest.error?.message || t("taskInput.planningFailed"));
     }
     if (!latest.plan_id) {
-      throw new Error("The task is planned but has no plan id");
+      throw new Error(t("taskInput.noPlanId"));
     }
     onTaskCreated?.(latest);
     router.push(`/workflows/${latest.plan_id}/approval`);
@@ -130,7 +127,7 @@ export function TaskInput({
       await waitForPlan(created);
     } catch (err) {
       if (!aliveRef.current) return;
-      setError(errorMessage(err, "Failed to create the task"));
+      setError(errorMessage(err, t("taskInput.createFailed")));
       setPhase("idle");
     }
   };
@@ -151,7 +148,7 @@ export function TaskInput({
 
   return (
     <section
-      aria-label="New tutorial"
+      aria-label={t("taskInput.sectionAria")}
       data-testid="task-input-section"
       className={`kr-spectrum-border kr-ask rounded-[2rem] bg-ink-900/85 p-5 backdrop-blur-xl sm:p-7 ${className}`}
     >
@@ -162,11 +159,11 @@ export function TaskInput({
         <span className="size-3 rounded-full bg-verify shadow-[0_0_10px_var(--verify)]" />
         <span className="ml-3 flex items-center gap-1.5 font-mono text-xs text-ink-400">
           <Terminal className="size-3.5 text-ask" />
-          krama://ask
+          {t("taskInput.consoleTitle")}
         </span>
         <span className="kr-chip ml-auto !py-0.5 !text-[10px]">
           <span className="kr-dot kr-dot-live !size-1.5" />
-          {busy ? "PLANNING" : "READY"}
+          {busy ? t("taskInput.statusPlanning") : t("taskInput.statusReady")}
         </span>
       </div>
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -175,7 +172,7 @@ export function TaskInput({
             htmlFor="task-prompt-input"
             className="kr-display flex items-center gap-2 text-2xl font-extrabold text-white sm:text-3xl"
           >
-            What do you want to learn?
+            {t("taskInput.label")}
           </label>
           <textarea
             id="task-prompt-input"
@@ -184,23 +181,23 @@ export function TaskInput({
             rows={3}
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
-            placeholder="e.g. Show me how to create a private GitHub repository"
+            placeholder={t("taskInput.placeholder")}
             disabled={phase !== "idle"}
             required
             className="kr-input w-full resize-none !rounded-2xl px-5 py-4 text-lg leading-relaxed sm:text-xl"
           />
           {!prompt && phase === "idle" && (
             <div className="flex flex-wrap gap-2" data-testid="example-prompts">
-              {EXAMPLES.map((example, i) => (
+              {EXAMPLES.map((key, i) => (
                 <button
-                  key={example}
+                  key={key}
                   type="button"
-                  onClick={() => setPrompt(example)}
+                  onClick={() => setPrompt(t(`taskInput.examples.${key}`))}
                   className={`${EXAMPLE_TONES[i % EXAMPLE_TONES.length]} kr-chip kr-rise cursor-pointer !px-3.5 !py-1.5 !text-xs transition-all hover:shadow-[0_0_20px_-4px_var(--kr-tone)]`}
                   style={{ animationDelay: `${150 + i * 90}ms` }}
                 >
                   <Sparkles aria-hidden="true" className="size-3" />
-                  {example}
+                  {t(`taskInput.examples.${key}`)}
                 </button>
               ))}
             </div>
@@ -220,7 +217,7 @@ export function TaskInput({
           >
             <summary className="cursor-pointer text-ink-400 hover:text-white">
               <Wrench aria-hidden="true" className="mr-1.5 inline size-3.5 text-plan" />
-              Developer options: choose the target site
+              {t("taskInput.devOptions")}
             </summary>
             <div className="mt-3">
               <TargetPicker
@@ -259,8 +256,10 @@ export function TaskInput({
           >
             <span aria-hidden="true" className="kr-rail absolute inset-x-0 bottom-0 !h-1 !rounded-none" />
             <Loader2 aria-hidden="true" className="mr-2 inline size-4 animate-spin text-run" />
-            Planning the steps… {elapsed > 0 ? `${elapsed} s` : ""} Krama is opening {site?.name ?? "the site"} and
-            working out each step. This usually takes 15–60 seconds.
+            {t("taskInput.planningStatus", {
+              elapsed: elapsed > 0 ? t("taskInput.elapsedSeconds", { seconds: elapsed }) : "",
+              site: site?.name ?? t("taskInput.theSite"),
+            })}
           </div>
         )}
 
@@ -278,7 +277,7 @@ export function TaskInput({
         {phase !== "clarifying" && (
           <div className="flex items-center justify-between gap-3 pt-1">
             <span aria-hidden="true" className="hidden items-center gap-1.5 font-mono text-xs text-ink-400 sm:flex">
-              <CornerDownLeft className="size-3.5" /> plan → approve → run → verify → learn
+              <CornerDownLeft className="size-3.5" /> {t("taskInput.flow")}
             </span>
             <button
               type="submit"
@@ -289,12 +288,12 @@ export function TaskInput({
               {busy ? (
                 <>
                   <Loader2 aria-hidden="true" className="size-4 animate-spin" />
-                  <span>Planning…</span>
+                  <span>{t("taskInput.planningButton")}</span>
                 </>
               ) : (
                 <>
                   <Sparkles aria-hidden="true" className="size-4" />
-                  <span>Plan the steps</span>
+                  <span>{t("taskInput.submit")}</span>
                 </>
               )}
             </button>
@@ -309,17 +308,17 @@ export function TaskInput({
             className="kr-plan kr-tone-card rounded-2xl px-4 py-3 text-sm text-plan"
           >
             <HelpCircle aria-hidden="true" className="mr-2 inline size-4" />
-            {task.clarification_question || "Krama needs a little more detail to plan this."}
+            {task.clarification_question || t("taskInput.clarifyDefault")}
           </p>
           <label htmlFor="task-clarify-input" className="sr-only">
-            Your answer
+            {t("taskInput.answerLabel")}
           </label>
           <input
             id="task-clarify-input"
             data-testid="task-clarify-input"
             value={answer}
             onChange={(e) => setAnswer(e.target.value)}
-            placeholder="Your answer"
+            placeholder={t("taskInput.answerLabel")}
             required
             className="kr-input kr-plan w-full px-4 py-2.5 text-sm"
           />
@@ -330,7 +329,7 @@ export function TaskInput({
               disabled={!answer.trim()}
               className="kr-btn kr-btn-tone kr-plan px-5 py-2.5 text-sm"
             >
-              Send answer
+              {t("taskInput.sendAnswer")}
             </button>
           </div>
         </form>
@@ -351,10 +350,11 @@ function SiteLine({
   sites: Site[];
   onChoose: (site: Site) => void;
 }) {
+  const t = useTranslations("approval");
   if (detection.kind === "unsupported") {
     return (
       <p data-testid="site-unsupported" className="kr-plan kr-tone-card rounded-xl px-3 py-2 text-sm text-plan">
-        Krama can&apos;t do tasks on {detection.name} yet. It works on {sites.map((s) => s.name).join(", ")}.
+        {t("taskInput.siteUnsupported", { name: detection.name, sites: sites.map((s) => s.name).join(", ") })}
       </p>
     );
   }
@@ -362,7 +362,7 @@ function SiteLine({
     return (
       <p data-testid="detected-site" className="flex items-center gap-2 text-sm text-ink-300">
         <Globe aria-hidden="true" className="size-4 text-verify" />
-        Website: <span className="kr-chip kr-verify">{detection.site.name}</span>
+        {t("taskInput.website")} <span className="kr-chip kr-verify">{detection.site.name}</span>
       </p>
     );
   }
@@ -372,7 +372,7 @@ function SiteLine({
       data-testid="site-question"
       className="flex flex-wrap items-center gap-2 text-sm text-ink-300"
     >
-      <span>Which website is this for?</span>
+      <span>{t("taskInput.whichSite")}</span>
       {options.map((option) => (
         <button
           key={option.id}

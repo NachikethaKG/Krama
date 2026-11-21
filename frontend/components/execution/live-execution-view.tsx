@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import type { PauseReason } from "@krama/contracts-ts";
 
 import { VerificationFailureCard } from "@/components/diagnostics";
@@ -28,24 +29,25 @@ export interface LiveExecutionViewProps {
 }
 
 function ProposedSteps({ proposal }: { proposal: ProposedPlanState | null }) {
+  const t = useTranslations("execution");
   if (!proposal || proposal.loading) {
     return (
       <p data-testid="proposed-steps-loading" className="text-xs text-ink-300">
-        Loading the proposed steps…
+        {t("view.proposedLoading")}
       </p>
     );
   }
   if (proposal.error) {
     return (
       <p data-testid="proposed-steps-error" role="alert" className="text-xs font-semibold text-danger">
-        {proposal.error} Allow is disabled; deny cancels the run.
+        {proposal.error} {t("view.proposedError")}
       </p>
     );
   }
   return (
     <div data-testid="proposed-steps" className="rounded-2xl border border-approve/40 bg-ink-950/60 p-3">
       <h4 className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-approve">
-        Proposed remaining steps ({proposal.steps.length})
+        {t("view.proposedTitle", { count: proposal.steps.length })}
       </h4>
       <ol className="flex flex-col gap-2">
         {proposal.steps.map((s) => (
@@ -70,6 +72,7 @@ function ProposedSteps({ proposal }: { proposal: ProposedPlanState | null }) {
 }
 
 export function LiveExecutionView({ runId, speed, client, className = "" }: LiveExecutionViewProps) {
+  const t = useTranslations("execution");
   const {
     runStatus,
     run,
@@ -108,7 +111,7 @@ export function LiveExecutionView({ runId, speed, client, className = "" }: Live
       await api.startTakeover(runId);
       setWatching(true);
     } catch (err) {
-      setTakeoverError(errorMessage(err, "The page can't be taken over right now."));
+      setTakeoverError(errorMessage(err, t("view.takeoverUnavailable")));
     }
   };
 
@@ -119,7 +122,7 @@ export function LiveExecutionView({ runId, speed, client, className = "" }: Live
         className="mx-auto flex w-full max-w-4xl flex-1 flex-col items-center justify-center gap-3 px-4 py-20 text-center"
       >
         <div className="size-12 animate-spin rounded-full border-4 border-white/10 border-t-run shadow-[0_0_30px_-4px_var(--run)]" />
-        <p className="font-mono text-sm text-run">Loading the run…</p>
+        <p className="font-mono text-sm text-run">{t("view.loading")}</p>
       </main>
     );
   }
@@ -130,10 +133,10 @@ export function LiveExecutionView({ runId, speed, client, className = "" }: Live
         data-testid="live-execution-error"
         className="mx-auto flex w-full max-w-4xl flex-1 flex-col items-center justify-center gap-4 px-4 py-20 text-center"
       >
-        <h1 className="kr-display text-4xl font-extrabold text-white">Run Not Found</h1>
+        <h1 className="kr-display text-4xl font-extrabold text-white">{t("view.notFound")}</h1>
         <p className="max-w-md text-sm text-ink-300">{loadError}</p>
         <Link href="/" className="kr-btn kr-btn-primary px-5 py-2 text-sm">
-          Start a new task
+          {t("view.startNewTask")}
         </Link>
       </main>
     );
@@ -153,7 +156,7 @@ export function LiveExecutionView({ runId, speed, client, className = "" }: Live
       className={`mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 px-4 py-8 sm:py-12 ${className}`}
     >
       <ExecutionHeader
-        title={plan?.expected_result ? `Goal: ${plan.expected_result}` : "Doing the task"}
+        title={plan?.expected_result ? t("view.goal", { goal: plan.expected_result }) : t("header.defaultTitle")}
         prompt={task?.prompt}
         targetUrl={task?.target_url}
         targetApp={task?.interpretation?.app}
@@ -180,7 +183,7 @@ export function LiveExecutionView({ runId, speed, client, className = "" }: Live
                 onClick={reconnect}
                 className="kr-btn kr-btn-tone px-3 py-1.5 text-xs"
               >
-                Reconnect
+                {t("view.reconnect")}
               </button>
             )}
             <button
@@ -189,7 +192,7 @@ export function LiveExecutionView({ runId, speed, client, className = "" }: Live
               onClick={dismissError}
               className="text-xs text-ink-300 underline hover:text-white"
             >
-              Dismiss
+              {t("view.dismiss")}
             </button>
           </div>
         </div>
@@ -201,7 +204,7 @@ export function LiveExecutionView({ runId, speed, client, className = "" }: Live
           data-testid="stream-reconnecting"
           className="kr-plan kr-tone-card rounded-2xl p-3 text-xs text-ink-300"
         >
-          Connection to the live view dropped. Reconnecting and resuming from the last event…
+          {t("view.reconnecting")}
         </div>
       )}
 
@@ -216,10 +219,10 @@ export function LiveExecutionView({ runId, speed, client, className = "" }: Live
             />
             <span className="text-xs font-semibold text-ink-300 sm:text-sm">
               {runStatus === "paused"
-                ? "Waiting for you to confirm a step"
+                ? t("view.waitingConfirm")
                 : runStatus === "queued"
-                  ? "Waiting for the run to start…"
-                  : "Workflow is actively executing…"}
+                  ? t("view.waitingStart")
+                  : t("view.executing")}
             </span>
           </div>
 
@@ -230,7 +233,7 @@ export function LiveExecutionView({ runId, speed, client, className = "" }: Live
             onClick={cancel}
             className="kr-btn kr-btn-ghost kr-danger px-3.5 py-1.5 text-xs text-danger"
           >
-            {isCancelling ? "Cancelling…" : "Cancel Run"}
+            {isCancelling ? t("view.cancelling") : t("view.cancel")}
           </button>
         </div>
       )}
@@ -256,7 +259,7 @@ export function LiveExecutionView({ runId, speed, client, className = "" }: Live
         <PolicyConfirmationModal
           isOpen={true}
           stepSeq={pauseDetails.stepSeq}
-          stepInstruction={pausedStep?.instructionText || pauseDetails.message || "Execute the paused step"}
+          stepInstruction={pausedStep?.instructionText || pauseDetails.message || t("view.pausedStepFallback")}
           actionType={pausedStep?.actionType}
           targetRole={pausedStep?.targetRole}
           targetName={pausedStep?.targetName}
@@ -288,9 +291,9 @@ export function LiveExecutionView({ runId, speed, client, className = "" }: Live
                 onClick={startTakeover}
                 className="kr-btn kr-btn-tone px-3.5 py-1.5 text-xs"
               >
-                Take over the page
+                {t("view.takeOver")}
               </button>
-              <span className="text-xs text-ink-300">Do it yourself in Krama&apos;s browser, then hand it back.</span>
+              <span className="text-xs text-ink-300">{t("view.takeOverHint")}</span>
               {takeoverError ? (
                 <span role="alert" data-testid="take-over-error" className="text-xs font-semibold text-danger">
                   {takeoverError}
@@ -341,9 +344,9 @@ export function LiveExecutionView({ runId, speed, client, className = "" }: Live
           className="kr-glass flex flex-col gap-4 rounded-2xl p-4 sm:flex-row sm:items-center sm:justify-between"
         >
           <div>
-            <h3 className="kr-display text-lg font-bold text-white">Workflow Execution Cancelled</h3>
+            <h3 className="kr-display text-lg font-bold text-white">{t("view.cancelledTitle")}</h3>
             <p className="text-xs text-ink-400">
-              The run was halted before all steps could be completed.
+              {t("view.cancelledBody")}
             </p>
           </div>
           <div className="flex shrink-0 items-center gap-2">
@@ -353,7 +356,7 @@ export function LiveExecutionView({ runId, speed, client, className = "" }: Live
                 data-testid="back-to-plan-btn"
                 className="kr-btn kr-btn-ghost kr-approve px-3 py-1.5 text-xs"
               >
-                Back to Plan
+                {t("failureBanner.backToPlan")}
               </a>
             )}
             <Link
@@ -361,7 +364,7 @@ export function LiveExecutionView({ runId, speed, client, className = "" }: Live
               data-testid="new-task-link"
               className="kr-btn kr-btn-primary px-3.5 py-1.5 text-xs"
             >
-              New Task
+              {t("view.newTask")}
             </Link>
           </div>
         </div>
@@ -374,9 +377,9 @@ export function LiveExecutionView({ runId, speed, client, className = "" }: Live
           className="kr-spectrum-border kr-verify flex flex-col gap-3 rounded-3xl bg-ink-900/85 p-5 text-sm font-semibold text-white sm:flex-row sm:items-center sm:justify-between"
         >
           <div>
-            <div className="kr-display kr-gradient-text text-2xl font-extrabold">Tutorial ready</div>
+            <div className="kr-display kr-gradient-text text-2xl font-extrabold">{t("view.tutorialReady")}</div>
             <div className="text-xs font-normal text-ink-300">
-              {totalSteps} verified {totalSteps === 1 ? "step" : "steps"} · 0 failed actions · 0 unresolved states
+              {t("view.completedSummary", { count: totalSteps })}
             </div>
           </div>
           <div className="flex shrink-0 flex-wrap gap-2">
@@ -387,7 +390,7 @@ export function LiveExecutionView({ runId, speed, client, className = "" }: Live
                 data-testid="watch-tutorial-link"
                 className="kr-btn kr-btn-primary px-4 py-2 text-xs"
               >
-                &#9654; Start tutorial
+                &#9654; {t("view.startTutorial")}
               </a>
             )}
             <a
@@ -395,17 +398,17 @@ export function LiveExecutionView({ runId, speed, client, className = "" }: Live
               data-testid="view-workflow-link"
               className="kr-btn kr-btn-tone kr-verify px-4 py-2 text-xs"
             >
-              See each step&apos;s checks &rarr;
+              {t("view.seeChecks")} →
             </a>
           </div>
         </div>
       )}
 
-      <section aria-label="Execution steps" className="flex flex-col gap-3">
+      <section aria-label={t("view.stepsAria")} className="flex flex-col gap-3">
         <div className="flex items-center justify-between px-1">
-          <h2 className="kr-display text-xl font-bold text-white">Execution Steps ({steps.length})</h2>
+          <h2 className="kr-display text-xl font-bold text-white">{t("view.stepsTitle", { count: steps.length })}</h2>
           <span className="kr-chip kr-verify">
-            {verifiedCount}/{totalSteps} verified
+            {t("view.verifiedChip", { verified: verifiedCount, total: totalSteps })}
           </span>
         </div>
 

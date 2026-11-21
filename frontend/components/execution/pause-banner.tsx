@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import type { PauseReason } from "@krama/contracts-ts";
+import { useTranslations } from "next-intl";
 
 export interface PauseBannerProps {
   reason: PauseReason;
@@ -15,30 +16,11 @@ export interface PauseBannerProps {
   className?: string;
 }
 
-/** What "allow" means for each reason (POST /runs/{id}/confirm). "Deny" always cancels the run. */
-export const ALLOW_LABELS: Record<PauseReason, string> = {
-  destructive_action: "Allow this step",
-  captcha: "Continue",
-  auth_wall: "Continue",
-  rate_limited: "Continue",
-  verification_unclear: "Accept this step",
-  replan_review: "Run the proposed steps",
-  recovery_exhausted: "Try the step once more",
-  sensitive_data: "Allow this step",
-  prompt_injection: "Continue anyway",
-};
-
-const REASON_DESCRIPTIONS: Record<PauseReason, string> = {
-  destructive_action: "A destructive action requires human confirmation before proceeding.",
-  captcha: "A bot detection or CAPTCHA was encountered and requires human intervention.",
-  auth_wall: "An authentication barrier was reached and requires manual sign-in.",
-  rate_limited: "A rate limit was triggered; execution is temporarily held.",
-  verification_unclear: "The step ran, but nothing proved it worked. Please check the page and decide.",
-  replan_review: "The agent proposes changed steps after a failure. Review them before it continues.",
-  recovery_exhausted: "The step kept failing and the retry budget is used up. Retry once more or cancel.",
-  sensitive_data: "This step touches sensitive data and needs your confirmation.",
-  prompt_injection: "The page seems to contain instructions aimed at the agent. Please check before continuing.",
-};
+/*
+ * Per reason, in the "execution" namespace: pauseBanner.allow.<reason> is what "allow" means
+ * (POST /runs/{id}/confirm; "Deny" always cancels the run), pauseBanner.description.<reason> explains the stop
+ * and pauseBanner.reason.<reason> names it.
+ */
 
 /** Each pause reason wears its own spectrum tone, so the kind of stop reads at a glance. */
 const REASON_TONES: Record<PauseReason, string> = {
@@ -64,7 +46,9 @@ export function PauseBanner({
   children,
   className = "",
 }: PauseBannerProps) {
-  const reasonText = REASON_DESCRIPTIONS[reason] || "Execution has been paused for safety.";
+  const t = useTranslations("execution");
+  const known = reason in REASON_TONES;
+  const reasonText = known ? t(`pauseBanner.description.${reason}`) : t("pauseBanner.defaultDescription");
 
   return (
     <div
@@ -96,10 +80,10 @@ export function PauseBanner({
           <div className="flex flex-col gap-1">
             <div className="flex flex-wrap items-center gap-2">
               <h3 className="kr-display text-lg font-bold text-white">
-                Execution Paused at Step {stepSeq}
+                {t("pauseBanner.title", { seq: stepSeq })}
               </h3>
               <span className="kr-chip font-mono uppercase">
-                {reason.replace(/_/g, " ")}
+                {known ? t(`pauseBanner.reason.${reason}`) : reason.replace(/_/g, " ")}
               </span>
             </div>
 
@@ -122,7 +106,7 @@ export function PauseBanner({
               <svg aria-hidden="true" className="size-3.5 text-danger" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
               </svg>
-              {isConfirming ? "Processing…" : "Deny & cancel run"}
+              {isConfirming ? t("pauseBanner.processing") : t("pauseBanner.deny")}
             </button>
           )}
 
@@ -146,7 +130,11 @@ export function PauseBanner({
                 d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 010 1.972l-11.54 6.347a1.125 1.125 0 01-1.667-.986V5.653z"
               />
             </svg>
-            {isConfirming ? "Processing…" : ALLOW_LABELS[reason] ?? "Continue"}
+            {isConfirming
+              ? t("pauseBanner.processing")
+              : known
+                ? t(`pauseBanner.allow.${reason}`)
+                : t("pauseBanner.defaultAllow")}
           </button>
         </div>
       </div>

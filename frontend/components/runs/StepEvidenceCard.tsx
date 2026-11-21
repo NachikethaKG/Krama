@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { artifactUrl } from "@/lib/artifacts";
 import type { StepEvidenceDetail, VerificationEvidenceMethod } from "@/lib/types";
 import { RiskBadge } from "@/components/risk-badge";
@@ -11,31 +12,24 @@ export interface StepEvidenceCardProps {
   className?: string;
 }
 
-const METHOD_CONFIG: Record<
-  VerificationEvidenceMethod,
-  { label: string; description: string; className: string }
-> = {
+/** next-intl's `t` for the "runs" namespace, for the text helpers below. */
+export type RunsTranslator = (key: string, values?: Record<string, string | number>) => string;
+
+// Label and description live in messages/<locale>/runs.json under evidence.method.<method>.
+const METHOD_CONFIG: Record<VerificationEvidenceMethod, { className: string }> = {
   url_dom: {
-    label: "Page address",
-    description: "Krama checked the page it landed on after this step.",
     className:
       "bg-run/15 text-run border-run/40",
   },
   aria: {
-    label: "Page content",
-    description: "Krama checked that the page shows the expected button, field or text.",
     className:
       "bg-approve/15 text-approve border-approve/40",
   },
   network: {
-    label: "Site's answer",
-    description: "The website confirmed the change.",
     className:
       "bg-plan/15 text-plan border-plan/40",
   },
   vision: {
-    label: "Screenshot",
-    description: "A look at the screenshot confirmed the step.",
     className:
       "bg-ask/15 text-ask border-ask/40",
   },
@@ -43,14 +37,15 @@ const METHOD_CONFIG: Record<
 
 export function getConfidenceDetails(confidence: number): {
   percentage: number;
-  label: string;
+  /** Message key under evidence.confidence in the "runs" namespace. */
+  labelKey: "sure" | "fairlySure" | "unsure";
   badgeClass: string;
 } {
   const percentage = Math.round(confidence <= 1 ? confidence * 100 : confidence);
   if (percentage >= 90) {
     return {
       percentage,
-      label: "Sure",
+      labelKey: "sure",
       badgeClass:
         "bg-verify/15 text-verify border-verify/40",
     };
@@ -58,14 +53,14 @@ export function getConfidenceDetails(confidence: number): {
   if (percentage >= 70) {
     return {
       percentage,
-      label: "Fairly sure",
+      labelKey: "fairlySure",
       badgeClass:
         "bg-plan/15 text-plan border-plan/40",
     };
   }
   return {
     percentage,
-    label: "Unsure",
+    labelKey: "unsure",
     badgeClass:
       "bg-danger/15 text-danger border-danger/40",
   };
@@ -76,11 +71,14 @@ export function StepEvidenceCard({
   index,
   className = "",
 }: StepEvidenceCardProps) {
+  const t = useTranslations("runs");
   const [imageError, setImageError] = useState(false);
   const [showStateDetails, setShowStateDetails] = useState(false);
 
   const method = step.evidence?.method ?? "url_dom";
-  const methodConfig = METHOD_CONFIG[method] ?? METHOD_CONFIG.url_dom;
+  const methodKey = METHOD_CONFIG[method] ? method : "url_dom";
+  const methodConfig = METHOD_CONFIG[methodKey];
+  const methodLabel = t(`evidence.method.${methodKey}.label`);
   // No invented score: a step without a verification result shows "n/a".
   const confidence = step.evidence?.confidence ?? null;
   const confidenceDetails = getConfidenceDetails(confidence ?? 0);
@@ -120,7 +118,7 @@ export function StepEvidenceCard({
               data-testid="step-action-target"
               className="text-xs text-ink-400 flex items-center gap-2 mt-0.5"
             >
-              <span>{describeAction(step.actionType, step.targetRole, step.targetName)}</span>
+              <span>{describeAction(t, step.actionType, step.targetRole, step.targetName)}</span>
             </div>
           </div>
         </div>
@@ -143,17 +141,17 @@ export function StepEvidenceCard({
                 <svg className="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                 </svg>
-                Verified
+                {t("evidence.verified")}
               </>
             ) : isFailed ? (
               <>
                 <svg className="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
                 </svg>
-                Failed
+                {t("evidence.failed")}
               </>
             ) : (
-              "Pending"
+              t("evidence.pending")
             )}
           </span>
         </div>
@@ -165,7 +163,7 @@ export function StepEvidenceCard({
           {/* Method badge */}
           <div className="rounded-2xl border border-white/10 bg-ink-950/50 p-3">
             <span className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.16em] text-ink-400">
-              How it was checked
+              {t("evidence.howChecked")}
             </span>
             <div className="flex items-center gap-2">
               <span
@@ -176,18 +174,18 @@ export function StepEvidenceCard({
                 <svg className="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                 </svg>
-                {methodConfig.label}
+                {methodLabel}
               </span>
             </div>
             <p className="text-[11px] text-ink-400 mt-1">
-              {methodConfig.description}
+              {t(`evidence.method.${methodKey}.description`)}
             </p>
           </div>
 
           {/* Confidence Score */}
           <div className="rounded-2xl border border-white/10 bg-ink-950/50 p-3">
             <span className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.16em] text-ink-400">
-              How sure
+              {t("evidence.howSure")}
             </span>
             <div className="flex items-center gap-2">
               <span
@@ -199,10 +197,10 @@ export function StepEvidenceCard({
                     : confidenceDetails.badgeClass
                 }`}
               >
-                {confidence === null ? "n/a" : `${confidenceDetails.percentage}%`}
+                {confidence === null ? t("evidence.notApplicable") : `${confidenceDetails.percentage}%`}
               </span>
               <span className="text-xs text-ink-400">
-                {confidence === null ? "Not verified yet" : confidenceDetails.label}
+                {confidence === null ? t("evidence.notVerified") : t(`evidence.confidence.${confidenceDetails.labelKey}`)}
               </span>
             </div>
             <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-white/[0.07]">
@@ -226,11 +224,11 @@ export function StepEvidenceCard({
         <div className="space-y-1.5">
           <div className="flex items-center justify-between text-xs text-ink-400">
             <span className="font-semibold text-ink-300">
-              Screenshot after this step
+              {t("evidence.screenshotAfter")}
             </span>
             {step.timing?.durationMs && (
               <span className="text-ink-400 text-[11px]">
-                Duration: {step.timing.durationMs}ms
+                {t("evidence.duration", { ms: step.timing.durationMs })}
               </span>
             )}
           </div>
@@ -240,7 +238,7 @@ export function StepEvidenceCard({
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={effectiveScreenshotUrl}
-                alt={`Verification screenshot for step ${step.seq}: ${step.instructionText}`}
+                alt={t("evidence.screenshotAlt", { seq: step.seq, instruction: step.instructionText })}
                 data-testid="step-screenshot"
                 onError={() => setImageError(true)}
                 className="max-h-[360px] w-auto max-w-full object-contain mx-auto"
@@ -265,12 +263,10 @@ export function StepEvidenceCard({
                   />
                 </svg>
                 <span className="text-xs font-medium text-ink-300">
-                  {imageError
-                    ? "Screenshot failed to load from artifact store"
-                    : "No screenshot captured for this step"}
+                  {imageError ? t("evidence.screenshotFailed") : t("evidence.noScreenshot")}
                 </span>
                 <span className="text-[11px] text-ink-400 mt-0.5">
-                  Verification was recorded via {methodConfig.label}
+                  {t("evidence.recordedVia", { method: methodLabel })}
                 </span>
               </div>
             )}
@@ -294,7 +290,7 @@ export function StepEvidenceCard({
               >
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
-              {showStateDetails ? "Hide" : "Show"} technical details
+              {showStateDetails ? t("evidence.hideDetails") : t("evidence.showDetails")}
             </button>
 
             {showStateDetails && (
@@ -305,11 +301,11 @@ export function StepEvidenceCard({
                 {/* Expected */}
                 <div className="rounded-2xl border border-white/10 bg-ink-950/50 p-3">
                   <span className="font-semibold text-white block mb-1">
-                    Expected State
+                    {t("evidence.expectedState")}
                   </span>
                   {step.expectedState?.url_matches && (
                     <div className="mb-1">
-                      <span className="text-ink-400">URL matches: </span>
+                      <span className="text-ink-400">{t("evidence.urlMatches")} </span>
                       <code className="font-mono text-[11px] bg-white/5 px-1 py-0.5 rounded">
                         {step.expectedState.url_matches}
                       </code>
@@ -317,10 +313,10 @@ export function StepEvidenceCard({
                   )}
                   {step.expectedState?.visible && step.expectedState.visible.length > 0 && (
                     <div>
-                      <span className="text-ink-400">Visible: </span>
+                      <span className="text-ink-400">{t("evidence.visible")} </span>
                       {step.expectedState.visible.map((el, i) => (
                         <span key={i} className="font-mono text-[11px] text-ink-300">
-                          [{el.role}: &quot;{el.name}&quot;]
+                          {t("evidence.visibleElement", { role: el.role, name: el.name })}
                         </span>
                       ))}
                     </div>
@@ -330,11 +326,11 @@ export function StepEvidenceCard({
                 {/* Observed */}
                 <div className="rounded-2xl border border-white/10 bg-ink-950/50 p-3">
                   <span className="font-semibold text-white block mb-1">
-                    Observed State
+                    {t("evidence.observedState")}
                   </span>
                   {step.observedState?.url && (
                     <div className="mb-1">
-                      <span className="text-ink-400">URL: </span>
+                      <span className="text-ink-400">{t("evidence.url")} </span>
                       <code className="font-mono text-[11px] bg-white/5 px-1 py-0.5 rounded">
                         {step.observedState.url}
                       </code>
@@ -342,7 +338,7 @@ export function StepEvidenceCard({
                   )}
                   {step.observedState?.title && (
                     <div>
-                      <span className="text-ink-400">Title: </span>
+                      <span className="text-ink-400">{t("evidence.title")} </span>
                       <span className="text-ink-300">{step.observedState.title}</span>
                     </div>
                   )}
@@ -356,47 +352,46 @@ export function StepEvidenceCard({
   );
 }
 
-const ACTION_VERBS: Record<string, string> = {
-  navigate: "Opened a page",
-  click: "Clicked",
-  fill: "Typed into",
-  select: "Chose an option in",
-  press: "Pressed a key in",
-  wait: "Waited for",
-  scroll: "Scrolled to",
-};
-
-const ROLE_NAMES: Record<string, string> = {
-  textbox: "the field",
-  searchbox: "the search field",
-  combobox: "the field",
-  button: "the button",
-  link: "the link",
-  checkbox: "the checkbox",
-  radio: "the option",
-  tab: "the tab",
-  menuitem: "the menu item",
-};
+// Message keys under evidence.action / evidence.role in the "runs" namespace.
+const ACTION_VERBS = new Set(["navigate", "click", "fill", "select", "press", "wait", "scroll"]);
+const ROLE_NAMES = new Set([
+  "textbox",
+  "searchbox",
+  "combobox",
+  "button",
+  "link",
+  "checkbox",
+  "radio",
+  "tab",
+  "menuitem",
+]);
 
 /** "Clicked the button “Create label”" instead of "click · role: button · name: Create label" (#318). */
-export function describeAction(action: string, role?: string | null, name?: string | null): string {
-  const verb = ACTION_VERBS[action] ?? action;
+export function describeAction(
+  t: RunsTranslator,
+  action: string,
+  role?: string | null,
+  name?: string | null,
+): string {
+  const verb = ACTION_VERBS.has(action) ? t(`evidence.action.${action}`) : action;
   if (!name) return verb;
   const cleanName = name.replace(/\s*\*+\s*$/, "").trim();
-  const what = role ? (ROLE_NAMES[role] ?? `the ${role}`) : "";
-  return `${verb} ${what} \u201c${cleanName || name}\u201d`.replace(/\s+/g, " ");
+  const what = role ? (ROLE_NAMES.has(role) ? t(`evidence.role.${role}`) : t("evidence.role.other", { role })) : "";
+  return t("evidence.actionTarget", { verb, what, name: cleanName || name }).replace(/\s+/g, " ");
 }
 
+// Message keys under evidence.methodLabel in the "runs" namespace.
 const METHOD_LABELS: Record<string, string> = {
-  url: "page address",
-  url_dom: "page address",
-  dom: "page content",
-  aria: "page content",
-  network: "site's answer",
+  url: "page",
+  url_dom: "page",
+  dom: "content",
+  aria: "content",
+  network: "site",
   vision: "screenshot",
 };
 
-export function getMethodLabel(method: string): string {
+export function getMethodLabel(t: RunsTranslator, method: string): string {
   const normalized = method.toLowerCase();
-  return METHOD_LABELS[normalized] ?? normalized.replace(/_/g, " ");
+  const key = METHOD_LABELS[normalized];
+  return key ? t(`evidence.methodLabel.${key}`) : normalized.replace(/_/g, " ");
 }

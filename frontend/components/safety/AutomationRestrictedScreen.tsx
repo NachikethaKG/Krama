@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useTranslations } from "next-intl";
 
 export interface AutomationRestrictedScreenProps {
   barrierType: string;
@@ -14,56 +15,19 @@ export interface AutomationRestrictedScreenProps {
   className?: string;
 }
 
-interface BarrierInfo {
-  title: string;
-  badge: string;
-  explanation: string;
-}
-
-const BARRIER_CONFIG: Record<string, BarrierInfo> = {
-  cloudflare_turnstile: {
-    title: "Cloudflare Turnstile Detected",
-    badge: "Cloudflare Turnstile",
-    explanation:
-      "A Cloudflare Turnstile challenge was encountered. Automated agents are strictly restricted from attempting to bypass or evade bot verification per Krama safety baseline rules.",
-  },
-  cloudflare_challenge: {
-    title: "Cloudflare Challenge Interstitial",
-    badge: "Cloudflare Challenge",
-    explanation:
-      "A Cloudflare security challenge or bot interstitial was detected. Automated bypass is strictly prevented per safety policy.",
-  },
-  recaptcha: {
-    title: "Google reCAPTCHA Encountered",
-    badge: "Google reCAPTCHA",
-    explanation:
-      "A Google reCAPTCHA challenge was detected on the page. Automated solving is disallowed; manual resolution is required.",
-  },
-  hcaptcha: {
-    title: "hCaptcha Challenge Encountered",
-    badge: "hCaptcha",
-    explanation:
-      "An hCaptcha challenge was detected on the page. Automated solving is disallowed; manual resolution is required.",
-  },
-  captcha: {
-    title: "CAPTCHA Challenge Encountered",
-    badge: "CAPTCHA Barrier",
-    explanation:
-      "A bot detection challenge (CAPTCHA) was encountered. Human intervention is required to complete the verification before automation can continue.",
-  },
-  auth_wall: {
-    title: "Authentication / Login Gate Encountered",
-    badge: "Login Barrier",
-    explanation:
-      "A login screen or authentication gate was reached that requires user authentication credentials. Manual sign-in is required before automation can proceed.",
-  },
-  login_wall: {
-    title: "Login Wall Encountered",
-    badge: "Login Barrier",
-    explanation:
-      "A login screen or authentication gate was reached that requires user authentication credentials. Manual sign-in is required before automation can proceed.",
-  },
-};
+/**
+ * Known barriers. Title, badge and explanation are messages under restricted.barrier.<key> in the "safety"
+ * namespace; login_wall shares auth_wall's badge and explanation.
+ */
+const BARRIER_KEYS = new Set([
+  "cloudflare_turnstile",
+  "cloudflare_challenge",
+  "recaptcha",
+  "hcaptcha",
+  "captcha",
+  "auth_wall",
+  "login_wall",
+]);
 
 export function AutomationRestrictedScreen({
   barrierType,
@@ -74,14 +38,18 @@ export function AutomationRestrictedScreen({
   runHref,
   className = "",
 }: AutomationRestrictedScreenProps) {
+  const t = useTranslations("safety");
   const normalizedKey = barrierType.toLowerCase().replace(/-/g, "_").trim();
-  const barrier =
-    BARRIER_CONFIG[normalizedKey] || {
-      title: "Security Barrier Encountered",
-      badge: barrierType.replace(/_/g, " ").toUpperCase(),
-      explanation:
-        "An anti-bot challenge or authentication restriction was encountered. Automated bypass is prohibited per safety baseline rules.",
-    };
+  const barrier = BARRIER_KEYS.has(normalizedKey)
+    ? {
+        badge: t(`restricted.barrier.${normalizedKey}.badge`),
+        explanation: t(`restricted.barrier.${normalizedKey}.explanation`),
+      }
+    : {
+        // An unknown barrier type from the API is shown as-is.
+        badge: barrierType.replace(/_/g, " ").toUpperCase(),
+        explanation: t("restricted.unknownExplanation"),
+      };
 
   return (
     <div
@@ -119,7 +87,7 @@ export function AutomationRestrictedScreen({
           <div className="flex-1 min-w-0">
             <div className="flex flex-wrap items-center gap-2.5">
               <h2 className="kr-display text-2xl font-extrabold text-white">
-                Automation restricted &rarr; Take over manually
+                {t("restricted.title")} → {t("restricted.titleAction")}
               </h2>
               <span
                 data-testid="barrier-type-badge"
@@ -137,7 +105,7 @@ export function AutomationRestrictedScreen({
         {/* Detailed Message / Reason Banner */}
         {message && (
           <div className="rounded-2xl border border-plan/40 bg-plan/10 p-3.5 text-xs text-plan">
-            <span className="font-bold">Detection Detail: </span>
+            <span className="font-bold">{t("restricted.detectionDetail")} </span>
             {message}
           </div>
         )}
@@ -148,7 +116,7 @@ export function AutomationRestrictedScreen({
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <span className="text-[11px] font-bold uppercase tracking-widest text-run">
-                Target Location {stepSeq ? `(Step ${stepSeq})` : ""}
+                {t("restricted.targetLocation")} {stepSeq ? t("restricted.stepSuffix", { seq: stepSeq }) : ""}
               </span>
               <p className="mt-1 break-all font-mono text-xs font-medium text-white">
                 {targetUrl}
@@ -162,7 +130,7 @@ export function AutomationRestrictedScreen({
               data-testid="open-target-url-btn"
               className="kr-btn kr-btn-tone kr-run shrink-0 px-4 py-2 text-xs"
             >
-              Open Target URL
+              {t("restricted.openTarget")}
               <svg aria-hidden="true" className="size-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
               </svg>
@@ -174,18 +142,19 @@ export function AutomationRestrictedScreen({
         {/* Manual Takeover Instructions */}
         <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
           <h3 className="text-xs font-bold uppercase tracking-widest text-approve">
-            Manual Takeover Workflow
+            {t("restricted.howTitle")}
           </h3>
           <ol className="mt-2.5 list-decimal space-y-1.5 pl-4 text-xs leading-relaxed text-ink-300 marker:font-bold marker:text-approve">
             <li>
-              Click <span className="font-semibold text-white">&ldquo;Open Target URL&rdquo;</span> to view the blocked challenge page in your browser.
+              {t.rich("restricted.how1", {
+                b: (chunks) => <span className="font-semibold text-white">{chunks}</span>,
+              })}
             </li>
             <li>
-              Complete the CAPTCHA puzzle, check Turnstile verification, or sign into your account manually.
+              {t("restricted.how2")}
             </li>
             <li>
-              Finish the remaining steps yourself. The automated run has stopped and cannot be resumed; start a new
-              task once the site no longer shows the challenge.
+              {t("restricted.how3")}
             </li>
           </ol>
         </div>
@@ -198,7 +167,7 @@ export function AutomationRestrictedScreen({
               data-testid="takeover-run-link"
               className="kr-btn kr-btn-ghost px-5 py-2.5 text-xs"
             >
-              View run evidence
+              {t("restricted.viewRun")}
             </a>
           )}
           <a
@@ -206,7 +175,7 @@ export function AutomationRestrictedScreen({
             data-testid="takeover-new-task-link"
             className="kr-btn kr-btn-primary px-6 py-2.5 text-xs"
           >
-            Start a new task
+            {t("restricted.newTask")}
           </a>
         </div>
       </div>

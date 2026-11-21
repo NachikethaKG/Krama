@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 export type ReplanStatus =
   | "idle"
@@ -35,6 +36,7 @@ export function ReplanStatusIndicator({
   onResume,
   className = "",
 }: ReplanStatusIndicatorProps) {
+  const t = useTranslations("execution");
   const [countdown, setCountdown] = useState<number | undefined>(timeoutSeconds);
   const [prevTimeout, setPrevTimeout] = useState<number | undefined>(timeoutSeconds);
 
@@ -99,10 +101,10 @@ export function ReplanStatusIndicator({
             <div className="flex flex-wrap items-center gap-2">
               <h3 className="kr-display text-lg font-bold text-white">
                 {isExhausted
-                  ? "Automatic Recovery Exhausted"
+                  ? t("replan.exhaustedTitle")
                   : isSucceeded
-                    ? "Replan Recovery Succeeded"
-                    : "Live Agent Recovery & Replanning"}
+                    ? t("replan.succeededTitle")
+                    : t("replan.activeTitle")}
               </h3>
 
               {/* Status Badge */}
@@ -120,7 +122,7 @@ export function ReplanStatusIndicator({
                           : "kr-verify"
                 }`}
               >
-                {status}
+                {t(`replan.status.${status}`)}
               </span>
 
               {/* Attempt Counter Badge */}
@@ -128,14 +130,16 @@ export function ReplanStatusIndicator({
                 data-testid="replan-attempt-counter"
                 className="rounded-full border border-white/15 bg-white/5 px-2.5 py-0.5 font-mono text-xs font-semibold text-ink-300"
               >
-                {maxAttempts ? `Attempt ${attempt} of ${maxAttempts}` : `Attempt ${attempt}`}
+                {maxAttempts
+                  ? t("replan.attemptOf", { attempt, max: maxAttempts })
+                  : t("replan.attempt", { attempt })}
               </span>
             </div>
 
             {/* Reason */}
             {reason && (
               <p data-testid="replan-reason" className="text-xs text-ink-300">
-                <span className="font-bold text-white">Trigger:</span> {reason}
+                <span className="font-bold text-white">{t("replan.trigger")}</span> {reason}
               </p>
             )}
 
@@ -143,13 +147,13 @@ export function ReplanStatusIndicator({
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-ink-400">
               {strategy && (
                 <span data-testid="replan-strategy">
-                  <strong className="text-ink-300">Strategy:</strong> {strategy}
+                  <strong className="text-ink-300">{t("replan.strategy")}</strong> {strategy}
                 </span>
               )}
 
               {countdown !== undefined && countdown > 0 && !isExhausted && !isSucceeded && (
                 <span data-testid="replan-timeout" className="font-mono font-bold text-plan">
-                  Timeout in {countdown}s
+                  {t("replan.timeout", { seconds: countdown })}
                 </span>
               )}
             </div>
@@ -170,7 +174,7 @@ export function ReplanStatusIndicator({
                   <svg className="size-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
                   </svg>
-                  Manual Takeover
+                  {t("replan.takeover")}
                 </button>
               )}
 
@@ -184,7 +188,7 @@ export function ReplanStatusIndicator({
                   <svg className="size-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                   </svg>
-                  Abort Run
+                  {t("replan.abort")}
                 </button>
               )}
             </>
@@ -197,7 +201,7 @@ export function ReplanStatusIndicator({
               onClick={onAbort}
               className="kr-btn kr-btn-ghost px-2.5 py-1 text-xs"
             >
-              Cancel Replan
+              {t("replan.cancel")}
             </button>
           )}
         </div>

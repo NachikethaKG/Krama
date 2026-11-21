@@ -1,4 +1,5 @@
 import type { VerificationMethod } from "@krama/contracts-ts";
+import { useTranslations } from "next-intl";
 
 import { RiskBadge } from "@/components/risk-badge";
 import { describeAction, getMethodLabel } from "@/components/runs/StepEvidenceCard";
@@ -35,6 +36,9 @@ export function StepProgressItem({
   observedTitle,
   className = "",
 }: StepProgressItemProps) {
+  const t = useTranslations("execution");
+  // describeAction / getMethodLabel are shared with the run evidence card, so their text lives in "runs".
+  const tRuns = useTranslations("runs");
   return (
     <li
       data-testid="step-progress-item"
@@ -61,7 +65,7 @@ export function StepProgressItem({
           {status === "started" && (
             <div
               data-testid="step-spinner"
-              aria-label={`Step ${seq} executing`}
+              aria-label={t("stepItem.executingAria", { seq })}
               className="size-6 animate-spin rounded-full border-[3px] border-run border-t-transparent shadow-[0_0_14px_var(--run)]"
             />
           )}
@@ -69,7 +73,7 @@ export function StepProgressItem({
           {status === "verified" && (
             <span
               data-testid="step-verified-icon"
-              aria-label={`Step ${seq} verified`}
+              aria-label={t("stepItem.verifiedAria", { seq })}
               className="flex size-7 items-center justify-center rounded-full bg-verify text-oncolor shadow-[0_0_18px_var(--verify)]"
             >
               <svg className="size-4" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
@@ -81,7 +85,7 @@ export function StepProgressItem({
           {status === "failed" && (
             <span
               data-testid="step-failed-icon"
-              aria-label={`Step ${seq} failed`}
+              aria-label={t("stepItem.failedAria", { seq })}
               className="flex size-7 items-center justify-center rounded-full bg-danger text-oncolor shadow-[0_0_18px_var(--danger)]"
             >
               <svg className="size-4" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
@@ -93,7 +97,7 @@ export function StepProgressItem({
           {status === "pending" && (
             <div
               data-testid="step-pending-icon"
-              aria-label={`Step ${seq} pending`}
+              aria-label={t("stepItem.pendingAria", { seq })}
               className="flex size-7 items-center justify-center rounded-full border border-white/15 bg-ink-850 font-mono text-xs font-bold text-ink-400"
             >
               {seq}
@@ -108,7 +112,7 @@ export function StepProgressItem({
               data-testid="step-action-target"
               className="text-xs text-ink-400"
             >
-              {describeAction(actionType, targetRole, targetName)}
+              {describeAction(tRuns, actionType, targetRole, targetName)}
             </span>
 
             {/* Status pills */}
@@ -118,7 +122,7 @@ export function StepProgressItem({
                 className="kr-chip kr-run"
               >
                 <span className="kr-dot kr-dot-live !size-1.5" />
-                Executing…
+                {t("stepItem.executing")}
               </span>
             )}
 
@@ -127,7 +131,7 @@ export function StepProgressItem({
                 data-testid="step-verified-badge"
                 className="kr-chip kr-verify"
               >
-                Verified
+                {t("stepItem.verified")}
               </span>
             )}
 
@@ -136,7 +140,7 @@ export function StepProgressItem({
                 data-testid="step-failed-badge"
                 className="kr-chip kr-danger"
               >
-                Failed
+                {t("stepItem.failed")}
               </span>
             )}
           </div>
@@ -151,8 +155,8 @@ export function StepProgressItem({
           {/* Verification methods badges */}
           {status === "verified" && methods && methods.length > 0 && (
             <div data-testid="step-methods" className="flex flex-wrap items-center gap-1.5 pt-1">
-              <span className="text-xs text-ink-400">Checked:</span>
-              {Array.from(new Set(methods.map(getMethodLabel))).map((label) => (
+              <span className="text-xs text-ink-400">{t("stepItem.checked")}</span>
+              {Array.from(new Set(methods.map((m) => getMethodLabel(tRuns, m)))).map((label) => (
                 <span
                   key={label}
                   className="rounded-md border border-verify/40 bg-verify/10 px-1.5 py-0.5 text-[11px] font-medium text-verify"
@@ -173,13 +177,13 @@ export function StepProgressItem({
                 <svg className="size-4 shrink-0 text-danger" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
                 </svg>
-                <span>Verification Failed</span>
+                <span>{t("stepItem.verificationFailed")}</span>
               </div>
-              <p className="mt-1 leading-normal">{error || "Observed state did not match expected preconditions."}</p>
+              <p className="mt-1 leading-normal">{error || t("stepItem.defaultError")}</p>
               {(observedUrl || observedTitle) && (
                 <div className="mt-2 font-mono text-[11px] text-ink-300">
-                  {observedUrl && <div>Observed URL: {observedUrl}</div>}
-                  {observedTitle && <div>Observed Title: {observedTitle}</div>}
+                  {observedUrl && <div>{t("stepItem.observedUrl", { url: observedUrl })}</div>}
+                  {observedTitle && <div>{t("stepItem.observedTitle", { title: observedTitle })}</div>}
                 </div>
               )}
             </div>

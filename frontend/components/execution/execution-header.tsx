@@ -1,4 +1,5 @@
 import { Radio } from "lucide-react";
+import { useTranslations } from "next-intl";
 import type { RunExecutionStatus } from "@/hooks/useRunExecutionStream";
 
 export interface ExecutionHeaderProps {
@@ -32,6 +33,7 @@ export function ExecutionHeader({
   totalSteps,
   className = "",
 }: ExecutionHeaderProps) {
+  const t = useTranslations("execution");
   // Each run state wears a spectrum tone: running = cyan, paused = amber, failed = coral, done = lime.
   const statusColorMap: Record<RunExecutionStatus, { tone: string; live: boolean }> = {
     idle: { tone: "var(--ink-400)", live: false },
@@ -56,7 +58,7 @@ export function ExecutionHeader({
           <div className="flex flex-wrap items-center gap-2">
             <span className="kr-chip kr-run">
               <Radio aria-hidden="true" className="size-3" />
-              Live Execution
+              {t("header.badge")}
             </span>
             {targetApp && (
               <span className="kr-chip kr-approve">
@@ -69,12 +71,12 @@ export function ExecutionHeader({
               className="kr-chip uppercase tracking-wider"
             >
               <span className={`kr-dot !size-1.5 ${statusStyle.live ? "kr-dot-live" : ""}`} />
-              {runStatus}
+              {t(`header.status.${runStatus}`)}
             </span>
           </div>
 
           <h1 className="kr-display text-3xl font-extrabold text-white sm:text-4xl">
-            {title || "Doing the task"}
+            {title || t("header.defaultTitle")}
           </h1>
           {prompt && (
             <p className="text-sm font-medium text-ink-300">
@@ -86,7 +88,7 @@ export function ExecutionHeader({
         {/* Live Elapsed Timer */}
         <div className="flex flex-row items-center gap-2 rounded-2xl border border-white/10 bg-ink-950/70 px-4 py-2.5 sm:flex-col sm:items-end">
           <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-ink-400">
-            Elapsed
+            {t("header.elapsed")}
           </span>
           <span
             data-testid="elapsed-timer"
@@ -101,7 +103,7 @@ export function ExecutionHeader({
       <div className="mt-6 flex flex-col gap-2.5 border-t border-white/10 pt-4">
         <div className="flex items-center justify-between text-xs font-medium">
           <span className="text-ink-300">
-            Progress: {verifiedCount} of {totalSteps} steps verified
+            {t("header.progress", { verified: verifiedCount, total: totalSteps })}
           </span>
           <span data-testid="progress-percent" className="font-mono font-bold text-white">
             {progressPercent}%
@@ -124,7 +126,7 @@ export function ExecutionHeader({
 
         {targetUrl && (
           <div className="mt-1 flex items-center gap-1.5 text-xs text-ink-400">
-            <span>Website:</span>
+            <span>{t("header.website")}</span>
             <a
               href={targetUrl}
               target="_blank"

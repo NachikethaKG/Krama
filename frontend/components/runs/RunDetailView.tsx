@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { getApiClient, type ApiClient } from "@/lib/api";
 import type { RunDetails } from "@/lib/types";
 import { RunDetailHeader } from "./RunDetailHeader";
@@ -20,6 +21,7 @@ export function RunDetailView({
   initialDetails,
   className = "",
 }: RunDetailViewProps) {
+  const t = useTranslations("runs");
   const [details, setDetails] = useState<RunDetails | null>(initialDetails ?? null);
   const [isLoading, setIsLoading] = useState(!initialDetails);
   const [error, setError] = useState<string | null>(null);
@@ -59,10 +61,10 @@ export function RunDetailView({
         >
           <div className="mb-4 size-12 animate-spin rounded-full border-4 border-white/10 border-t-verify shadow-[0_0_30px_-4px_var(--verify)]" />
           <h2 className="text-base font-semibold text-ink-300">
-            Loading Run Verification Evidence…
+            {t("detailView.loading")}
           </h2>
           <p className="text-xs text-ink-400 mt-1">
-            Fetching step screenshots and multi-layer verification scores from artifact store
+            {t("detailView.loadingHint")}
           </p>
         </div>
       </main>
@@ -82,10 +84,10 @@ export function RunDetailView({
             </svg>
           </div>
           <h2 className="kr-display text-2xl font-extrabold text-white">
-            Run Not Found
+            {t("detailView.notFound")}
           </h2>
           <p className="text-xs sm:text-sm text-ink-400 mt-1 max-w-md mx-auto">
-            {error || `The requested run "${runId}" does not exist or its execution artifacts were deleted.`}
+            {error || t("detailView.notFoundBody", { runId })}
           </p>
           <div className="mt-6 flex items-center justify-center gap-3">
             <Link
@@ -93,7 +95,7 @@ export function RunDetailView({
               data-testid="back-to-runs-button"
               className="kr-btn kr-btn-ghost px-4 py-2 text-xs"
             >
-              Back to runs
+              {t("detailView.backToRuns")}
             </Link>
           </div>
         </div>
@@ -111,7 +113,7 @@ export function RunDetailView({
           data-testid="run-live-link"
           className="kr-btn kr-btn-primary self-start px-4 py-1.5 text-xs"
         >
-          Open the live view &rarr;
+          {t("detailView.openLive")} →
         </Link>
       )}
 
@@ -129,14 +131,16 @@ export function RunDetailView({
         <div className="flex items-center justify-between border-b border-white/10 pb-3">
           <div>
             <h2 className="kr-display text-2xl font-extrabold text-white sm:text-3xl">
-              What Krama did and <span className="kr-gradient-text">checked</span>
+              {t.rich("detailView.title", {
+                em: (chunks) => <span className="kr-gradient-text">{chunks}</span>,
+              })}
             </h2>
             <p className="text-xs text-ink-400">
-              Each step, how it was checked, and a screenshot of the page right after it.
+              {t("detailView.subtitle")}
             </p>
           </div>
           <span className="kr-chip kr-verify">
-            {details.steps.length} {details.steps.length === 1 ? "Step" : "Steps"}
+            {t("detailView.stepCount", { count: details.steps.length })}
           </span>
         </div>
 
@@ -145,7 +149,7 @@ export function RunDetailView({
             data-testid="steps-empty-state"
             className="rounded-3xl border border-dashed border-white/15 bg-ink-900/40 p-8 text-center text-xs text-ink-400"
           >
-            No steps executed for this workflow run yet.
+            {t("detailView.noSteps")}
           </div>
         ) : (
           <div data-testid="step-evidence-list" className="relative space-y-4">

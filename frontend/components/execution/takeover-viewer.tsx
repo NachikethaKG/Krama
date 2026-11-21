@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { HandBackDone, TakeoverInput } from "@krama/contracts-ts";
 import { Hand, Loader2, MonitorPlay, ShieldAlert } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { type ApiClient, type TakeoverServerMessage, errorMessage } from "@/lib/api";
 
 const WIDTH = 1280;
@@ -20,11 +21,11 @@ export interface TakeoverViewerProps {
   onEnded: () => void;
 }
 
-const HAND_BACK: { done: HandBackDone; label: string; detail: string }[] = [
-  { done: "barrier", label: "I cleared what was in the way", detail: "Krama checks the page and does the step itself." },
-  { done: "step", label: "I did this step", detail: "Krama checks the step worked, then goes on." },
-  { done: "rest", label: "I finished the task", detail: "Krama checks the end result." },
-];
+/** Label and detail of each choice: handBack.<done>.label / .detail in the "takeover" namespace. */
+const HAND_BACK: HandBackDone[] = ["barrier", "step", "rest"];
+
+/** Text from the server is shown as-is; our own text is a message key, translated when rendered. */
+type Text = { key: string } | { text: string };
 
 /** Modifier flags for the contract's TakeoverModifiers. */
 function modifiers(e: { altKey: boolean; ctrlKey: boolean; metaKey: boolean; shiftKey: boolean }) {
@@ -36,12 +37,14 @@ function modifiers(e: { altKey: boolean; ctrlKey: boolean; metaKey: boolean; shi
  * paste, then hands back by saying what they did. Frames are shown and dropped, never stored.
  */
 export function TakeoverViewer({ runId, stepSeq, client, onEnded }: TakeoverViewerProps) {
+  const t = useTranslations("takeover");
+  const show = (m: Text) => ("key" in m ? t(m.key) : m.text);
   const [frame, setFrame] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
+  const [notice, setNotice] = useState<Text | null>(null);
   const [ended, setEnded] = useState<TakeoverServerMessage["reason"] | null>(null);
   const [choosing, setChoosing] = useState(false);
   const [sending, setSending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<Text | null>(null);
   const screen = useRef<ReturnType<ApiClient["openScreen"]> | null>(null);
   const surface = useRef<HTMLDivElement | null>(null);
   const lastMove = useRef(0);
@@ -51,12 +54,12 @@ export function TakeoverViewer({ runId, stepSeq, client, onEnded }: TakeoverView
     screen.current = connection;
     connection.onFrame(setFrame);
     connection.onMessage((message) => {
-      if (message.type === "blocked") setNotice(message.message ?? "That was blocked during the takeover.");
+      if (message.type === "blocked") setNotice(message.message ? { text: message.message } : { key: "blocked" });
       if (message.type === "ended") setEnded(message.reason ?? "closed");
     });
     connection.onClose((code) => {
-      if (code === 4403) setError("You can't control this run.");
-      else if (code === 4409) setError("Someone else is already controlling this run, or the takeover ended.");
+      if (code === 4403) setError({ key: "forbidden" });
+      else if (code === 4409) setError({ key: "conflict" });
       setEnded((current) => current ?? "closed");
     });
     surface.current?.focus();
@@ -84,7 +87,7 @@ export function TakeoverViewer({ runId, stepSeq, client, onEnded }: TakeoverView
       await client.handBack(runId, stepSeq, done);
       onEnded();
     } catch (err) {
-      setError(errorMessage(err, "Handing back failed."));
+      setError({ text: errorMessage(err, t("handBackFailed")) });
       setSending(false);
     }
   };
@@ -93,22 +96,22 @@ export function TakeoverViewer({ runId, stepSeq, client, onEnded }: TakeoverView
     return (
       <div data-testid="takeover-ended" role="status" className="kr-tone-card rounded-3xl p-4 text-sm text-ink-200">
         <p className="font-semibold text-white">
-          {ended === "idle" ? "The takeover ended after 5 minutes without input." : "The takeover ended."}
+          {ended === "idle" ? t("endedIdle") : t("ended")}
         </p>
-        <p className="mt-1 text-ink-300">{error ?? "The run is still paused: take over again, allow or cancel it."}</p>
+        <p className="mt-1 text-ink-300">{error ? show(error) : t("stillPaused")}</p>
         <button type="button" onClick={onEnded} className="kr-btn kr-btn-ghost mt-3 px-3.5 py-1.5 text-xs">
-          Back to the pause
+          {t("backToPause")}
         </button>
       </div>
     );
   }
 
   return (
-    <section data-testid="takeover-viewer" aria-label="Live page you control" className="kr-tone-card rounded-3xl p-4">
+    <section data-testid="takeover-viewer" aria-label={t("sectionAria")} className="kr-tone-card rounded-3xl p-4">
       <header className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <p className="flex items-center gap-2 text-sm font-semibold text-white">
           <MonitorPlay aria-hidden="true" className="size-4 text-run" />
-          You control the page at step {stepSeq}
+          {t("youControl", { seq: stepSeq })}
         </p>
         <button
           type="button"
@@ -117,14 +120,13 @@ export function TakeoverViewer({ runId, stepSeq, client, onEnded }: TakeoverView
           className="kr-btn kr-btn-tone px-3.5 py-1.5 text-xs"
         >
           <Hand aria-hidden="true" className="size-3.5" />
-          I&apos;m done
+          {t("done")}
         </button>
       </header>
 
       <p className="mb-2 flex items-start gap-2 text-xs text-ink-300">
         <ShieldAlert aria-hidden="true" className="mt-0.5 size-3.5 shrink-0 text-plan" />
-        What you type goes to the page only; Krama never stores the screen. Only this site and its sign-in pages open
-        here.
+        {t("privacy")}
       </p>
 
       <div
@@ -132,7 +134,7 @@ export function TakeoverViewer({ runId, stepSeq, client, onEnded }: TakeoverView
         data-testid="takeover-surface"
         tabIndex={0}
         role="application"
-        aria-label="The run's page. Click to focus, then use mouse and keyboard as usual."
+        aria-label={t("surfaceAria")}
         className="relative aspect-[16/10] w-full cursor-default overflow-hidden rounded-2xl border border-ink-700 bg-ink-950 outline-none focus:border-run"
         onContextMenu={(e) => e.preventDefault()}
         onMouseDown={(e) => {
@@ -167,35 +169,35 @@ export function TakeoverViewer({ runId, stepSeq, client, onEnded }: TakeoverView
         ) : (
           <p className="flex size-full items-center justify-center gap-2 text-sm text-ink-300">
             <Loader2 aria-hidden="true" className="size-4 animate-spin" />
-            Connecting to the page…
+            {t("connecting")}
           </p>
         )}
       </div>
 
       {notice ? (
         <p role="status" data-testid="takeover-notice" className="mt-2 text-xs font-semibold text-plan">
-          {notice}
+          {show(notice)}
         </p>
       ) : null}
       {error ? (
         <p role="alert" data-testid="takeover-error" className="mt-2 text-xs font-semibold text-danger">
-          {error}
+          {show(error)}
         </p>
       ) : null}
 
       {choosing ? (
-        <div data-testid="takeover-handback" role="group" aria-label="What did you do?" className="mt-3 grid gap-2 sm:grid-cols-3">
-          {HAND_BACK.map((option) => (
+        <div data-testid="takeover-handback" role="group" aria-label={t("handBackAria")} className="mt-3 grid gap-2 sm:grid-cols-3">
+          {HAND_BACK.map((done) => (
             <button
-              key={option.done}
+              key={done}
               type="button"
-              data-testid={`handback-${option.done}`}
+              data-testid={`handback-${done}`}
               disabled={sending}
-              onClick={() => handBack(option.done)}
+              onClick={() => handBack(done)}
               className="rounded-2xl border border-ink-700 bg-ink-950/60 p-3 text-left text-xs text-ink-300 transition-colors hover:border-run"
             >
-              <span className="block text-sm font-semibold text-white">{option.label}</span>
-              {option.detail}
+              <span className="block text-sm font-semibold text-white">{t(`handBack.${done}.label`)}</span>
+              {t(`handBack.${done}.detail`)}
             </button>
           ))}
         </div>
