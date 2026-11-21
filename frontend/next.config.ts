@@ -7,6 +7,9 @@ import createNextIntlPlugin from "next-intl/plugin";
 loadEnvConfig(path.resolve(process.cwd(), ".."));
 
 const nextConfig: NextConfig = {
+  // The dev server trusts only localhost by default: on 127.0.0.1 (our Windows dev URL) it refused its own
+  // live-reload socket and the page never hydrated (dead buttons, login looping back) (#431 gate).
+  allowedDevOrigins: ["127.0.0.1"],
   transpilePackages: ["@krama/tutorial-compiler"],
   webpack: (config) => {
     config.resolve = config.resolve || {};
