@@ -98,7 +98,9 @@ describe("DoItForMeModal (#402)", () => {
     expect(screen.getByTestId("do-it-run-btn")).toBeDisabled();
     fireEvent.click(screen.getByTestId("do-it-sign-in-btn"));
 
-    await waitFor(() => expect(push).toHaveBeenCalledWith("/runs/run-sign-in-gitea/live"));
+    // ...and remembers the tutorial, so the finished sign-in links back to it (#451).
+    const back = encodeURIComponent(`/tutorials/${WORKFLOW_ID}`);
+    await waitFor(() => expect(push).toHaveBeenCalledWith(`/runs/run-sign-in-gitea/live?back=${back}`));
     expect(signIn).toHaveBeenCalledWith("gitea");
   });
 
