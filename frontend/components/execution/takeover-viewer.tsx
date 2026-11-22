@@ -19,6 +19,8 @@ export interface TakeoverViewerProps {
   client: ApiClient;
   /** The takeover ended (handed back, idle, closed): the live view returns to the pause. */
   onEnded: () => void;
+  /** A sign-in run (#451): one "I've signed in" button instead of the three hand-back choices. */
+  signIn?: boolean;
 }
 
 /** Label and detail of each choice: handBack.<done>.label / .detail in the "takeover" namespace. */
@@ -36,7 +38,7 @@ function modifiers(e: { altKey: boolean; ctrlKey: boolean; metaKey: boolean; shi
  * Human takeover (#411, ADR 0008): the paused run's live page, which the owner drives with mouse, keyboard and
  * paste, then hands back by saying what they did. Frames are shown and dropped, never stored.
  */
-export function TakeoverViewer({ runId, stepSeq, client, onEnded }: TakeoverViewerProps) {
+export function TakeoverViewer({ runId, stepSeq, client, onEnded, signIn = false }: TakeoverViewerProps) {
   const t = useTranslations("takeover");
   const show = (m: Text) => ("key" in m ? t(m.key) : m.text);
   const [frame, setFrame] = useState<string | null>(null);
@@ -123,11 +125,12 @@ export function TakeoverViewer({ runId, stepSeq, client, onEnded }: TakeoverView
         <button
           type="button"
           data-testid="takeover-done-btn"
-          onClick={() => setChoosing(true)}
+          disabled={sending}
+          onClick={() => (signIn ? handBack("barrier") : setChoosing(true))}
           className="kr-btn kr-btn-tone px-3.5 py-1.5 text-xs"
         >
           <Hand aria-hidden="true" className="size-3.5" />
-          {t("done")}
+          {signIn ? t("signedInDone") : t("done")}
         </button>
       </header>
 

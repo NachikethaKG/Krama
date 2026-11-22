@@ -42,6 +42,22 @@ function setup() {
 describe("TakeoverViewer (#411)", () => {
   afterEach(() => vi.restoreAllMocks());
 
+  it("a sign-in hands back with one \"I've signed in\" button (#451)", async () => {
+    const client = new MockApiClient();
+    vi.spyOn(client, "openScreen").mockReturnValue(new ScriptedScreen());
+    const handBack = vi.spyOn(client, "handBack").mockResolvedValue({ id: "run-1", status: "running" } as never);
+    const onEnded = vi.fn();
+    render(<TakeoverViewer runId="run-1" stepSeq={1} client={client} onEnded={onEnded} signIn />);
+
+    const done = screen.getByTestId("takeover-done-btn");
+    expect(done).toHaveTextContent("I've signed in");
+    fireEvent.click(done);
+
+    await waitFor(() => expect(handBack).toHaveBeenCalledWith("run-1", 1, "barrier"));
+    expect(screen.queryByTestId("takeover-handback")).not.toBeInTheDocument(); // no three-way choice
+    await waitFor(() => expect(onEnded).toHaveBeenCalled());
+  });
+
   it("keeps one screen while the page re-renders, and ignores a screen it already closed", () => {
     // The run page re-rendered every second with a new client: the viewer reconnected each time until the
     // takeover ended (#431 gate).

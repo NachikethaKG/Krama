@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import type { PauseReason } from "@krama/contracts-ts";
 
@@ -105,6 +106,10 @@ export function LiveExecutionView({ runId, speed, client, className = "" }: Live
   // One client for the page's life: a new one each render (the elapsed timer re-renders every second) made the
   // takeover viewer reconnect its screen every second until the takeover ended (#431 gate).
   const [api] = useState<ApiClient>(() => client ?? getApiClient());
+  // A sign-in run (#451): its pause, takeover and result speak about signing in, and lead back to the task.
+  const signIn = run?.kind === "sign_in";
+  const back = useSearchParams()?.get("back") ?? null;
+  const backTo = back && back.startsWith("/") && !back.startsWith("//") ? back : null;
   const [watching, setWatching] = useState(false);
   const [takeoverError, setTakeoverError] = useState<string | null>(null);
   const startTakeover = async () => {
@@ -221,7 +226,9 @@ export function LiveExecutionView({ runId, speed, client, className = "" }: Live
             />
             <span className="text-xs font-semibold text-ink-300 sm:text-sm">
               {runStatus === "paused"
-                ? t("view.waitingConfirm")
+                ? signIn
+                  ? t("view.waitingSignIn")
+                  : t("view.waitingConfirm")
                 : runStatus === "queued"
                   ? t("view.waitingStart")
                   : t("view.executing")}
@@ -278,10 +285,15 @@ export function LiveExecutionView({ runId, speed, client, className = "" }: Live
         <PauseBanner
           reason={pauseDetails.reason}
           stepSeq={pauseDetails.stepSeq}
-          message={pauseDetails.message}
+          message={
+            signIn
+              ? `${pauseDetails.message?.startsWith("Krama can't") ? `${t("view.signInNotYet")} ` : ""}${t("view.signInHere")}`
+              : pauseDetails.message
+          }
           onResume={resume}
           onDeny={deny}
           isConfirming={isConfirming}
+          hideAnswers={signIn}
           allowDisabled={pauseDetails.reason === "replan_review" && !proposedPlan?.plan}
         >
           {pauseDetails.reason === "replan_review" ? <ProposedSteps proposal={proposedPlan} /> : null}
@@ -307,7 +319,13 @@ export function LiveExecutionView({ runId, speed, client, className = "" }: Live
       )}
 
       {watching && pauseDetails && runStatus === "paused" && (
-        <TakeoverViewer runId={runId} stepSeq={pauseDetails.stepSeq} client={api} onEnded={() => setWatching(false)} />
+        <TakeoverViewer
+          runId={runId}
+          stepSeq={pauseDetails.stepSeq}
+          client={api}
+          onEnded={() => setWatching(false)}
+          signIn={signIn}
+        />
       )}
 
       {runStatus === "failed" && !policyStop && (
@@ -372,7 +390,25 @@ export function LiveExecutionView({ runId, speed, client, className = "" }: Live
         </div>
       )}
 
-      {runStatus === "completed" && (
+      {runStatus === "completed" && signIn && (
+        <div
+          role="status"
+          data-testid="sign-in-done-banner"
+          className="kr-spectrum-border kr-verify flex flex-col gap-3 rounded-3xl bg-ink-900/85 p-5 text-sm font-semibold text-white sm:flex-row sm:items-center sm:justify-between"
+        >
+          <div>
+            <div className="kr-display kr-gradient-text text-2xl font-extrabold">{t("view.signedIn")}</div>
+            <div className="text-xs font-normal text-ink-300">{t("view.signedInSummary")}</div>
+          </div>
+          {backTo ? (
+            <a href={backTo} data-testid="back-to-tutorial-link" className="kr-btn kr-btn-primary px-4 py-2 text-xs">
+              {t("view.backToTutorial")} →
+            </a>
+          ) : null}
+        </div>
+      )}
+
+      {runStatus === "completed" && !signIn && (
         <div
           role="status"
           data-testid="completion-banner"

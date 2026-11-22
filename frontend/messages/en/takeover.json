@@ -41,5 +41,6 @@
     "defaultError": "Authentication could not be completed.",
     "retry": "Retry Manual Login",
     "launch": "Launch Manual Login"
-  }
+  },
+  "signedInDone": "I've signed in"
 }

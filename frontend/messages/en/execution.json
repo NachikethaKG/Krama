@@ -162,7 +162,7 @@
     "dismiss": "Dismiss",
     "reconnecting": "Connection to the live view dropped. Reconnecting and resuming from the last event…",
     "waitingConfirm": "Waiting for you to confirm a step",
-    "waitingStart": "Waiting for the run to start…",
+    "waitingStart": "Waiting to start: Krama runs one task at a time, so this starts when the one before it ends…",
     "executing": "Workflow is actively executing…",
     "cancelling": "Cancelling…",
     "cancel": "Cancel Run",
@@ -178,6 +178,12 @@
     "seeChecks": "See each step's checks",
     "stepsAria": "Execution steps",
     "stepsTitle": "Execution Steps ({count})",
-    "verifiedChip": "{verified}/{total} verified"
+    "verifiedChip": "{verified}/{total} verified",
+    "waitingSignIn": "Waiting for you to sign in",
+    "signInHere": "Sign in here, in Krama's browser: take over the page, sign in, then press “I've signed in”. Signing in in your own browser tab doesn't count.",
+    "signInNotYet": "Krama can't see that you're signed in yet.",
+    "signedIn": "Signed in",
+    "signedInSummary": "Do it for me now acts in your own account on this site.",
+    "backToTutorial": "Back to your tutorial"
   }
 }
