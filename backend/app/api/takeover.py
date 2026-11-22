@@ -80,11 +80,14 @@ async def hand_back(run_id: UUID, body: RunHandBackRequest, user: CurrentUser, s
 async def screen(websocket: WebSocket, run_id: UUID) -> None:
     services: Services = websocket.app.state.services
     if not await _allowed(websocket, services, run_id):
+        logger.warning("screen for run %s refused: not signed in, unknown origin, or not the owner", run_id)
         await websocket.close(code=CLOSE_FORBIDDEN)
         return
     feed = services.screens.get(run_id)
     session = services.executor.takeover(run_id)
-    if feed is None or session is None or not feed.attach():
+    if feed is None or session is None or not await _attach(feed):
+        why = "no takeover" if feed is None or session is None else "another viewer is attached"
+        logger.warning("screen for run %s refused: %s", run_id, why)
         await websocket.close(code=CLOSE_TAKEN)
         return
     await websocket.accept()
@@ -112,6 +115,19 @@ async def screen(websocket: WebSocket, run_id: UUID) -> None:
             task = asyncio.create_task(_end_unless_back(services, run_id, feed, session))
             _grace_tasks.add(task)
             task.add_done_callback(_grace_tasks.discard)
+
+
+ATTACH_WAIT_S = 2.0
+"""How long a new viewer waits for the previous one to let go: a reload, or React opening the socket twice in
+dev, connects again before the server has seen the old socket close (#451 end-to-end test)."""
+
+
+async def _attach(feed: ScreenFeed) -> bool:
+    for _ in range(int(ATTACH_WAIT_S / 0.05)):
+        if feed.attach():
+            return True
+        await asyncio.sleep(0.05)
+    return feed.attach()
 
 
 DETACH_GRACE_S = 5.0
