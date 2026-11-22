@@ -11,6 +11,7 @@ from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Response
+from sqlalchemy import select
 
 from app.api.auth import CurrentUser
 from app.api.convert import run_out
@@ -46,6 +47,23 @@ async def sign_in(site: str, user: CurrentUser, services: ServicesDep) -> Run:
     login_path = services.target(url).login_path if url is not None else None
     if url is None or login_path is None:
         raise ApiException(404, "not_found", f"Krama can't sign in to {site!r}")
+    async with services.sessions() as s:
+        # One sign-in per site at a time (#451): a second one only queued behind the paused first.
+        open_run = await s.scalar(
+            select(RunRow)
+            .join(PlanRow, PlanRow.id == RunRow.plan_id)
+            .join(TaskRow, TaskRow.id == PlanRow.task_id)
+            .where(
+                TaskRow.user_id == user.id,
+                TaskRow.target_url == url,
+                RunRow.kind == "sign_in",
+                RunRow.status.in_(("queued", "running", "paused")),
+            )
+            .order_by(RunRow.created_at.desc())
+            .limit(1)
+        )
+        if open_run is not None:
+            return run_out(open_run, None)
     # One step, the one it pauses at: open the sign-in page (run.started needs total_steps >= 1).
     step = {
         "seq": 1, "action": {"type": "navigate", "value": login_path}, "target": {},
