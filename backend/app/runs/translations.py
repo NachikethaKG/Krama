@@ -73,17 +73,20 @@ class TranslationService:
             elif row.status == "failed":
                 self._failure_shown.add(row.id)  # report it once; the next request retries
             row_id, status = row.id, row.status
+            stale = status == "ready" and row.prompt_version != self._translator.prompt_version
             out = _view(workflow, row)
-        if status == "translating" and row_id not in self._tasks:
-            task = asyncio.create_task(self._run(row_id), name=f"translate-{row_id}")
+        # Made with an older prompt (#448): keep showing it while a fresh one is made.
+        if (status == "translating" or stale) and row_id not in self._tasks:
+            task = asyncio.create_task(self._run(row_id, refresh=stale), name=f"translate-{row_id}")
             self._tasks[row_id] = task
             task.add_done_callback(lambda _t: self._tasks.pop(row_id, None))
         return out
 
     async def wait(self, workflow: WorkflowRow, language: str) -> Translation:
-        """The translation, made now if it isn't ready (the export job needs the text before rendering)."""
+        """The translation, made now if it isn't ready (the export job needs the text before rendering), and
+        refreshed first if it was made with an older prompt (#448)."""
         out = await self.get(workflow, language)
-        if out.status != "translating":
+        if out.status not in ("translating", "ready"):
             return out
         assert workflow.current_version_id is not None
         async with self._sessions() as s:
@@ -94,8 +97,10 @@ class TranslationService:
                 )
             )
         task = self._tasks.get(row_id) if row_id else None
-        if task is not None:
+        if task is not None:  # being made, or refreshed after a prompt change
             await asyncio.shield(task)
+        elif out.status == "ready":
+            return out
         elif row_id is not None:
             await self._run(row_id)
         return await self.get(workflow, language)
@@ -116,7 +121,8 @@ class TranslationService:
         ]
         return workflow.model_copy(update={"title": translation.title or workflow.title, "steps": steps})
 
-    async def _run(self, row_id: UUID) -> None:
+    async def _run(self, row_id: UUID, *, refresh: bool = False) -> None:
+        """Translate a row. A refresh (#448) keeps the old text if it fails."""
         async with self._sessions() as s:
             row = await s.get(TranslationRow, row_id)
             if row is None:
@@ -140,11 +146,13 @@ class TranslationService:
             results = await self._translate(items, language)
         except TranslationError as e:
             logger.info("translation %s failed: %s", row_id, e)
-            await self._finish(row_id, status="failed", error=str(e))
+            if not refresh:
+                await self._finish(row_id, status="failed", error=str(e))
             return
         except Exception:
             logger.exception("translation %s crashed", row_id)
-            await self._finish(row_id, status="failed", error="internal error")
+            if not refresh:
+                await self._finish(row_id, status="failed", error="internal error")
             return
         translated_steps = [
             {
@@ -154,7 +162,10 @@ class TranslationService:
             }
             for st, text in zip(steps, results[1:], strict=True)
         ]
-        await self._finish(row_id, status="ready", title=results[0] or title, steps=translated_steps)
+        await self._finish(
+            row_id, status="ready", title=results[0] or title, steps=translated_steps,
+            prompt_version=self._translator.prompt_version,
+        )  # fmt: skip
 
     async def _translate(self, items: Sequence[TranslationItem], language: str) -> list[str | None]:
         """Cached texts from the cache, the rest in one request; new results go into the cache."""
