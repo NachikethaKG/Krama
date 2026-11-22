@@ -44,6 +44,9 @@ services:
       GITEA__service__DISABLE_REGISTRATION: "true"
       GITEA__service__REQUIRE_SIGNIN_VIEW: "false"
       GITEA__log__LEVEL: warn
+      # Sessions on disk, not in memory: a restart used to sign everyone out, including the sessions Krama
+      # stores for Do it for me.
+      GITEA__session__PROVIDER: file
     ports:
       - "${GITEA_PORT:-3001}:3000"
     volumes:

@@ -33,8 +33,12 @@ STATE: dict[str, Any] = {"cookies": [{"name": "sid", "value": "s3cret", "domain"
 
 
 async def account_of(page: Page, state: Any) -> str | None:
-    """The test site's 'who am I': signed in once the members page is open."""
-    return "demo" if "/members" in page.url else None
+    """The test site's 'who am I': signed in with the stored session's cookie, or once the members page is
+    open (a sign-in run). Any other cookie is a session the site has dropped."""
+    cookies = (state or {}).get("cookies", [])
+    if "/members" in page.url or any(c.get("name") == "sid" and c.get("value") == "s3cret" for c in cookies):
+        return "demo"
+    return None
 
 
 def local_site() -> TargetSetup:
@@ -183,6 +187,30 @@ async def test_do_it_needs_the_users_own_session_and_then_acts_in_it(
     assert (after.account, after.sign_in_site) == ("demo", None)
     assert stream[-1]["type"] == "run.completed", stream[-1]
     assert signed_out.status_code == 204 and gone.items == []
+
+
+async def test_a_session_the_site_dropped_stops_the_run_and_asks_to_sign_in_again(
+    sessions: Sessions, tmp_path: Path, site: str
+) -> None:
+    # A Gitea restart dropped its sessions: the run went on signed out and failed a step on a page without the
+    # comment box ("element not found") instead of asking to sign in again.
+    svc = svc_with_profiles(sessions, tmp_path, site, reply(GOOD_PLAN))
+    dropped = {**STATE, "cookies": [{**STATE["cookies"][0], "value": "no-longer-valid"}]}
+    async with Api(svc) as api:
+        assert api.user is not None
+        workflow_id = await verified_workflow(api, site)
+        await svc.profiles.save(api.user.id, "local", "demo", dropped)
+        body = {"revision": 1, "inputs": {"item_name": "team-notes"}}
+        ran = await api.client.post(f"/workflows/{workflow_id}/run", json=body)
+        stream = await api.events(Run.model_validate(ran.json()).id)
+        after = WorkflowInputList.model_validate(
+            (await api.client.get(f"/workflows/{workflow_id}/inputs")).json()
+        )
+
+    assert stream[-1]["type"] == "run.failed"
+    assert "expired" in stream[-1]["error"]["message"]
+    assert not any(e["type"] == "step.started" for e in stream)  # stopped before acting
+    assert (after.account, after.sign_in_site) == (None, "local")  # the dead session is gone: sign in again
 
 
 async def test_versions_remember_the_account_they_were_recorded_in(

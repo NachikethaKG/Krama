@@ -374,6 +374,22 @@ class InProcessExecutor:
             if target.signed_in_check is not None and not await target.signed_in_check(page):
                 await self._fail_sign_in(run_id, "The stored session no longer signs in. Log in again.")
                 return
+            if (
+                profile is not None
+                and env.profiles is not None
+                and target.account_of is not None
+                and job.user_id is not None
+            ):
+                # The site may have dropped the session (a restart, a sign-out elsewhere): ask it who is
+                # signed in before acting, instead of failing a step on a signed-out page. A dead session
+                # is forgotten, so "Do it for me" asks the user to sign in again.
+                state = dict(await page.context.storage_state())
+                if await target.account_of(page, state) is None:
+                    await env.profiles.delete(job.user_id, target.site or "")
+                    await self._fail_sign_in(
+                        run_id, f"Your sign-in to {target.site} has expired. Sign in again, then run it."
+                    )
+                    return
             setup = [] if profile is not None else list(env.preconditions(job))
             if setup:
                 log = await run_script(executor, setup, task="preconditions", base_url=job.target_url)
