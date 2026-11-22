@@ -131,6 +131,7 @@ async def test_capture_includes_an_open_dialog_outside_main(mock_gitea_page: Pag
 
     assert 'heading "Branches"' in obs.aria_snapshot
     assert 'textbox "Branch Name *"' in obs.aria_snapshot and 'button "Confirm"' in obs.aria_snapshot
-    assert "- dialog:\n  - text: Create new branch" in obs.aria_snapshot  # marked as a dialog for the policy
+    # marked as a dialog for the policy, named by its header so a plan can expect it (#449)
+    assert '- dialog "Create new branch":\n  - text: Create new branch' in obs.aria_snapshot
     assert "Delete branch" not in obs.aria_snapshot  # a closed dialog stays out
     assert "hunter2" not in obs.aria_snapshot  # dialog fields are masked like the rest
