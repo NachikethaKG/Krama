@@ -771,7 +771,12 @@ class InProcessExecutor:
                     await env.profiles.save(
                         job.user_id, target.site, account, dict(state), session_cookie=target.session_cookie
                     )
-                    await store.complete_sign_in(job)
+                    # The step is done (by the owner) and checked (the site names the account): without
+                    # this the finished run showed its one step as "Pending" (#451).
+                    verified = {"step_seq": 1, "method": ["dom"], "confidence": 0.7, "performed_by": "human"}
+                    if not await store.event(job.run_id, "step.verified", verified):
+                        return
+                    await store.complete_sign_in(job, verified_steps=1)
                     return
                 message = "Krama can't see that you're signed in yet. Take over again and finish signing in."
         await store.fail(

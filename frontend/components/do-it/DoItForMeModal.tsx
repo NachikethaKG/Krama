@@ -104,7 +104,8 @@ function DoItForMeDialog({ onClose, workflowId, tutorialTitle, client }: Omit<Do
     setError(null);
     try {
       const run = await api.startSignIn(site);
-      router.push(`/runs/${encodeURIComponent(run.id)}/live`);
+      const back = encodeURIComponent(`/tutorials/${workflowId}`);
+      router.push(`/runs/${encodeURIComponent(run.id)}/live?back=${back}`);
     } catch (err) {
       setError(refusalMessage(err, t));
     }

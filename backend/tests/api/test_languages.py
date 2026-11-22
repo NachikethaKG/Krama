@@ -141,6 +141,62 @@ async def test_a_failed_translation_is_retried_on_the_next_request(
     assert ready.status == "ready"
 
 
+async def test_a_new_prompt_version_refreshes_stored_translations(
+    sessions: Sessions, tmp_path: Path, site: str
+) -> None:
+    # #448: a translation made with an older prompt was served forever.
+    class Newer(FakeTranslator):
+        prompt_version = "fake-2"
+
+        async def translate(self, items: Any, language: str) -> list[str | None]:
+            self.calls.append((language, len(items)))
+            return [f"[{language}2] {it.text}" for it in items]
+
+    class Broken(FakeTranslator):
+        prompt_version = "fake-3"
+
+        async def translate(self, items: Any, language: str) -> list[str | None]:
+            self.calls.append((language, len(items)))
+            raise TranslationError("the model was busy")
+
+    svc = services(sessions, tmp_path, reply(GOOD_PLAN))
+    svc.translations = TranslationService(sessions, FakeTranslator())
+    async with Api(svc) as api:
+        workflow_id = await verified_workflow(api, site)
+        _, old = await translated(api, workflow_id, "de")
+
+        newer = Newer()
+        svc.translations = TranslationService(sessions, newer)
+        meanwhile = Translation.model_validate(
+            (await api.client.get(f"/workflows/{workflow_id}/translations/de")).json()
+        )
+        for _ in range(100):
+            await asyncio.sleep(0.05)
+            fresh = Translation.model_validate(
+                (await api.client.get(f"/workflows/{workflow_id}/translations/de")).json()
+            )
+            if fresh.title and fresh.title.startswith("[de2] "):
+                break
+        calls_after_refresh = list(newer.calls)
+        again = Translation.model_validate(
+            (await api.client.get(f"/workflows/{workflow_id}/translations/de")).json()
+        )
+
+        svc.translations = TranslationService(sessions, Broken())
+        await api.client.get(f"/workflows/{workflow_id}/translations/de")
+        await asyncio.sleep(0.3)
+        kept = Translation.model_validate(
+            (await api.client.get(f"/workflows/{workflow_id}/translations/de")).json()
+        )
+
+    assert old.title is not None and old.title.startswith("[de] ")
+    assert meanwhile.status == "ready" and meanwhile.title == old.title  # the old text while refreshing
+    assert fresh.title is not None and fresh.title.startswith("[de2] ")
+    assert calls_after_refresh == [("de", 5)] and newer.calls == [("de", 5)]  # once, not on every request
+    assert again.title == fresh.title
+    assert kept.status == "ready" and kept.title == fresh.title  # a failed refresh keeps the text
+
+
 # --- narration and exports in a language
 
 

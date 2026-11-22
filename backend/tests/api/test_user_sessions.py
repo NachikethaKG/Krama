@@ -98,6 +98,9 @@ async def test_a_sign_in_run_stores_the_users_session(sessions: Sessions, tmp_pa
         run_id = Run.model_validate(started.json()).id
         paused = await wait_status(api, run_id, "paused")
         assert paused.kind == "sign_in"
+        # A second sign-in to the same site is the open one, not a new run queued behind it (#451).
+        again = await api.client.post("/sites/local/sign-in")
+        assert again.status_code == 202 and Run.model_validate(again.json()).id == run_id
 
         assert (await api.client.post(f"/runs/{run_id}/takeover")).status_code == 200
         executor = api.svc.executor
@@ -117,6 +120,10 @@ async def test_a_sign_in_run_stores_the_users_session(sessions: Sessions, tmp_pa
         unknown = await api.client.post("/sites/nowhere/sign-in")
 
     assert stream[-1]["type"] == "run.completed" and "workflow_id" not in stream[-1]
+    # The step reads as done by the owner, not "Pending" (#451).
+    verified = [e for e in stream if e["type"] == "step.verified"]
+    assert len(verified) == 1 and verified[0]["performed_by"] == "human" and verified[0]["step_seq"] == 1
+    assert stream[-1]["verified_steps"] == 1
     assert [(p.site, p.account) for p in profiles.items] == [("local", "demo")]
     assert "typed by the owner only" not in str(stream)
     assert unknown.status_code == 404

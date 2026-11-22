@@ -250,12 +250,13 @@ class RunStore:
             )
         return await self._committed(job.run_id, row is not None)
 
-    async def complete_sign_in(self, job: RunJob, **changes: Any) -> bool:
+    async def complete_sign_in(self, job: RunJob, *, verified_steps: int = 0, **changes: Any) -> bool:
         """End a sign-in run as verified: the session is stored; there is no workflow (ADR 0007)."""
         async with self._sessions.begin() as s:
             row = await transition_run(
                 s, job.run_id, to=RunStatus.VERIFIED, allowed_from=(RunStatus.RUNNING,),
-                event_type="run.completed", event_data={"verified_steps": 0, "failed_actions": 0},
+                event_type="run.completed",
+                event_data={"verified_steps": verified_steps, "failed_actions": 0},
                 finished_at=datetime.now(UTC), **changes,
             )  # fmt: skip
         return await self._committed(job.run_id, row is not None)

@@ -140,7 +140,19 @@ def _check_url(pattern: str, path: str) -> Check:
 
 def _find(nodes: list[AriaNode], ref: ElementRef) -> list[AriaNode]:
     name = ref.name.lower()
+    if ref.role in _DIALOG_ROLES:
+        # A dialog's title is predicted before it is seen (#449): "Delete Repository" for "Delete This
+        # Repository". Every expected word, in any order, is enough for a dialog; other roles stay exact.
+        words = _WORDS.findall(name)
+        return [
+            n for n in nodes
+            if n.role in _DIALOG_ROLES and all(w in _WORDS.findall(n.label().lower()) for w in words)
+        ]  # fmt: skip
     return [n for n in nodes if n.role == ref.role and name in n.label().lower()]
+
+
+_DIALOG_ROLES = frozenset({"dialog", "alertdialog"})
+_WORDS = re.compile(r"\w+")
 
 
 def _ref(ref: ElementRef) -> str:

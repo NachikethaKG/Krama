@@ -11,6 +11,8 @@ export interface PauseBannerProps {
   isConfirming?: boolean;
   /** Disables "allow" (e.g. the proposed steps of a replan_review are not loaded). Deny stays available. */
   allowDisabled?: boolean;
+  /** No allow/deny buttons (#451): a sign-in pause is answered by taking over and signing in. */
+  hideAnswers?: boolean;
   /** Extra content, e.g. the proposed steps of a replan_review pause. */
   children?: ReactNode;
   className?: string;
@@ -43,6 +45,7 @@ export function PauseBanner({
   onDeny,
   isConfirming = false,
   allowDisabled = false,
+  hideAnswers = false,
   children,
   className = "",
 }: PauseBannerProps) {
@@ -94,6 +97,7 @@ export function PauseBanner({
         </div>
 
         {/* Action Controls */}
+        {hideAnswers ? null : (
         <div className="flex shrink-0 items-center gap-2 pl-12 sm:pl-0">
           {onDeny && (
             <button
@@ -137,6 +141,7 @@ export function PauseBanner({
                 : t("pauseBanner.defaultAllow")}
           </button>
         </div>
+        )}
       </div>
       {children && <div className="mt-4">{children}</div>}
     </div>

@@ -1,3 +1,4 @@
+import { StrictMode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { TakeoverInput } from "@krama/contracts-ts";
@@ -41,6 +42,22 @@ function setup() {
 
 describe("TakeoverViewer (#411)", () => {
   afterEach(() => vi.restoreAllMocks());
+
+  it("a sign-in hands back with one \"I've signed in\" button (#451)", async () => {
+    const client = new MockApiClient();
+    vi.spyOn(client, "openScreen").mockReturnValue(new ScriptedScreen());
+    const handBack = vi.spyOn(client, "handBack").mockResolvedValue({ id: "run-1", status: "running" } as never);
+    const onEnded = vi.fn();
+    render(<TakeoverViewer runId="run-1" stepSeq={1} client={client} onEnded={onEnded} signIn />);
+
+    const done = screen.getByTestId("takeover-done-btn");
+    expect(done).toHaveTextContent("I've signed in");
+    fireEvent.click(done);
+
+    await waitFor(() => expect(handBack).toHaveBeenCalledWith("run-1", 1, "barrier"));
+    expect(screen.queryByTestId("takeover-handback")).not.toBeInTheDocument(); // no three-way choice
+    await waitFor(() => expect(onEnded).toHaveBeenCalled());
+  });
 
   it("keeps one screen while the page re-renders, and ignores a screen it already closed", () => {
     // The run page re-rendered every second with a new client: the viewer reconnected each time until the
@@ -114,10 +131,28 @@ describe("TakeoverViewer (#411)", () => {
     expect(screen.getByTestId("takeover-ended")).toHaveTextContent("Someone else is already controlling");
   });
 
-  it("closes the screen when it unmounts", () => {
+  it("closes the screen when it unmounts", async () => {
     const { scripted, view } = setup();
     view.unmount();
-    expect(scripted.closedByClient).toBe(true);
+    await waitFor(() => expect(scripted.closedByClient).toBe(true)); // a tick later, see below
+  });
+
+  it("opens one screen even when React runs its effect twice (dev StrictMode)", async () => {
+    // A second socket was refused while the first, closed mid-connect, still held the one viewer place.
+    const client = new MockApiClient();
+    const scripted = new ScriptedScreen();
+    const open = vi.spyOn(client, "openScreen").mockReturnValue(scripted);
+    render(
+      <StrictMode>
+        <TakeoverViewer runId="run-1" stepSeq={3} client={client} onEnded={vi.fn()} />
+      </StrictMode>,
+    );
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    expect(open).toHaveBeenCalledTimes(1);
+    expect(scripted.closedByClient).toBe(false);
+    act(() => scripted.frame("blob:live"));
+    expect(screen.getByTestId("takeover-frame")).toHaveAttribute("src", "blob:live");
   });
 });
 

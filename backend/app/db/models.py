@@ -345,6 +345,8 @@ class TranslationRow(Timestamps, Base):
     steps: Mapped[list[Any]] = mapped_column(default=list, server_default="[]")
     """[{step_seq, text, translated}] in step order."""
     error: Mapped[str | None] = mapped_column(Text, default=None)
+    prompt_version: Mapped[str | None] = mapped_column(Text, default=None)
+    """The translation prompt that made it (#448): an older one makes it again, in the background."""
 
 
 class TranslationCacheRow(Base):

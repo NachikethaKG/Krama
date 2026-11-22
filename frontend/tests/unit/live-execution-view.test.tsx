@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { LiveExecutionView } from "@/components/execution/live-execution-view";
 import { ApiRequestError, MockApiClient } from "@/lib/api";
@@ -117,5 +117,20 @@ describe("LiveExecutionView", () => {
     view("invalid-non-existent-run");
     await waitFor(() => expect(screen.getByTestId("live-execution-error")).toBeInTheDocument());
     expect(screen.getByText("Run Not Found")).toBeInTheDocument();
+  });
+});
+
+describe("a sign-in run (#451)", () => {
+  it("says to sign in here and offers no allow or deny", async () => {
+    const client = new MockApiClient();
+    const getRun = client.getRun.bind(client);
+    vi.spyOn(client, "getRun").mockImplementation(async (id) => ({ ...(await getRun(id)), kind: "sign_in" }));
+    view("replan", client);
+
+    await waitFor(() => expect(screen.getByTestId("pause-banner")).toBeInTheDocument(), T);
+    expect(screen.getByTestId("pause-banner")).toHaveTextContent(/Sign in here, in Krama's browser/);
+    expect(screen.queryByTestId("resume-run-btn")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("deny-run-btn")).not.toBeInTheDocument();
+    expect(screen.getByTestId("run-controls-bar")).toHaveTextContent("Waiting for you to sign in");
   });
 });

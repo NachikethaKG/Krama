@@ -26,15 +26,22 @@ from app.ports.observer import Observer
 # Open dialogs; Gitea's Fomantic UI marks them only with classes (no role=dialog).
 _OPEN_DIALOGS = "dialog[open], [role=dialog], [role=alertdialog], .ui.modal.visible"
 _DIALOG_LINE = re.compile(r"^\s*- (?:dialog|alertdialog)\b")
+_DIALOG_NAME_JS = (
+    "e => e.getAttribute('aria-label') || (e.querySelector('.header, h1, h2, h3, [role=heading]')"
+    " || {}).textContent || ''"
+)
 
 
-def _as_dialog(snapshot: str) -> str:
+def _as_dialog(snapshot: str, name: str = "") -> str:
     """The dialog's ARIA lines under a `- dialog:` line, as Playwright prints a real role=dialog, so readers
-    (the policy) can tell what is inside the dialog."""
+    (the policy) can tell what is inside the dialog. A modal without role=dialog is named by its header
+    (#449: Gitea's "Delete This Repository" was an unnamed dialog, so no expectation could match it)."""
     lines = snapshot.splitlines()
     if lines and _DIALOG_LINE.match(lines[0]):
         return snapshot
-    return "\n".join(["- dialog:", *(f"  {line}" for line in lines)])
+    label = " ".join(name.split()).replace('"', "'")
+    head = f'- dialog "{label}":' if label else "- dialog:"
+    return "\n".join([head, *(f"  {line}" for line in lines)])
 
 
 class PageObserver(Observer):
@@ -425,7 +432,8 @@ class PageObserver(Observer):
             for i in range(await dialogs.count()):
                 dialog = dialogs.nth(i)
                 if await dialog.evaluate("e => !e.closest('main, [role=main]')"):
-                    found.append(_as_dialog(await dialog.aria_snapshot(timeout=600)))
+                    name = await dialog.evaluate(_DIALOG_NAME_JS)
+                    found.append(_as_dialog(await dialog.aria_snapshot(timeout=600), name or ""))
         except Exception:
             return found  # a dialog closing mid-read is not an error
         return found

@@ -212,6 +212,7 @@ async def test_the_screen_socket_streams_frames_takes_input_and_checks_who_conne
     sessions: Sessions, tmp_path: Path, site: str, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setattr(takeover_api, "DETACH_GRACE_S", 0.3)
+    monkeypatch.setattr(takeover_api, "ATTACH_WAIT_S", 0.5)
     broken = {
         **GOOD_PLAN,
         "steps": [
@@ -252,11 +253,13 @@ async def test_the_screen_socket_streams_frames_takes_input_and_checks_who_conne
         await viewer.inbox.put('{"type": "wat"}')
         await viewer.inbox.put('{"type": "text", "text": "x"}')
         await asyncio.sleep(0.3)
-        await viewer.inbox.put(None)  # the viewer goes away (a reload, or React's second effect in dev)...
-        await watching
+        # A reload, or React's second effect in dev: the new socket connects BEFORE the old one has closed...
         back = FakeSocket(api)
         returning = asyncio.create_task(screen(back, run_id))  # type: ignore[arg-type]
-        for _ in range(100):  # ...and is back within the grace: same takeover
+        await asyncio.sleep(0.1)
+        await viewer.inbox.put(None)
+        await watching
+        for _ in range(100):  # ...and still gets the same takeover once the old one lets go
             if back.accepted:
                 break
             await asyncio.sleep(0.02)

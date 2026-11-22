@@ -179,3 +179,22 @@ def test_scripted_verifier_replays_outcomes() -> None:
     assert scripted.verify(ExpectedState(url_matches="^/x$"), observed("/", "t", None)) == canned
     with pytest.raises(AssertionError):
         scripted.verify(ExpectedState(url_matches="^/x$"), observed("/", "t", None))
+
+
+def test_a_dialog_matches_every_expected_word_but_other_roles_stay_exact() -> None:
+    # #449: the plan expected a dialog "Delete Repository"; Gitea's says "Delete This Repository".
+    snapshot = (
+        '- dialog "Delete This Repository":\n  - textbox "Repository Name *"\n  - button "Delete Repository"'
+    )
+    state = ObservedState(
+        url="/demo/x/settings", title="Settings", aria_excerpt=snapshot, captured_at=datetime.now(UTC)
+    )
+
+    def check(role: str, name: str) -> str:
+        expected = ExpectedState(visible=[ElementRef(role=role, name=name)])
+        return verifier.verify(expected, state).verification.result
+
+    assert check("dialog", "Delete Repository") == "verified"
+    assert check("dialog", "delete this repository") == "verified"
+    assert check("dialog", "Transfer Repository") == "failed"
+    assert check("button", "Delete This Repository") == "failed"  # buttons keep the exact substring match
