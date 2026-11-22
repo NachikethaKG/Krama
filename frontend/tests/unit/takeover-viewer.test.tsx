@@ -1,3 +1,4 @@
+import { StrictMode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { TakeoverInput } from "@krama/contracts-ts";
@@ -130,10 +131,28 @@ describe("TakeoverViewer (#411)", () => {
     expect(screen.getByTestId("takeover-ended")).toHaveTextContent("Someone else is already controlling");
   });
 
-  it("closes the screen when it unmounts", () => {
+  it("closes the screen when it unmounts", async () => {
     const { scripted, view } = setup();
     view.unmount();
-    expect(scripted.closedByClient).toBe(true);
+    await waitFor(() => expect(scripted.closedByClient).toBe(true)); // a tick later, see below
+  });
+
+  it("opens one screen even when React runs its effect twice (dev StrictMode)", async () => {
+    // A second socket was refused while the first, closed mid-connect, still held the one viewer place.
+    const client = new MockApiClient();
+    const scripted = new ScriptedScreen();
+    const open = vi.spyOn(client, "openScreen").mockReturnValue(scripted);
+    render(
+      <StrictMode>
+        <TakeoverViewer runId="run-1" stepSeq={3} client={client} onEnded={vi.fn()} />
+      </StrictMode>,
+    );
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    expect(open).toHaveBeenCalledTimes(1);
+    expect(scripted.closedByClient).toBe(false);
+    act(() => scripted.frame("blob:live"));
+    expect(screen.getByTestId("takeover-frame")).toHaveAttribute("src", "blob:live");
   });
 });
 

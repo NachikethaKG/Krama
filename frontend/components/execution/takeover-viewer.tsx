@@ -52,29 +52,43 @@ export function TakeoverViewer({ runId, stepSeq, client, onEnded, signIn = false
   const surface = useRef<HTMLDivElement | null>(null);
   const lastMove = useRef(0);
 
+  // One screen connection per takeover. React runs effects twice in dev (mount, unmount, mount): the second run
+  // reuses the first connection instead of opening another, because the server allows one viewer and a socket
+  // closed while still connecting held that place (#451 end-to-end test). A real unmount closes it a tick later.
+  const mounted = useRef(false);
+  const pendingClose = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   useEffect(() => {
-    const connection = clientRef.current.openScreen(runId);
-    screen.current = connection;
-    // A connection this effect already closed must not touch the view: React runs effects twice in dev, and
-    // the first socket's close used to show "the takeover ended" over the live one (#431 gate).
-    let live = true;
-    connection.onFrame((url) => live && setFrame(url));
-    connection.onMessage((message) => {
-      if (!live) return;
-      if (message.type === "blocked") setNotice(message.message ? { text: message.message } : { key: "blocked" });
-      if (message.type === "ended") setEnded(message.reason ?? "closed");
-    });
-    connection.onClose((code) => {
-      if (!live) return;
-      if (code === 4403) setError({ key: "forbidden" });
-      else if (code === 4409) setError({ key: "conflict" });
-      setEnded((current) => current ?? "closed");
-    });
+    mounted.current = true;
+    if (pendingClose.current !== null) {
+      clearTimeout(pendingClose.current);
+      pendingClose.current = null;
+    }
+    if (screen.current === null) {
+      const connection = clientRef.current.openScreen(runId);
+      screen.current = connection;
+      // Events after the viewer is gone must not touch the view (#431 gate).
+      connection.onFrame((url) => mounted.current && setFrame(url));
+      connection.onMessage((message) => {
+        if (!mounted.current) return;
+        if (message.type === "blocked") setNotice(message.message ? { text: message.message } : { key: "blocked" });
+        if (message.type === "ended") setEnded(message.reason ?? "closed");
+      });
+      connection.onClose((code) => {
+        if (!mounted.current) return;
+        if (code === 4403) setError({ key: "forbidden" });
+        else if (code === 4409) setError({ key: "conflict" });
+        setEnded((current) => current ?? "closed");
+      });
+    }
     surface.current?.focus();
     return () => {
-      live = false;
-      connection.close();
-      screen.current = null;
+      mounted.current = false;
+      pendingClose.current = setTimeout(() => {
+        pendingClose.current = null;
+        screen.current?.close();
+        screen.current = null;
+      }, 0);
     };
   }, [runId]); // not the client: one screen per takeover, whatever the parent re-renders
 
