@@ -255,7 +255,8 @@ class RunStore:
         async with self._sessions.begin() as s:
             row = await transition_run(
                 s, job.run_id, to=RunStatus.VERIFIED, allowed_from=(RunStatus.RUNNING,),
-                event_type="run.completed", event_data={"verified_steps": verified_steps, "failed_actions": 0},
+                event_type="run.completed",
+                event_data={"verified_steps": verified_steps, "failed_actions": 0},
                 finished_at=datetime.now(UTC), **changes,
             )  # fmt: skip
         return await self._committed(job.run_id, row is not None)
