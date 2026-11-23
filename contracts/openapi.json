@@ -885,6 +885,28 @@
         "title": "ObservedState",
         "type": "object"
       },
+      "OutlineItem": {
+        "additionalProperties": false,
+        "properties": {
+          "seq": {
+            "minimum": 1.0,
+            "title": "Seq",
+            "type": "integer"
+          },
+          "text": {
+            "description": "One rough intention, e.g. \"Search for the place\". Universal wording: no account or test names.",
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "seq",
+          "text"
+        ],
+        "title": "OutlineItem",
+        "type": "object"
+      },
       "PerformedBy": {
         "description": "Who did a step: Krama, or the run's owner by hand in a takeover (ADR 0008).",
         "enum": [
@@ -924,6 +946,32 @@
             "title": "Id",
             "type": "string"
           },
+          "mode": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PlanMode"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "upfront: every step planned before the run (until v1.4). steps: an outline the user approves, then one decision per step during the run (ADR 0011). Absent means upfront."
+          },
+          "outline": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/OutlineItem"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Step mode: the goal broken into rough ordered intentions, no selectors and no expected states. Null for upfront plans.",
+            "title": "Outline"
+          },
           "revision": {
             "description": "Bumped on every edit; approve and edit requests must send the revision they saw.",
             "minimum": 1.0,
@@ -938,10 +986,11 @@
             "$ref": "#/components/schemas/PlanStatus"
           },
           "steps": {
+            "description": "Upfront plans: every step, at least one (the API checks it). Step-mode plans: empty; the steps are decided during the run.",
             "items": {
               "$ref": "#/components/schemas/PlannedStep"
             },
-            "minItems": 1,
+            "minItems": 0,
             "title": "Steps",
             "type": "array"
           },
@@ -991,6 +1040,15 @@
         ],
         "title": "PlanApproveRequest",
         "type": "object"
+      },
+      "PlanMode": {
+        "description": "How a task's steps are made (ADR 0011).",
+        "enum": [
+          "upfront",
+          "steps"
+        ],
+        "title": "PlanMode",
+        "type": "string"
       },
       "PlanRejectRequest": {
         "additionalProperties": false,

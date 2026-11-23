@@ -13,6 +13,26 @@ from . import common_schema
 type PlanStatus = Annotated[Literal["proposed", "approved", "rejected"], Field(title="PlanStatus")]
 
 
+type PlanMode = Annotated[
+    Literal["upfront", "steps"],
+    Field(description="How a task's steps are made (ADR 0011).", title="PlanMode"),
+]
+
+
+class OutlineItem(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+    seq: Annotated[int, Field(ge=1)]
+    text: Annotated[
+        str,
+        Field(
+            description='One rough intention, e.g. "Search for the place". Universal wording: no account or test names.',
+            min_length=1,
+        ),
+    ]
+
+
 class PlannedStep(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
@@ -70,6 +90,24 @@ class Plan(BaseModel):
             min_length=1,
         ),
     ] = None
-    steps: Annotated[list[PlannedStep], Field(min_length=1)]
+    mode: Annotated[
+        PlanMode | None,
+        Field(
+            description="upfront: every step planned before the run (until v1.4). steps: an outline the user approves, then one decision per step during the run (ADR 0011). Absent means upfront."
+        ),
+    ] = None
+    outline: Annotated[
+        list[OutlineItem] | None,
+        Field(
+            description="Step mode: the goal broken into rough ordered intentions, no selectors and no expected states. Null for upfront plans."
+        ),
+    ] = None
+    steps: Annotated[
+        list[PlannedStep],
+        Field(
+            description="Upfront plans: every step, at least one (the API checks it). Step-mode plans: empty; the steps are decided during the run.",
+            min_length=0,
+        ),
+    ]
     created_at: AwareDatetime
     approved_at: AwareDatetime | None = None
