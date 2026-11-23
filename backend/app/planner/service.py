@@ -163,6 +163,8 @@ class PlanningService:
                     expected_result=plan.expected_result,
                     title=plan.title,
                     steps=[step.model_dump(mode="json", exclude_none=True) for step in plan.steps],
+                    mode=plan.mode or "upfront",
+                    outline=[o.model_dump(mode="json") for o in plan.outline] if plan.outline else None,
                 )
             )
             task_row = await s.get(TaskRow, task_id)
