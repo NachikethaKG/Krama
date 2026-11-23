@@ -239,6 +239,7 @@ export function compileWorkflow(
       id: sceneId,
       step_seq,
       title: sceneTitle,
+      ...(step.section ? { section: step.section } : {}),
       start_ms: currentTimelineMs,
       duration_ms,
       action,
