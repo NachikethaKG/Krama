@@ -1,7 +1,7 @@
 """Browser execution: a headless Playwright session and an executor for the contract's action types."""
 
 from app.agent.executor import ActionError, ActionErrorCode, ActionExecutor, ActionResult
-from app.agent.session import PlaywrightSession, SessionConfig, open_start_page, page_snapshot
+from app.agent.session import PlaywrightSession, SessionConfig, open_start_page, page_snapshot, start_path
 
 __all__ = [
     "ActionError",
@@ -11,5 +11,6 @@ __all__ = [
     "PlaywrightSession",
     "SessionConfig",
     "open_start_page",
+    "start_path",
     "page_snapshot",
 ]
