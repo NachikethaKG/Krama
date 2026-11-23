@@ -12,6 +12,9 @@ Look before each step (ADR 0011). Additive, plus one relaxation.
 - `events.schema.json` v1.7: `step.decided` (`step_seq`, `outline_seq`, `thought`, `action`, `target`), and pause
   reasons `no_progress` (3 decisions in a row changed nothing) and `step_budget` (20 steps or 25 LLM calls).
 - A step-mode run's `run.started.total_steps` is the number of outline items.
+- `step.schema.json` v1.4: `Step.section`, the outline item a step-mode step belongs to.
+- `tutorial-spec.schema.json` v1.1: `Scene.section`, copied from the step; the step list shows it when it
+  changes.
 
 ## 1.20 (#463)
 
