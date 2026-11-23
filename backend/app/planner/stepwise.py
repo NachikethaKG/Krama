@@ -28,9 +28,11 @@ OUTLINE_SYSTEM = "\n".join(
         "does the task one step at a time, looking at each page before it acts.",
         "",
         "Rules:",
-        f'- Write 1 to {MAX_OUTLINE_ITEMS} short intentions in order, each starting with a verb: "Open the',
-        '  search", "Search for the place", "Open the first result". No element names you haven\'t seen,',
-        "  no selectors, no URLs, no expected results per item.",
+        f'- Write 1 to {MAX_OUTLINE_ITEMS} short intentions in order, each starting with a verb: "Search',
+        '  for the place", "Open the first result", "Mark it as completed". Each item is a meaningful part',
+        '  of the task that may take several clicks, never one click: no "click the field", "type the',
+        '  text", "press Enter" or "wait for the page" items. No element names you haven\'t seen, no',
+        "  selectors, no URLs, no expected results per item.",
         "- Use only what the task asks; stop when it is done. Never add sign-in, payment or deleting",
         "  unless the task asks for it.",
         "- risk for the whole task: low for looking and searching, medium for creating or changing",
@@ -52,7 +54,9 @@ DECIDE_SYSTEM = "\n".join(
         "already done, and the current page as an ARIA snapshot. Decide the single next action.",
         "",
         "Rules:",
-        "- Use only elements in the snapshot, with their exact role and accessible name.",
+        "- target is required for click, fill and select: role and accessible name copied exactly from the",
+        "  snapshot. Never use an element that isn't in the snapshot.",
+        "- To type, fill the field directly: never click a field first, and never fill without a value.",
         "- Actions: click (buttons, links, checkboxes, tabs, menu items), fill (type into a field;",
         "  value = the text), select (value = the option), press (a key in a field; value = the key, e.g.",
         "  Enter), navigate (value = a URL path starting with /, only when no link or button gets there),",
@@ -96,7 +100,9 @@ class LLMDecision(BaseModel):
     thought: str
     outline_seq: int | None = None
     action: Literal["click", "fill", "select", "press", "check", "navigate", "wait", "done"]
-    target: DecidedTarget | None = None
+    target: DecidedTarget | None = Field(
+        description="the element to act on; null only for navigate, wait, done"
+    )
     value: str | None = None
     risk: Risk = "low"
 
@@ -174,17 +180,47 @@ class StepDecider:
     def __init__(self, llm: LLMProvider) -> None:
         self._llm = llm
 
-    async def decide(self, ctx: StepContext, *, seq: int) -> Decision:
-        result = await self._llm.generate(system=DECIDE_SYSTEM, prompt=decide_prompt(ctx), schema=LLMDecision)
-        raw = result.value
-        step = to_step(raw, seq)
+    async def decide(self, ctx: StepContext, *, seq: int, max_attempts: int = 2) -> Decision:
+        """One decision. An answer that can't be run (a click with no target, a fill with no value, a navigate
+        with no path) is asked again once with the problems listed; the second answer is used as it is, so the
+        executor's policy and checks decide."""
+        prompt = decide_prompt(ctx)
+        attempts: list[LLMAttempt] = []
+        model = ""
+        raw: LLMDecision | None = None
+        for _ in range(max_attempts):
+            result = await self._llm.generate(system=DECIDE_SYSTEM, prompt=prompt, schema=LLMDecision)
+            attempts += result.attempts
+            model, raw = result.model, normalize(result.value)
+            problems = check_decision(raw)
+            if not problems:
+                break
+            prompt = (
+                decide_prompt(ctx)
+                + "\n\nYour previous answer can't be run. Fix this:\n"
+                + "\n".join(f"- {p}" for p in problems)
+            )
+        assert raw is not None
         return Decision(
             thought=neutralize_tags(raw.thought.strip())[:300],
             outline_seq=raw.outline_seq,
-            step=step,
-            model=result.model,
-            llm_attempts=result.attempts,
+            step=to_step(raw, seq),
+            model=model,
+            llm_attempts=attempts,
         )
+
+
+def check_decision(raw: LLMDecision) -> list[str]:
+    """What makes a (normalized) decision impossible to run."""
+    problems: list[str] = []
+    has_target = raw.target is not None and bool(raw.target.role.strip()) and bool(raw.target.name.strip())
+    if raw.action in ("click", "fill", "select") and not has_target:
+        problems.append(f"{raw.action} needs a target: role and name of an element in the snapshot")
+    if raw.action in ("fill", "select") and not (raw.value or "").strip():
+        problems.append(f"{raw.action} needs a value: the text to type or the option to choose")
+    if raw.action == "navigate" and not (raw.value or "").startswith("/"):
+        problems.append("navigate needs a URL path starting with / as its value")
+    return problems
 
 
 def decide_prompt(ctx: StepContext) -> str:
