@@ -123,6 +123,10 @@ class PlanRow(Timestamps, Base):
     title: Mapped[str | None] = mapped_column(Text, default=None)
     """The planner's general name for the tutorial (#390); the workflow's title. None: use the request."""
     steps: Mapped[list[Any]] = mapped_column()  # an editable document, so jsonb rather than rows
+    mode: Mapped[str] = mapped_column(Text, default="upfront", server_default="upfront")
+    """upfront: every step planned before the run. steps: an outline, then a decision per step (ADR 0011)."""
+    outline: Mapped[list[Any] | None] = mapped_column(default=None)
+    """Step mode: the approved outline items ({seq, text}). None for upfront plans."""
     approved_at: Mapped[datetime | None] = mapped_column(default=None)
 
 
