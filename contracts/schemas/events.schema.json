@@ -2,10 +2,11 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "events.schema.json",
   "title": "RunEvent",
-  "$comment": "v1.6. Live-view events sent over SSE on GET /runs/{id}/events. SSE `event:` = type, `id:` = seq. Keep-alives are SSE comment lines, not events.",
+  "$comment": "v1.7. Live-view events sent over SSE on GET /runs/{id}/events. SSE `event:` = type, `id:` = seq. Keep-alives are SSE comment lines, not events.",
   "type": "object",
   "oneOf": [
     { "$ref": "#/$defs/RunStartedEvent" },
+    { "$ref": "#/$defs/StepDecidedEvent" },
     { "$ref": "#/$defs/StepStartedEvent" },
     { "$ref": "#/$defs/StepActionDoneEvent" },
     { "$ref": "#/$defs/StepVerifiedEvent" },
@@ -33,6 +34,26 @@
         "ts": { "type": "string", "format": "date-time" },
         "plan_id": { "type": "string", "format": "uuid" },
         "total_steps": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "StepDecidedEvent": {
+      "title": "StepDecidedEvent",
+      "type": "object",
+      "description": "Step mode (ADR 0011): the agent looked at the page and chose the next action. Followed by step.started for the same step_seq, unless the policy stops it.",
+      "required": ["type", "run_id", "seq", "ts", "step_seq", "thought", "action"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "step.decided" },
+        "run_id": { "type": "string", "format": "uuid" },
+        "seq": { "type": "integer", "minimum": 1 },
+        "ts": { "type": "string", "format": "date-time" },
+        "step_seq": { "type": "integer", "minimum": 1 },
+        "outline_seq": { "type": ["integer", "null"], "minimum": 1, "description": "The outline item it works on" },
+        "thought": { "type": "string", "description": "One line: what the page shows and why this action. Masked." },
+        "action": { "$ref": "common.schema.json#/$defs/Action" },
+        "target": {
+          "oneOf": [{ "$ref": "common.schema.json#/$defs/Target" }, { "type": "null" }]
+        }
       }
     },
     "StepStartedEvent": {
@@ -252,6 +273,8 @@
         "verification_unclear",
         "replan_review",
         "recovery_exhausted",
+        "no_progress",
+        "step_budget",
         "sensitive_data",
         "prompt_injection"
       ]
