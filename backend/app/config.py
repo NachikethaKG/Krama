@@ -38,7 +38,7 @@ class Settings(BaseSettings):
     # and most reliably in the Phase 7 spike goes first.
     gemini_models_step: str = "gemini-2.5-flash,gemini-3.5-flash,gemini-3.8-flash"
     # upfront: plan every step before the run (until v1.4). steps: an outline, then one decision per step.
-    planner_mode: Literal["upfront", "steps"] = "upfront"
+    planner_mode: Literal["upfront", "steps"] = "steps"
     # 127.0.0.1, not localhost: IPv6 localhost first costs a timeout on Windows.
     ollama_url: str = "http://127.0.0.1:11434"
     ollama_model: str = "qwen2.5:7b"
