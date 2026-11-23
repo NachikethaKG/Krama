@@ -8,6 +8,8 @@ Phase 7 quick fixes. Additive.
 
 - `step.schema.json` v1.3: `ObservedState.query`, the URL's query string (masked). `url_matches` is tried on the
   path first, then on `path?query`, so stored path-only patterns keep passing and search pages can be checked.
+- `events.schema.json` v1.6: `ObservedSummary.url` (in `step.failed`) is the path plus `?query` when the page
+  has one; still a string.
 
 ## 1.19 (#421)
 
