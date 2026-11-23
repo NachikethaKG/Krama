@@ -459,6 +459,8 @@ class WorkflowStepRow(Timestamps, Base):
     action: Mapped[dict[str, Any]] = mapped_column()  # value masked if sensitive
     target: Mapped[dict[str, Any]] = mapped_column()
     instruction_text: Mapped[str] = mapped_column(Text)
+    section: Mapped[str | None] = mapped_column(Text, default=None)
+    """Step mode (ADR 0011): the outline item this step belongs to, shown as a section title."""
     before_state: Mapped[dict[str, Any] | None] = mapped_column(default=None)
     expected_state: Mapped[dict[str, Any]] = mapped_column()
     observed_state: Mapped[dict[str, Any]] = mapped_column()
