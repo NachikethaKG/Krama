@@ -45,6 +45,8 @@ def plan_out(row: PlanRow) -> Plan:
             "risk": row.risk,
             "expected_result": row.expected_result,
             "title": row.title,
+            "mode": row.mode,
+            "outline": row.outline,
             "steps": row.steps,
             "created_at": row.created_at,
             "approved_at": row.approved_at,
