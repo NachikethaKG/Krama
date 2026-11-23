@@ -155,6 +155,21 @@ def test_url_regex_ignores_one_trailing_slash() -> None:
     assert verifier.verify(ExpectedState(url_matches="/feature-docs/$"), branch).verified
 
 
+def test_url_regex_tries_the_query_after_the_path() -> None:
+    # #463: OpenStreetMap showed /search?query=Bengaluru; the observer kept /search, so the check failed.
+    search = ObservedState(
+        url="/search", query="query=Bengaluru", title="Bengaluru", captured_at=datetime.now(UTC)
+    )
+
+    assert verifier.verify(ExpectedState(url_matches=r"^/search\?query=Bengaluru"), search).verified
+    assert verifier.verify(ExpectedState(url_matches="^/search$"), search).verified  # path-only still passes
+    failed = verifier.verify(ExpectedState(url_matches="query=Paris"), search)
+    assert not failed.verified
+    assert failed.failures()[0].detail == "URL is '/search?query=Bengaluru'"
+    no_query = observed("/search", "Search", None)
+    assert not verifier.verify(ExpectedState(url_matches="query=Bengaluru"), no_query).verified
+
+
 def test_empty_expected_state_is_skipped() -> None:
     outcome = verifier.verify(ExpectedState(), observed("/", "Dashboard", None))
 

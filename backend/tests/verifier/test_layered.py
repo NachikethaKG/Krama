@@ -101,6 +101,17 @@ async def test_a_click_whose_url_was_already_right_proves_nothing() -> None:
     assert (await result({"url_matches": "^/repo/create$"}, ev))[0] == "skipped"
 
 
+async def test_a_search_verifies_through_the_query_string() -> None:
+    # #463: the path stays /search; only the query says the search ran.
+    before = state("/search", FORM)
+    after = ObservedState(
+        url="/search", query="q=asyncio.gather", title=TITLE, aria_excerpt=FORM, captured_at=datetime.now(UTC)
+    )
+    ev = evidence(before=before, after=after)
+
+    assert (await result({"url_matches": r"^/search\?q=asyncio\.gather$"}, ev))[0] == "verified"
+
+
 async def test_navigate_counts_even_if_the_url_was_already_right() -> None:
     ev = evidence("navigate", Target(), value="/repo/create", after=state("/repo/create", FORM))
 
