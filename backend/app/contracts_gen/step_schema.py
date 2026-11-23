@@ -77,6 +77,12 @@ class Step(BaseModel):
     action: common_schema.Action
     target: StepTarget
     instruction_text: Annotated[str, Field(min_length=1)]
+    section: Annotated[
+        str | None,
+        Field(
+            description="Step mode (ADR 0011): the outline item this step belongs to, shown as a section title. Null for upfront workflows."
+        ),
+    ] = None
     before_state: ObservedState | None = None
     expected_state: common_schema.ExpectedState
     observed_state: ObservedState

@@ -1025,6 +1025,10 @@ export interface Step {
   action: Action;
   target: StepTarget;
   instruction_text: string;
+  /**
+   * Step mode (ADR 0011): the outline item this step belongs to, shown as a section title. Null for upfront workflows.
+   */
+  section?: string | null;
   before_state?: ObservedState | null;
   expected_state: ExpectedState;
   observed_state: ObservedState;
@@ -1237,6 +1241,10 @@ export interface Scene {
    * Short label for the step list.
    */
   title?: string | null;
+  /**
+   * The workflow step's section (an outline item); the step list shows it when it changes.
+   */
+  section?: string | null;
   /**
    * Scene start on the tutorial timeline.
    */
