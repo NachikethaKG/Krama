@@ -6,6 +6,8 @@ from urllib.parse import urlsplit
 from playwright.async_api import Browser, BrowserContext, Page, Playwright, async_playwright
 from playwright.async_api import Error as PlaywrightError
 
+from app.agent.page_text import PAGE_BUDGET_CHARS, trim_snapshot
+
 
 @dataclass(frozen=True)
 class SessionConfig:
@@ -101,16 +103,20 @@ def _as_dialog(snapshot: str) -> str:
     return "\n".join(["- dialog:", *(f"  {line}" for line in lines)])
 
 
-async def page_snapshot(page: Page) -> str:
-    """ARIA snapshot of the current page for the planner (`main` if there is one, else `body`), plus any open
-    dialog outside it. Untrusted: the planner redacts and delimits it before an LLM sees it."""
-    for locator in (page.get_by_role("main").first, page.locator("body")):
-        try:
-            snapshot = await locator.aria_snapshot(timeout=2_000)
-        except Exception:
-            continue
-        return "\n".join([snapshot, *await _dialogs_outside_main(page)])
-    return ""
+async def page_snapshot(page: Page, budget: int = PAGE_BUDGET_CHARS) -> str:
+    """ARIA snapshot of the whole page for an LLM (planner, task check), trimmed to `budget` characters.
+
+    The whole `body`, not only `<main>`: the header holds site search, navigation and account menus, and the
+    planner never saw them (#461, spike #457). Open dialogs outside `<main>` come first, marked as dialogs, so
+    trimming never drops them. Untrusted: callers mask and delimit it before an LLM sees it."""
+    dialogs = "\n".join(await _dialogs_outside_main(page))
+    try:
+        body = await page.locator("body").aria_snapshot(timeout=5_000)
+    except Exception:
+        return dialogs
+    if not dialogs:
+        return trim_snapshot(body, budget)
+    return "\n".join([dialogs, trim_snapshot(body, max(budget - len(dialogs), budget // 2))])
 
 
 async def _dialogs_outside_main(page: Page) -> list[str]:
