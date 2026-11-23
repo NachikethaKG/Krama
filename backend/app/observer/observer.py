@@ -413,20 +413,15 @@ class PageObserver(Observer):
             return ""
 
     async def _safe_aria_snapshot(self, page: Page) -> str:
-        # Prefer landmark role='main' to capture relevant content first, plus any open dialog outside it:
-        # Gitea (Fomantic UI) renders dialogs outside <main> and without role=dialog, so a step expecting a
-        # field in the dialog could never be verified (#78).
+        # The whole page, not only role='main': site search, navigation and account menus live in headers and
+        # sidebars, and a step there (or a step-mode change there, ADR 0011) could never be verified (Phase 7
+        # spike #457: Wikipedia's and the Python docs' search boxes). Plus any open dialog outside <main>,
+        # marked as a dialog: Gitea (Fomantic UI) renders dialogs without role=dialog (#78).
         try:
-            snapshot = await page.get_by_role("main").first.aria_snapshot(timeout=600)
-            return "\n".join([snapshot, *await self._dialogs_outside_main(page)])
-        except Exception:
-            pass
-
-        # Fallback to full body snapshot
-        try:
-            return await page.locator("body").aria_snapshot(timeout=600)
+            snapshot = await page.locator("body").aria_snapshot(timeout=3000)
         except Exception:
             return ""
+        return "\n".join([snapshot, *await self._dialogs_outside_main(page)])
 
     async def _dialogs_outside_main(self, page: Page) -> list[str]:
         dialogs = page.locator(_OPEN_DIALOGS).filter(visible=True)
