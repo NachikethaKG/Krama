@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import type { Plan, PlannedStep, Task } from "@krama/contracts-ts";
+import type { OutlineItem, Plan, PlannedStep, Task } from "@krama/contracts-ts";
 
 import { ApprovalControls } from "@/components/approval-controls";
 import { StepList } from "@/components/step-list";
@@ -190,6 +190,9 @@ export function ApprovalScreen({ planId, client, initialPlan, initialTask = null
     );
   }
 
+  // Step mode (ADR 0011): the user approves an outline; Krama decides each step on the page during the run.
+  const stepMode = plan.mode === "steps";
+
   return (
     <main data-testid="approval-screen" className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-7 px-4 py-8 sm:py-12">
       <TaskHeader
@@ -221,17 +224,23 @@ export function ApprovalScreen({ planId, client, initialPlan, initialTask = null
         </div>
       )}
 
-      {/* PRD §41: "I found a 6-step workflow. No destructive actions detected. [Approve & Run]" (#318) */}
-      <PlanSummary steps={steps} />
+      {stepMode ? (
+        <OutlineView outline={plan.outline ?? []} risk={plan.risk} />
+      ) : (
+        <>
+          {/* PRD §41: "I found a 6-step workflow. No destructive actions detected. [Approve & Run]" (#318) */}
+          <PlanSummary steps={steps} />
 
-      <StepList
-        steps={steps}
-        isEditing={isEditing}
-        onInstructionChange={handleInstructionChange}
-        onMoveUp={(seq) => handleMove(seq, -1)}
-        onMoveDown={(seq) => handleMove(seq, 1)}
-        onDeleteStep={handleDeleteStep}
-      />
+          <StepList
+            steps={steps}
+            isEditing={isEditing}
+            onInstructionChange={handleInstructionChange}
+            onMoveUp={(seq) => handleMove(seq, -1)}
+            onMoveDown={(seq) => handleMove(seq, 1)}
+            onDeleteStep={handleDeleteStep}
+          />
+        </>
+      )}
 
       <ApprovalControls
         runId={runId}
@@ -239,7 +248,7 @@ export function ApprovalScreen({ planId, client, initialPlan, initialTask = null
         isEditing={isEditing}
         isPending={isPending}
         error={error}
-        onToggleEdit={handleToggleEdit}
+        onToggleEdit={stepMode ? undefined : handleToggleEdit}
         onApprove={handleApprove}
         onReject={handleReject}
       />
@@ -260,5 +269,34 @@ function PlanSummary({ steps }: { steps: { risk?: string | null }[] }) {
       {risky ? t("summary.risky", { count: risky }) : t("summary.safe")}{" "}
       {t("summary.check")}
     </p>
+  );
+}
+
+/** Step mode: the rough plan the user approves. Steps are decided page by page; risky ones still ask first. */
+function OutlineView({ outline, risk }: { outline: OutlineItem[]; risk: string }) {
+  const t = useTranslations("approval");
+  return (
+    <section data-testid="outline-view" className="flex flex-col gap-4">
+      <p
+        data-testid="outline-summary"
+        className={`kr-tone-card rounded-2xl px-5 py-4 text-sm leading-relaxed text-white ${risk === "high" ? "kr-learn" : "kr-verify"}`}
+      >
+        {t("outline.summary", { count: outline.length })} {t("outline.risky")}
+      </p>
+      <ol className="flex flex-col gap-2" aria-label={t("outline.title")}>
+        {outline.map((item) => (
+          <li
+            key={item.seq}
+            data-testid="outline-item"
+            className="flex items-start gap-3 rounded-2xl border border-white/10 bg-ink-850/60 px-4 py-3"
+          >
+            <span className="flex size-7 shrink-0 items-center justify-center rounded-full border border-white/15 font-mono text-xs font-bold text-ink-300">
+              {item.seq}
+            </span>
+            <span className="pt-0.5 text-[15px] font-semibold leading-relaxed text-white">{item.text}</span>
+          </li>
+        ))}
+      </ol>
+    </section>
   );
 }
