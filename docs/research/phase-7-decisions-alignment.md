@@ -2,8 +2,8 @@
 
 - **Phase:** 7 (idea #455; spike #457; Ollama dev provider #456, done)
 - **Document type:** Decision record + research summary (for Nachiketha to read; for both agents to build on)
-- **Status:** **PROPOSED, waiting for Vishwas.** Each table gives the options and the **recommended** one. Nothing
-  here is decided until this line says so.
+- **Decided by:** Vishwas, 2026-11-23: **every recommended option**, chosen in the session that wrote this note.
+  Nachiketha is away, so Vishwas also took the decisions in Nachiketha's areas.
 - **Written by:** Claude Code on Vishwas's laptop, 2026-11-23, from
   [`phase-7-vishwas-any-website-spike.md`](phase-7-vishwas-any-website-spike.md).
 - Decisions in Nachiketha's areas (`frontend/`, `packages/`, `policy/`, `observer/`, `validation/`) are marked
@@ -28,7 +28,9 @@ overloaded (503) and 3.5-flash stalled on big prompts all day.
 
 ---
 
-## 2. Decisions to make
+## 2. Decisions
+
+Each table keeps the options that were weighed; the **bold** one was chosen.
 
 ### 2.1 How the agent works
 
@@ -41,6 +43,7 @@ overloaded (503) and 3.5-flash stalled on big prompts all day.
 | W5 | The page the LLM sees | (a) `<main>` only (today); (b) whole `body`; (c) **whole `body`, trimmed to a budget of ~24k characters (~6k tokens): interactive elements, headings and landmarks first, long text cut, dialogs always kept** | **(c)**. Also used by today's planner and the task check (the check sent 114,688 tokens) |
 | W6 | Screenshots for decisions | (a) **ARIA text only; vision stays a fallback when an element can't be found (today's rule)**; (b) screenshot with every decision | **(a)**: ARIA was enough in every spike case and costs a fraction of the tokens |
 | W7 | Tutorial text | **Written by code from the steps actually taken (ADR 0003 stays); the outline's wording becomes section titles** | — |
+| W8 | Today's plan-up-front planner during the switch | (a) remove at once; (b) **keep it behind a setting for one release (v1.4), then remove it**; (c) keep it | **(b)** |
 
 ### 2.2 LLM use and quota
 
@@ -84,7 +87,7 @@ overloaded (503) and 3.5-flash stalled on big prompts all day.
 
 ---
 
-## 3. Proposed issues and sizes
+## 3. Issues and sizes
 
 | Batch | Issue | Size | Notes |
 |---|---|---|---|
@@ -115,7 +118,7 @@ Roughly 2 L, 13 M, 10 S.
 
 ---
 
-## 4. Exit gate (proposed)
+## 4. Exit gate (v1.4)
 
 On a 16 GB CPU-only laptop, free tiers only, real Gemini; CI uses fakes.
 
@@ -132,5 +135,3 @@ On a 16 GB CPU-only laptop, free tiers only, real Gemini; CI uses fakes.
 
 - Which free accounts to use for the 4 signed-in sites (the owner's own accounts; no shared test accounts).
 - The real daily limit of `gemini-2.5-flash` (Q3 measures it).
-- Whether to keep the old plan-up-front path behind a setting during the switch (recommended: one release, then
-  remove).
