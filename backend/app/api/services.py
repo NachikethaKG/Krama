@@ -74,6 +74,8 @@ class Services:
     async def close(self) -> None:
         await self.planning.shutdown()
         await self.executor.shutdown()
+        if self.translations is not None:
+            await self.translations.shutdown()
         if self.relay is not None:
             await self.relay.stop()
         if isinstance(self.exports, (InProcessExportQueue, ArqExportQueue)):
