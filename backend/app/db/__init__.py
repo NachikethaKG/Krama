@@ -4,6 +4,7 @@ from app.db.base import Base
 from app.db.models import (
     BrowserProfileRow,
     ExportRow,
+    LLMCallRow,
     PlanRow,
     RunEventRow,
     RunRow,
@@ -24,6 +25,7 @@ __all__ = [
     "Base",
     "BrowserProfileRow",
     "ExportRow",
+    "LLMCallRow",
     "PlanRow",
     "RunEventRow",
     "RunRow",
