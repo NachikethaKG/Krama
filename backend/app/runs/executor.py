@@ -676,7 +676,9 @@ class InProcessExecutor:
                 done.append("(The user did something by hand here; look at the page again.)")
                 stalled = 0
             elif out.verified:
-                rows.append(self._row(job, recorded.model_copy(update={"seq": len(rows) + 1}), out))
+                section = next((o.text for o in job.outline if o.seq == decision.outline_seq), None)
+                numbered = recorded.model_copy(update={"seq": len(rows) + 1})
+                rows.append(self._row(job, numbered, out, section=section))
                 done.append(rows[-1].instruction_text)
                 stalled = 0
             else:
@@ -1139,7 +1141,13 @@ class InProcessExecutor:
                 self._paused_s[job.run_id] += time.perf_counter() - t0
 
     def _row(
-        self, job: RunJob, step: PlannedStep, out: StepOutcome, *, by_hand: bool = False
+        self,
+        job: RunJob,
+        step: PlannedStep,
+        out: StepOutcome,
+        *,
+        by_hand: bool = False,
+        section: str | None = None,
     ) -> WorkflowStepRow:
         """The stored step. Sensitive fill values are masked; the ARIA text stays out (it can hold typed
         values), the screenshot is referenced by its artifact key. The step text is rewritten from what ran
@@ -1161,6 +1169,7 @@ class InProcessExecutor:
                 else None,
             },
             instruction_text=self._step_text(job, step, out, sensitive=sensitive),
+            section=section,
             expected_state=mask_expected(step.expected_state).model_dump(mode="json", exclude_none=True),
             before_state=_before_state(out),
             observed_state={
