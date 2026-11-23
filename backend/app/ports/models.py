@@ -86,6 +86,9 @@ class ObservedState(_Model):
     """What the Observer captured after a step."""
 
     url: str = Field(description="Path only, e.g. /repo/create (no scheme or host)")
+    query: str | None = Field(
+        default=None, description="The query string without '?', masked, e.g. query=Bengaluru (#463)"
+    )
     title: str
     headings: list[str] = []
     aria_excerpt: str = ""
