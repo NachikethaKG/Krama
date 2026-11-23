@@ -10,7 +10,7 @@ Vishwas and Nachiketha are building the PRD's "Verified UI Workflow Engine": a n
 4. a real-world GitHub workflow (Issues, Projects, PRs, CODEOWNERS, branch protection, CI).
 
 Decisions made:
-- **LLM:** a provider abstraction. **Gemini (free tier) is the reference model on both laptops.** No local model: cheap text jobs are done in code or with Gemini ([ADR 0003](../adr/0003-no-local-model-for-text-jobs.md), Phase 2). Tests use recorded LLM fixtures, so they need no network and no GPU.
+- **LLM:** a provider abstraction. **Gemini (free tier) is the reference model on both laptops.** No local model in the product: cheap text jobs are done in code or with Gemini ([ADR 0003](../adr/0003-no-local-model-for-text-jobs.md), Phase 2); a local model is an opt-in development provider only ([ADR 0010](../adr/0010-local-llm-as-opt-in-dev-provider.md), Phase 7). Tests use recorded LLM fixtures, so they need no network and no GPU.
 - **First target:** **self-hosted Gitea in Docker** (a GitHub-like UI that can be reset to a clean state). Real GitHub with a throwaway account comes in Phase 3.
 - **Docker Desktop (WSL2) on both laptops** for Postgres, Redis and Gitea.
 - **GitHub Issues + Projects** for tracking.
@@ -152,7 +152,8 @@ Each sprint ends with an integration PR merged to `main` and a demo **run on Nac
 | [3: MVP](phase-3-mvp.md) | Real GitHub, accounts, sharing, polish | ✅ completed (tag: `v1.0-mvp`) |
 | [4: Reliability](phase-4-reliability.md) | UI drift detection, self-healing, versioning | ✅ completed (tag: `v1.1`) |
 | [5: Video export](phase-5-video-export.md) | MP4 export with narration | ✅ completed (tag: `v1.2.1`; `v1.2` was broken) |
-| [6: Do it for me, takeover, search, languages](phase-6-assist.md) | Run a task for the user, hand a run to a human, search workflows, more languages | 🚧 in progress (tag: `v1.3`) |
+| [6: Do it for me, takeover, search, languages](phase-6-assist.md) | Run a task for the user, hand a run to a human, search workflows, more languages | ✅ completed (tag: `v1.3`) |
+| [7: Krama on any website](phase-7-any-website.md) | Any public site: outline, then look before each step; sign in to any site; site notes | 🚧 in progress (tag: `v1.4`) |
 | [Later](phase-6-later.md) | Backlog: browser extension, RBAC/teams/audit log, public API | — |
 
 ### Phase 5: Video Export — Exit Gate (#128)
