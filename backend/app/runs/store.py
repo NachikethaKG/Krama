@@ -6,7 +6,7 @@ in the same transaction as the run's status change.
 """
 
 from collections.abc import Awaitable, Callable, Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
@@ -14,7 +14,7 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from app.contracts_gen.plan_schema import PlannedStep
+from app.contracts_gen.plan_schema import OutlineItem, PlannedStep
 from app.db import PlanRow, RunRow, TaskRow, WorkflowRow, WorkflowStepRow, WorkflowVersionRow
 from app.db.repositories import (
     add_workflow,
@@ -50,6 +50,9 @@ class RunJob:
     """Whose run it is (the task's owner): a do-it run uses their own site session (ADR 0007)."""
     recorded_as: str | None = None
     """The site account the run was signed in as; stored with the version it makes (ADR 0007)."""
+    mode: str = "upfront"
+    """upfront: run `steps`. steps: decide each step during the run from `outline` (ADR 0011)."""
+    outline: list[OutlineItem] = field(default_factory=list)
 
 
 _RISK_ORDER = {"low": 0, "medium": 1, "high": 2}
@@ -101,6 +104,8 @@ class RunStore:
                 kind=run.kind,
                 source_workflow_id=run.source_workflow_id,
                 user_id=task.user_id,
+                mode=plan.mode,
+                outline=[OutlineItem.model_validate(o) for o in plan.outline or []],
             )
 
     async def status(self, run_id: UUID) -> RunStatus:
