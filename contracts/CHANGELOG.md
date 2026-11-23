@@ -2,6 +2,13 @@
 
 Every change to `contracts/` is listed here. Additive change = minor version bump; breaking change = major bump + ADR.
 
+## 1.20 (#463)
+
+Phase 7 quick fixes. Additive.
+
+- `step.schema.json` v1.3: `ObservedState.query`, the URL's query string (masked). `url_matches` is tried on the
+  path first, then on `path?query`, so stored path-only patterns keep passing and search pages can be checked.
+
 ## 1.19 (#421)
 
 Multiple languages, backend (#132). Additive.
