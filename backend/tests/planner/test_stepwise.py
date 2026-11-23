@@ -91,11 +91,37 @@ async def test_the_decider_returns_one_step_with_an_empty_expected_state() -> No
 
 
 async def test_done_means_no_step() -> None:
-    reply = {"thought": "The map shows Bengaluru.", "action": "done"}
+    reply = {"thought": "The map shows Bengaluru.", "action": "done", "target": None}
     llm = FakeProvider([FakeResponse(name="d", schema_name="LLMDecision", response=reply)])
     ctx = StepContext(task="t", outline=[OutlineItem(seq=1, text="Search")])
 
     assert (await StepDecider(llm).decide(ctx, seq=3)).step is None
+
+
+async def test_an_answer_that_cant_run_is_asked_again_once() -> None:
+    # Phase 7 batch B check on qwen2.5: "fill Alan Turing" with no target, "navigate" with no path.
+    fixed = {
+        "thought": "Type the name.",
+        "action": "fill",
+        "target": {"role": "searchbox", "name": "Search Wikipedia"},
+        "value": "Alan Turing",
+    }
+    broken = {"thought": "Type the name.", "action": "fill", "target": None, "value": "Alan Turing"}
+    llm = FakeProvider(
+        [
+            FakeResponse(
+                name="fixed", schema_name="LLMDecision", prompt_contains=["can't be run"], response=fixed
+            ),
+            FakeResponse(name="broken", schema_name="LLMDecision", response=broken),
+        ]
+    )
+    ctx = StepContext(task="t", outline=[OutlineItem(seq=1, text="Search")])
+
+    got = await StepDecider(llm).decide(ctx, seq=1)
+
+    assert got.step is not None and got.step.target.name == "Search Wikipedia"
+    assert len(got.llm_attempts) == 2
+    assert "fill needs a target" in llm.calls[1][1]
 
 
 def decision(action: str, role: str | None, value: str | None = None) -> LLMDecision:
