@@ -197,6 +197,33 @@ async def test_a_new_prompt_version_refreshes_stored_translations(
     assert kept.status == "ready" and kept.title == fresh.title  # a failed refresh keeps the text
 
 
+async def test_stopping_the_api_cancels_a_translation_still_running(
+    sessions: Sessions, tmp_path: Path, site: str
+) -> None:
+    # A refresh left running after shutdown kept its transaction open, and the test database's TRUNCATE
+    # deadlocked against it (CI on main, 2026-11-22).
+    started, cancelled = asyncio.Event(), asyncio.Event()
+
+    class Hanging(FakeTranslator):
+        async def translate(self, items: Any, language: str) -> list[str | None]:
+            started.set()
+            try:
+                await asyncio.sleep(3600)
+            except asyncio.CancelledError:
+                cancelled.set()
+                raise
+            return []
+
+    svc = services(sessions, tmp_path, reply(GOOD_PLAN))
+    async with Api(svc) as api:
+        workflow_id = await verified_workflow(api, site)
+        svc.translations = TranslationService(sessions, Hanging())
+        await api.client.get(f"/workflows/{workflow_id}/translations/de")
+        await asyncio.wait_for(started.wait(), 10)
+
+    assert cancelled.is_set()
+
+
 # --- narration and exports in a language
 
 
