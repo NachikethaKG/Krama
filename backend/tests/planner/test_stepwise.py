@@ -100,7 +100,7 @@ async def test_done_means_no_step() -> None:
 
 def decision(action: str, role: str | None, value: str | None = None) -> LLMDecision:
     target = DecidedTarget(role=role, name="X") if role else None
-    return LLMDecision(thought="t", action=action, target=target, value=value)  # type: ignore[arg-type]
+    return LLMDecision(thought="t", action=action, target=target, value=value)
 
 
 @pytest.mark.parametrize(
