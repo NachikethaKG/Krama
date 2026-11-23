@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "step.schema.json",
   "title": "Step",
-  "$comment": "v1.2. One executed and verified step of a Verified Workflow (docs/phases/README.md §3.1, docs/database-schema.md).",
+  "$comment": "v1.3. One executed and verified step of a Verified Workflow (docs/phases/README.md §3.1, docs/database-schema.md).",
   "type": "object",
   "required": [
     "id",
@@ -99,6 +99,10 @@
       "additionalProperties": false,
       "properties": {
         "url": { "type": "string", "description": "URL path only, e.g. /repo/create" },
+        "query": {
+          "type": ["string", "null"],
+          "description": "The URL's query string without the '?', masked like other page text, e.g. query=Bengaluru. url_matches is tried on the path first, then on path?query (#463)."
+        },
         "title": { "type": ["string", "null"] },
         "headings": { "type": "array", "items": { "type": "string" } },
         "aria_excerpt": { "type": ["string", "null"] },
