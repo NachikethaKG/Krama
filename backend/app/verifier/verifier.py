@@ -73,7 +73,7 @@ class RuleVerifier:
 
         if expected.url_matches is not None:
             methods.append("url")
-            checks.append(_check_url(expected.url_matches, observed.url))
+            checks.append(_check_url(expected.url_matches, observed.url, observed.query))
         if expected.title_contains is not None:
             methods.append("dom")
             ok = expected.title_contains.lower() in observed.title.lower()
@@ -121,21 +121,31 @@ class ScriptedVerifier:
         return self._outcomes.pop(0)
 
 
-def url_path_matches(pattern: str, path: str) -> bool:
+def url_path_matches(pattern: str, path: str, query: str | None = None) -> bool:
     """`url_matches` on a path, ignoring one trailing slash: Gitea answers /o/r/src/branch/x/ for .../x.
+    Then, if the page has a query string, on `path?query` (#463): stored path-only patterns keep passing,
+    and a search page can be checked by its query (`^/search\\?query=Bengaluru`).
 
     Raises re.error for an invalid pattern."""
     if re.search(pattern, path) is not None:
         return True
-    return len(path) > 1 and path.endswith("/") and re.search(pattern, path.rstrip("/")) is not None
+    if len(path) > 1 and path.endswith("/") and re.search(pattern, path.rstrip("/")) is not None:
+        return True
+    return bool(query) and re.search(pattern, f"{path}?{query}") is not None
 
 
-def _check_url(pattern: str, path: str) -> Check:
+def url_shown(path: str, query: str | None) -> str:
+    """The observed URL as a person reads it: the path, plus `?query` when there is one."""
+    return f"{path}?{query}" if query else path
+
+
+def _check_url(pattern: str, path: str, query: str | None = None) -> Check:
     try:
-        ok = url_path_matches(pattern, path)
+        ok = url_path_matches(pattern, path, query)
     except re.error as e:
         return Check(kind="url_matches", expected=pattern, passed=False, detail=f"invalid regex: {e}")
-    return Check(kind="url_matches", expected=pattern, passed=ok, detail=f"path is {path!r}")
+    detail = f"URL is {url_shown(path, query)!r}" if query else f"path is {path!r}"
+    return Check(kind="url_matches", expected=pattern, passed=ok, detail=detail)
 
 
 def _find(nodes: list[AriaNode], ref: ElementRef) -> list[AriaNode]:
