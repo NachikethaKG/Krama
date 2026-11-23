@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "events.schema.json",
   "title": "RunEvent",
-  "$comment": "v1.5. Live-view events sent over SSE on GET /runs/{id}/events. SSE `event:` = type, `id:` = seq. Keep-alives are SSE comment lines, not events.",
+  "$comment": "v1.6. Live-view events sent over SSE on GET /runs/{id}/events. SSE `event:` = type, `id:` = seq. Keep-alives are SSE comment lines, not events.",
   "type": "object",
   "oneOf": [
     { "$ref": "#/$defs/RunStartedEvent" },
@@ -268,7 +268,7 @@
       "required": ["url", "title"],
       "additionalProperties": false,
       "properties": {
-        "url": { "type": "string", "description": "Path only" },
+        "url": { "type": "string", "description": "The path, plus ?query when the page has one (#463)" },
         "title": { "type": "string" }
       }
     }
