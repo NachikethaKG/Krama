@@ -1,0 +1,486 @@
+[
+ {
+  "case": "wiki-home-next",
+  "q": "next",
+  "snapshot_chars": 40329,
+  "correct": true,
+  "reply": {
+   "thought": "Fill 'Alan Turing' into the Wikipedia searchbox.",
+   "action": "fill",
+   "target": {
+    "role": "searchbox",
+    "name": "Search Wikipedia"
+   },
+   "value": "Alan Turing"
+  },
+  "model": "gemini-3.5-flash",
+  "attempts": [
+   {
+    "model": "gemini-3.8-flash",
+    "status": "unavailable",
+    "http_code": null,
+    "latency_ms": 30019,
+    "tokens_in": null,
+    "tokens_out": null,
+    "message": "no answer within 30 s"
+   },
+   {
+    "model": "gemini-3.5-flash",
+    "status": "ok",
+    "http_code": 200,
+    "latency_ms": 10737,
+    "tokens_in": 13071,
+    "tokens_out": 64,
+    "message": null
+   }
+  ],
+  "seconds": 40.8
+ },
+ {
+  "case": "wiki-typed-next",
+  "q": "next",
+  "snapshot_chars": 40720,
+  "correct": true,
+  "reply": {
+   "thought": "The search term 'Alan Turing' is typed in the search box, now clicking the search button to submit.",
+   "action": "click",
+   "target": {
+    "role": "button",
+    "name": "Search"
+   },
+   "value": null
+  },
+  "model": "gemini-3.5-flash",
+  "attempts": [
+   {
+    "model": "gemini-3.5-flash",
+    "status": "ok",
+    "http_code": 200,
+    "latency_ms": 28247,
+    "tokens_in": 13193,
+    "tokens_out": 70,
+    "message": null
+   }
+  ],
+  "seconds": 28.3
+ },
+ {
+  "case": "wiki-article-done",
+  "q": "done",
+  "snapshot_chars": 48000,
+  "correct": true,
+  "reply": {
+   "evidence": "The page URL is 'https://en.wikipedia.org/wiki/Alan_Turing' and the main heading is 'Alan Turing', indicating that Alan Turing's Wikipedia article is open.",
+   "done": true
+  },
+  "model": "gemini-2.5-flash",
+  "attempts": [
+   {
+    "model": "gemini-3.5-flash",
+    "status": "unavailable",
+    "http_code": null,
+    "latency_ms": 89527,
+    "tokens_in": null,
+    "tokens_out": null,
+    "message": "no answer within 30 s"
+   },
+   {
+    "model": "gemini-2.5-flash",
+    "status": "ok",
+    "http_code": 200,
+    "latency_ms": 6613,
+    "tokens_in": 14230,
+    "tokens_out": 49,
+    "message": null
+   }
+  ],
+  "seconds": 96.1
+ },
+ {
+  "case": "wiki-home-done",
+  "q": "done",
+  "snapshot_chars": 40329,
+  "correct": true,
+  "reply": {
+   "evidence": "The current page is the Wikipedia Main Page and does not display Alan Turing's article.",
+   "done": false
+  },
+  "model": "gemini-2.5-flash",
+  "attempts": [
+   {
+    "model": "gemini-2.5-flash",
+    "status": "ok",
+    "http_code": 200,
+    "latency_ms": 3951,
+    "tokens_in": 13013,
+    "tokens_out": 27,
+    "message": null
+   }
+  ],
+  "seconds": 4.0
+ },
+ {
+  "case": "osm-home-next",
+  "q": "next",
+  "snapshot_chars": 2895,
+  "correct": true,
+  "reply": {
+   "thought": "The page shows a map and a search textbox. I need to type 'Bengaluru' into the search textbox.",
+   "action": "fill",
+   "target": {
+    "role": "textbox",
+    "name": "Search"
+   },
+   "value": "Bengaluru"
+  },
+  "model": "gemini-2.5-flash",
+  "attempts": [
+   {
+    "model": "gemini-2.5-flash",
+    "status": "ok",
+    "http_code": 200,
+    "latency_ms": 1669,
+    "tokens_in": 1251,
+    "tokens_out": 74,
+    "message": null
+   }
+  ],
+  "seconds": 1.7
+ },
+ {
+  "case": "osm-typed-next",
+  "q": "next",
+  "snapshot_chars": 2880,
+  "correct": true,
+  "reply": {
+   "thought": "The search term 'Bengaluru' has been entered, and now I need to click the 'Go' button to perform the search.",
+   "action": "click",
+   "target": {
+    "role": "button",
+    "name": "Go"
+   },
+   "value": null
+  },
+  "model": "gemini-2.5-flash",
+  "attempts": [
+   {
+    "model": "gemini-2.5-flash",
+    "status": "ok",
+    "http_code": 200,
+    "latency_ms": 1347,
+    "tokens_in": 1248,
+    "tokens_out": 50,
+    "message": null
+   }
+  ],
+  "seconds": 1.3
+ },
+ {
+  "case": "osm-results-done",
+  "q": "done",
+  "snapshot_chars": 2596,
+  "correct": true,
+  "reply": {
+   "evidence": "The page displays 'Search Results' with 'Bengaluru, Bangalore North, Bengaluru Urban, Karnataka, India' listed, and the URL indicates the map is centered on Bengaluru.",
+   "done": true
+  },
+  "model": "gemini-2.5-flash",
+  "attempts": [
+   {
+    "model": "gemini-2.5-flash",
+    "status": "ok",
+    "http_code": 200,
+    "latency_ms": 2116,
+    "tokens_in": 1162,
+    "tokens_out": 44,
+    "message": null
+   }
+  ],
+  "seconds": 2.1
+ },
+ {
+  "case": "todo-empty-next",
+  "q": "next",
+  "snapshot_chars": 440,
+  "correct": true,
+  "reply": {
+   "thought": "The page shows an input field to add new todos. I need to type \"Buy milk\" into this field.",
+   "action": "fill",
+   "target": {
+    "role": "textbox",
+    "name": "What needs to be done?"
+   },
+   "value": "Buy milk"
+  },
+  "model": "gemini-2.5-flash",
+  "attempts": [
+   {
+    "model": "gemini-2.5-flash",
+    "status": "ok",
+    "http_code": 200,
+    "latency_ms": 10013,
+    "tokens_in": 383,
+    "tokens_out": 51,
+    "message": null
+   }
+  ],
+  "seconds": 54.3
+ },
+ {
+  "case": "todo-typed-next",
+  "q": "next",
+  "snapshot_chars": 450,
+  "correct": false,
+  "reply": {
+   "thought": "I have typed the todo item, now I need to press Enter to add it to the list.",
+   "action": "press",
+   "target": null,
+   "value": "Enter"
+  },
+  "model": "gemini-2.5-flash",
+  "attempts": [
+   {
+    "model": "gemini-2.5-flash",
+    "status": "ok",
+    "http_code": 200,
+    "latency_ms": 8967,
+    "tokens_in": 396,
+    "tokens_out": 36,
+    "message": null
+   }
+  ],
+  "seconds": 9.0
+ },
+ {
+  "case": "todo-added-next",
+  "q": "next",
+  "snapshot_chars": 794,
+  "correct": true,
+  "reply": {
+   "thought": "The todo \"Buy milk\" has been added. Now I need to mark it as completed by clicking the \"Toggle Todo\" checkbox next to it.",
+   "action": "click",
+   "target": {
+    "role": "checkbox",
+    "name": "Toggle Todo"
+   },
+   "value": null
+  },
+  "model": "gemini-2.5-flash",
+  "attempts": [
+   {
+    "model": "gemini-2.5-flash",
+    "status": "ok",
+    "http_code": 200,
+    "latency_ms": 17239,
+    "tokens_in": 527,
+    "tokens_out": 54,
+    "message": null
+   }
+  ],
+  "seconds": 17.2
+ },
+ {
+  "case": "todo-added-done",
+  "q": "done",
+  "snapshot_chars": 794,
+  "correct": true,
+  "reply": {
+   "evidence": "The todo item 'Buy milk' is present but not marked as completed, as its checkbox is unchecked.",
+   "done": false
+  },
+  "model": "gemini-2.5-flash",
+  "attempts": [
+   {
+    "model": "gemini-2.5-flash",
+    "status": "ok",
+    "http_code": 200,
+    "latency_ms": 9465,
+    "tokens_in": 469,
+    "tokens_out": 30,
+    "message": null
+   }
+  ],
+  "seconds": 9.5
+ },
+ {
+  "case": "todo-completed-done",
+  "q": "done",
+  "snapshot_chars": 867,
+  "correct": true,
+  "reply": {
+   "evidence": "The todo item 'Buy milk' is present in the list and its 'Toggle Todo' checkbox is checked.",
+   "done": true
+  },
+  "model": "gemini-2.5-flash",
+  "attempts": [
+   {
+    "model": "gemini-2.5-flash",
+    "status": "ok",
+    "http_code": 200,
+    "latency_ms": 9037,
+    "tokens_in": 483,
+    "tokens_out": 31,
+    "message": null
+   }
+  ],
+  "seconds": 9.0
+ },
+ {
+  "case": "todo-other-done",
+  "q": "done",
+  "snapshot_chars": 871,
+  "correct": true,
+  "reply": {
+   "evidence": "The todo 'Buy milk' is not present on the list.",
+   "done": false
+  },
+  "model": "gemini-2.5-flash",
+  "attempts": [
+   {
+    "model": "gemini-2.5-flash",
+    "status": "ok",
+    "http_code": 200,
+    "latency_ms": 1866,
+    "tokens_in": 484,
+    "tokens_out": 22,
+    "message": null
+   }
+  ],
+  "seconds": 7.1
+ },
+ {
+  "case": "py-home-next",
+  "q": "next",
+  "snapshot_chars": 11305,
+  "correct": true,
+  "reply": {
+   "thought": "The page shows the Python documentation homepage. I need to search for \"asyncio.gather\" using the \"Quick search\" searchbox.",
+   "action": "fill",
+   "target": {
+    "role": "searchbox",
+    "name": "Quick search"
+   },
+   "value": "asyncio.gather"
+  },
+  "model": "gemini-2.5-flash",
+  "attempts": [
+   {
+    "model": "gemini-2.5-flash",
+    "status": "ok",
+    "http_code": 200,
+    "latency_ms": 3171,
+    "tokens_in": 3915,
+    "tokens_out": 64,
+    "message": null
+   }
+  ],
+  "seconds": 11.3
+ },
+ {
+  "case": "py-results-next",
+  "q": "next",
+  "snapshot_chars": 9265,
+  "correct": true,
+  "reply": {
+   "thought": "The page shows search results for 'asyncio.gather'. The first result is the exact entry I need to open.",
+   "action": "click",
+   "target": {
+    "role": "link",
+    "name": "asyncio.gather"
+   },
+   "value": null
+  },
+  "model": "gemini-2.5-flash",
+  "attempts": [
+   {
+    "model": "gemini-2.5-flash",
+    "status": "ok",
+    "http_code": 200,
+    "latency_ms": 3009,
+    "tokens_in": 2999,
+    "tokens_out": 57,
+    "message": null
+   }
+  ],
+  "seconds": 8.8
+ },
+ {
+  "case": "py-results-done",
+  "q": "done",
+  "snapshot_chars": 9265,
+  "correct": true,
+  "reply": {
+   "evidence": "The page displays search results for 'asyncio.gather', but the entry itself has not been opened yet.",
+   "done": false
+  },
+  "model": "gemini-2.5-flash",
+  "attempts": [
+   {
+    "model": "gemini-2.5-flash",
+    "status": "ok",
+    "http_code": 200,
+    "latency_ms": 3114,
+    "tokens_in": 2941,
+    "tokens_out": 31,
+    "message": null
+   }
+  ],
+  "seconds": 17.3
+ },
+ {
+  "case": "mdn-home-next",
+  "q": "next",
+  "snapshot_chars": 12126,
+  "correct": true,
+  "reply": {
+   "thought": "The page is the MDN homepage. I need to find the search bar to look for \"Array.prototype.map\". I see a \"Search the site\" button and a \"Search\" button. I will try the \"Search the site\" button first as it is in the banner.",
+   "action": "click",
+   "target": {
+    "role": "button",
+    "name": "Search the site"
+   },
+   "value": null
+  },
+  "model": "gemini-2.5-flash",
+  "attempts": [
+   {
+    "model": "gemini-2.5-flash",
+    "status": "ok",
+    "http_code": 200,
+    "latency_ms": 3051,
+    "tokens_in": 4264,
+    "tokens_out": 84,
+    "message": null
+   }
+  ],
+  "seconds": 9.4
+ },
+ {
+  "case": "gh-issues-next",
+  "q": "next",
+  "snapshot_chars": 24605,
+  "correct": true,
+  "reply": {
+   "thought": "The page shows the open issues for the microsoft/playwright repository. I need to filter these issues by the label 'documentation'. I can use the \"Filter by labels\" button to achieve this.",
+   "action": "click",
+   "target": {
+    "role": "button",
+    "name": "Filter by labels"
+   },
+   "value": null
+  },
+  "model": "gemini-2.5-flash",
+  "attempts": [
+   {
+    "model": "gemini-2.5-flash",
+    "status": "ok",
+    "http_code": 200,
+    "latency_ms": 4263,
+    "tokens_in": 7600,
+    "tokens_out": 65,
+    "message": null
+   }
+  ],
+  "seconds": 15.5
+ }
+]

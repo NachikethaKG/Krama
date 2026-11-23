@@ -1,0 +1,341 @@
+[
+ {
+  "case": "osm-home-next",
+  "q": "next",
+  "snapshot_chars": 2895,
+  "correct": true,
+  "reply": {
+   "thought": "The user wants to search for Bengaluru on the map. The search box is available on the page.",
+   "action": "fill",
+   "target": {
+    "role": "textbox",
+    "name": "Search"
+   },
+   "value": "Bengaluru"
+  },
+  "model": "qwen2.5-cpu",
+  "attempts": [
+   {
+    "model": "qwen2.5-cpu",
+    "status": "ok",
+    "http_code": 200,
+    "latency_ms": 81552,
+    "tokens_in": 1185,
+    "tokens_out": 58,
+    "message": null
+   }
+  ],
+  "seconds": 81.6
+ },
+ {
+  "case": "osm-typed-next",
+  "q": "next",
+  "snapshot_chars": 2880,
+  "correct": false,
+  "reply": {
+   "thought": "The user has already typed 'Bengaluru' in the search box. The next logical step is to press Enter or click the Go button to perform the search.",
+   "action": "press",
+   "target": {
+    "role": "button",
+    "name": "Go"
+   },
+   "value": ""
+  },
+  "model": "qwen2.5-cpu",
+  "attempts": [
+   {
+    "model": "qwen2.5-cpu",
+    "status": "ok",
+    "http_code": 200,
+    "latency_ms": 64198,
+    "tokens_in": 1187,
+    "tokens_out": 74,
+    "message": null
+   }
+  ],
+  "seconds": 64.2
+ },
+ {
+  "case": "osm-results-done",
+  "q": "done",
+  "snapshot_chars": 2596,
+  "correct": true,
+  "reply": {
+   "evidence": "The current page shows a map centered on Bengaluru, with search results indicating that the query 'Bengaluru' has returned relevant locations. The user has completed the steps of typing 'Bengaluru' in the search box and clicking 'Go', which led to the display of these results.",
+   "done": true
+  },
+  "model": "qwen2.5-cpu",
+  "attempts": [
+   {
+    "model": "qwen2.5-cpu",
+    "status": "ok",
+    "http_code": 200,
+    "latency_ms": 67912,
+    "tokens_in": 1118,
+    "tokens_out": 75,
+    "message": null
+   }
+  ],
+  "seconds": 67.9
+ },
+ {
+  "case": "todo-empty-next",
+  "q": "next",
+  "snapshot_chars": 440,
+  "correct": true,
+  "reply": {
+   "thought": "The user needs to add a todo called 'Buy milk' and mark it as completed. The current page is the demo TodoMVC app. I should first focus on the textbox where new todos can be added.",
+   "action": "fill",
+   "target": {
+    "role": "textbox",
+    "name": "What needs to be done?"
+   },
+   "value": "Buy milk"
+  },
+  "model": "qwen2.5-cpu",
+  "attempts": [
+   {
+    "model": "qwen2.5-cpu",
+    "status": "ok",
+    "http_code": 200,
+    "latency_ms": 28568,
+    "tokens_in": 368,
+    "tokens_out": 74,
+    "message": null
+   }
+  ],
+  "seconds": 28.6
+ },
+ {
+  "case": "todo-typed-next",
+  "q": "next",
+  "snapshot_chars": 450,
+  "correct": false,
+  "reply": {
+   "thought": "The next step is to mark the todo as completed.",
+   "action": "check",
+   "target": {
+    "role": "checkbox",
+    "name": "Completed"
+   },
+   "value": ""
+  },
+  "model": "qwen2.5-cpu",
+  "attempts": [
+   {
+    "model": "qwen2.5-cpu",
+    "status": "ok",
+    "http_code": 200,
+    "latency_ms": 15227,
+    "tokens_in": 383,
+    "tokens_out": 41,
+    "message": null
+   }
+  ],
+  "seconds": 15.2
+ },
+ {
+  "case": "todo-added-next",
+  "q": "next",
+  "snapshot_chars": 794,
+  "correct": true,
+  "reply": {
+   "thought": "The next step is to mark the 'Buy milk' todo as completed.",
+   "action": "check",
+   "target": {
+    "role": "checkbox",
+    "name": "Toggle Todo"
+   },
+   "value": null
+  },
+  "model": "qwen2.5-cpu",
+  "attempts": [
+   {
+    "model": "qwen2.5-cpu",
+    "status": "ok",
+    "http_code": 200,
+    "latency_ms": 23065,
+    "tokens_in": 499,
+    "tokens_out": 55,
+    "message": null
+   }
+  ],
+  "seconds": 23.1
+ },
+ {
+  "case": "todo-added-done",
+  "q": "done",
+  "snapshot_chars": 794,
+  "correct": true,
+  "reply": {
+   "evidence": "The task is not complete because the 'Buy milk' item is present in the list but it is not marked as completed. The user needs to check the checkbox next to 'Buy milk' to mark it as completed.",
+   "done": false
+  },
+  "model": "qwen2.5-cpu",
+  "attempts": [
+   {
+    "model": "qwen2.5-cpu",
+    "status": "ok",
+    "http_code": 200,
+    "latency_ms": 30062,
+    "tokens_in": 443,
+    "tokens_out": 57,
+    "message": null
+   }
+  ],
+  "seconds": 30.1
+ },
+ {
+  "case": "todo-completed-done",
+  "q": "done",
+  "snapshot_chars": 867,
+  "correct": true,
+  "reply": {
+   "evidence": "The current page shows that the user has added 'Buy milk' and ticked its checkbox. The task is to add a todo called 'Buy milk' and mark it as completed, which has been fully accomplished on this page.",
+   "done": true
+  },
+  "model": "qwen2.5-cpu",
+  "attempts": [
+   {
+    "model": "qwen2.5-cpu",
+    "status": "ok",
+    "http_code": 200,
+    "latency_ms": 23557,
+    "tokens_in": 455,
+    "tokens_out": 59,
+    "message": null
+   }
+  ],
+  "seconds": 23.6
+ },
+ {
+  "case": "todo-other-done",
+  "q": "done",
+  "snapshot_chars": 871,
+  "correct": true,
+  "reply": {
+   "evidence": "The current page snapshot shows a todo list with an item 'Walk the dog' that has been marked as completed. The user's task was to add a todo called 'Buy milk' and mark it as completed. Since there is no 'Buy milk' item on the page, the whole task is not complete.",
+   "done": false
+  },
+  "model": "qwen2.5-cpu",
+  "attempts": [
+   {
+    "model": "qwen2.5-cpu",
+    "status": "ok",
+    "http_code": 200,
+    "latency_ms": 26345,
+    "tokens_in": 456,
+    "tokens_out": 76,
+    "message": null
+   }
+  ],
+  "seconds": 26.3
+ },
+ {
+  "case": "py-home-next",
+  "q": "next",
+  "snapshot_chars": 11305,
+  "correct": true,
+  "reply": {
+   "thought": "需要在文档中搜索 asyncio.gather，应该使用搜索框进行搜索。",
+   "action": "fill",
+   "target": {
+    "role": "searchbox",
+    "name": "Quick search"
+   },
+   "value": "asyncio.gather"
+  },
+  "model": "qwen2.5-cpu",
+  "attempts": [
+   {
+    "model": "qwen2.5-cpu",
+    "status": "ok",
+    "http_code": 200,
+    "latency_ms": 202621,
+    "tokens_in": 3555,
+    "tokens_out": 56,
+    "message": null
+   }
+  ],
+  "seconds": 202.6
+ },
+ {
+  "case": "py-results-next",
+  "q": "next",
+  "snapshot_chars": 9265,
+  "correct": false,
+  "reply": {
+   "thought": "The user needs to open the entry for asyncio.gather, which is listed as a Python function in the search results.",
+   "action": "press",
+   "target": {
+    "role": "link",
+    "name": "asyncio.gather"
+   },
+   "value": "/url: library/asyncio-task.html#asyncio.gather"
+  },
+  "model": "qwen2.5-cpu",
+  "attempts": [
+   {
+    "model": "qwen2.5-cpu",
+    "status": "ok",
+    "http_code": 200,
+    "latency_ms": 152210,
+    "tokens_in": 2787,
+    "tokens_out": 81,
+    "message": null
+   }
+  ],
+  "seconds": 152.2
+ },
+ {
+  "case": "py-results-done",
+  "q": "done",
+  "snapshot_chars": 9265,
+  "correct": true,
+  "reply": {
+   "evidence": "The current page is the search results page for 'asyncio.gather' in Python documentation, and it lists several pages that contain this term. However, none of these links directly point to the specific entry for `asyncio.gather`. The task requires opening the exact entry for `asyncio.gather`, which is listed as a link on the search results page: 'asyncio.gather': /url: library/asyncio-task.html#asyncio.gather. Since this link has not been followed, the whole task is incomplete.",
+   "done": false
+  },
+  "model": "qwen2.5-cpu",
+  "attempts": [
+   {
+    "model": "qwen2.5-cpu",
+    "status": "ok",
+    "http_code": 200,
+    "latency_ms": 257928,
+    "tokens_in": 2731,
+    "tokens_out": 123,
+    "message": null
+   }
+  ],
+  "seconds": 257.9
+ },
+ {
+  "case": "mdn-home-next",
+  "q": "next",
+  "snapshot_chars": 12126,
+  "correct": false,
+  "reply": {
+   "thought": "The user wants to find the MDN reference page for the JavaScript Array.prototype.map method. The current page is the MDN homepage, so I should use the search functionality.",
+   "action": "press",
+   "target": {
+    "role": "button",
+    "name": "Search"
+   },
+   "value": ""
+  },
+  "model": "qwen2.5-cpu",
+  "attempts": [
+   {
+    "model": "qwen2.5-cpu",
+    "status": "ok",
+    "http_code": 200,
+    "latency_ms": 257054,
+    "tokens_in": 3877,
+    "tokens_out": 70,
+    "message": null
+   }
+  ],
+  "seconds": 257.1
+ }
+]

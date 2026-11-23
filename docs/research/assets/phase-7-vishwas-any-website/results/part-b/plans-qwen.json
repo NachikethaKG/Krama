@@ -1,0 +1,713 @@
+[
+ {
+  "task": "Task: Search Wikipedia for Alan Turing and open his article",
+  "prompt_chars": 36666,
+  "gemini": {
+   "expected_result": "The \"Alan Turing\" article page is displayed.",
+   "title": "Search Wikipedia for an article",
+   "steps": [
+    {
+     "seq": 1,
+     "action": {
+      "type": "navigate",
+      "value": "/wiki/Alan_Turing"
+     },
+     "target": {
+      "role": null,
+      "name": null,
+      "selector": null
+     },
+     "instruction_text": "Go to the \"Alan Turing\" page.",
+     "expected_state": {
+      "url_matches": "^/wiki/Alan_Turing$",
+      "title_contains": null,
+      "visible": null,
+      "absent": null,
+      "field_values": null,
+      "checked": null
+     },
+     "risk": "low"
+    }
+   ],
+   "clarification_question": null
+  },
+  "qwen2.5:7b": {
+   "expected_result": "Open the Alan Turing article on Wikipedia.",
+   "title": "Search for Alan Turing",
+   "steps": [
+    {
+     "seq": 1,
+     "action": {
+      "type": "navigate",
+      "value": "/wiki/Main_Page"
+     },
+     "target": {
+      "role": null,
+      "name": null,
+      "selector": null
+     },
+     "instruction_text": "Go to the main page of Wikipedia.",
+     "expected_state": {
+      "url_matches": "^/wiki/Main_Page$",
+      "title_contains": null,
+      "visible": null,
+      "absent": null,
+      "field_values": null,
+      "checked": null
+     },
+     "risk": "low"
+    },
+    {
+     "seq": 2,
+     "action": {
+      "type": "fill",
+      "value": "Alan Turing"
+     },
+     "target": {
+      "role": "combobox",
+      "name": "searchInput",
+      "selector": null
+     },
+     "instruction_text": "Enter Alan Turing in the search box.",
+     "expected_state": {
+      "url_matches": null,
+      "title_contains": null,
+      "visible": null,
+      "absent": null,
+      "field_values": [
+       {
+        "role": "combobox",
+        "name": "searchInput",
+        "value": "Alan Turing"
+       }
+      ],
+      "checked": null
+     },
+     "risk": "low"
+    },
+    {
+     "seq": 3,
+     "action": {
+      "type": "press",
+      "value": "Enter"
+     },
+     "target": {
+      "role": null,
+      "name": null,
+      "selector": null
+     },
+     "instruction_text": "Press Enter to search.",
+     "expected_state": {
+      "url_matches": "^/wiki/Alan_Turing$",
+      "title_contains": null,
+      "visible": null,
+      "absent": null,
+      "field_values": null,
+      "checked": null
+     },
+     "risk": "low"
+    }
+   ],
+   "clarification_question": ""
+  },
+  "seconds": 53.3
+ },
+ {
+  "task": "Task: Search the map for Bengaluru",
+  "prompt_chars": 3068,
+  "gemini": {
+   "expected_result": "The map displays search results for Bengaluru.",
+   "title": "Search the map for a location",
+   "steps": [
+    {
+     "seq": 1,
+     "action": {
+      "type": "fill",
+      "value": "Bengaluru"
+     },
+     "target": {
+      "role": "textbox",
+      "name": "Search",
+      "selector": null
+     },
+     "instruction_text": "Enter a location such as “Bengaluru” in the “Search” textbox.",
+     "expected_state": {
+      "url_matches": null,
+      "title_contains": null,
+      "visible": null,
+      "absent": null,
+      "field_values": [
+       {
+        "role": "textbox",
+        "name": "Search",
+        "value": "Bengaluru"
+       }
+      ],
+      "checked": null
+     },
+     "risk": "low"
+    },
+    {
+     "seq": 2,
+     "action": {
+      "type": "click",
+      "value": null
+     },
+     "target": {
+      "role": "button",
+      "name": "Go",
+      "selector": null
+     },
+     "instruction_text": "Click “Go”.",
+     "expected_state": {
+      "url_matches": "^/search.*query=Bengaluru",
+      "title_contains": null,
+      "visible": null,
+      "absent": null,
+      "field_values": null,
+      "checked": null
+     },
+     "risk": "low"
+    }
+   ],
+   "clarification_question": null
+  },
+  "qwen2.5:7b": {
+   "expected_result": "The map center is on Bengaluru.",
+   "title": "Search the map for Bengaluru",
+   "steps": [
+    {
+     "seq": 1,
+     "action": {
+      "type": "fill",
+      "value": "Bengaluru"
+     },
+     "target": {
+      "role": "textbox",
+      "name": "Search",
+      "selector": null
+     },
+     "instruction_text": "Enter Bengaluru in the search box.",
+     "expected_state": {
+      "url_matches": null,
+      "title_contains": null,
+      "visible": null,
+      "absent": null,
+      "field_values": [
+       {
+        "role": "textbox",
+        "name": "Search",
+        "value": "Bengaluru"
+       }
+      ],
+      "checked": null
+     },
+     "risk": "low"
+    },
+    {
+     "seq": 2,
+     "action": {
+      "type": "press",
+      "value": "Go"
+     },
+     "target": {
+      "role": "button",
+      "name": "Go",
+      "selector": null
+     },
+     "instruction_text": "Press Go.",
+     "expected_state": {
+      "url_matches": "^/map/.*Bengaluru$",
+      "title_contains": null,
+      "visible": null,
+      "absent": null,
+      "field_values": null,
+      "checked": null
+     },
+     "risk": "low"
+    }
+   ],
+   "clarification_question": null
+  },
+  "seconds": 21.3
+ },
+ {
+  "task": "Task: Add a todo called Buy milk and mark it as completed",
+  "prompt_chars": 925,
+  "gemini": {
+   "expected_result": "The todo item \"Buy milk\" is added and marked as completed.",
+   "title": null,
+   "steps": [],
+   "clarification_question": "Where can I find the todo list functionality to add and complete a todo item?"
+  },
+  "qwen2.5:7b": {
+   "expected_result": "A todo called 'Buy milk' is marked as completed.",
+   "title": "Add a todo item and mark it as completed",
+   "steps": [
+    {
+     "seq": 1,
+     "action": {
+      "type": "navigate",
+      "value": "/dashboard"
+     },
+     "target": {
+      "role": null,
+      "name": null,
+      "selector": null
+     },
+     "instruction_text": "Go to the dashboard page.",
+     "expected_state": {
+      "url_matches": "^/dashboard$",
+      "title_contains": null,
+      "visible": null,
+      "absent": null,
+      "field_values": null,
+      "checked": null
+     },
+     "risk": "low"
+    },
+    {
+     "seq": 2,
+     "action": {
+      "type": "click",
+      "value": "New todo item"
+     },
+     "target": {
+      "role": null,
+      "name": null,
+      "selector": null
+     },
+     "instruction_text": "Click the 'New todo item' button.",
+     "expected_state": {
+      "url_matches": null,
+      "title_contains": null,
+      "visible": [
+       {
+        "role": "dialog",
+        "name": "Create a new todo item"
+       }
+      ],
+      "absent": null,
+      "field_values": null,
+      "checked": null
+     },
+     "risk": "low"
+    },
+    {
+     "seq": 3,
+     "action": {
+      "type": "fill",
+      "value": "Buy milk"
+     },
+     "target": {
+      "role": null,
+      "name": null,
+      "selector": null
+     },
+     "instruction_text": "Enter 'Buy milk' in the new todo item field.",
+     "expected_state": {
+      "url_matches": null,
+      "title_contains": null,
+      "visible": null,
+      "absent": null,
+      "field_values": [
+       {
+        "role": "combobox",
+        "name": "Todo text",
+        "value": "Buy milk"
+       }
+      ],
+      "checked": null
+     },
+     "risk": "low"
+    },
+    {
+     "seq": 4,
+     "action": {
+      "type": "click",
+      "value": "Confirm"
+     },
+     "target": {
+      "role": null,
+      "name": null,
+      "selector": null
+     },
+     "instruction_text": "In the 'Create a new todo item' dialog, click 'Confirm'.",
+     "expected_state": {
+      "url_matches": null,
+      "title_contains": null,
+      "visible": [
+       {
+        "role": "checkbox",
+        "name": "Mark as completed"
+       }
+      ],
+      "absent": null,
+      "field_values": null,
+      "checked": null
+     },
+     "risk": "low"
+    },
+    {
+     "seq": 5,
+     "action": {
+      "type": "click",
+      "value": "Mark as completed"
+     },
+     "target": {
+      "role": null,
+      "name": null,
+      "selector": null
+     },
+     "instruction_text": "Click the 'Mark as completed' checkbox.",
+     "expected_state": {
+      "url_matches": null,
+      "title_contains": null,
+      "visible": null,
+      "absent": null,
+      "field_values": null,
+      "checked": [
+       {
+        "role": "checkbox",
+        "name": "Mark as completed"
+       }
+      ]
+     },
+     "risk": "low"
+    }
+   ],
+   "clarification_question": null
+  },
+  "seconds": 43.3
+ },
+ {
+  "task": "Task: Search the Python documentation for asyncio.gather and open its entry",
+  "prompt_chars": 4218,
+  "gemini": {
+   "expected_result": "The learner has opened the documentation entry for asyncio.gather.",
+   "title": "Search Python documentation for a function",
+   "steps": [
+    {
+     "seq": 1,
+     "action": {
+      "type": "click",
+      "value": null
+     },
+     "target": {
+      "role": "link",
+      "name": "Search page",
+      "selector": null
+     },
+     "instruction_text": "Click \"Search page\".",
+     "expected_state": {
+      "url_matches": "^/search.html$",
+      "title_contains": null,
+      "visible": null,
+      "absent": null,
+      "field_values": null,
+      "checked": null
+     },
+     "risk": "low"
+    },
+    {
+     "seq": 2,
+     "action": {
+      "type": "fill",
+      "value": "asyncio.gather"
+     },
+     "target": {
+      "role": "searchbox",
+      "name": "Search",
+      "selector": null
+     },
+     "instruction_text": "Enter “asyncio.gather” in the “Search” text field.",
+     "expected_state": {
+      "url_matches": null,
+      "title_contains": null,
+      "visible": null,
+      "absent": null,
+      "field_values": [
+       {
+        "role": "searchbox",
+        "name": "Search",
+        "value": "asyncio.gather"
+       }
+      ],
+      "checked": null
+     },
+     "risk": "low"
+    },
+    {
+     "seq": 3,
+     "action": {
+      "type": "press",
+      "value": "Enter"
+     },
+     "target": {
+      "role": "searchbox",
+      "name": "Search",
+      "selector": null
+     },
+     "instruction_text": "Press the “Enter” key.",
+     "expected_state": {
+      "url_matches": null,
+      "title_contains": null,
+      "visible": [
+       {
+        "role": "link",
+        "name": "asyncio.gather"
+       }
+      ],
+      "absent": null,
+      "field_values": null,
+      "checked": null
+     },
+     "risk": "low"
+    },
+    {
+     "seq": 4,
+     "action": {
+      "type": "click",
+      "value": null
+     },
+     "target": {
+      "role": "link",
+      "name": "asyncio.gather",
+      "selector": null
+     },
+     "instruction_text": "Click the “asyncio.gather” link.",
+     "expected_state": {
+      "url_matches": ".*asyncio.*gather.*",
+      "title_contains": null,
+      "visible": null,
+      "absent": null,
+      "field_values": null,
+      "checked": null
+     },
+     "risk": "low"
+    }
+   ],
+   "clarification_question": null
+  },
+  "qwen2.5:7b": {
+   "expected_result": "Found and opened the asyncio.gather entry in Python 3.15.2 documentation.",
+   "title": "Search for asyncio.gather in Python documentation",
+   "steps": [
+    {
+     "seq": 1,
+     "action": {
+      "type": "navigate",
+      "value": "/search.html"
+     },
+     "target": {
+      "role": null,
+      "name": null,
+      "selector": null
+     },
+     "instruction_text": "Go to the search page.",
+     "expected_state": {
+      "url_matches": "^/search.html$",
+      "title_contains": null,
+      "visible": null,
+      "absent": null,
+      "field_values": null,
+      "checked": null
+     },
+     "risk": "low"
+    },
+    {
+     "seq": 2,
+     "action": {
+      "type": "fill",
+      "value": "asyncio.gather"
+     },
+     "target": {
+      "role": "combobox",
+      "name": "q",
+      "selector": null
+     },
+     "instruction_text": "Enter asyncio.gather in the search box.",
+     "expected_state": {
+      "url_matches": null,
+      "title_contains": null,
+      "visible": null,
+      "absent": null,
+      "field_values": [
+       {
+        "role": "combobox",
+        "name": "q",
+        "value": "asyncio.gather"
+       }
+      ],
+      "checked": null
+     },
+     "risk": "low"
+    },
+    {
+     "seq": 3,
+     "action": {
+      "type": "press",
+      "value": "Enter"
+     },
+     "target": {
+      "role": null,
+      "name": null,
+      "selector": null
+     },
+     "instruction_text": "Press Enter to search.",
+     "expected_state": {
+      "url_matches": "^/search.html?q=asyncio.gather$",
+      "title_contains": null,
+      "visible": null,
+      "absent": null,
+      "field_values": null,
+      "checked": null
+     },
+     "risk": "low"
+    },
+    {
+     "seq": 4,
+     "action": {
+      "type": "click",
+      "value": "asyncio.gather"
+     },
+     "target": {
+      "role": "link",
+      "name": "asyncio.gather",
+      "selector": null
+     },
+     "instruction_text": "Click the asyncio.gather entry.",
+     "expected_state": {
+      "url_matches": "^/library/asyncio/gather.html$",
+      "title_contains": null,
+      "visible": null,
+      "absent": null,
+      "field_values": null,
+      "checked": null
+     },
+     "risk": "low"
+    }
+   ],
+   "clarification_question": null
+  },
+  "seconds": 38.7
+ },
+ {
+  "task": "Task: Find the MDN reference page for the JavaScript Array.prototype.map method",
+  "prompt_chars": 10840,
+  "gemini": {
+   "expected_result": "The search results for 'Array.prototype.map' are displayed.",
+   "title": "Find a JavaScript method reference",
+   "steps": [
+    {
+     "seq": 1,
+     "action": {
+      "type": "click",
+      "value": null
+     },
+     "target": {
+      "role": "button",
+      "name": "Search the site",
+      "selector": null
+     },
+     "instruction_text": "Click \"Search the site\".",
+     "expected_state": {
+      "url_matches": null,
+      "title_contains": null,
+      "visible": [
+       {
+        "role": "searchbox",
+        "name": "Search"
+       }
+      ],
+      "absent": null,
+      "field_values": null,
+      "checked": null
+     },
+     "risk": "low"
+    },
+    {
+     "seq": 2,
+     "action": {
+      "type": "fill",
+      "value": "Array.prototype.map"
+     },
+     "target": {
+      "role": "searchbox",
+      "name": "Search",
+      "selector": null
+     },
+     "instruction_text": "Enter \"Array.prototype.map\" into the search box.",
+     "expected_state": {
+      "url_matches": null,
+      "title_contains": null,
+      "visible": null,
+      "absent": null,
+      "field_values": [
+       {
+        "role": "searchbox",
+        "name": "Search",
+        "value": "Array.prototype.map"
+       }
+      ],
+      "checked": null
+     },
+     "risk": "low"
+    },
+    {
+     "seq": 3,
+     "action": {
+      "type": "press",
+      "value": "Enter"
+     },
+     "target": {
+      "role": "searchbox",
+      "name": "Search",
+      "selector": null
+     },
+     "instruction_text": "Press Enter.",
+     "expected_state": {
+      "url_matches": "^/en-US/search\\?q=Array\\.prototype\\.map",
+      "title_contains": null,
+      "visible": null,
+      "absent": null,
+      "field_values": null,
+      "checked": null
+     },
+     "risk": "low"
+    }
+   ],
+   "clarification_question": null
+  },
+  "qwen2.5:7b": {
+   "expected_result": "Find the MDN reference page for the JavaScript Array.prototype.map method.",
+   "title": "Find a MDN reference page",
+   "steps": [
+    {
+     "seq": 1,
+     "action": {
+      "type": "navigate",
+      "value": "/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/map"
+     },
+     "target": {
+      "role": null,
+      "name": null,
+      "selector": null
+     },
+     "instruction_text": "Go to the JavaScript Array.prototype.map reference page.",
+     "expected_state": {
+      "url_matches": "^/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/map$",
+      "title_contains": null,
+      "visible": null,
+      "absent": null,
+      "field_values": null,
+      "checked": null
+     },
+     "risk": "low"
+    }
+   ],
+   "clarification_question": null
+  },
+  "seconds": 15.7
+ }
+]
