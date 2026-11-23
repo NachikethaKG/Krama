@@ -34,6 +34,11 @@ class Settings(BaseSettings):
     gemini_api_key: str = ""
     # Tried in order; each model has its own free-tier quota (docs/research/phase-0-vishwas-gemini-*).
     gemini_models: str = "gemini-3.8-flash,gemini-3.5-flash,gemini-2.5-flash"
+    # The per-step decisions of step mode (ADR 0011, Q1): many small calls, so the model that answered fastest
+    # and most reliably in the Phase 7 spike goes first.
+    gemini_models_step: str = "gemini-2.5-flash,gemini-3.5-flash,gemini-3.8-flash"
+    # upfront: plan every step before the run (until v1.4). steps: an outline, then one decision per step.
+    planner_mode: Literal["upfront", "steps"] = "upfront"
     # 127.0.0.1, not localhost: IPv6 localhost first costs a timeout on Windows.
     ollama_url: str = "http://127.0.0.1:11434"
     ollama_model: str = "qwen2.5:7b"
@@ -102,6 +107,10 @@ class Settings(BaseSettings):
     @property
     def gemini_model_list(self) -> list[str]:
         return [m.strip() for m in self.gemini_models.split(",") if m.strip()]
+
+    @property
+    def gemini_step_model_list(self) -> list[str]:
+        return [m.strip() for m in self.gemini_models_step.split(",") if m.strip()]
 
     @field_validator(
         "artifacts_dir", "sessions_dir", "metrics_summary_path", "tts_voices_dir", "tts_worker_dir"
