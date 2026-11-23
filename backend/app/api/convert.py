@@ -109,6 +109,7 @@ def _steps_out(workflow_id: UUID, rows: Sequence[WorkflowStepRow]) -> list[Step]
                 "action": st.action,
                 "target": {k: v for k, v in (st.target or {}).items() if k not in _INTERNAL_TARGET_KEYS},
                 "instruction_text": st.instruction_text,
+                "section": st.section,
                 "before_state": st.before_state,
                 "expected_state": st.expected_state,
                 "observed_state": st.observed_state,
