@@ -17,8 +17,10 @@ from app.agent.quota import RedisHealBudget
 from app.agent.vision import GeminiVisionLocator
 from app.config import Settings
 from app.db import create_engine, create_sessionmaker
+from app.db.llm_calls import DbCallSink
 from app.export import ArqExportQueue, InProcessExportQueue
-from app.llm import create_provider
+from app.llm import LLMProvider, create_provider
+from app.llm.recording import RecordingProvider
 from app.llm.translator import LLMTranslator
 from app.observer import PageObserver
 from app.planner import LLMPlanner
@@ -84,10 +86,20 @@ class Services:
             await self.engine.dispose()
 
 
-def build_run_environment(settings: Settings) -> RunEnvironment:
-    """What a run needs (verifier, observer, policy, planner for replans, ...), the same in the API process
-    and in the worker (#95)."""
+def recorded_provider(settings: Settings, sessions: async_sessionmaker[AsyncSession]) -> LLMProvider:
+    """The configured provider; with a real one (not the fake), every request is recorded in `llm_calls`."""
     llm = create_provider(settings)
+    if settings.llm_provider == "fake":
+        return llm
+    return RecordingProvider(llm, DbCallSink(sessions), provider=settings.llm_provider)
+
+
+def build_run_environment(
+    settings: Settings, sessions: async_sessionmaker[AsyncSession] | None = None
+) -> RunEnvironment:
+    """What a run needs (verifier, observer, policy, planner for replans, ...), the same in the API process
+    and in the worker (#95). With `sessions`, every LLM request is recorded (#464)."""
+    llm = create_provider(settings) if sessions is None else recorded_provider(settings, sessions)
     gemini = settings.llm_provider == "gemini"
     policy = PolicyService(classifier=LLMClassifier(llm))
     store_ = LocalFsStore(settings.artifacts_dir)
@@ -121,7 +133,7 @@ def build_services(settings: Settings) -> Services:
     sessions = create_sessionmaker(engine)
     hub = EventHub()
     store = RunStore(sessions, on_event=hub.notify)
-    llm = create_provider(settings)
+    llm = recorded_provider(settings, sessions)
     policy = PolicyService(classifier=LLMClassifier(llm))
     executor: InProcessExecutor | ArqExecutor
     relay: RedisEventRelay | None = None
@@ -142,7 +154,7 @@ def build_services(settings: Settings) -> Services:
         relay = RedisEventRelay(settings.redis_url, hub)
     profiles = ProfileStore(sessions, settings.krama_storage_key.get_secret_value())
     if settings.run_executor != "arq":
-        env = build_run_environment(settings)
+        env = build_run_environment(settings, sessions)
         env.profiles = profiles
         executor = InProcessExecutor(store, env, max_concurrent=settings.max_concurrent_runs)
     return Services(
