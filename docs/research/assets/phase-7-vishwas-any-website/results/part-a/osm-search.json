@@ -1,0 +1,103 @@
+{
+ "task": {
+  "id": "osm-search",
+  "url": "https://www.openstreetmap.org",
+  "prompt": "Search the map for Bengaluru"
+ },
+ "started": 1795419779.5,
+ "task_row": {
+  "id": "9b0b1b99-aa48-4da6-be56-5cff7cf0f4c4",
+  "prompt": "Search the map for Bengaluru",
+  "target_url": "https://www.openstreetmap.org/",
+  "status": "planned",
+  "interpretation": null,
+  "clarification_question": null,
+  "plan_id": "b45e5c0b-f1c4-4e29-9263-df3f62d7e034",
+  "regenerates_workflow_id": null,
+  "error": null,
+  "created_at": "2026-11-23T07:42:59.728579Z"
+ },
+ "plan": {
+  "id": "b45e5c0b-f1c4-4e29-9263-df3f62d7e034",
+  "task_id": "9b0b1b99-aa48-4da6-be56-5cff7cf0f4c4",
+  "revision": 1,
+  "status": "proposed",
+  "risk": "low",
+  "expected_result": "The map displays search results for Bengaluru.",
+  "title": "Search the map for a location",
+  "steps": [
+   {
+    "seq": 1,
+    "action": {
+     "type": "fill",
+     "value": "Bengaluru"
+    },
+    "target": {
+     "role": "textbox",
+     "name": "Search",
+     "selector": null
+    },
+    "instruction_text": "Enter a location such as “Bengaluru” in the “Search” textbox.",
+    "expected_state": {
+     "url_matches": null,
+     "title_contains": null,
+     "visible": null,
+     "absent": null,
+     "field_values": [
+      {
+       "role": "textbox",
+       "name": "Search",
+       "value": "Bengaluru"
+      }
+     ],
+     "checked": null
+    },
+    "risk": "low"
+   },
+   {
+    "seq": 2,
+    "action": {
+     "type": "click",
+     "value": null
+    },
+    "target": {
+     "role": "button",
+     "name": "Go",
+     "selector": null
+    },
+    "instruction_text": "Click “Go”.",
+    "expected_state": {
+     "url_matches": "^/search.*query=Bengaluru",
+     "title_contains": null,
+     "visible": null,
+     "absent": null,
+     "field_values": null,
+     "checked": null
+    },
+    "risk": "low"
+   }
+  ],
+  "created_at": "2026-11-23T07:43:13.978566Z",
+  "approved_at": null
+ },
+ "run": {
+  "id": "2c86b438-bdc1-4e4b-bff0-7af91a279e96",
+  "plan_id": "b45e5c0b-f1c4-4e29-9263-df3f62d7e034",
+  "plan_revision": 1,
+  "status": "paused",
+  "current_seq": 2,
+  "retry_count": 1,
+  "kind": "task",
+  "source_workflow_id": null,
+  "workflow_id": null,
+  "error": null,
+  "takeover": null,
+  "created_at": "2026-11-23T07:43:14.104546Z",
+  "started_at": "2026-11-23T07:43:14.169891Z",
+  "finished_at": null
+ },
+ "outcome": "paused",
+ "why": null,
+ "seconds": 47.4,
+ "ended": 1795419826.9
+}

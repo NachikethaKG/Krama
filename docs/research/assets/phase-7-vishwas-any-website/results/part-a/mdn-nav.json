@@ -1,0 +1,152 @@
+{
+ "task": {
+  "id": "mdn-nav",
+  "url": "https://developer.mozilla.org/en-US",
+  "prompt": "Find the MDN reference page for the JavaScript Array.prototype.map method"
+ },
+ "started": 1795419934.7,
+ "task_row": {
+  "id": "2d3d302e-64de-4236-bc2b-a3a8e11b0256",
+  "prompt": "Find the MDN reference page for the JavaScript Array.prototype.map method",
+  "target_url": "https://developer.mozilla.org/en-US",
+  "status": "planned",
+  "interpretation": null,
+  "clarification_question": null,
+  "plan_id": "28f32b82-9318-4cf1-9f14-ec53e1d0469f",
+  "regenerates_workflow_id": null,
+  "error": null,
+  "created_at": "2026-11-23T07:45:35.365780Z"
+ },
+ "plan": {
+  "id": "28f32b82-9318-4cf1-9f14-ec53e1d0469f",
+  "task_id": "2d3d302e-64de-4236-bc2b-a3a8e11b0256",
+  "revision": 1,
+  "status": "proposed",
+  "risk": "low",
+  "expected_result": "The MDN reference page for the JavaScript Array.prototype.map method is displayed.",
+  "title": "Find a JavaScript method reference page",
+  "steps": [
+   {
+    "seq": 1,
+    "action": {
+     "type": "click",
+     "value": null
+    },
+    "target": {
+     "role": "button",
+     "name": "Search the site",
+     "selector": null
+    },
+    "instruction_text": "Click \"Search the site\".",
+    "expected_state": {
+     "url_matches": null,
+     "title_contains": null,
+     "visible": [
+      {
+       "role": "searchbox",
+       "name": "Search MDN"
+      }
+     ],
+     "absent": null,
+     "field_values": null,
+     "checked": null
+    },
+    "risk": "low"
+   },
+   {
+    "seq": 2,
+    "action": {
+     "type": "fill",
+     "value": "Array.prototype.map"
+    },
+    "target": {
+     "role": "searchbox",
+     "name": "Search MDN",
+     "selector": null
+    },
+    "instruction_text": "Enter \"Array.prototype.map\" into the search box.",
+    "expected_state": {
+     "url_matches": null,
+     "title_contains": null,
+     "visible": null,
+     "absent": null,
+     "field_values": [
+      {
+       "role": "searchbox",
+       "name": "Search MDN",
+       "value": "Array.prototype.map"
+      }
+     ],
+     "checked": null
+    },
+    "risk": "low"
+   },
+   {
+    "seq": 3,
+    "action": {
+     "type": "press",
+     "value": "Enter"
+    },
+    "target": {
+     "role": "searchbox",
+     "name": "Search MDN",
+     "selector": null
+    },
+    "instruction_text": "Press \"Enter\".",
+    "expected_state": {
+     "url_matches": "^/en-US/search$",
+     "title_contains": null,
+     "visible": null,
+     "absent": null,
+     "field_values": null,
+     "checked": null
+    },
+    "risk": "low"
+   },
+   {
+    "seq": 4,
+    "action": {
+     "type": "click",
+     "value": null
+    },
+    "target": {
+     "role": "link",
+     "name": "Array.prototype.map",
+     "selector": null
+    },
+    "instruction_text": "Click the link for \"Array.prototype.map\".",
+    "expected_state": {
+     "url_matches": "^/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/map$",
+     "title_contains": null,
+     "visible": null,
+     "absent": null,
+     "field_values": null,
+     "checked": null
+    },
+    "risk": "low"
+   }
+  ],
+  "created_at": "2026-11-23T07:47:05.060918Z",
+  "approved_at": null
+ },
+ "run": {
+  "id": "34b00969-d796-4a4c-ae61-bdd90a6a6a13",
+  "plan_id": "28f32b82-9318-4cf1-9f14-ec53e1d0469f",
+  "plan_revision": 1,
+  "status": "paused",
+  "current_seq": 1,
+  "retry_count": 1,
+  "kind": "task",
+  "source_workflow_id": null,
+  "workflow_id": null,
+  "error": null,
+  "takeover": null,
+  "created_at": "2026-11-23T07:47:05.290364Z",
+  "started_at": "2026-11-23T07:47:05.350130Z",
+  "finished_at": null
+ },
+ "outcome": "paused",
+ "why": null,
+ "seconds": 178.7,
+ "ended": 1795420113.4
+}

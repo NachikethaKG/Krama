@@ -1,0 +1,60 @@
+{
+ "task": {
+  "id": "wikipedia-search",
+  "url": "https://en.wikipedia.org",
+  "prompt": "Search Wikipedia for Alan Turing and open his article"
+ },
+ "plan": {
+  "id": "9d568a84-0734-4a6f-8329-b9179a27715d",
+  "task_id": "96c0b4bd-cc8e-4499-9d60-7d59b280a8ee",
+  "revision": 1,
+  "status": "approved",
+  "risk": "low",
+  "expected_result": "The \"Alan Turing\" article page is displayed.",
+  "title": "Search Wikipedia for an article",
+  "steps": [
+   {
+    "seq": 1,
+    "action": {
+     "type": "navigate",
+     "value": "/wiki/Alan_Turing"
+    },
+    "target": {
+     "role": null,
+     "name": null,
+     "selector": null
+    },
+    "instruction_text": "Go to the \"Alan Turing\" page.",
+    "expected_state": {
+     "url_matches": "^/wiki/Alan_Turing$",
+     "title_contains": null,
+     "visible": null,
+     "absent": null,
+     "field_values": null,
+     "checked": null
+    },
+    "risk": "low"
+   }
+  ],
+  "created_at": "2026-11-23T07:40:29.153225Z",
+  "approved_at": "2026-11-23T07:40:29.945603Z"
+ },
+ "run": {
+  "id": "b49a8c4f-ae9e-4c17-8b41-41a95277d691",
+  "plan_id": "9d568a84-0734-4a6f-8329-b9179a27715d",
+  "plan_revision": 1,
+  "status": "verified",
+  "current_seq": 1,
+  "retry_count": 0,
+  "kind": "task",
+  "source_workflow_id": null,
+  "workflow_id": "8a219466-b019-40d8-89ea-40ddbe7d06b6",
+  "error": null,
+  "takeover": null,
+  "created_at": "2026-11-23T07:40:29.945603Z",
+  "started_at": "2026-11-23T07:40:30.040511Z",
+  "finished_at": "2026-11-23T07:41:38.599604Z"
+ },
+ "outcome": "verified",
+ "why": null
+}

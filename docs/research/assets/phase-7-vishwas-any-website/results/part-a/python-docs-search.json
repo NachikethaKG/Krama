@@ -1,0 +1,152 @@
+{
+ "task": {
+  "id": "python-docs-search",
+  "url": "https://docs.python.org/3",
+  "prompt": "Search the Python documentation for asyncio.gather and open its entry"
+ },
+ "started": 1795419862.0,
+ "task_row": {
+  "id": "9d0d4865-e34c-4168-b183-facf3ef0a099",
+  "prompt": "Search the Python documentation for asyncio.gather and open its entry",
+  "target_url": "https://docs.python.org/3",
+  "status": "planned",
+  "interpretation": null,
+  "clarification_question": null,
+  "plan_id": "fe00294f-ba69-4003-a944-a22cae697bd2",
+  "regenerates_workflow_id": null,
+  "error": null,
+  "created_at": "2026-11-23T07:44:24.164797Z"
+ },
+ "plan": {
+  "id": "fe00294f-ba69-4003-a944-a22cae697bd2",
+  "task_id": "9d0d4865-e34c-4168-b183-facf3ef0a099",
+  "revision": 1,
+  "status": "proposed",
+  "risk": "low",
+  "expected_result": "The learner has opened the documentation entry for asyncio.gather.",
+  "title": "Search Python documentation for a function",
+  "steps": [
+   {
+    "seq": 1,
+    "action": {
+     "type": "click",
+     "value": null
+    },
+    "target": {
+     "role": "link",
+     "name": "Search page",
+     "selector": null
+    },
+    "instruction_text": "Click \"Search page\".",
+    "expected_state": {
+     "url_matches": "^/search.html$",
+     "title_contains": null,
+     "visible": null,
+     "absent": null,
+     "field_values": null,
+     "checked": null
+    },
+    "risk": "low"
+   },
+   {
+    "seq": 2,
+    "action": {
+     "type": "fill",
+     "value": "asyncio.gather"
+    },
+    "target": {
+     "role": "searchbox",
+     "name": "Search",
+     "selector": null
+    },
+    "instruction_text": "Enter “asyncio.gather” in the “Search” text field.",
+    "expected_state": {
+     "url_matches": null,
+     "title_contains": null,
+     "visible": null,
+     "absent": null,
+     "field_values": [
+      {
+       "role": "searchbox",
+       "name": "Search",
+       "value": "asyncio.gather"
+      }
+     ],
+     "checked": null
+    },
+    "risk": "low"
+   },
+   {
+    "seq": 3,
+    "action": {
+     "type": "press",
+     "value": "Enter"
+    },
+    "target": {
+     "role": "searchbox",
+     "name": "Search",
+     "selector": null
+    },
+    "instruction_text": "Press the “Enter” key.",
+    "expected_state": {
+     "url_matches": null,
+     "title_contains": null,
+     "visible": [
+      {
+       "role": "link",
+       "name": "asyncio.gather"
+      }
+     ],
+     "absent": null,
+     "field_values": null,
+     "checked": null
+    },
+    "risk": "low"
+   },
+   {
+    "seq": 4,
+    "action": {
+     "type": "click",
+     "value": null
+    },
+    "target": {
+     "role": "link",
+     "name": "asyncio.gather",
+     "selector": null
+    },
+    "instruction_text": "Click the “asyncio.gather” link.",
+    "expected_state": {
+     "url_matches": ".*asyncio.*gather.*",
+     "title_contains": null,
+     "visible": null,
+     "absent": null,
+     "field_values": null,
+     "checked": null
+    },
+    "risk": "low"
+   }
+  ],
+  "created_at": "2026-11-23T07:44:49.228758Z",
+  "approved_at": null
+ },
+ "run": {
+  "id": "ffbb1002-989f-48d6-9109-eeb545c8ba09",
+  "plan_id": "fe00294f-ba69-4003-a944-a22cae697bd2",
+  "plan_revision": 1,
+  "status": "paused",
+  "current_seq": 1,
+  "retry_count": 1,
+  "kind": "task",
+  "source_workflow_id": null,
+  "workflow_id": null,
+  "error": null,
+  "takeover": null,
+  "created_at": "2026-11-23T07:44:50.983569Z",
+  "started_at": "2026-11-23T07:44:51.196991Z",
+  "finished_at": null
+ },
+ "outcome": "paused",
+ "why": null,
+ "seconds": 72.6,
+ "ended": 1795419934.6
+}

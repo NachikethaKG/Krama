@@ -1,0 +1,465 @@
+[
+ {
+  "case": "wiki-home-next",
+  "q": "next",
+  "snapshot_chars": 40329,
+  "correct": false,
+  "reply": {
+   "thought": "This is a snapshot of the Wikipedia main page, which is the entry point for users to access and contribute to the online encyclopedia. The page provides information about the Wikimedia Foundation, the organization that operates Wikipedia, as well as links to other important pages such as the About Wikipedia page, Disclaimers, Contact Wikipedia, and more.",
+   "action": "navigate",
+   "target": null,
+   "value": null
+  },
+  "model": "llama3:8b",
+  "attempts": [
+   {
+    "model": "llama3:8b",
+    "status": "ok",
+    "http_code": 200,
+    "latency_ms": 21058,
+    "tokens_in": 8192,
+    "tokens_out": 92,
+    "message": null
+   }
+  ],
+  "seconds": 21.1
+ },
+ {
+  "case": "wiki-typed-next",
+  "q": "next",
+  "snapshot_chars": 40720,
+  "correct": false,
+  "reply": {
+   "thought": "This is a snapshot of the Wikipedia main page, which is the entry point for users to access and contribute to the online encyclopedia. The page provides links to various sections, including articles, categories, and other resources.",
+   "action": "navigate",
+   "target": null,
+   "value": null
+  },
+  "model": "llama3:8b",
+  "attempts": [
+   {
+    "model": "llama3:8b",
+    "status": "ok",
+    "http_code": 200,
+    "latency_ms": 10965,
+    "tokens_in": 8192,
+    "tokens_out": 69,
+    "message": null
+   }
+  ],
+  "seconds": 11.0
+ },
+ {
+  "case": "wiki-article-done",
+  "q": "done",
+  "snapshot_chars": 48000,
+  "correct": true,
+  "reply": {
+   "evidence": "https://en.wikipedia.org/wiki/Alan_Turing",
+   "done": true
+  },
+  "model": "llama3:8b",
+  "attempts": [
+   {
+    "model": "llama3:8b",
+    "status": "ok",
+    "http_code": 200,
+    "latency_ms": 7662,
+    "tokens_in": 8192,
+    "tokens_out": 25,
+    "message": null
+   }
+  ],
+  "seconds": 7.7
+ },
+ {
+  "case": "wiki-home-done",
+  "q": "done",
+  "snapshot_chars": 40329,
+  "correct": false,
+  "reply": {
+   "evidence": "web page snapshot",
+   "done": true
+  },
+  "model": "llama3:8b",
+  "attempts": [
+   {
+    "model": "llama3:8b",
+    "status": "ok",
+    "http_code": 200,
+    "latency_ms": 7082,
+    "tokens_in": 8192,
+    "tokens_out": 18,
+    "message": null
+   }
+  ],
+  "seconds": 7.1
+ },
+ {
+  "case": "osm-home-next",
+  "q": "next",
+  "snapshot_chars": 2895,
+  "correct": true,
+  "reply": {
+   "thought": "Next step",
+   "action": "fill",
+   "target": {
+    "role": "textbox",
+    "name": "Search"
+   },
+   "value": "Bengaluru"
+  },
+  "model": "llama3:8b",
+  "attempts": [
+   {
+    "model": "llama3:8b",
+    "status": "ok",
+    "http_code": 200,
+    "latency_ms": 3948,
+    "tokens_in": 1159,
+    "tokens_out": 44,
+    "message": null
+   }
+  ],
+  "seconds": 4.0
+ },
+ {
+  "case": "osm-typed-next",
+  "q": "next",
+  "snapshot_chars": 2880,
+  "correct": false,
+  "reply": {
+   "thought": "Next action is to press the 'Go' button.",
+   "action": "press",
+   "target": {
+    "role": "button",
+    "name": "Go"
+   },
+   "value": ""
+  },
+  "model": "llama3:8b",
+  "attempts": [
+   {
+    "model": "llama3:8b",
+    "status": "ok",
+    "http_code": 200,
+    "latency_ms": 4728,
+    "tokens_in": 1161,
+    "tokens_out": 56,
+    "message": null
+   }
+  ],
+  "seconds": 4.7
+ },
+ {
+  "case": "osm-results-done",
+  "q": "done",
+  "snapshot_chars": 2596,
+  "correct": true,
+  "reply": {
+   "evidence": "https://www.openstreetmap.org/search?query=Bengaluru#map=11/12.9881/77.6220",
+   "done": true
+  },
+  "model": "llama3:8b",
+  "attempts": [
+   {
+    "model": "llama3:8b",
+    "status": "ok",
+    "http_code": 200,
+    "latency_ms": 4116,
+    "tokens_in": 1070,
+    "tokens_out": 44,
+    "message": null
+   }
+  ],
+  "seconds": 4.1
+ },
+ {
+  "case": "todo-empty-next",
+  "q": "next",
+  "snapshot_chars": 440,
+  "correct": true,
+  "reply": {
+   "thought": "I will add a todo called 'Buy milk' and mark it as completed.",
+   "action": "fill",
+   "target": {
+    "role": "textbox",
+    "name": "What needs to be done?"
+   },
+   "value": "Buy milk"
+  },
+  "model": "llama3:8b",
+  "attempts": [
+   {
+    "model": "llama3:8b",
+    "status": "ok",
+    "http_code": 200,
+    "latency_ms": 4268,
+    "tokens_in": 370,
+    "tokens_out": 57,
+    "message": null
+   }
+  ],
+  "seconds": 4.3
+ },
+ {
+  "case": "todo-typed-next",
+  "q": "next",
+  "snapshot_chars": 450,
+  "correct": false,
+  "reply": {
+   "thought": "I will press the Enter key to add the todo.",
+   "action": "press",
+   "target": {
+    "role": "textbox",
+    "name": "What needs to be done?"
+   },
+   "value": "Buy milk"
+  },
+  "model": "llama3:8b",
+  "attempts": [
+   {
+    "model": "llama3:8b",
+    "status": "ok",
+    "http_code": 200,
+    "latency_ms": 3891,
+    "tokens_in": 385,
+    "tokens_out": 51,
+    "message": null
+   }
+  ],
+  "seconds": 3.9
+ },
+ {
+  "case": "todo-added-next",
+  "q": "next",
+  "snapshot_chars": 794,
+  "correct": false,
+  "reply": {
+   "thought": "I will check the checkbox for Buy milk.",
+   "action": "check",
+   "target": {
+    "role": "listitem",
+    "name": "Buy milk"
+   },
+   "value": null
+  },
+  "model": "llama3:8b",
+  "attempts": [
+   {
+    "model": "llama3:8b",
+    "status": "ok",
+    "http_code": 200,
+    "latency_ms": 3536,
+    "tokens_in": 502,
+    "tokens_out": 46,
+    "message": null
+   }
+  ],
+  "seconds": 3.5
+ },
+ {
+  "case": "todo-added-done",
+  "q": "done",
+  "snapshot_chars": 794,
+  "correct": true,
+  "reply": {
+   "evidence": "The task is not yet complete. The user has only typed 'Buy milk' in the What needs to be done? box and pressed Enter, but no action has been taken to mark it as completed.",
+   "done": false
+  },
+  "model": "llama3:8b",
+  "attempts": [
+   {
+    "model": "llama3:8b",
+    "status": "ok",
+    "http_code": 200,
+    "latency_ms": 4467,
+    "tokens_in": 446,
+    "tokens_out": 55,
+    "message": null
+   }
+  ],
+  "seconds": 4.5
+ },
+ {
+  "case": "todo-completed-done",
+  "q": "done",
+  "snapshot_chars": 867,
+  "correct": true,
+  "reply": {
+   "evidence": "The task is complete on this page.",
+   "done": true
+  },
+  "model": "llama3:8b",
+  "attempts": [
+   {
+    "model": "llama3:8b",
+    "status": "ok",
+    "http_code": 200,
+    "latency_ms": 2113,
+    "tokens_in": 458,
+    "tokens_out": 22,
+    "message": null
+   }
+  ],
+  "seconds": 2.1
+ },
+ {
+  "case": "todo-other-done",
+  "q": "done",
+  "snapshot_chars": 871,
+  "correct": true,
+  "reply": {
+   "evidence": "The task is not complete on this page.",
+   "done": false
+  },
+  "model": "llama3:8b",
+  "attempts": [
+   {
+    "model": "llama3:8b",
+    "status": "ok",
+    "http_code": 200,
+    "latency_ms": 2208,
+    "tokens_in": 459,
+    "tokens_out": 23,
+    "message": null
+   }
+  ],
+  "seconds": 2.2
+ },
+ {
+  "case": "py-home-next",
+  "q": "next",
+  "snapshot_chars": 11305,
+  "correct": false,
+  "reply": {
+   "thought": "Search the Python documentation for asyncio.gather and open its entry",
+   "action": "fill",
+   "target": {
+    "role": "link",
+    "name": "asyncio.gather"
+   },
+   "value": "/url: asyncio.html"
+  },
+  "model": "llama3:8b",
+  "attempts": [
+   {
+    "model": "llama3:8b",
+    "status": "ok",
+    "http_code": 200,
+    "latency_ms": 6348,
+    "tokens_in": 3492,
+    "tokens_out": 55,
+    "message": null
+   }
+  ],
+  "seconds": 6.4
+ },
+ {
+  "case": "py-results-next",
+  "q": "next",
+  "snapshot_chars": 9265,
+  "correct": false,
+  "reply": {
+   "thought": "Fill the search box with asyncio.gather and press Enter.",
+   "action": "fill",
+   "target": {
+    "role": "textbox",
+    "name": "Search"
+   },
+   "value": "asyncio.gather"
+  },
+  "model": "llama3:8b",
+  "attempts": [
+   {
+    "model": "llama3:8b",
+    "status": "ok",
+    "http_code": 200,
+    "latency_ms": 5371,
+    "tokens_in": 2723,
+    "tokens_out": 50,
+    "message": null
+   }
+  ],
+  "seconds": 5.4
+ },
+ {
+  "case": "py-results-done",
+  "q": "done",
+  "snapshot_chars": 9265,
+  "correct": false,
+  "reply": {
+   "evidence": "https://docs.python.org/3/search.html?q=asyncio.gather",
+   "done": true
+  },
+  "model": "llama3:8b",
+  "attempts": [
+   {
+    "model": "llama3:8b",
+    "status": "ok",
+    "http_code": 200,
+    "latency_ms": 3985,
+    "tokens_in": 2667,
+    "tokens_out": 28,
+    "message": null
+   }
+  ],
+  "seconds": 4.0
+ },
+ {
+  "case": "mdn-home-next",
+  "q": "next",
+  "snapshot_chars": 12126,
+  "correct": false,
+  "reply": {
+   "thought": "Find the MDN reference page for the JavaScript Array.prototype.map method.",
+   "action": "press",
+   "target": {
+    "role": "link",
+    "name": "Array.prototype.map"
+   },
+   "value": "Enter"
+  },
+  "model": "llama3:8b",
+  "attempts": [
+   {
+    "model": "llama3:8b",
+    "status": "ok",
+    "http_code": 200,
+    "latency_ms": 6312,
+    "tokens_in": 3842,
+    "tokens_out": 51,
+    "message": null
+   }
+  ],
+  "seconds": 6.3
+ },
+ {
+  "case": "gh-issues-next",
+  "q": "next",
+  "snapshot_chars": 24605,
+  "correct": false,
+  "reply": {
+   "thought": "Find the open issues of the microsoft/playwright repository that are labelled 'documentation'.",
+   "action": "fill",
+   "target": {
+    "role": "link",
+    "name": "Issues (41)"
+   },
+   "value": "documentation"
+  },
+  "model": "llama3:8b",
+  "attempts": [
+   {
+    "model": "llama3:8b",
+    "status": "ok",
+    "http_code": 200,
+    "latency_ms": 8697,
+    "tokens_in": 6695,
+    "tokens_out": 54,
+    "message": null
+   }
+  ],
+  "seconds": 8.7
+ }
+]

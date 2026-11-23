@@ -1,0 +1,399 @@
+[
+ {
+  "id": "wiki-home-next",
+  "url": "https://en.wikipedia.org/wiki/Main_Page",
+  "task": "Search Wikipedia for Alan Turing and open his article",
+  "done_steps": [],
+  "q": "next",
+  "ok": [
+   [
+    [
+     "fill",
+     "click"
+    ],
+    "searchbox|combobox|textbox",
+    "search",
+    "alan turing|^$|None"
+   ]
+  ],
+  "page_url": "https://en.wikipedia.org/wiki/Main_Page",
+  "main_chars": 37011,
+  "body_chars": 40329,
+  "capped": false,
+  "snapshot_chars": 40329
+ },
+ {
+  "id": "wiki-typed-next",
+  "url": "https://en.wikipedia.org/wiki/Main_Page",
+  "setup": "wiki_typed",
+  "task": "Search Wikipedia for Alan Turing and open his article",
+  "done_steps": [
+   "Typed Alan Turing in the search box"
+  ],
+  "q": "next",
+  "ok": [
+   [
+    [
+     "click",
+     "press"
+    ],
+    "button|searchbox|combobox|textbox|option",
+    "search|alan turing",
+    null
+   ]
+  ],
+  "page_url": "https://en.wikipedia.org/wiki/Main_Page",
+  "main_chars": 37011,
+  "body_chars": 40720,
+  "capped": false,
+  "snapshot_chars": 40720
+ },
+ {
+  "id": "wiki-article-done",
+  "url": "https://en.wikipedia.org/wiki/Alan_Turing",
+  "task": "Search Wikipedia for Alan Turing and open his article",
+  "done_steps": [
+   "Typed Alan Turing in the search box",
+   "Pressed Enter"
+  ],
+  "q": "done",
+  "ok": true,
+  "page_url": "https://en.wikipedia.org/wiki/Alan_Turing",
+  "main_chars": 347284,
+  "body_chars": 352465,
+  "capped": true,
+  "snapshot_chars": 48000
+ },
+ {
+  "id": "wiki-home-done",
+  "url": "https://en.wikipedia.org/wiki/Main_Page",
+  "task": "Search Wikipedia for Alan Turing and open his article",
+  "done_steps": [],
+  "q": "done",
+  "ok": false,
+  "page_url": "https://en.wikipedia.org/wiki/Main_Page",
+  "main_chars": 37011,
+  "body_chars": 40329,
+  "capped": false,
+  "snapshot_chars": 40329
+ },
+ {
+  "id": "osm-home-next",
+  "url": "https://www.openstreetmap.org/",
+  "task": "Search the map for Bengaluru",
+  "done_steps": [],
+  "q": "next",
+  "ok": [
+   [
+    [
+     "fill"
+    ],
+    "textbox|searchbox|combobox",
+    "search",
+    "bengaluru"
+   ]
+  ],
+  "page_url": "https://www.openstreetmap.org/#map=5/21.84/82.79",
+  "main_chars": 2895,
+  "body_chars": 2895,
+  "capped": false,
+  "snapshot_chars": 2895
+ },
+ {
+  "id": "osm-typed-next",
+  "url": "https://www.openstreetmap.org/",
+  "setup": "osm_typed",
+  "task": "Search the map for Bengaluru",
+  "done_steps": [
+   "Typed Bengaluru in the Search box"
+  ],
+  "q": "next",
+  "ok": [
+   [
+    [
+     "click"
+    ],
+    "button",
+    "^go$|search",
+    null
+   ],
+   [
+    [
+     "press"
+    ],
+    "textbox|searchbox",
+    "search",
+    "enter"
+   ]
+  ],
+  "page_url": "https://www.openstreetmap.org/#map=5/21.84/82.79",
+  "main_chars": 2880,
+  "body_chars": 2880,
+  "capped": false,
+  "snapshot_chars": 2880
+ },
+ {
+  "id": "osm-results-done",
+  "url": "https://www.openstreetmap.org/search?query=Bengaluru",
+  "task": "Search the map for Bengaluru",
+  "done_steps": [
+   "Typed Bengaluru in the Search box",
+   "Clicked Go"
+  ],
+  "q": "done",
+  "ok": true,
+  "page_url": "https://www.openstreetmap.org/search?query=Bengaluru#map=11/12.9881/77.6220",
+  "main_chars": 2596,
+  "body_chars": 2596,
+  "capped": false,
+  "snapshot_chars": 2596
+ },
+ {
+  "id": "todo-empty-next",
+  "url": "https://demo.playwright.dev/todomvc/",
+  "task": "Add a todo called Buy milk and mark it as completed",
+  "done_steps": [],
+  "q": "next",
+  "ok": [
+   [
+    [
+     "fill"
+    ],
+    "textbox",
+    "what needs to be done",
+    "buy milk"
+   ]
+  ],
+  "page_url": "https://demo.playwright.dev/todomvc/#/",
+  "main_chars": 440,
+  "body_chars": 440,
+  "capped": false,
+  "snapshot_chars": 440
+ },
+ {
+  "id": "todo-typed-next",
+  "url": "https://demo.playwright.dev/todomvc/",
+  "setup": "todo_typed",
+  "task": "Add a todo called Buy milk and mark it as completed",
+  "done_steps": [
+   "Typed Buy milk in the What needs to be done? box"
+  ],
+  "q": "next",
+  "ok": [
+   [
+    [
+     "press"
+    ],
+    "textbox",
+    "what needs to be done",
+    "enter"
+   ]
+  ],
+  "page_url": "https://demo.playwright.dev/todomvc/#/",
+  "main_chars": 450,
+  "body_chars": 450,
+  "capped": false,
+  "snapshot_chars": 450
+ },
+ {
+  "id": "todo-added-next",
+  "url": "https://demo.playwright.dev/todomvc/",
+  "setup": "todo_added",
+  "task": "Add a todo called Buy milk and mark it as completed",
+  "done_steps": [
+   "Typed Buy milk in the What needs to be done? box",
+   "Pressed Enter"
+  ],
+  "q": "next",
+  "ok": [
+   [
+    [
+     "click",
+     "check"
+    ],
+    "checkbox",
+    "toggle todo|buy milk",
+    null
+   ]
+  ],
+  "page_url": "https://demo.playwright.dev/todomvc/#/",
+  "main_chars": 794,
+  "body_chars": 794,
+  "capped": false,
+  "snapshot_chars": 794
+ },
+ {
+  "id": "todo-added-done",
+  "url": "https://demo.playwright.dev/todomvc/",
+  "setup": "todo_added",
+  "task": "Add a todo called Buy milk and mark it as completed",
+  "done_steps": [
+   "Typed Buy milk in the What needs to be done? box",
+   "Pressed Enter"
+  ],
+  "q": "done",
+  "ok": false,
+  "page_url": "https://demo.playwright.dev/todomvc/#/",
+  "main_chars": 794,
+  "body_chars": 794,
+  "capped": false,
+  "snapshot_chars": 794
+ },
+ {
+  "id": "todo-completed-done",
+  "url": "https://demo.playwright.dev/todomvc/",
+  "setup": "todo_completed",
+  "task": "Add a todo called Buy milk and mark it as completed",
+  "done_steps": [
+   "Added Buy milk",
+   "Ticked its checkbox"
+  ],
+  "q": "done",
+  "ok": true,
+  "page_url": "https://demo.playwright.dev/todomvc/#/",
+  "main_chars": 867,
+  "body_chars": 867,
+  "capped": false,
+  "snapshot_chars": 867
+ },
+ {
+  "id": "todo-other-done",
+  "url": "https://demo.playwright.dev/todomvc/",
+  "setup": "todo_other",
+  "task": "Add a todo called Buy milk and mark it as completed",
+  "done_steps": [
+   "Added a todo",
+   "Ticked its checkbox"
+  ],
+  "q": "done",
+  "ok": false,
+  "page_url": "https://demo.playwright.dev/todomvc/#/",
+  "main_chars": 871,
+  "body_chars": 871,
+  "capped": false,
+  "snapshot_chars": 871
+ },
+ {
+  "id": "py-home-next",
+  "url": "https://docs.python.org/3/",
+  "task": "Search the Python documentation for asyncio.gather and open its entry",
+  "done_steps": [],
+  "q": "next",
+  "ok": [
+   [
+    [
+     "fill"
+    ],
+    "searchbox|textbox|combobox",
+    "search",
+    "asyncio"
+   ]
+  ],
+  "page_url": "https://docs.python.org/3/",
+  "main_chars": 4002,
+  "body_chars": 11305,
+  "capped": false,
+  "snapshot_chars": 11305
+ },
+ {
+  "id": "py-results-next",
+  "url": "https://docs.python.org/3/search.html?q=asyncio.gather",
+  "task": "Search the Python documentation for asyncio.gather and open its entry",
+  "done_steps": [
+   "Searched for asyncio.gather"
+  ],
+  "q": "next",
+  "ok": [
+   [
+    [
+     "click"
+    ],
+    "link",
+    "asyncio\\.gather|gather",
+    null
+   ]
+  ],
+  "page_url": "https://docs.python.org/3/search.html?q=asyncio.gather",
+  "main_chars": 4808,
+  "body_chars": 9265,
+  "capped": false,
+  "snapshot_chars": 9265
+ },
+ {
+  "id": "py-results-done",
+  "url": "https://docs.python.org/3/search.html?q=asyncio.gather",
+  "task": "Search the Python documentation for asyncio.gather and open its entry",
+  "done_steps": [
+   "Searched for asyncio.gather"
+  ],
+  "q": "done",
+  "ok": false,
+  "page_url": "https://docs.python.org/3/search.html?q=asyncio.gather",
+  "main_chars": 4808,
+  "body_chars": 9265,
+  "capped": false,
+  "snapshot_chars": 9265
+ },
+ {
+  "id": "mdn-home-next",
+  "url": "https://developer.mozilla.org/en-US/",
+  "task": "Find the MDN reference page for the JavaScript Array.prototype.map method",
+  "done_steps": [],
+  "q": "next",
+  "ok": [
+   [
+    [
+     "fill"
+    ],
+    "searchbox|textbox|combobox",
+    "search",
+    "map"
+   ],
+   [
+    [
+     "click"
+    ],
+    "button|link",
+    "search|references|javascript",
+    null
+   ]
+  ],
+  "page_url": "https://developer.mozilla.org/en-US/",
+  "main_chars": 12126,
+  "body_chars": 12126,
+  "capped": false,
+  "snapshot_chars": 12126
+ },
+ {
+  "id": "gh-issues-next",
+  "url": "https://github.com/microsoft/playwright/issues",
+  "task": "Find the open issues of the microsoft/playwright repository that are labelled 'documentation'",
+  "done_steps": [
+   "Opened the repository's Issues tab"
+  ],
+  "q": "next",
+  "ok": [
+   [
+    [
+     "click"
+    ],
+    "button|link",
+    "label",
+    null
+   ],
+   [
+    [
+     "fill"
+    ],
+    "textbox|searchbox|combobox",
+    "search|filter",
+    "label:.?documentation"
+   ]
+  ],
+  "page_url": "https://github.com/microsoft/playwright/issues",
+  "main_chars": 22653,
+  "body_chars": 24605,
+  "capped": false,
+  "snapshot_chars": 24605
+ }
+]

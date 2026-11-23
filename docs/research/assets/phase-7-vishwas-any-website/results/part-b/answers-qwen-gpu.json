@@ -1,0 +1,471 @@
+[
+ {
+  "case": "wiki-home-next",
+  "q": "next",
+  "snapshot_chars": 40329,
+  "correct": true,
+  "reply": {
+   "thought": "The user wants to search for Alan Turing on Wikipedia. The search box is available in the current page snapshot.",
+   "action": "fill",
+   "target": {
+    "role": "searchbox",
+    "name": "Search Wikipedia"
+   },
+   "value": "Alan Turing"
+  },
+  "model": "qwen2.5:7b",
+  "attempts": [
+   {
+    "model": "qwen2.5:7b",
+    "status": "ok",
+    "http_code": 200,
+    "latency_ms": 24753,
+    "tokens_in": 11520,
+    "tokens_out": 59,
+    "message": null
+   }
+  ],
+  "seconds": 24.8
+ },
+ {
+  "case": "wiki-typed-next",
+  "q": "next",
+  "snapshot_chars": 40720,
+  "correct": true,
+  "reply": {
+   "thought": "The user needs to search for Alan Turing and open his article. The search box is already filled with 'Alan Turing', so the next step is to press Enter to submit the search.",
+   "action": "press",
+   "target": {
+    "role": "button",
+    "name": "Search"
+   },
+   "value": "Enter"
+  },
+  "model": "qwen2.5:7b",
+  "attempts": [
+   {
+    "model": "qwen2.5:7b",
+    "status": "ok",
+    "http_code": 200,
+    "latency_ms": 17301,
+    "tokens_in": 11633,
+    "tokens_out": 78,
+    "message": null
+   }
+  ],
+  "seconds": 17.3
+ },
+ {
+  "case": "wiki-article-done",
+  "q": "done",
+  "snapshot_chars": 48000,
+  "correct": true,
+  "reply": {
+   "evidence": "The current page shows the Wikipedia article for Alan Turing and contains extensive information about his life, work, and legacy. The user has successfully navigated to the correct Wikipedia page for Alan Turing after performing a search.",
+   "done": true
+  },
+  "model": "qwen2.5:7b",
+  "attempts": [
+   {
+    "model": "qwen2.5:7b",
+    "status": "ok",
+    "http_code": 200,
+    "latency_ms": 17355,
+    "tokens_in": 13012,
+    "tokens_out": 56,
+    "message": null
+   }
+  ],
+  "seconds": 17.4
+ },
+ {
+  "case": "wiki-home-done",
+  "q": "done",
+  "snapshot_chars": 40329,
+  "correct": true,
+  "reply": {
+   "evidence": "The current page is the Wikipedia main page. There are no links or search boxes to directly search for Alan Turing's article. The task of searching for and opening Alan Turing's article has not been started yet.",
+   "done": false
+  },
+  "model": "qwen2.5:7b",
+  "attempts": [
+   {
+    "model": "qwen2.5:7b",
+    "status": "ok",
+    "http_code": 200,
+    "latency_ms": 15028,
+    "tokens_in": 11464,
+    "tokens_out": 56,
+    "message": null
+   }
+  ],
+  "seconds": 15.0
+ },
+ {
+  "case": "osm-home-next",
+  "q": "next",
+  "snapshot_chars": 2895,
+  "correct": true,
+  "reply": {
+   "thought": "The user wants to search for Bengaluru on the map. The search box is available on the page.",
+   "action": "fill",
+   "target": {
+    "role": "textbox",
+    "name": "Search"
+   },
+   "value": "Bengaluru"
+  },
+  "model": "qwen2.5:7b",
+  "attempts": [
+   {
+    "model": "qwen2.5:7b",
+    "status": "ok",
+    "http_code": 200,
+    "latency_ms": 5800,
+    "tokens_in": 1185,
+    "tokens_out": 58,
+    "message": null
+   }
+  ],
+  "seconds": 5.8
+ },
+ {
+  "case": "osm-typed-next",
+  "q": "next",
+  "snapshot_chars": 2880,
+  "correct": false,
+  "reply": {
+   "thought": "The user has already typed 'Bengaluru' in the search box. The next step is to press Enter or click the Go button to perform the search.",
+   "action": "press",
+   "target": {
+    "role": "button",
+    "name": "Go"
+   },
+   "value": ""
+  },
+  "model": "qwen2.5:7b",
+  "attempts": [
+   {
+    "model": "qwen2.5:7b",
+    "status": "ok",
+    "http_code": 200,
+    "latency_ms": 6424,
+    "tokens_in": 1187,
+    "tokens_out": 71,
+    "message": null
+   }
+  ],
+  "seconds": 6.4
+ },
+ {
+  "case": "osm-results-done",
+  "q": "done",
+  "snapshot_chars": 2596,
+  "correct": true,
+  "reply": {
+   "evidence": "The current page shows a map centered on Bengaluru, with search results indicating that the city has been found. The user has completed the steps of typing 'Bengaluru' in the search box and clicking 'Go'. The page also provides additional links to more detailed information about Bengaluru.",
+   "done": true
+  },
+  "model": "qwen2.5:7b",
+  "attempts": [
+   {
+    "model": "qwen2.5:7b",
+    "status": "ok",
+    "http_code": 200,
+    "latency_ms": 6743,
+    "tokens_in": 1118,
+    "tokens_out": 72,
+    "message": null
+   }
+  ],
+  "seconds": 6.7
+ },
+ {
+  "case": "todo-empty-next",
+  "q": "next",
+  "snapshot_chars": 440,
+  "correct": true,
+  "reply": {
+   "thought": "The user needs to add a todo called 'Buy milk' and mark it as completed. The next step is to type 'Buy milk' into the textbox.",
+   "action": "fill",
+   "target": {
+    "role": "textbox",
+    "name": "What needs to be done?"
+   },
+   "value": "Buy milk"
+  },
+  "model": "qwen2.5:7b",
+  "attempts": [
+   {
+    "model": "qwen2.5:7b",
+    "status": "ok",
+    "http_code": 200,
+    "latency_ms": 5873,
+    "tokens_in": 368,
+    "tokens_out": 64,
+    "message": null
+   }
+  ],
+  "seconds": 5.9
+ },
+ {
+  "case": "todo-typed-next",
+  "q": "next",
+  "snapshot_chars": 450,
+  "correct": false,
+  "reply": {
+   "thought": "The next action is to press Enter to submit the todo item.",
+   "action": "press",
+   "target": {
+    "role": "textbox",
+    "name": "What needs to be done?"
+   },
+   "value": null
+  },
+  "model": "qwen2.5:7b",
+  "attempts": [
+   {
+    "model": "qwen2.5:7b",
+    "status": "ok",
+    "http_code": 200,
+    "latency_ms": 3923,
+    "tokens_in": 383,
+    "tokens_out": 43,
+    "message": null
+   }
+  ],
+  "seconds": 3.9
+ },
+ {
+  "case": "todo-added-next",
+  "q": "next",
+  "snapshot_chars": 794,
+  "correct": true,
+  "reply": {
+   "thought": "The next step is to mark the todo 'Buy milk' as completed.",
+   "action": "check",
+   "target": {
+    "role": "checkbox",
+    "name": "Toggle Todo"
+   },
+   "value": null
+  },
+  "model": "qwen2.5:7b",
+  "attempts": [
+   {
+    "model": "qwen2.5:7b",
+    "status": "ok",
+    "http_code": 200,
+    "latency_ms": 4856,
+    "tokens_in": 499,
+    "tokens_out": 55,
+    "message": null
+   }
+  ],
+  "seconds": 4.9
+ },
+ {
+  "case": "todo-added-done",
+  "q": "done",
+  "snapshot_chars": 794,
+  "correct": true,
+  "reply": {
+   "evidence": "The task 'Buy milk' has been added to the todo list, but it is not marked as completed. The user needs to check the checkbox next to 'Buy milk' to mark it as completed.",
+   "done": false
+  },
+  "model": "qwen2.5:7b",
+  "attempts": [
+   {
+    "model": "qwen2.5:7b",
+    "status": "ok",
+    "http_code": 200,
+    "latency_ms": 4951,
+    "tokens_in": 443,
+    "tokens_out": 54,
+    "message": null
+   }
+  ],
+  "seconds": 5.0
+ },
+ {
+  "case": "todo-completed-done",
+  "q": "done",
+  "snapshot_chars": 867,
+  "correct": true,
+  "reply": {
+   "evidence": "The task 'Buy milk' has been added and its checkbox is ticked, marking it as completed.",
+   "done": true
+  },
+  "model": "qwen2.5:7b",
+  "attempts": [
+   {
+    "model": "qwen2.5:7b",
+    "status": "ok",
+    "http_code": 200,
+    "latency_ms": 3512,
+    "tokens_in": 455,
+    "tokens_out": 34,
+    "message": null
+   }
+  ],
+  "seconds": 3.5
+ },
+ {
+  "case": "todo-other-done",
+  "q": "done",
+  "snapshot_chars": 871,
+  "correct": true,
+  "reply": {
+   "evidence": "The user has added a todo called 'Walk the dog' and ticked its checkbox, but there is no todo item for 'Buy milk' on the page. The task requires adding a new todo item with the text 'Buy milk' and marking it as completed.",
+   "done": false
+  },
+  "model": "qwen2.5:7b",
+  "attempts": [
+   {
+    "model": "qwen2.5:7b",
+    "status": "ok",
+    "http_code": 200,
+    "latency_ms": 6021,
+    "tokens_in": 456,
+    "tokens_out": 67,
+    "message": null
+   }
+  ],
+  "seconds": 6.0
+ },
+ {
+  "case": "py-home-next",
+  "q": "next",
+  "snapshot_chars": 11305,
+  "correct": true,
+  "reply": {
+   "thought": "需要在文档中搜索 asyncio.gather，应该使用搜索框进行搜索。",
+   "action": "fill",
+   "target": {
+    "role": "searchbox",
+    "name": "Quick search"
+   },
+   "value": "asyncio.gather"
+  },
+  "model": "qwen2.5:7b",
+  "attempts": [
+   {
+    "model": "qwen2.5:7b",
+    "status": "ok",
+    "http_code": 200,
+    "latency_ms": 7543,
+    "tokens_in": 3555,
+    "tokens_out": 56,
+    "message": null
+   }
+  ],
+  "seconds": 7.6
+ },
+ {
+  "case": "py-results-next",
+  "q": "next",
+  "snapshot_chars": 9265,
+  "correct": false,
+  "reply": {
+   "thought": "The user needs to open the entry for asyncio.gather, which is listed as a Python function in the search results.",
+   "action": "press",
+   "target": {
+    "role": "link",
+    "name": "asyncio.gather"
+   },
+   "value": "(Python function, in Coroutines and tasks)"
+  },
+  "model": "qwen2.5:7b",
+  "attempts": [
+   {
+    "model": "qwen2.5:7b",
+    "status": "ok",
+    "http_code": 200,
+    "latency_ms": 8486,
+    "tokens_in": 2787,
+    "tokens_out": 76,
+    "message": null
+   }
+  ],
+  "seconds": 8.5
+ },
+ {
+  "case": "py-results-done",
+  "q": "done",
+  "snapshot_chars": 9265,
+  "correct": false,
+  "reply": {
+   "evidence": "The current page is the search results page for 'asyncio.gather' in Python documentation, and it lists several links related to this term. One of these links points directly to the entry for `asyncio.gather`: https://docs.python.org/3/library/asyncio-task.html#asyncio.gather.",
+   "done": true
+  },
+  "model": "qwen2.5:7b",
+  "attempts": [
+   {
+    "model": "qwen2.5:7b",
+    "status": "ok",
+    "http_code": 200,
+    "latency_ms": 8890,
+    "tokens_in": 2731,
+    "tokens_out": 78,
+    "message": null
+   }
+  ],
+  "seconds": 8.9
+ },
+ {
+  "case": "mdn-home-next",
+  "q": "next",
+  "snapshot_chars": 12126,
+  "correct": false,
+  "reply": {
+   "thought": "The user wants to find the MDN reference page for the JavaScript Array.prototype.map method. The current page is the MDN homepage, so I need to navigate to the search bar and perform a search.",
+   "action": "check",
+   "target": {
+    "role": "button",
+    "name": "Search the site"
+   },
+   "value": ""
+  },
+  "model": "qwen2.5:7b",
+  "attempts": [
+   {
+    "model": "qwen2.5:7b",
+    "status": "ok",
+    "http_code": 200,
+    "latency_ms": 10176,
+    "tokens_in": 3877,
+    "tokens_out": 83,
+    "message": null
+   }
+  ],
+  "seconds": 10.2
+ },
+ {
+  "case": "gh-issues-next",
+  "q": "next",
+  "snapshot_chars": 24605,
+  "correct": false,
+  "reply": {
+   "thought": "需要筛选出标记为'documentation'的issues，应该使用过滤器功能。",
+   "action": "check",
+   "target": {
+    "role": "button",
+    "name": "Filter by labels"
+   },
+   "value": null
+  },
+  "model": "qwen2.5:7b",
+  "attempts": [
+   {
+    "model": "qwen2.5:7b",
+    "status": "ok",
+    "http_code": 200,
+    "latency_ms": 9386,
+    "tokens_in": 7042,
+    "tokens_out": 45,
+    "message": null
+   }
+  ],
+  "seconds": 9.4
+ }
+]

@@ -1,0 +1,24 @@
+{
+ "task": {
+  "id": "todomvc-add-complete",
+  "url": "https://demo.playwright.dev/todomvc",
+  "prompt": "Add a todo called Buy milk and mark it as completed"
+ },
+ "started": 1795419826.9,
+ "task_row": {
+  "id": "33254968-64b6-4e01-a94b-fcfe2082d083",
+  "prompt": "Add a todo called Buy milk and mark it as completed",
+  "target_url": "https://demo.playwright.dev/todomvc",
+  "status": "needs_clarification",
+  "interpretation": null,
+  "clarification_question": "Where can I find the todo list functionality to add and complete a todo item?",
+  "plan_id": null,
+  "regenerates_workflow_id": null,
+  "error": null,
+  "created_at": "2026-11-23T07:43:47.107981Z"
+ },
+ "outcome": "planning_needs_clarification",
+ "why": "Where can I find the todo list functionality to add and complete a todo item?",
+ "seconds": 35.0,
+ "ended": 1795419862.0
+}
