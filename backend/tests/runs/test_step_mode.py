@@ -79,6 +79,7 @@ async def test_a_step_mode_run_records_what_each_action_changed(
     assert types.count("step.decided") == 3 and types.count("step.verified") == 3
     steps = await stored_steps(sessions, run_id)
     assert [s.seq for s in steps] == [1, 2, 3]
+    assert {s.section for s in steps} == {"Create the item"}  # the outline item, as a section title (#471)
     expected: list[dict[str, Any]] = [s.expected_state for s in steps]
     assert expected[0]["url_matches"] == "^/form$"
     assert expected[1]["field_values"] == [{"role": "textbox", "name": "Item name *", "value": "demo-item"}]
