@@ -2,6 +2,17 @@
 
 Every change to `contracts/` is listed here. Additive change = minor version bump; breaking change = major bump + ADR.
 
+## 1.21 (#466)
+
+Look before each step (ADR 0011). Additive, plus one relaxation.
+
+- `plan.schema.json` v1.2: `PlanMode` (`upfront`, `steps`), `Plan.mode` (absent = upfront), `Plan.outline`
+  (`OutlineItem`: `seq`, `text`). **Relaxed:** `Plan.steps` may be empty, for step-mode plans; the API still
+  requires at least one step in an upfront plan.
+- `events.schema.json` v1.7: `step.decided` (`step_seq`, `outline_seq`, `thought`, `action`, `target`), and pause
+  reasons `no_progress` (3 decisions in a row changed nothing) and `step_budget` (20 steps or 25 LLM calls).
+- A step-mode run's `run.started.total_steps` is the number of outline items.
+
 ## 1.20 (#463)
 
 Phase 7 quick fixes. Additive.
