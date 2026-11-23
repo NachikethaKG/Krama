@@ -23,6 +23,21 @@ class RunStartedEvent(BaseModel):
     total_steps: Annotated[int, Field(ge=1)]
 
 
+class StepDecidedEvent(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+    type: Literal["step.decided"]
+    run_id: UUID
+    seq: Annotated[int, Field(ge=1)]
+    ts: AwareDatetime
+    step_seq: Annotated[int, Field(ge=1)]
+    outline_seq: Annotated[int | None, Field(description="The outline item it works on", ge=1)] = None
+    thought: Annotated[str, Field(description="One line: what the page shows and why this action. Masked.")]
+    action: common_schema.Action
+    target: common_schema.Target | None = None
+
+
 class StepStartedEvent(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
@@ -153,6 +168,8 @@ type PauseReason = Annotated[
         "verification_unclear",
         "replan_review",
         "recovery_exhausted",
+        "no_progress",
+        "step_budget",
         "sensitive_data",
         "prompt_injection",
     ],
@@ -234,6 +251,7 @@ class RunCancelledEvent(BaseModel):
 
 type RunEvent = Annotated[
     RunStartedEvent
+    | StepDecidedEvent
     | StepStartedEvent
     | StepActionDoneEvent
     | StepVerifiedEvent

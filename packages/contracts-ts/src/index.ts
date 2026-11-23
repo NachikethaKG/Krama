@@ -75,6 +75,7 @@ export type ErrorCode =
   | "internal";
 export type RunEvent =
   | RunStartedEvent
+  | StepDecidedEvent
   | StepStartedEvent
   | StepActionDoneEvent
   | StepVerifiedEvent
@@ -102,6 +103,8 @@ export type PauseReason =
   | "verification_unclear"
   | "replan_review"
   | "recovery_exhausted"
+  | "no_progress"
+  | "step_budget"
   | "sensitive_data"
   | "prompt_injection";
 /**
@@ -147,6 +150,17 @@ export type Ratio1 = number;
  * via the `definition` "PlanStatus".
  */
 export type PlanStatus = "proposed" | "approved" | "rejected";
+/**
+ * upfront: every step planned before the run (until v1.4). steps: an outline the user approves, then one decision per step during the run (ADR 0011). Absent means upfront.
+ */
+export type PlanMode = "upfront" | "steps";
+/**
+ * How a task's steps are made (ADR 0011).
+ *
+ * This interface was referenced by `Plan`'s JSON-Schema
+ * via the `definition` "PlanMode".
+ */
+export type PlanMode1 = "upfront" | "steps";
 /**
  * outdated: the workflow no longer works and nothing waits for review. heal_pending: an AI-chosen fix waits for the owner (D8). unstable: 2+ flaky validations in 7 days. cant_check: the last 3 validations were blocked (sign-in, CAPTCHA, site down, ...).
  *
@@ -385,6 +399,26 @@ export interface RunStartedEvent {
   ts: string;
   plan_id: string;
   total_steps: number;
+}
+/**
+ * Step mode (ADR 0011): the agent looked at the page and chose the next action. Followed by step.started for the same step_seq, unless the policy stops it.
+ */
+export interface StepDecidedEvent {
+  type: "step.decided";
+  run_id: string;
+  seq: number;
+  ts: string;
+  step_seq: number;
+  /**
+   * The outline item it works on
+   */
+  outline_seq?: number | null;
+  /**
+   * One line: what the page shows and why this action. Masked.
+   */
+  thought: string;
+  action: Action;
+  target?: Target | null;
 }
 export interface StepStartedEvent {
   type: "step.started";
@@ -656,12 +690,30 @@ export interface Plan {
    * A short, general name for the tutorial, written by the planner: no account, organization, repository or other names from the request ("Create a private repository in an organization"). The workflow takes its title from it; null for older plans, which use the request.
    */
   title?: string | null;
+  mode?: PlanMode;
   /**
-   * @minItems 1
+   * Step mode: the goal broken into rough ordered intentions, no selectors and no expected states. Null for upfront plans.
    */
-  steps: [PlannedStep, ...PlannedStep[]];
+  outline?: OutlineItem[] | null;
+  /**
+   * Upfront plans: every step, at least one (the API checks it). Step-mode plans: empty; the steps are decided during the run.
+   *
+   * @minItems 0
+   */
+  steps: PlannedStep[];
   created_at: string;
   approved_at?: string | null;
+}
+/**
+ * This interface was referenced by `Plan`'s JSON-Schema
+ * via the `definition` "OutlineItem".
+ */
+export interface OutlineItem {
+  seq: number;
+  /**
+   * One rough intention, e.g. "Search for the place". Universal wording: no account or test names.
+   */
+  text: string;
 }
 /**
  * One step before execution. The executed version (with observed state and verification) is Step in step.schema.json.
