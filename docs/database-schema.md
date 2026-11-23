@@ -158,6 +158,7 @@ Index `exports(workflow_id, version_id, preset, voice)` for re-use (D16); cleanu
 - **Phase 4:** `workflow_versions`, `validations`, `workflow_steps.version_id`, `workflows.revision` +
   `current_version_id`: see the tables above.
 - **Phase 5:** `exports`: see the table below. Narration clips are artifacts, not rows: `narration/<voice>/<sha256 of the text>.wav` + `.json` (duration and word timings).
+- **Phase 7:** `llm_calls (id bigint, call_id, attempt, job, provider, model, status, http_code null, latency_ms, tokens_in null, tokens_out null, created_at)`, index on `created_at`: one row per request to an LLM model, failed ones too (#464). No prompt or reply text. `just llm-usage` sums it per day, model and status.
 
 ## Indexes
 `runs(plan_id)`, `runs(status)`, `workflows(target_app, status)`, `workflow_steps(version_id, seq)` unique, `workflow_steps(workflow_id)`, `workflow_versions(workflow_id, revision)`
