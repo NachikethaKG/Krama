@@ -1012,6 +1012,10 @@ export interface ObservedState {
    * URL path only, e.g. /repo/create
    */
   url: string;
+  /**
+   * The URL's query string without the '?', masked like other page text, e.g. query=Bengaluru. url_matches is tried on the path first, then on path?query (#463).
+   */
+  query?: string | null;
   title?: string | null;
   headings?: string[];
   aria_excerpt?: string | null;

@@ -53,6 +53,12 @@ class ObservedState(BaseModel):
         extra="forbid",
     )
     url: Annotated[str, Field(description="URL path only, e.g. /repo/create")]
+    query: Annotated[
+        str | None,
+        Field(
+            description="The URL's query string without the '?', masked like other page text, e.g. query=Bengaluru. url_matches is tried on the path first, then on path?query (#463)."
+        ),
+    ] = None
     title: str | None = None
     headings: list[str] | None = None
     aria_excerpt: str | None = None

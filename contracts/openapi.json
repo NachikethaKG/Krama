@@ -828,6 +828,18 @@
             ],
             "title": "Headings"
           },
+          "query": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The URL's query string without the '?', masked like other page text, e.g. query=Bengaluru. url_matches is tried on the path first, then on path?query (#463).",
+            "title": "Query"
+          },
           "screenshot": {
             "anyOf": [
               {
