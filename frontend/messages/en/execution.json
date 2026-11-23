@@ -84,7 +84,9 @@
       "replan_review": "Run the proposed steps",
       "recovery_exhausted": "Try the step once more",
       "sensitive_data": "Allow this step",
-      "prompt_injection": "Continue anyway"
+      "prompt_injection": "Continue anyway",
+      "no_progress": "Let Krama look again",
+      "step_budget": "Continue"
     },
     "description": {
       "destructive_action": "A destructive action requires human confirmation before proceeding.",
@@ -95,7 +97,9 @@
       "replan_review": "The agent proposes changed steps after a failure. Review them before it continues.",
       "recovery_exhausted": "The step kept failing and the retry budget is used up. Retry once more or cancel.",
       "sensitive_data": "This step touches sensitive data and needs your confirmation.",
-      "prompt_injection": "The page seems to contain instructions aimed at the agent. Please check before continuing."
+      "prompt_injection": "The page seems to contain instructions aimed at the agent. Please check before continuing.",
+      "no_progress": "The last few actions changed nothing on the page. Take over to help, or let Krama look again.",
+      "step_budget": "Krama has taken many steps without finishing. Let it continue, or cancel."
     },
     "reason": {
       "destructive_action": "destructive action",
@@ -106,7 +110,9 @@
       "replan_review": "replan review",
       "recovery_exhausted": "recovery exhausted",
       "sensitive_data": "sensitive data",
-      "prompt_injection": "prompt injection"
+      "prompt_injection": "prompt injection",
+      "no_progress": "no progress",
+      "step_budget": "step limit reached"
     },
     "defaultDescription": "Execution has been paused for safety.",
     "defaultAllow": "Continue",
@@ -147,7 +153,8 @@
     "verificationFailed": "Verification Failed",
     "defaultError": "Observed state did not match expected preconditions.",
     "observedUrl": "Observed URL: {url}",
-    "observedTitle": "Observed Title: {title}"
+    "observedTitle": "Observed Title: {title}",
+    "thought": "Why: {thought}"
   },
   "view": {
     "proposedLoading": "Loading the proposed steps…",
