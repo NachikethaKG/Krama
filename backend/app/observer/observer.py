@@ -291,6 +291,7 @@ class PageObserver(Observer):
             raw_url = page.url or ""
             parsed = urllib.parse.urlsplit(raw_url)
             path_url = parsed.path or "/"
+            query = parsed.query
 
             # 2. Concurrently fetch title, ARIA snapshot, screenshot, and headings
             title_task = self._safe_title(page)
@@ -314,6 +315,7 @@ class PageObserver(Observer):
         else:
             raw_url = ""
             path_url = "/"
+            query = ""
             title = ""
             headings = []
             aria_masked = ""
@@ -389,6 +391,7 @@ class PageObserver(Observer):
 
         return Observation.create(
             url=mask_text(path_url),
+            query=mask_text(query) if query else None,
             raw_url=mask_text(raw_url),
             title=mask_text(title),
             headings=[mask_text(h) for h in headings],
