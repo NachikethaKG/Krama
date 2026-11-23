@@ -66,6 +66,7 @@ __all__ = ["TakeoverError"]
 from app.targets import TargetSetup
 from app.verifier import StepVerifier
 from app.verifier.task_check import TaskChecker
+from app.verifier.verifier import url_shown
 
 logger = logging.getLogger(__name__)
 
@@ -620,7 +621,7 @@ class InProcessExecutor:
         failed = {
             "step_seq": seq,
             "expected": mask_expected(step.expected_state).model_dump(mode="json", exclude_none=True),
-            "observed": {"url": out.observed.url, "title": out.observed.title},
+            "observed": {"url": url_shown(out.observed.url, out.observed.query), "title": out.observed.title},
             "screenshot_url": shot,
         }
         return out if await store.event(job.run_id, "step.failed", failed) else None
@@ -992,6 +993,7 @@ class InProcessExecutor:
             before_state=_before_state(out),
             observed_state={
                 "url": out.observed.url,
+                "query": out.observed.query,
                 "title": out.observed.title,
                 "headings": out.observed.headings,
                 "screenshot_path": key,
@@ -1172,7 +1174,7 @@ def _failure_text(step: PlannedStep, out: StepOutcome) -> str:
         f"Action: {step.action.type} on {_target_text(step)}",
         f"Problem: {_failure_reason(out)}",
         f"Expected: {expected}",
-        f"Observed: URL path {out.observed.url}, title {out.observed.title!r}",
+        f"Observed: URL {url_shown(out.observed.url, out.observed.query)}, title {out.observed.title!r}",
     ]
     if out.verification is not None:
         lines += [f"- {c.kind} {c.expected}: {c.detail}" for c in out.verification.failures()]
