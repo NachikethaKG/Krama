@@ -28,7 +28,7 @@ Verified Workflow JSON ──► tutorial-compiler (TS, pure function) ──►
 |---|---|---|
 | Backend | Python, uv, FastAPI, Pydantic v2, SQLAlchemy 2 + Alembic | `.python-version` (3.12) |
 | Browser | Playwright for Python, headless Chromium | `backend/uv.lock` |
-| LLM | `LLMProvider` interface: Gemini (reference), Fake (tests). No local model ([ADR 0003](adr/0003-no-local-model-for-text-jobs.md)) | — |
+| LLM | `LLMProvider` interface: Gemini (reference), Fake (tests), Ollama (opt-in, development only, text only: [ADR 0010](adr/0010-local-llm-as-opt-in-dev-provider.md)) | — |
 | Jobs | In-process asyncio (Phases 0–2) → Redis + arq (Phase 3) | Redis 7 |
 | Frontend | Next.js (App Router), TypeScript, Tailwind, pnpm | `.nvmrc` (Node 22), `packageManager` field |
 | Replay | rrweb recording + SVG overlay layer | `pnpm-lock.yaml` |
@@ -50,7 +50,7 @@ Ownership is by module ([ADR 0001](adr/0001-ownership-by-module.md)). Modules ow
 | `planner/` | Vishwas | Task interpretation + plan generation (`instruction_text`, `expected_state` per step) |
 | `agent/` | Vishwas | Browser session, action execution, locator fallback chain, self-healing (Phase 4), per-user site sessions (`browser_profiles`, [ADR 0007](adr/0007-per-user-site-sessions.md)) |
 | `verifier/` | Vishwas | Compares expected vs observed state, returns result + method + confidence |
-| `llm/` | Vishwas | `LLMProvider` + Gemini / Fake implementations, prompt templates |
+| `llm/` | Vishwas | `LLMProvider` + Gemini / Fake / Ollama (dev only) implementations, prompt templates |
 | `db/` | Vishwas | SQLAlchemy models, repositories, Alembic migrations (schema: [`database-schema.md`](database-schema.md)) |
 | `storage/` | Vishwas | `ArtifactStore` (local FS; SeaweedFS later, [ADR 0005](adr/0005-object-storage-seaweedfs.md)) |
 | `tts/` | Vishwas | Piper narration (Phase 5): one WAV per step + word timings + manifest, behind the `Narrator` port. Talks to `backend/tts-worker/` (GPL, own venv) over stdin/stdout |
@@ -68,7 +68,7 @@ Every boundary is an interface with a mock that ships *before* the real implemen
 
 | Seam | Interface | Mock (exists first) | Real | Who uses the mock |
 |---|---|---|---|---|
-| LLM | `LLMProvider` | `FakeProvider`: replays `backend/tests/llm_fixtures/*.json` | `GeminiProvider` | backend tests, CI, offline dev |
+| LLM | `LLMProvider` | `FakeProvider`: replays `backend/tests/llm_fixtures/*.json` | `GeminiProvider` (`OllamaProvider` opt-in for development) | backend tests, CI, offline dev |
 | Planner | `Planner` | `StaticPlanner`: returns a fixture plan | `LLMPlanner` | executor + API work before the planner is good |
 | Browser | `BrowserSession` | `RecordedSession`: replays stored observations | `PlaywrightSession` | verifier/policy unit tests |
 | Verifier | `Verifier` | `ScriptedVerifier`: results given by the test | `LayeredVerifier` | executor/replan tests |
@@ -95,6 +95,7 @@ Every boundary is an interface with a mock that ships *before* the real implemen
 | Ownership by module, cross-owner calls only via `ports/` | Both people work on the backend without sharing files | [0001](adr/0001-ownership-by-module.md) |
 | Thin Playwright layer over browser-use/Stagehand | Deterministic execution, fits free-tier quota (1 planning call), strict plan-approve-execute control | [0002](adr/0002-own-playwright-layer.md) |
 | No local model; instruction text written by code | Template = Gemini = Llama 3.1 on real steps; the reference laptop can't run Ollama | [0003](adr/0003-no-local-model-for-text-jobs.md) |
+| Ollama as an opt-in development provider (text only) | Phase 7 needs many more LLM calls than the Gemini free tier allows; gates and demos stay on Gemini | [0010](adr/0010-local-llm-as-opt-in-dev-provider.md) |
 | CSRF defense via `X-Krama: 1` + HTTP-only cookies | Blocks cross-origin mutating requests without complex signed double-submit tokens; RSC calls direct over internal HTTP | [Phase 3 Alignment](research/phase-3-decisions-alignment.md) |
 | Share tokens without TTL for MVP | `secrets.token_urlsafe(32)` stored as SHA-256 hash with `never` expiry; avoids background worker cron overhead | [Phase 3 Alignment](research/phase-3-decisions-alignment.md) |
 | Seeded user accounts only for MVP | Prevents quota exhaustion and bot-flagging against shared GitHub machine account; gated via `just seed-users` | [Phase 3 Alignment](research/phase-3-decisions-alignment.md) |
