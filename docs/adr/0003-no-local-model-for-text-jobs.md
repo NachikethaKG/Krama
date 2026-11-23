@@ -1,6 +1,7 @@
 # 0003 — No local model (Ollama) for text jobs; instruction text comes from code
 
-- **Status:** accepted
+- **Status:** accepted; decision 1 superseded by [0010](0010-local-llm-as-opt-in-dev-provider.md) (an opt-in Ollama
+  provider for development, 2026-11-23)
 - **Deciders:** Vishwas (research and decision), Nachiketha (review)
 - **Issue:** #74 · Research: [`phase-2-vishwas-local-model.md`](../research/phase-2-vishwas-local-model.md),
   [`phase-2-vishwas-instruction-text.md`](../research/phase-2-vishwas-instruction-text.md) (#68)
