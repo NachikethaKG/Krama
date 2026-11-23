@@ -1892,6 +1892,18 @@
             ],
             "title": "Screenshot Path"
           },
+          "section": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Step mode (ADR 0011): the outline item this step belongs to, shown as a section title. Null for upfront workflows.",
+            "title": "Section"
+          },
           "sensitive": {
             "anyOf": [
               {

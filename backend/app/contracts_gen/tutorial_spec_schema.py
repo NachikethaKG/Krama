@@ -115,6 +115,12 @@ class Scene(BaseModel):
     id: Annotated[str, Field(min_length=1)]
     step_seq: Annotated[int, Field(description="seq of the workflow step this scene shows.", ge=1)]
     title: Annotated[str | None, Field(description="Short label for the step list.")] = None
+    section: Annotated[
+        str | None,
+        Field(
+            description="The workflow step's section (an outline item); the step list shows it when it changes."
+        ),
+    ] = None
     start_ms: Annotated[int, Field(description="Scene start on the tutorial timeline.", ge=0)]
     duration_ms: Annotated[int, Field(ge=0)]
     action: Annotated[
