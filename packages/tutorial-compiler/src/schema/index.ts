@@ -1,10 +1,50 @@
 // Auto-embedded canonical schemas for browser/pure-TS portability without filesystem IO.
+
 export const commonSchema = {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "common.schema.json",
   "title": "Common",
-  "$comment": "v1.1. Building blocks shared by plan, step, workflow, event and tutorial-spec schemas. See contracts/README.md for the schema rules.",
+  "$comment": "v1.4. Building blocks shared by plan, step, workflow, event and tutorial-spec schemas. See contracts/README.md for the schema rules.",
   "$defs": {
+    "Language": {
+      "title": "Language",
+      "description": "A tutorial language (#132, L3). en is the original; the others are translations. Narration: en, de, es, fr; hi and kn get captions only (L7).",
+      "enum": [
+        "en",
+        "hi",
+        "kn",
+        "de",
+        "es",
+        "fr"
+      ]
+    },
+    "PerformedBy": {
+      "title": "PerformedBy",
+      "description": "Who did a step: Krama, or the run's owner by hand in a takeover (ADR 0008).",
+      "enum": [
+        "krama",
+        "human"
+      ]
+    },
+    "TakeoverEndReason": {
+      "title": "TakeoverEndReason",
+      "description": "Why a takeover ended. handed_back: the owner said what they did; idle: 5 min without input; closed: the screen connection went away; cancelled: the run was cancelled.",
+      "enum": [
+        "handed_back",
+        "idle",
+        "closed",
+        "cancelled"
+      ]
+    },
+    "HandBackDone": {
+      "title": "HandBackDone",
+      "description": "What the owner did in a takeover. barrier: cleared a login wall or challenge (Krama re-checks and retries the step); step: did the paused step (Krama verifies it without acting); rest: did the rest of the task (Krama runs the final check).",
+      "enum": [
+        "barrier",
+        "step",
+        "rest"
+      ]
+    },
     "Risk": {
       "title": "Risk",
       "enum": [
@@ -216,6 +256,8 @@ export const commonSchema = {
         "run_not_active",
         "rate_limited",
         "llm_unavailable",
+        "unauthorized",
+        "forbidden",
         "internal"
       ]
     },
@@ -260,7 +302,7 @@ export const stepSchema = {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "step.schema.json",
   "title": "Step",
-  "$comment": "v1.1. One executed and verified step of a Verified Workflow (docs/phases/README.md §3.1, docs/database-schema.md).",
+  "$comment": "v1.4. One executed and verified step of a Verified Workflow (docs/phases/README.md §3.1, docs/database-schema.md).",
   "type": "object",
   "required": [
     "id",
@@ -300,6 +342,13 @@ export const stepSchema = {
       "type": "string",
       "minLength": 1
     },
+    "section": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Step mode (ADR 0011): the outline item this step belongs to, shown as a section title. Null for upfront workflows."
+    },
     "before_state": {
       "oneOf": [
         {
@@ -325,6 +374,11 @@ export const stepSchema = {
     "sensitive": {
       "type": "boolean",
       "default": false
+    },
+    "performed_by": {
+      "$ref": "common.schema.json#/$defs/PerformedBy",
+      "default": "krama",
+      "description": "human: the run's owner did this step in a takeover; its confidence is capped and the tutorial shows it as a do-it-yourself step (ADR 0008)."
     },
     "screenshot_path": {
       "type": [
@@ -472,6 +526,13 @@ export const stepSchema = {
           "type": "string",
           "description": "URL path only, e.g. /repo/create"
         },
+        "query": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The URL's query string without the '?', masked like other page text, e.g. query=Bengaluru. url_matches is tried on the path first, then on path?query (#463)."
+        },
         "title": {
           "type": [
             "string",
@@ -518,7 +579,7 @@ export const workflowSchema = {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "workflow.schema.json",
   "title": "Workflow",
-  "$comment": "v1.0. The verified workflow, the core object of Krama (docs/phases/README.md §3.1, docs/database-schema.md).",
+  "$comment": "v1.6. The verified workflow, the core object of Krama (docs/phases/README.md §3.1, docs/database-schema.md).",
   "type": "object",
   "required": [
     "id",
@@ -536,6 +597,25 @@ export const workflowSchema = {
       "type": "string",
       "default": "1.0",
       "description": "Workflow format version (e.g. 1.0)."
+    },
+    "revision": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 1,
+      "description": "Number of the workflow version whose steps and recording this is (1 = as first recorded). Not the format `version` above."
+    },
+    "current_version_source": {
+      "description": "How the current version was made. With status `verified`, `heal` means a self-heal updated it: the `auto-updated` badge (#114, #382). Null for workflows from before versions.",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/WorkflowVersionSource"
+        },
+        {
+          "type": "null"
+        }
+      ]
     },
     "task_id": {
       "type": [
@@ -776,6 +856,17 @@ export const workflowSchema = {
         "status": {
           "$ref": "#/$defs/WorkflowStatus"
         },
+        "current_version_source": {
+          "description": "How the current version was made. With status `verified`, `heal` means a self-heal updated it: the `auto-updated` badge (#114, #382). Null for workflows from before versions.",
+          "oneOf": [
+            {
+              "$ref": "#/$defs/WorkflowVersionSource"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "target_app": {
           "type": [
             "string",
@@ -800,6 +891,135 @@ export const workflowSchema = {
             "null"
           ],
           "format": "date-time"
+        },
+        "last_validated_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time",
+          "description": "When validation last checked it (#135); null if never."
+        },
+        "score": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "description": "Only with GET /workflows?q=: relevance x status x freshness (higher first, #135 S5)."
+        },
+        "match": {
+          "description": "Only with GET /workflows?q=: where the words matched best.",
+          "oneOf": [
+            {
+              "$ref": "#/$defs/WorkflowMatch"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "TranslationStatus": {
+      "title": "TranslationStatus",
+      "enum": [
+        "translating",
+        "ready",
+        "failed"
+      ]
+    },
+    "TranslatedStep": {
+      "title": "TranslatedStep",
+      "type": "object",
+      "required": [
+        "step_seq",
+        "text"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "step_seq": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "text": {
+          "type": "string",
+          "description": "The step text in the language. Quoted UI labels are byte for byte the site's own."
+        },
+        "translated": {
+          "type": "boolean",
+          "default": true,
+          "description": "False when this step kept its English text (its translation failed the label check)."
+        }
+      }
+    },
+    "Translation": {
+      "title": "Translation",
+      "type": "object",
+      "description": "GET /workflows/{id}/translations/{language}: the current version's title and step texts in a language (#132, L4-L6). Made once, on first request, then cached.",
+      "required": [
+        "workflow_id",
+        "revision",
+        "language",
+        "status",
+        "steps"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "workflow_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "language": {
+          "$ref": "common.schema.json#/$defs/Language"
+        },
+        "status": {
+          "$ref": "#/$defs/TranslationStatus"
+        },
+        "title": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/TranslatedStep"
+          }
+        },
+        "error": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Why it failed (status failed); ask again to retry."
+        }
+      }
+    },
+    "WorkflowMatch": {
+      "title": "WorkflowMatch",
+      "type": "object",
+      "required": [
+        "snippet"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "step_seq": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1,
+          "description": "The step whose text matched best; null when the title or request matched."
+        },
+        "snippet": {
+          "type": "string",
+          "description": "Plain text with the matched words wrapped in <mark></mark>. Show it as text plus marks, never as HTML."
         }
       }
     },
@@ -824,6 +1044,385 @@ export const workflowSchema = {
           ]
         }
       }
+    },
+    "WorkflowInput": {
+      "title": "WorkflowInput",
+      "type": "object",
+      "description": "A value the user chooses when Krama runs the workflow for them (#129, P3): one non-sensitive single-line value the recorded run typed. The recorded value is only an example; the user's value replaces it in every step where it reappears.",
+      "required": [
+        "key",
+        "label",
+        "example",
+        "kind",
+        "min_length",
+        "steps"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "key": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$",
+          "description": "Stable name of the input in RunWorkflowRequest.inputs (e.g. repository_name)."
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1,
+          "description": "What to ask for, from the field's label (e.g. \"Repository name\")."
+        },
+        "example": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The value the recorded run typed, shown as a placeholder, never as the default."
+        },
+        "kind": {
+          "enum": [
+            "text"
+          ],
+          "description": "text only in v1; dropdowns replay the recorded option (P15)."
+        },
+        "pattern": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "A regular expression a value must match: the example's character class (P5), e.g. ^[A-Za-z0-9._-]+$. Null when any single-line text is accepted."
+        },
+        "min_length": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Shortest value accepted (3 in v1, P5)."
+        },
+        "steps": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "title": "StepSeq",
+            "type": "integer",
+            "minimum": 1
+          },
+          "description": "Seq of every step the value is typed in or reappears in (URL checks, headings, later targets, step text)."
+        }
+      }
+    },
+    "WorkflowInputList": {
+      "title": "WorkflowInputList",
+      "type": "object",
+      "description": "GET /workflows/{id}/inputs: what the owner fills in before \"Do it for me\" runs the current version.",
+      "required": [
+        "workflow_id",
+        "revision",
+        "inputs"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "workflow_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "The version the inputs belong to; send it back in RunWorkflowRequest."
+        },
+        "inputs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/WorkflowInput"
+          }
+        },
+        "account": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The site account the run will act in: the user's own (ADR 0007). Null when unknown or not signed in yet."
+        },
+        "sign_in_site": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The site the user must sign in to first (POST /sites/{site}/sign-in), else null."
+        }
+      }
+    },
+    "RunWorkflowRequest": {
+      "title": "RunWorkflowRequest",
+      "type": "object",
+      "description": "POST /workflows/{id}/run: run the workflow's current version for its owner with these values (\"Do it for me\", #129). Starting it approves the steps; risky steps still pause for confirmation.",
+      "required": [
+        "revision",
+        "inputs"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "revision": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "The version the user previewed (from WorkflowInputList); a newer current version gives 409 stale_revision."
+        },
+        "inputs": {
+          "type": "object",
+          "description": "One value per WorkflowInput.key; every input is required (the server checks min_length and pattern).",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "WorkflowVersionSource": {
+      "title": "WorkflowVersionSource",
+      "description": "What made the version: the first verified run, a self-heal, a regenerated plan, or a human edit.",
+      "enum": [
+        "initial",
+        "heal",
+        "regenerate",
+        "edit"
+      ]
+    },
+    "WorkflowVersionStatus": {
+      "title": "WorkflowVersionStatus",
+      "description": "current: the one shown. pending_review: waits for the owner to accept it. superseded: an older current one. rejected: the owner turned it down.",
+      "enum": [
+        "current",
+        "pending_review",
+        "superseded",
+        "rejected"
+      ]
+    },
+    "WorkflowVersion": {
+      "title": "WorkflowVersion",
+      "type": "object",
+      "required": [
+        "id",
+        "workflow_id",
+        "revision",
+        "source",
+        "status",
+        "step_count",
+        "created_at"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "recorded_as": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The site account the version was recorded in (ADR 0007). Do it for me swaps it for the user's own account. Null for versions from before 1.18 (they were recorded in the shared test account)."
+        },
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "workflow_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "source": {
+          "$ref": "#/$defs/WorkflowVersionSource"
+        },
+        "status": {
+          "$ref": "#/$defs/WorkflowVersionStatus"
+        },
+        "parent_version_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uuid",
+          "description": "The version this one was made from; null for the first."
+        },
+        "run_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uuid",
+          "description": "The run that recorded this version."
+        },
+        "confidence": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1
+        },
+        "step_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "change_summary": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/StepDiff"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "How the steps differ from the parent version; null for the first."
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "WorkflowVersionList": {
+      "title": "WorkflowVersionList",
+      "type": "object",
+      "required": [
+        "items"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/WorkflowVersion"
+          },
+          "description": "Newest first."
+        }
+      }
+    },
+    "StepDiff": {
+      "title": "StepDiff",
+      "type": "object",
+      "required": [
+        "from_revision",
+        "to_revision",
+        "steps"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "from_revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "to_revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/StepChange"
+          },
+          "description": "Every step of both versions, aligned by meaning, in the new version's order."
+        }
+      }
+    },
+    "StepChangeKind": {
+      "title": "StepChangeKind",
+      "enum": [
+        "same",
+        "changed",
+        "added",
+        "removed"
+      ]
+    },
+    "StepChangeCategory": {
+      "title": "StepChangeCategory",
+      "description": "behaviour: what the step does or acts on. check: its expected state. wording: only its instruction text (the UI may collapse these). risk: its risk level.",
+      "enum": [
+        "behaviour",
+        "check",
+        "wording",
+        "risk"
+      ]
+    },
+    "StepChange": {
+      "title": "StepChange",
+      "type": "object",
+      "required": [
+        "kind"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "$ref": "#/$defs/StepChangeKind"
+        },
+        "old_seq": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1,
+          "description": "Null for an added step."
+        },
+        "new_seq": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1,
+          "description": "Null for a removed step."
+        },
+        "category": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/StepChangeCategory"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The most important category among the changes; null for a same step."
+        },
+        "fields": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/FieldChange"
+          },
+          "default": []
+        },
+        "summary": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Short text for an added or removed step, e.g. 'click button “Confirm”'."
+        }
+      }
+    },
+    "FieldChange": {
+      "title": "FieldChange",
+      "type": "object",
+      "required": [
+        "field"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "field": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Dotted path in the step, e.g. target.name, action.value, expected_state."
+        },
+        "from": {
+          "description": "The old value (any JSON); absent or null if there was none."
+        },
+        "to": {
+          "description": "The new value (any JSON); absent or null if there is none."
+        }
+      }
+    },
+    "ValidationStatus": {
+      "title": "ValidationStatus",
+      "description": "Result of one validation of a stored workflow (docs/research/phase-4-decisions-alignment.md): passed, healed (a new current version), heal_pending (a new version waits for review), outdated, blocked (the environment stopped it; the workflow's status is unchanged), skipped (not replayable).",
+      "enum": [
+        "passed",
+        "healed",
+        "heal_pending",
+        "outdated",
+        "blocked",
+        "skipped"
+      ]
     }
   }
 } as const;
@@ -832,7 +1431,7 @@ export const tutorialSpecSchema = {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "tutorial-spec.schema.json",
   "title": "TutorialSpec",
-  "$comment": "v1.0. Output of packages/tutorial-compiler (Workflow -> TutorialSpec), consumed by the player (Phase 2) and the Remotion export (Phase 5). Design: docs/research/phase-2-together-tutorial-spec-design.md.",
+  "$comment": "v1.1. Output of packages/tutorial-compiler (Workflow -> TutorialSpec), consumed by the player (Phase 2) and the Remotion export (Phase 5). Design: docs/research/phase-2-together-tutorial-spec-design.md.",
   "description": "An interactive tutorial compiled from one Verified Workflow. Times are integer milliseconds; geometry is CSS pixels in page coordinates. Frames are derived only at video export: frame = round(ms / 1000 * fps).",
   "type": "object",
   "required": [
@@ -863,6 +1462,11 @@ export const tutorialSpecSchema = {
         "string",
         "null"
       ]
+    },
+    "language": {
+      "$ref": "common.schema.json#/$defs/Language",
+      "default": "en",
+      "description": "The language of the captions and titles (#132). UI labels inside them stay in the site's own language."
     },
     "viewport": {
       "$ref": "workflow.schema.json#/$defs/WorkflowViewport",
@@ -920,6 +1524,13 @@ export const tutorialSpecSchema = {
             "null"
           ],
           "description": "Short label for the step list."
+        },
+        "section": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The workflow step's section (an outline item); the step list shows it when it changes."
         },
         "start_ms": {
           "type": "integer",
