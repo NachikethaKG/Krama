@@ -26,6 +26,8 @@ from app.config import get_settings
 from app.exports_cli import add_parser as add_exports_parser
 from app.exports_cli import exports_command
 from app.llm import create_provider
+from app.llm_usage_cli import add_parser as add_llm_usage_parser
+from app.llm_usage_cli import llm_usage_command
 from app.observer import PageObserver
 from app.planner import LLMPlanner
 from app.runs import RunOptions, RunParts, RunReport, run_task
@@ -68,6 +70,7 @@ def build_parser() -> argparse.ArgumentParser:
     add_users_parser(commands)
     add_exports_parser(commands)
     add_validate_parser(commands)
+    add_llm_usage_parser(commands)
     commands.add_parser(
         "worker",
         help="run queued runs (RUN_EXECUTOR=arq; needs Redis)",
@@ -162,6 +165,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         return exports_command(args)
     if args.command == "validate":
         return validate_command(args)
+    if args.command == "llm-usage":
+        return llm_usage_command(args)
     if args.command == "worker":
         from app.worker import run_worker
 
