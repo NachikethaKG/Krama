@@ -473,6 +473,7 @@ export function LiveExecutionView({ runId, speed, client, className = "" }: Live
               error={step.error}
               observedUrl={step.observedUrl}
               observedTitle={step.observedTitle}
+              thought={step.thought}
             />
           ))}
           </ol>

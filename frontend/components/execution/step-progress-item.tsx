@@ -19,6 +19,8 @@ export interface StepProgressItemProps {
   error?: string | null;
   observedUrl?: string | null;
   observedTitle?: string | null;
+  /** Step mode: why Krama chose this action (step.decided). */
+  thought?: string | null;
   className?: string;
 }
 
@@ -34,6 +36,7 @@ export function StepProgressItem({
   error,
   observedUrl,
   observedTitle,
+  thought,
   className = "",
 }: StepProgressItemProps) {
   const t = useTranslations("execution");
@@ -151,6 +154,12 @@ export function StepProgressItem({
           >
             {instructionText}
           </p>
+
+          {thought && (
+            <p data-testid="step-thought" className="text-xs italic leading-relaxed text-ink-300">
+              {t("stepItem.thought", { thought })}
+            </p>
+          )}
 
           {/* Verification methods badges */}
           {status === "verified" && methods && methods.length > 0 && (

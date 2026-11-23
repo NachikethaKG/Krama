@@ -33,6 +33,8 @@ const REASON_TONES: Record<PauseReason, string> = {
   verification_unclear: "var(--run)",
   replan_review: "var(--approve)",
   recovery_exhausted: "var(--learn)",
+  no_progress: "var(--learn)",
+  step_budget: "var(--plan)",
   sensitive_data: "var(--ask)",
   prompt_injection: "var(--danger)",
 };
