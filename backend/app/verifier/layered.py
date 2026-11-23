@@ -163,13 +163,14 @@ def _effects(expected: ExpectedState, ev: StepEvidence) -> list[VerificationMeth
     state_action = kind in _STATE_ACTIONS or is_toggle
     found: list[VerificationMethod] = []
 
-    def url_holds(path: str | None) -> bool:
-        return path is not None and _url_check(expected, path)
+    def url_holds(state: ObservedState | None) -> bool:
+        return state is not None and _url_check(expected, state.url, state.query)
 
-    if expected.url_matches is not None and url_holds(ev.after.url):
-        before_path = ev.before.url if ev.before else None
-        if kind == "navigate" or (kind in ("click", "press") and not url_holds(before_path)):
-            found.append("url")
+    def moved() -> bool:
+        return kind == "navigate" or (kind in ("click", "press") and not url_holds(ev.before))
+
+    if expected.url_matches is not None and url_holds(ev.after) and moved():
+        found.append("url")
 
     if after is not None:
         if kind in ("fill", "select") and expected.field_values and _all_fields(expected.field_values, after):
@@ -249,10 +250,10 @@ def _methods(expected: ExpectedState) -> list[VerificationMethod]:
     return methods
 
 
-def _url_check(expected: ExpectedState, path: str) -> bool:
+def _url_check(expected: ExpectedState, path: str, query: str | None = None) -> bool:
     assert expected.url_matches is not None
     try:
-        return url_path_matches(expected.url_matches, path)
+        return url_path_matches(expected.url_matches, path, query)
     except re.error:
         return False
 
