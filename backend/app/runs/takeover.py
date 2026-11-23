@@ -25,7 +25,9 @@ from app.contracts_gen.takeover_schema import TakeoverKey, TakeoverMouse, Takeov
 
 logger = logging.getLogger(__name__)
 
-TAKEOVER_REASONS = frozenset({"auth_wall", "captcha", "recovery_exhausted", "verification_unclear"})
+TAKEOVER_REASONS = frozenset(
+    {"auth_wall", "captcha", "recovery_exhausted", "verification_unclear", "no_progress"}
+)
 """Pauses a human can resolve on the page itself (T5). Never rate_limited (waiting is the answer), destructive
 actions (allow/deny is the answer) or replan reviews (the steps are the question)."""
 
