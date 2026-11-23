@@ -176,7 +176,7 @@ class ObservedSummary(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
     )
-    url: Annotated[str, Field(description="Path only")]
+    url: Annotated[str, Field(description="The path, plus ?query when the page has one (#463)")]
     title: str
 
 

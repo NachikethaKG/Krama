@@ -431,7 +431,7 @@ export interface StepFailedEvent {
  */
 export interface ObservedSummary {
   /**
-   * Path only
+   * The path, plus ?query when the page has one (#463)
    */
   url: string;
   title: string;
