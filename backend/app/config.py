@@ -29,10 +29,18 @@ class Settings(BaseSettings):
     # inprocess: runs execute inside the API (tests, no Redis). arq: in the worker (#95).
     run_executor: Literal["inprocess", "arq"] = "inprocess"
 
-    llm_provider: Literal["fake", "gemini"] = "fake"
+    # ollama: a local model, opt-in for development only (ADR 0010); text jobs only, no vision.
+    llm_provider: Literal["fake", "gemini", "ollama"] = "fake"
     gemini_api_key: str = ""
     # Tried in order; each model has its own free-tier quota (docs/research/phase-0-vishwas-gemini-*).
     gemini_models: str = "gemini-3.8-flash,gemini-3.5-flash,gemini-2.5-flash"
+    # 127.0.0.1, not localhost: IPv6 localhost first costs a timeout on Windows.
+    ollama_url: str = "http://127.0.0.1:11434"
+    ollama_model: str = "qwen2.5:7b"
+    # A 7B model takes 8-18 s per job on a 6 GB GPU and about 4x that on CPU (phase-2-vishwas-local-model.md).
+    ollama_timeout_s: float = 180.0
+    # Ollama's default (4096 tokens) silently cuts long planner prompts.
+    ollama_num_ctx: int = 8192
 
     # Local-only demo account on the test Gitea (`just seed`).
     gitea_url: str = "http://localhost:3001"
