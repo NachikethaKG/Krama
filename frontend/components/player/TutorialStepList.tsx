@@ -60,9 +60,19 @@ export function TutorialStepList({
             const color = stepColor(index);
             const durationSec = (scene.duration_ms / 1000).toFixed(1);
             const stepTitle = scene.title || `${scene.action.type.toUpperCase()}`;
+            // Step mode (ADR 0011): the outline item opens a group of steps; shown when it changes.
+            const section = scene.section && scene.section !== scenes[index - 1]?.section ? scene.section : null;
 
             return (
               <li key={scene.id ?? `step-${scene.step_seq}`}>
+                {section && (
+                  <p
+                    data-testid="step-section"
+                    className="px-2 pb-1 pt-3 text-[11px] font-bold uppercase tracking-wide text-ink-400"
+                  >
+                    {section}
+                  </p>
+                )}
                 <button
                   type="button"
                   data-testid={`step-item-${scene.step_seq}`}
