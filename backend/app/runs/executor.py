@@ -20,7 +20,14 @@ from uuid import UUID
 from playwright.async_api import Error as PlaywrightError
 from playwright.async_api import Page
 
-from app.agent import ActionExecutor, PlaywrightSession, SessionConfig, open_start_page, page_snapshot
+from app.agent import (
+    ActionExecutor,
+    PlaywrightSession,
+    SessionConfig,
+    open_start_page,
+    page_snapshot,
+    start_path,
+)
 from app.agent.healer import HealBudget, HealChooser, HealOutcome, heal, stored_element
 from app.agent.runlog import MASK, ScriptedStep, looks_sensitive, mask_expected, run_script
 from app.agent.vision import VisionLocator, masked_screenshot
@@ -365,7 +372,7 @@ class InProcessExecutor:
         async with PlaywrightSession(config) as session:
             page = session.page
             executor = ActionExecutor(page, vision=None if do_it else env.vision, settle_ms=target.settle_ms)
-            if not await open_start_page(page):
+            if not await open_start_page(page, start_path(job.target_url)):
                 await self._store.fail(
                     run_id, from_=RunStatus.RUNNING, message=f"Couldn't open {job.target_url}",
                     reason="site_unreachable",
