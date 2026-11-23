@@ -20,6 +20,7 @@ from app.contracts_gen.plan_schema import PlannedStep
 from app.ports.models import ObservedState, StepRef
 from app.ports.observer import Observer
 from app.verifier import NetworkCall, StepEvidence, StepVerifier, VerificationOutcome
+from app.verifier.change import observed_change
 
 _DATA_REQUESTS = frozenset({"document", "xhr", "fetch"})
 
@@ -119,6 +120,67 @@ async def act_and_verify(
                 evidence = _evidence(step, before, observed, network)
                 outcome = await verifier.verify(step.expected_state, evidence, page=page, use_vision=True)
     return StepOutcome(
+        result=result,
+        before=before,
+        observed=observed,
+        verification=outcome,
+        verify_attempts=attempts,
+        network=list(network.calls),
+        focus_screenshot=focus[0] if focus else None,
+    )
+
+
+async def act_and_record(
+    step: PlannedStep,
+    executor: ActionExecutor,
+    observer: Observer,
+    verifier: StepVerifier,
+    page: Page,
+    *,
+    before: ObservedState,
+    change_timeout_s: float,
+    check_interval_s: float,
+    focus_shot: Callable[[], Awaitable[str | None]] | None = None,
+) -> tuple[PlannedStep, StepOutcome]:
+    """Step mode (ADR 0011, #469): act, then watch the page until the action visibly changed something, keep
+    that change as the step's expected state. The step is then verified against it, as a replay will be.
+
+    Nothing visible within `change_timeout_s`: the step comes back with its empty expected state and an
+    outcome that is `unclear` (skipped), never `verified`."""
+    ref = step_ref(step)
+    focus: list[str] = []
+
+    async def on_ready() -> None:
+        if focus_shot is not None and (key := await focus_shot()):
+            focus.append(key)
+
+    with _NetworkRecorder(page) as network:
+        result = await executor.execute(
+            step.action, step.target, instruction=step.instruction_text, on_ready=on_ready
+        )
+        observed = await observer.capture(page, ref)
+        recorded = step
+        outcome: VerificationOutcome | None = None
+        attempts = 0
+        if result.ok:
+            deadline = time.perf_counter() + change_timeout_s
+            while True:
+                attempts += 1
+                change = observed_change(before, observed, step.action, step.target)
+                if change is not None:
+                    recorded = step.model_copy(update={"expected_state": change})
+                    outcome = await verifier.verify(change, _evidence(recorded, before, observed, network))
+                    if outcome.verified:
+                        break
+                if time.perf_counter() >= deadline:
+                    break
+                await asyncio.sleep(check_interval_s)
+                observed = await observer.capture(page, ref)
+            if outcome is None:
+                outcome = await verifier.verify(
+                    step.expected_state, _evidence(step, before, observed, network)
+                )
+    return recorded, StepOutcome(
         result=result,
         before=before,
         observed=observed,
