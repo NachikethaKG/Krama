@@ -66,8 +66,9 @@ DECIDE_SYSTEM = "\n".join(
         "- outline_seq: the outline item this action works on.",
         "- risk: low for looking, typing and navigating; medium for creating something; high for deleting,",
         "  transferring, publishing, sending, paying or changing security settings.",
-        "- Made-up example values end with the example suffix you are given; values the task names are used",
-        "  exactly.",
+        "- Values the task names (a place, a search term, a todo's text) are typed exactly as written, never",
+        "  changed and never with the example suffix. Only names you must make up yourself (a new item the",
+        "  task doesn't name) end with the example suffix.",
         UNTRUSTED_DATA_RULE,
     ]
 )
@@ -220,7 +221,13 @@ def check_decision(raw: LLMDecision) -> list[str]:
         problems.append(f"{raw.action} needs a value: the text to type or the option to choose")
     if raw.action == "navigate" and not (raw.value or "").startswith("/"):
         problems.append("navigate needs a URL path starting with / as its value")
+    if raw.action == "click" and raw.target is not None and raw.target.role in _TEXT_FIELDS:
+        # Batch B check on qwen2.5: it clicked TodoMVC's text box three times instead of typing into it.
+        problems.append("don't click a text field: fill it, with the text to type as the value")
     return problems
+
+
+_TEXT_FIELDS = frozenset({"textbox", "searchbox"})
 
 
 def decide_prompt(ctx: StepContext) -> str:

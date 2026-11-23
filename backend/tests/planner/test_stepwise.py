@@ -14,6 +14,7 @@ from app.planner.stepwise import (
     OutlinePlanner,
     StepContext,
     StepDecider,
+    check_decision,
     normalize,
     to_step,
 )
@@ -122,6 +123,14 @@ async def test_an_answer_that_cant_run_is_asked_again_once() -> None:
     assert got.step is not None and got.step.target.name == "Search Wikipedia"
     assert len(got.llm_attempts) == 2
     assert "fill needs a target" in llm.calls[1][1]
+
+
+def test_clicking_a_text_field_is_not_a_step() -> None:
+    raw = LLMDecision(
+        thought="t", action="click", target=DecidedTarget(role="textbox", name="What needs to be done?")
+    )
+    assert check_decision(raw) == ["don't click a text field: fill it, with the text to type as the value"]
+    assert check_decision(raw.model_copy(update={"target": DecidedTarget(role="button", name="Go")})) == []
 
 
 def decision(action: str, role: str | None, value: str | None = None) -> LLMDecision:
