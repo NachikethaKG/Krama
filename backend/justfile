@@ -27,6 +27,10 @@ migrate:
 migration name:
     uv run alembic revision --autogenerate -m "{{name}}"
 
+# LLM requests per day, model and status, from the llm_calls table (#464)
+llm-usage days="7":
+    uv run python -m app.cli llm-usage --days {{days}}
+
 test *args:
     uv run pytest {{args}}
 
