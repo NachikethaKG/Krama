@@ -105,6 +105,15 @@ class TranslationService:
             await self._run(row_id)
         return await self.get(workflow, language)
 
+    async def shutdown(self) -> None:
+        """Stop translations still running in the background, so none is left mid-transaction when the API
+        stops (a test's TRUNCATE deadlocked against a refresh still writing its row)."""
+        tasks = list(self._tasks.values())
+        for task in tasks:
+            if not task.cancelling():
+                task.cancel()
+        await asyncio.gather(*tasks, return_exceptions=True)
+
     async def localize(self, workflow: Workflow, language: str) -> Workflow:
         """The contract Workflow with its title and step texts in `language` (the export job, #428)."""
         async with self._sessions() as s:
