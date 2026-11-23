@@ -8,6 +8,7 @@ the truth. A crash leaves the run at its last committed status, and `recover()` 
 import asyncio
 import json
 import logging
+import secrets
 import time
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field, replace
@@ -35,9 +36,10 @@ from app.contracts_gen.events_schema import PauseReason
 from app.contracts_gen.plan_schema import PlannedStep
 from app.db import WorkflowStepRow
 from app.db.base import literal_values
-from app.llm import LLMError
+from app.llm import LLMError, LLMRateLimitedError
 from app.planner.instructions import tutorial_text
 from app.planner.planner import Planner, PlannerError, PlanRequest
+from app.planner.stepwise import StepContext, StepDecider
 from app.ports.artifacts import ArtifactStore
 from app.ports.models import (
     InvalidArtifactKeyError,
@@ -51,7 +53,7 @@ from app.ports.policy import Policy
 from app.runs.profiles import ProfileStore
 from app.runs.reverify import failure_details
 from app.runs.states import RunStatus
-from app.runs.steps import StepOutcome, act_and_verify, step_ref
+from app.runs.steps import StepOutcome, act_and_record, act_and_verify, step_ref
 from app.runs.store import RunJob, RunNotFoundError, RunStore
 from app.runs.takeover import (
     TAKEOVER_REASONS,
@@ -133,6 +135,15 @@ class RunEnvironment:
     """Each user's own site sessions (ADR 0007): do-it runs act in them, sign-in runs fill them."""
     takeover_idle_s: float = 300.0
     """A takeover with no input for this long ends; the run stays paused (ADR 0008, T9)."""
+    decider: StepDecider | None = None
+    """Step mode (ADR 0011): picks each next action from the page. None: step-mode runs fail at once."""
+    max_steps: int = 20
+    """Step mode: steps tried before the run pauses (`step_budget`); allow gives it as many again."""
+    max_step_llm_calls: int = 25
+    """Step mode: decisions (LLM calls) before the run pauses (`step_budget`)."""
+    max_no_progress: int = 3
+    """Step mode: decisions in a row whose action changed nothing visible; then the run pauses
+    (`no_progress`)."""
 
 
 HUMAN_CAP = 0.7
@@ -340,7 +351,9 @@ class InProcessExecutor:
         job = await self._store.load(run_id)
         if job.status is not RunStatus.QUEUED:
             return  # cancelled while waiting for a slot, or submitted twice
-        started = {"plan_id": str(job.plan_id), "total_steps": len(job.steps)}
+        # Step mode has no steps yet: the outline items stand for them (contracts 1.21).
+        total = len(job.outline) if job.mode == "steps" else len(job.steps)
+        started = {"plan_id": str(job.plan_id), "total_steps": max(total, 1)}
         if not await self._store.transition(
             run_id, RunStatus.RUNNING, started, from_=RunStatus.QUEUED, started_at=datetime.now(UTC)
         ):
@@ -415,7 +428,10 @@ class InProcessExecutor:
                 await observer.start_recording(page)
             try:
                 verify_timeout_s = target.verify_timeout_s or env.verify_timeout_s
-                rows = await self._steps(job, executor, observer, page, verify_timeout_s)
+                if job.mode == "steps" and job.kind == "task":
+                    rows = await self._decided(job, executor, observer, page, verify_timeout_s)
+                else:
+                    rows = await self._steps(job, executor, observer, page, verify_timeout_s)
             finally:
                 if not do_it:
                     recording = await observer.stop_recording()
@@ -573,6 +589,162 @@ class InProcessExecutor:
                 continue
             budget.retry_count += 1  # the human asked for one more try (or cleared the way first)
         return rows
+
+    async def _decided(
+        self, job: RunJob, executor: ActionExecutor, observer: Observer, page: Page, verify_timeout_s: float
+    ) -> list[WorkflowStepRow] | None:
+        """Step mode (ADR 0011, #470): look at the page, decide one action, act, keep what visibly changed as
+        that step's expected state; until the agent says the task is done. Every action goes through the
+        policy, and risky ones pause, as in a planned run. The rows of the steps that verified (numbered from
+        1), or None if the run stopped."""
+        env, store = self._env, self._store
+        if env.decider is None:
+            await store.fail(
+                job.run_id, from_=RunStatus.RUNNING, message="This server can't run step-mode plans",
+                reason="no_decider",
+            )  # fmt: skip
+            return None
+        rows: list[WorkflowStepRow] = []
+        done: list[str] = []
+        calls = stalled = 0
+        max_steps, max_calls = env.max_steps, env.max_step_llm_calls
+        suffix = f"{secrets.randbelow(9000) + 1000}"
+        self._paused_s[job.run_id] = 0.0
+        t0 = time.perf_counter()
+        seq = 1
+        while True:
+            if time.perf_counter() - t0 - self._paused_s[job.run_id] > env.run_timeout_s:
+                await store.fail(
+                    job.run_id, from_=RunStatus.RUNNING, reason="run_timeout", step_seq=seq,
+                    message=f"The run took longer than {env.run_timeout_s:g} s (pauses not counted)",
+                )  # fmt: skip
+                return None
+            if seq > max_steps or calls >= max_calls:
+                message = (
+                    f"Krama took {seq - 1} steps and {calls} decisions without finishing. Allow gives it as "
+                    "many again; deny cancels."
+                )
+                if not await self._pause(job, seq, "step_budget", message, page=page):
+                    return None
+                max_steps, max_calls = seq - 1 + env.max_steps, calls + env.max_step_llm_calls
+            ctx = StepContext(
+                task=job.prompt,
+                outline=job.outline,
+                done=done,
+                path=self._mask(urlsplit(page.url).path or "/"),
+                page_snapshot=await self._masked_snapshot(page),
+                example_suffix=suffix,
+            )
+            try:
+                decision = await env.decider.decide(ctx, seq=seq)
+            except LLMRateLimitedError:
+                await store.fail(
+                    job.run_id, from_=RunStatus.RUNNING, message="The LLM is out of quota",
+                    code="rate_limited", reason="llm_quota", step_seq=seq,
+                )  # fmt: skip
+                return None
+            except LLMError as e:
+                await store.fail(
+                    job.run_id, from_=RunStatus.RUNNING, code="llm_unavailable", reason="llm_unavailable",
+                    message=f"The LLM couldn't decide the next step ({e})", step_seq=seq,
+                )  # fmt: skip
+                return None
+            calls += 1
+            if decision.step is None:
+                if not rows:
+                    await store.fail(
+                        job.run_id, from_=RunStatus.RUNNING, reason="nothing_to_do", step_seq=seq,
+                        message="Krama found nothing to do: the page already looks like the task is done",
+                    )  # fmt: skip
+                    return None
+                return rows
+            step = decision.step
+            decided = {
+                "step_seq": seq,
+                "outline_seq": decision.outline_seq,
+                "thought": self._mask(decision.thought),
+                "action": step.action.model_dump(mode="json", exclude_none=True),
+                "target": step.target.model_dump(mode="json", exclude_none=True) or None,
+            }
+            if not await store.event(job.run_id, "step.decided", decided):
+                return None
+            attempt = await self._attempt_decided(job, step, executor, observer, page, verify_timeout_s)
+            if attempt is None:
+                return None  # stopped by the policy, or cancelled
+            recorded, out = attempt
+            if out.by_hand_pending:
+                done.append("(The user did something by hand here; look at the page again.)")
+                stalled = 0
+            elif out.verified:
+                rows.append(self._row(job, recorded.model_copy(update={"seq": len(rows) + 1}), out))
+                done.append(rows[-1].instruction_text)
+                stalled = 0
+            else:
+                stalled += 1
+                error = out.result.error
+                why = f"it failed ({error.code})" if error is not None else "nothing visible changed"
+                done.append(f"(Tried, not done: {step.instruction_text} {why}.)")
+                if stalled >= env.max_no_progress:
+                    message = (
+                        f"The last {stalled} actions changed nothing on the page. Take over to help, then "
+                        "allow to let Krama look again; deny cancels."
+                    )
+                    if not await self._pause(job, seq, "no_progress", message, page=page):
+                        return None
+                    self._handbacks.pop(job.run_id, None)
+                    stalled = 0
+            seq += 1
+
+    async def _attempt_decided(
+        self,
+        job: RunJob,
+        step: PlannedStep,
+        executor: ActionExecutor,
+        observer: Observer,
+        page: Page,
+        verify_timeout_s: float,
+    ) -> tuple[PlannedStep, StepOutcome] | None:
+        """One decided step, announced on the live view like a planned one. The step comes back with the
+        expected state it reached. None if the run stopped (policy, cancel)."""
+        store, seq = self._store, step.seq
+        if not await store.event(
+            job.run_id, "step.started", {"step_seq": seq, "instruction_text": step.instruction_text},
+            current_seq=seq, retry_count=0,
+        ):  # fmt: skip
+            return None
+        before = await observer.capture(page, step_ref(step))
+        if not await self._allowed(job, step, before, page):
+            return None
+        if self._handbacks.pop(job.run_id, None) is not None:  # the owner took over at the policy's pause
+            return step, StepOutcome.pending_by_hand(before)
+        recorded, out = await act_and_record(
+            step,
+            executor,
+            observer,
+            self._env.verifier,
+            page,
+            before=before,
+            change_timeout_s=verify_timeout_s,
+            check_interval_s=self._env.verify_interval_s,
+            focus_shot=lambda: self._focus_shot(job, seq, page),
+        )
+        shot = self._artifact_url(out.observed.screenshot_path)
+        bbox = list(out.result.bbox) if out.result.bbox else None
+        if not await store.event(
+            job.run_id, "step.action_done", {"step_seq": seq, "screenshot_url": shot, "bbox": bbox}
+        ):
+            return None
+        if out.verified and out.verification is not None:
+            v = out.verification.verification
+            verified = {"step_seq": seq, "method": list(v.method), "confidence": v.confidence}
+            return (recorded, out) if await store.event(job.run_id, "step.verified", verified) else None
+        failed = {
+            "step_seq": seq,
+            "expected": {},
+            "observed": {"url": url_shown(out.observed.url, out.observed.query), "title": out.observed.title},
+            "screenshot_url": shot,
+        }
+        return (recorded, out) if await store.event(job.run_id, "step.failed", failed) else None
 
     async def _attempt(
         self,
