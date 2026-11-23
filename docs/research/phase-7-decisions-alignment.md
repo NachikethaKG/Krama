@@ -114,7 +114,7 @@ Each table keeps the options that were weighed; the **bold** one was chosen.
 | **E: benchmark + gate** | Real-site benchmark runner and task file (10–15 sites) | M | |
 | | Exit gate | M | |
 
-Roughly 2 L, 13 M, 10 S.
+Created as #461–#482 (1 L, 12 M, 9 S); the plan is in [`docs/phases/phase-7-any-website.md`](../phases/phase-7-any-website.md).
 
 ---
 
