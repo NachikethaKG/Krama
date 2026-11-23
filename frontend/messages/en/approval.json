@@ -121,5 +121,10 @@
     "deleteAria": "Delete step {seq}",
     "delete": "Delete step",
     "targetName": "\"{name}\""
+  },
+  "outline": {
+    "title": "Outline",
+    "summary": "Krama will do this in {count, plural, one {# part} other {# parts}}, looking at each page before it acts.",
+    "risky": "Any risky step will ask you first."
   }
 }

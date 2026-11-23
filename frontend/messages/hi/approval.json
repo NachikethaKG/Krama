@@ -121,5 +121,10 @@
     "deleteAria": "चरण {seq} हटाएँ",
     "delete": "चरण हटाएँ",
     "targetName": "\"{name}\""
+  },
+  "outline": {
+    "title": "रूपरेखा",
+    "summary": "Krama यह काम {count, plural, one {# हिस्से} other {# हिस्सों}} में करेगा, और हर कदम से पहले पेज देखेगा।",
+    "risky": "कोई भी जोखिम भरा कदम पहले आपसे पूछेगा।"
   }
 }
