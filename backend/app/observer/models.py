@@ -83,6 +83,7 @@ class Observation(ObservedState):
         cls,
         *,
         url: str,
+        query: str | None = None,
         title: str = "",
         raw_url: str = "",
         headings: list[str] | None = None,
@@ -122,6 +123,7 @@ class Observation(ObservedState):
 
         return cls(
             url=url,
+            query=query or None,
             title=title,
             headings=headings or [],
             aria_excerpt=excerpt,
