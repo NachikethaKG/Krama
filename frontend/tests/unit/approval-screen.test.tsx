@@ -27,6 +27,30 @@ describe("ApprovalScreen", () => {
     expect(screen.getByTestId("workflow-status-badge")).toHaveTextContent("proposed");
   });
 
+  it("shows a step-mode plan as an outline, with no step editing (ADR 0011)", async () => {
+    const client = new MockApiClient();
+    const base = await client.getPlan("default");
+    vi.spyOn(client, "getPlan").mockResolvedValue({
+      ...base,
+      mode: "steps",
+      steps: [],
+      outline: [
+        { seq: 1, text: "Search for the place" },
+        { seq: 2, text: "Open the first result" },
+      ],
+    });
+    await renderLoaded(client);
+
+    expect(screen.getAllByTestId("outline-item").map((li) => li.textContent)).toEqual([
+      "1Search for the place",
+      "2Open the first result",
+    ]);
+    expect(screen.getByTestId("outline-summary")).toHaveTextContent(/2 parts/);
+    expect(screen.queryByTestId("step-item")).not.toBeInTheDocument();
+    expect(screen.queryByText(/edit steps/i)).not.toBeInTheDocument();
+    expect(screen.getByTestId("approve-btn")).toBeEnabled();
+  });
+
   it("approves the revision on screen and navigates to the RUN's live view", async () => {
     push.mockClear();
     const client = new MockApiClient();

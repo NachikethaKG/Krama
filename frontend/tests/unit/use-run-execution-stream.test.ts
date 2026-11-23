@@ -145,6 +145,38 @@ describe("useRunExecutionStream", () => {
     expect(result.current.policyStop).toBeNull();
   });
 
+  it("step mode: step.decided shows Krama's reason on a step the plan never listed (ADR 0011)", async () => {
+    const client = new MockApiClient();
+    const base = await client.getPlan("default");
+    vi.spyOn(client, "getPlan").mockResolvedValue({ ...base, mode: "steps", steps: [], outline: [{ seq: 1, text: "Search" }] });
+    const run = "6f1c2a4e-1111-4b8a-9a1b-123456789abc";
+    const ts = "2026-11-23T10:00:00Z";
+    const events: RunEvent[] = [
+      { type: "run.started", run_id: run, seq: 1, ts, plan_id: base.id, total_steps: 1 },
+      {
+        type: "step.decided", run_id: run, seq: 2, ts, step_seq: 1, outline_seq: 1, thought: "The search box is empty.",
+        action: { type: "fill", value: "Bengaluru" }, target: { role: "textbox", name: "Search" },
+      },
+      { type: "step.started", run_id: run, seq: 3, ts, step_seq: 1, instruction_text: "Enter a place such as “Bengaluru”." },
+      { type: "step.verified", run_id: run, seq: 4, ts, step_seq: 1, method: ["aria"], confidence: 1 },
+      {
+        type: "step.decided", run_id: run, seq: 5, ts, step_seq: 2, outline_seq: 1, thought: "Submit the search.",
+        action: { type: "click" }, target: { role: "button", name: "Go" },
+      },
+    ];
+    client.streamRunEvents = async function* () {
+      for (const e of events) yield e;
+    };
+    const { result } = hook("default", client);
+
+    await waitFor(() => expect(result.current.steps).toHaveLength(2));
+    expect(result.current.steps[0]).toMatchObject({ status: "verified", thought: "The search box is empty." });
+    expect(result.current.steps[1]).toMatchObject({ status: "pending", thought: "Submit the search.", targetName: "Go" });
+    // Progress counts the steps seen, not the outline items.
+    expect(result.current.totalSteps).toBe(2);
+    expect(result.current.progressPercent).toBe(50);
+  });
+
   it("skips duplicate seqs and never re-opens the stream after a final event", async () => {
     const client = new MockApiClient();
     const events: RunEvent[] = [giteaEventsFixture[0], giteaEventsFixture[0], ...giteaEventsFixture.slice(1)];

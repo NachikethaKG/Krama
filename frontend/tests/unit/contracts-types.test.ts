@@ -79,6 +79,8 @@ describe("Contracts TypeScript Types", () => {
           return `paused: ${event.reason}`;
         case "run.started":
           return `started plan ${event.plan_id}`;
+        case "step.decided":
+          return `decided ${event.action.type}: ${event.thought}`;
         case "step.started":
           return `starting ${event.instruction_text}`;
         case "step.action_done":
