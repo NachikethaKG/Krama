@@ -42,6 +42,11 @@ async def update_plan(
     steps = [step.model_copy(update={"seq": i}) for i, step in enumerate(body.steps, start=1)]
     async with services.sessions.begin() as s:
         current = await owned_plan(s, plan_id, user)
+        if current.mode == "steps":
+            # ADR 0011: a step-mode plan has no steps to edit; they are decided on the page during the run.
+            raise ApiException(
+                409, "plan_not_editable", "A step-mode plan has an outline, not steps", {"mode": "steps"}
+            )
         problems = check_steps(LLMPlan(expected_result=current.expected_result, steps=steps))
         if problems:
             raise ApiException(422, "validation_error", "Invalid plan steps", {"problems": problems})
