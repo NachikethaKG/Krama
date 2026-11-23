@@ -249,6 +249,15 @@ describe("compileWorkflow", () => {
     expect(compiled.workflow_id).toBe(workflowFixture.id);
   });
 
+  it("copies a step-mode step's outline section into its scene (#471)", () => {
+    const steps = workflowFixture.steps.map((s, i) => ({ ...s, section: i < 2 ? "Open the form" : "Create it" }));
+    const spec = compileWorkflow({ ...workflowFixture, steps }, { validate: true });
+
+    expect(spec.scenes.map((s) => s.section)).toEqual(steps.map((s) => s.section));
+    // Upfront workflows have no sections, and their scenes carry none.
+    expect(compileWorkflow(workflowFixture).scenes.every((s) => !("section" in s))).toBe(true);
+  });
+
   it("throws validation error for invalid workflow inputs", () => {
     // Missing steps
     expect(() =>
