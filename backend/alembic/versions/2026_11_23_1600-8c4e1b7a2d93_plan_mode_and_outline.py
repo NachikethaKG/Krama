@@ -1,7 +1,8 @@
 """plan mode and outline
 
 #470, ADR 0011: a plan is either every step up front (upfront) or an outline the user approves, with the steps
-decided during the run (steps). Existing plans are upfront.
+decided during the run (steps). Existing plans are upfront. A step-mode step keeps the outline item it belongs
+to (`workflow_steps.section`, #471).
 
 Revision ID: 8c4e1b7a2d93
 Revises: 5f2a8c1d9e47
@@ -27,9 +28,11 @@ def upgrade() -> None:
     """Upgrade schema."""
     op.add_column("plans", sa.Column("mode", sa.Text(), server_default="upfront", nullable=False))
     op.add_column("plans", sa.Column("outline", postgresql.JSONB(astext_type=sa.Text()), nullable=True))
+    op.add_column("workflow_steps", sa.Column("section", sa.Text(), nullable=True))
 
 
 def downgrade() -> None:
     """Downgrade schema."""
+    op.drop_column("workflow_steps", "section")
     op.drop_column("plans", "outline")
     op.drop_column("plans", "mode")
