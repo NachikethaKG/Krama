@@ -46,6 +46,10 @@ export interface StepExecutionState {
   previousScreenshotUrl?: string;
   expectedState?: ExpectedState;
   observedSummary?: ObservedSummary;
+  /** Step mode (ADR 0011): why Krama chose this action, from step.decided. One line, page text masked. */
+  thought?: string;
+  /** Step mode: the outline item this step works on. */
+  outlineSeq?: number | null;
 }
 
 export interface PauseDetails {
@@ -321,6 +325,24 @@ export function useRunExecutionStream({
         case "run.started": {
           setRunStatus("running");
           if (event.total_steps) setTotalSteps(event.total_steps);
+          break;
+        }
+        case "step.decided": {
+          // Step mode: Krama looked at the page and chose the next action; step.started follows.
+          setStepStates((prev) => {
+            const existing = prev[event.step_seq];
+            return {
+              ...prev,
+              [event.step_seq]: {
+                ...(existing ?? { seq: event.step_seq, status: "pending", instructionText: "", risk: "low" }),
+                thought: event.thought,
+                outlineSeq: event.outline_seq ?? null,
+                actionType: event.action.type,
+                targetRole: event.target?.role ?? null,
+                targetName: event.target?.name ?? null,
+              },
+            };
+          });
           break;
         }
         case "step.started": {
@@ -633,7 +655,8 @@ export function useRunExecutionStream({
 
   const steps = Object.values(stepStates).sort((a, b) => a.seq - b.seq);
   const verifiedCount = steps.filter((s) => s.status === "verified").length;
-  const denominator = totalSteps > 0 ? totalSteps : steps.length;
+  // Step mode has no step count up front (run.started counts outline items): progress is over the steps seen.
+  const denominator = plan?.mode === "steps" ? steps.length : totalSteps > 0 ? totalSteps : steps.length;
   const progressPercent =
     runStatus === "completed" ? 100 : denominator > 0 ? Math.round((verifiedCount / denominator) * 100) : 0;
 
