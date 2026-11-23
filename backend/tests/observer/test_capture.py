@@ -41,6 +41,7 @@ async def test_capture_fields_against_mock_gitea(mock_gitea_page: Page) -> None:
     assert isinstance(obs1, ObservedState)
     assert obs1.url == "/"
     assert obs1.raw_url == "http://gitea.local/"
+    assert obs1.query is None
     assert obs1.title == "Dashboard - Gitea"
     assert "Dashboard" in obs1.headings
     assert obs1.aria_snapshot != ""
@@ -48,8 +49,8 @@ async def test_capture_fields_against_mock_gitea(mock_gitea_page: Page) -> None:
     assert obs1.screenshot.startswith(b"\x89PNG")
     assert obs1.network_summary.request_count >= 1
 
-    # Navigate to create repo form with password field
-    await mock_gitea_page.goto("http://gitea.local/repo/create")
+    # Navigate to create repo form with password field; a query string is kept apart from the path (#463)
+    await mock_gitea_page.goto("http://gitea.local/repo/create?owner=demo")
     step2 = StepRef(
         seq=2,
         action=Action(type="click"),
@@ -60,6 +61,7 @@ async def test_capture_fields_against_mock_gitea(mock_gitea_page: Page) -> None:
     obs2: Observation = await observer.capture(mock_gitea_page, step=step2)
 
     assert obs2.url == "/repo/create"
+    assert obs2.query == "owner=demo"
     assert obs2.title == "Create a repository - Gitea"
     assert "Create a repository" in obs2.headings
     assert "Repository Name *" in obs2.aria_snapshot
