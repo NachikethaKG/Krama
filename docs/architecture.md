@@ -5,9 +5,9 @@
 ## 1. Pipeline
 
 ```
-Next.js UI (prompt / plan review / live view / tutorial player)
+Next.js UI (prompt / outline review / live view / tutorial player)
       │  REST + SSE  ── docs/api-contract.md, contracts/
-FastAPI ── Run state machine ── Planner (LLM) ── Policy (risk / denylist)
+FastAPI ── Run state machine ── Planner: outline (LLM) ── Step decider (LLM, one action per step) ── Policy
       │
 Browser worker (Playwright Python, headless Chromium, CPU-only)
       ├─ Observer: URL, DOM, ARIA snapshot, screenshot, network, rrweb events
@@ -19,6 +19,11 @@ Postgres (tasks, plans, runs, workflows, steps)  +  data/artifacts/ (screenshots
 Verified Workflow JSON ──► tutorial-compiler (TS, pure function) ──► TutorialSpec ──► Player
                                                                         └──► Remotion MP4 (Phase 5)
 ```
+
+**Since Phase 7 ([ADR 0011](adr/0011-look-before-each-step.md))** a new task runs as: outline → the user approves
+it → (observe → decide one action → act → verify by what changed)* → one "is the task done?" check. The steps
+actually taken, with their observed expected states, become the workflow; replays (do it for me, reverify) need
+no LLM. The plan-up-front planner stays behind `PLANNER_MODE=upfront` for v1.4.
 
 **The Verified Workflow is the core object.** The tutorial, text guide, video and (later) "do it for me" are all *outputs* compiled from it.
 
@@ -95,6 +100,7 @@ Every boundary is an interface with a mock that ships *before* the real implemen
 | Ownership by module, cross-owner calls only via `ports/` | Both people work on the backend without sharing files | [0001](adr/0001-ownership-by-module.md) |
 | Thin Playwright layer over browser-use/Stagehand | Deterministic execution, fits free-tier quota (1 planning call), strict plan-approve-execute control | [0002](adr/0002-own-playwright-layer.md) |
 | No local model; instruction text written by code | Template = Gemini = Llama 3.1 on real steps; the reference laptop can't run Ollama | [0003](adr/0003-no-local-model-for-text-jobs.md) |
+| Look before each step: approved outline, one decision per step, verify by observed change | Guessed expectations of unseen pages failed 3 of 5 unknown-site tasks while every action was right (spike #457) | [0011](adr/0011-look-before-each-step.md) |
 | Ollama as an opt-in development provider (text only) | Phase 7 needs many more LLM calls than the Gemini free tier allows; gates and demos stay on Gemini | [0010](adr/0010-local-llm-as-opt-in-dev-provider.md) |
 | CSRF defense via `X-Krama: 1` + HTTP-only cookies | Blocks cross-origin mutating requests without complex signed double-submit tokens; RSC calls direct over internal HTTP | [Phase 3 Alignment](research/phase-3-decisions-alignment.md) |
 | Share tokens without TTL for MVP | `secrets.token_urlsafe(32)` stored as SHA-256 hash with `never` expiry; avoids background worker cron overhead | [Phase 3 Alignment](research/phase-3-decisions-alignment.md) |
