@@ -19,12 +19,14 @@ from app.config import Settings
 from app.db import create_engine, create_sessionmaker
 from app.db.llm_calls import DbCallSink
 from app.export import ArqExportQueue, InProcessExportQueue
-from app.llm import LLMProvider, create_provider
+from app.llm import GeminiProvider, LLMProvider, create_provider
 from app.llm.recording import RecordingProvider
 from app.llm.translator import LLMTranslator
 from app.observer import PageObserver
 from app.planner import LLMPlanner
+from app.planner.planner import Planner
 from app.planner.service import PlanningService
+from app.planner.stepwise import OutlinePlanner, StepDecider
 from app.policy import LLMClassifier, PolicyService
 from app.ports import ExportQueue
 from app.runs import InProcessExecutor, RunEnvironment, RunStore
@@ -94,6 +96,21 @@ def recorded_provider(settings: Settings, sessions: async_sessionmaker[AsyncSess
     return RecordingProvider(llm, DbCallSink(sessions), provider=settings.llm_provider)
 
 
+def step_provider(settings: Settings, sessions: async_sessionmaker[AsyncSession] | None) -> LLMProvider:
+    """The provider for step-mode decisions: Gemini with its own model order (Q1), else the configured one."""
+    if settings.llm_provider != "gemini":
+        return create_provider(settings) if sessions is None else recorded_provider(settings, sessions)
+    llm: LLMProvider = GeminiProvider(
+        settings.gemini_api_key, settings.gemini_step_model_list or settings.gemini_model_list
+    )
+    return llm if sessions is None else RecordingProvider(llm, DbCallSink(sessions), provider="gemini")
+
+
+def plan_maker(settings: Settings, llm: LLMProvider) -> Planner:
+    """The planner for new tasks: an outline (step mode, ADR 0011) or every step up front (until v1.4)."""
+    return OutlinePlanner(llm) if settings.planner_mode == "steps" else LLMPlanner(llm)
+
+
 def build_run_environment(
     settings: Settings, sessions: async_sessionmaker[AsyncSession] | None = None
 ) -> RunEnvironment:
@@ -116,6 +133,7 @@ def build_run_environment(
         # login-wall stop, secret masking. The executor also pauses every step the plan marks high risk.
         policy=policy,
         planner=LLMPlanner(llm),
+        decider=StepDecider(step_provider(settings, sessions)),
         target=lambda job: target_setup(job.target_url, settings),
         run_timeout_s=settings.run_timeout_seconds,
         max_replans_per_run=settings.max_replans_per_run,
@@ -163,7 +181,7 @@ def build_services(settings: Settings) -> Services:
         store=store,
         executor=executor,
         planning=PlanningService(
-            sessions, LLMPlanner(llm), lambda url: target_setup(url, settings), policy=policy
+            sessions, plan_maker(settings, llm), lambda url: target_setup(url, settings), policy=policy
         ),
         engine=engine,
         target=lambda url: target_setup(url, settings),
