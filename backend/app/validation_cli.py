@@ -39,7 +39,7 @@ async def _validate(workflow_id: UUID | None) -> int:
     settings = get_settings()
     engine = create_engine(settings.database_url)
     sessions = create_sessionmaker(engine)
-    executor = InProcessExecutor(RunStore(sessions), build_run_environment(settings))
+    executor = InProcessExecutor(RunStore(sessions), build_run_environment(settings, sessions))
     backend = RunValidationBackend(sessions, executor, lambda url: target_setup(url, settings))
     artifacts = LocalFsStore(settings.artifacts_dir)
     validator = ScheduledValidator(backend, RedisSiteLimits(settings.redis_url), artifacts=artifacts)

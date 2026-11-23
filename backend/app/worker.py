@@ -150,7 +150,7 @@ def worker_settings(
             await redis.publish(EVENTS, str(run_id))
 
         store = RunStore(own_sessions, on_event=published)
-        env = environment() if environment is not None else build_run_environment(settings)
+        env = environment() if environment is not None else build_run_environment(settings, own_sessions)
         if env.profiles is None:
             env.profiles = ProfileStore(own_sessions, settings.krama_storage_key.get_secret_value())
         executor = InProcessExecutor(store, env, max_concurrent=settings.max_concurrent_runs)
