@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from types import TracebackType
 from typing import Any, Self
+from urllib.parse import urlsplit
 
 from playwright.async_api import Browser, BrowserContext, Page, Playwright, async_playwright
 from playwright.async_api import Error as PlaywrightError
@@ -123,6 +124,17 @@ async def _dialogs_outside_main(page: Page) -> list[str]:
     except Exception:
         return found  # a dialog closing mid-read is not an error
     return found
+
+
+def start_path(target_url: str) -> str:
+    """Where a run starts on its target: the target URL's own path and query (`/todomvc`, `/3/`), else `/`.
+
+    Navigation resolves paths against the origin, so opening `/` on `https://docs.python.org/3` lands on
+    `https://docs.python.org/` and loses the `/3` the user named (spike #457, #462).
+    """
+    parts = urlsplit(target_url)
+    path = parts.path or "/"
+    return f"{path}?{parts.query}" if parts.query else path
 
 
 async def open_start_page(page: Page, path: str = "/") -> bool:
