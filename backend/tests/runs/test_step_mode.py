@@ -11,6 +11,7 @@ from sqlalchemy import select
 from app.db import PlanRow, RunRow, TaskRow, WorkflowStepRow
 from app.planner.stepwise import DecidedTarget, Decision, LLMDecision, StepContext, to_step
 from app.runs import InProcessExecutor, RunStore
+from app.runs.reverify import create_reverify_run
 from tests.runs.test_executor import Sessions, environment, events, finished, run_to_end, until_paused
 
 pytestmark = [pytest.mark.anyio, pytest.mark.usefixtures("stop_runs")]
@@ -126,3 +127,28 @@ async def test_without_a_decider_a_step_mode_run_fails(sessions: Sessions, site:
 
     last = (await events(sessions, run_id))[-1]
     assert last["type"] == "run.failed" and last["error"]["details"]["reason"] == "no_decider"
+
+
+async def test_a_step_mode_workflow_replays_without_a_decider(
+    sessions: Sessions, site: str, tmp_path: Path
+) -> None:
+    # #471: the stored steps carry the expected states they reached, so a replay needs no LLM.
+    decider = ScriptedDecider(
+        ("click", "link", "New item", None),
+        ("fill", "textbox", "Item name *", "demo-item"),
+        ("click", "button", "Create item", None),
+    )
+    recorder = InProcessExecutor(RunStore(sessions), environment(tmp_path, decider=decider))
+    run_id = await step_mode_run(sessions, site)
+    await run_to_end(recorder, run_id)
+    completed = [e for e in await events(sessions, run_id) if e["type"] == "run.completed"]
+    workflow_id = UUID(completed[0]["workflow_id"])
+
+    replayer = InProcessExecutor(RunStore(sessions), environment(tmp_path / "replay"))  # no decider at all
+    replay = await create_reverify_run(sessions, workflow_id, None)
+    await run_to_end(replayer, replay)
+
+    got = await events(sessions, replay)
+    assert got[-1]["type"] == "run.completed", got[-1]
+    assert [e["type"] for e in got].count("step.verified") == 3
+    assert "step.decided" not in [e["type"] for e in got]
