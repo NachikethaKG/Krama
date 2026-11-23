@@ -15,7 +15,14 @@ from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from app.agent import ActionExecutor, PlaywrightSession, SessionConfig, open_start_page, page_snapshot
+from app.agent import (
+    ActionExecutor,
+    PlaywrightSession,
+    SessionConfig,
+    open_start_page,
+    page_snapshot,
+    start_path,
+)
 from app.agent.runlog import run_script
 from app.db import PlanRow, TaskRow
 from app.llm import LLMError, LLMRateLimitedError
@@ -102,7 +109,7 @@ class PlanningService:
         async with PlaywrightSession(config) as session:
             page = session.page
             executor = ActionExecutor(page)
-            if not await open_start_page(page):
+            if not await open_start_page(page, start_path(target_url)):
                 error = _error("internal", f"Couldn't open {target_url}", "site_unreachable")
                 await self._finish(task_id, "failed", error=error)
                 return
