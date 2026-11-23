@@ -11,6 +11,6 @@ __all__ = [
     "PlaywrightSession",
     "SessionConfig",
     "open_start_page",
-    "start_path",
     "page_snapshot",
+    "start_path",
 ]
