@@ -362,6 +362,28 @@ class TranslationCacheRow(Base):
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
 
 
+class LLMCallRow(Base):
+    """One request to one LLM model (#464): an attempt of a call, failed ones included, since they use quota
+    too. No prompt or reply text (page content)."""
+
+    __tablename__ = "llm_calls"
+    __table_args__ = (Index("ix_llm_calls_created_at", "created_at"),)
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    call_id: Mapped[UUID]
+    attempt: Mapped[int] = mapped_column(Integer)
+    job: Mapped[str] = mapped_column(Text)
+    """The reply schema's name, e.g. LLMPlan, VisionBox, TaskAnswer."""
+    provider: Mapped[str] = mapped_column(Text)
+    model: Mapped[str] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(Text)
+    http_code: Mapped[int | None] = mapped_column(Integer, default=None)
+    latency_ms: Mapped[int] = mapped_column(Integer)
+    tokens_in: Mapped[int | None] = mapped_column(Integer, default=None)
+    tokens_out: Mapped[int | None] = mapped_column(Integer, default=None)
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now())
+
+
 class ExportRow(Timestamps, Base):
     """One MP4 render of one workflow version with one preset (#124, docs/database-schema.md).
 
