@@ -328,6 +328,9 @@ class BrowserProfileRow(Timestamps, Base):
     """The encrypted storage state. Never logged, returned or sent anywhere."""
     captured_at: Mapped[datetime] = mapped_column(server_default=func.now())
     expires_at: Mapped[datetime | None] = mapped_column(default=None)
+    sign_in_hosts: Mapped[list[Any]] = mapped_column(default=list, server_default="[]")
+    """Other hosts the owner opened while signing in (an identity provider): later takeovers on this site may
+    open them too (ADR 0012)."""
 
 
 class TranslationRow(Timestamps, Base):
