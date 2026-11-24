@@ -91,3 +91,15 @@ On a 16 GB CPU-only laptop, free tiers only, real Gemini; CI uses fakes.
   account names in artifacts; tutorials universal.
 - [ ] **Cost:** median ≤ 10 LLM calls per task; a decision's p50 ≤ 15 s on Gemini; fits the 16 GB laptop with the
   stack, the API and one browser.
+
+### Running the gate (#481, #482)
+
+The 24 tasks are in [`benchmarks/tasks/real-sites/gate.yaml`](../../benchmarks/tasks/real-sites/gate.yaml): 8 public
+sites and 4 where the owner signs in with their own free account (Trello, Todoist, Codeberg, GitLab.com, chosen
+2026-11-24).
+
+1. `just up`, then the API with `LLM_PROVIDER=gemini` and the frontend.
+2. Sign in once to each account site on `/sites` (by hand, in the takeover).
+3. `uv run --project backend python -m benchmarks.real_sites --interactive` (or `--only <task>`, `--account none`).
+   The Gemini free tier won't take all 24 in one day: run a few sites a day; `just llm-usage` shows what is used.
+4. Results (JSON and a Markdown table) land in `benchmarks/results/real-sites/`.
