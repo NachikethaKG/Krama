@@ -1,6 +1,9 @@
 """Sensitive sites are refused (ADR 0012, #478)."""
 
+from pathlib import Path
+
 import pytest
+import yaml  # type: ignore[import-untyped]
 
 from app.policy.sites import refusal, sensitive_site
 
@@ -42,3 +45,11 @@ def test_sensitive_sites_are_named(url: str, kind: str) -> None:
 )
 def test_ordinary_sites_are_allowed(url: str) -> None:
     assert sensitive_site(url) is None and refusal(url) is None
+
+
+def test_no_exit_gate_site_is_refused() -> None:
+    # The Phase 7 gate's sites (#481) must be ones Krama may work on (AGENTS.md §4).
+    gate = Path(__file__).resolve().parents[3] / "benchmarks" / "tasks" / "real-sites" / "gate.yaml"
+    targets = [t["target"] for t in yaml.safe_load(gate.read_text(encoding="utf-8"))["tasks"]]
+    assert len(targets) == 24
+    assert [t for t in targets if refusal(t)] == []
