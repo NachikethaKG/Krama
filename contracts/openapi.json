@@ -1841,6 +1841,30 @@
         "title": "SiteProfileList",
         "type": "object"
       },
+      "SiteSignInRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "terms_ok": {
+            "const": true,
+            "description": "The owner confirms the site's terms allow automated use of their account.",
+            "title": "Terms Ok",
+            "type": "boolean"
+          },
+          "url": {
+            "description": "Any page of the site; its origin is the site.",
+            "format": "uri",
+            "minLength": 1,
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "url",
+          "terms_ok"
+        ],
+        "title": "SiteSignInRequest",
+        "type": "object"
+      },
       "Step": {
         "additionalProperties": false,
         "properties": {
@@ -5230,6 +5254,53 @@
         ]
       }
     },
+    "/api/v1/sites/profile": {
+      "delete": {
+        "description": "The same for any site key, including an origin, which can't sit in a path (ADR 0012).",
+        "operationId": "sign_out_anywhere_api_v1_sites_profile_delete",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "site",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "title": "Site",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal error"
+          }
+        },
+        "summary": "Sign Out Anywhere",
+        "tags": [
+          "sites"
+        ]
+      }
+    },
     "/api/v1/sites/profiles": {
       "get": {
         "description": "The sites the user signed Krama in to, and as whom. Never the sessions.",
@@ -5267,6 +5338,58 @@
           }
         },
         "summary": "Get Profiles",
+        "tags": [
+          "sites"
+        ]
+      }
+    },
+    "/api/v1/sites/sign-in": {
+      "post": {
+        "description": "Sign in by hand to any public site (ADR 0012): the URL's page opens in Krama's browser and pauses for\nthe owner. The owner has confirmed (`terms_ok`) that the site's terms allow automated use of their\naccount.",
+        "operationId": "sign_in_anywhere_api_v1_sites_sign_in_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SiteSignInRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Run"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal error"
+          }
+        },
+        "summary": "Sign In Anywhere",
         "tags": [
           "sites"
         ]
@@ -5383,7 +5506,7 @@
     },
     "/api/v1/tasks": {
       "post": {
-        "description": "Starts planning in the background. Poll GET /tasks/{id} until it is planned, needs clarification or\nfailed.",
+        "description": "Starts planning in the background. Poll GET /tasks/{id} until it is planned, needs clarification or\nfailed. A banking, payment, government identity or health site is refused (ADR 0012).",
         "operationId": "create_task_api_v1_tasks_post",
         "requestBody": {
           "content": {
