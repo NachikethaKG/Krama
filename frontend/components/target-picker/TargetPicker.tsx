@@ -205,6 +205,15 @@ export function TargetPicker({
             {t(`targetPicker.urlError.${validation.errorKey}`)}
           </p>
         )}
+        {activeTarget === "custom" && validation.valid && activeCustomUrl && (
+          <a
+            data-testid="sign-in-first-link"
+            href={`/sites?url=${encodeURIComponent(activeCustomUrl)}`}
+            className="text-xs font-bold text-approve underline underline-offset-2"
+          >
+            {t("targetPicker.signInFirst")}
+          </a>
+        )}
       </div>
     </div>
   );
