@@ -652,6 +652,21 @@ class InProcessExecutor:
                 )  # fmt: skip
                 return None
             calls += 1
+            if (
+                decision.step is not None
+                and rows
+                and env.task_check is not None
+                and (
+                    decision.step.action.type == "wait"
+                    or action_key(decision.step.action, decision.step.target) == last_action
+                )
+            ):
+                # Asked again, the decider still wants to wait or repeat itself: often the task is done and
+                # the model doesn't see it (OSM on qwen2.5: the search had worked, then 3 waits). Ask the task
+                # check, the same question that ends every run.
+                calls += 1
+                if await self._task_done(job, rows, page):
+                    return rows
             if decision.step is None:
                 if not rows:
                     await store.fail(
@@ -699,6 +714,20 @@ class InProcessExecutor:
                     self._handbacks.pop(job.run_id, None)
                     stalled = 0
             seq += 1
+
+    async def _task_done(self, job: RunJob, rows: Sequence[WorkflowStepRow], page: Page) -> bool:
+        """True only if the task check says the steps so far did the whole task."""
+        assert self._env.task_check is not None
+        try:
+            verdict = await self._env.task_check.check(
+                job.prompt,
+                [r.instruction_text for r in rows],
+                self._mask(urlsplit(page.url).path or "/"),
+                await self._masked_snapshot(page),
+            )
+        except LLMError:
+            return False
+        return verdict.done is True
 
     async def _attempt_decided(
         self,
