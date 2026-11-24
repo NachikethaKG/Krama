@@ -266,12 +266,25 @@ class ActionExecutor:
         in_form = await self._pick_in_filled_form(several)
         if in_form is not None:
             return in_form, "form"
+        twin = await self._pick_twin_search(target)
+        if twin is not None:
+            return twin, "role"
         picked = await self._pick_with_vision(target, instruction, several, attempts)
         if picked is None:
             raise _UnresolvedTargetError(
                 "ambiguous_target", f"several elements match {_describe(target)} and none could be picked"
             )
         return picked, "vision"
+
+    async def _pick_twin_search(self, target: Target) -> Locator | None:
+        """The first of several visible search boxes with exactly the same name. They do the same thing: the
+        Python docs show "Quick search" in the header and in the sidebar at 1280 px, and without vision the
+        step failed as ambiguous (Phase 7, #470). Only search boxes: two same-named buttons or fields can
+        differ."""
+        if target.role != "searchbox" or not target.name:
+            return None
+        twins = self._page.get_by_role("searchbox", name=target.name, exact=True).filter(visible=True)
+        return twins.first if await twins.count() > 1 else None
 
     async def _pick_exact_name(self, target: Target) -> Locator | None:
         """The one visible element whose name is exactly the target's, when the substring match found several.
