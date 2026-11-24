@@ -38,6 +38,7 @@
   },
   "meta": {
     "root": { "title": "Krama", "description": "Verified, interactive software tutorials" },
+    "sites": { "title": "Your sign-ins", "description": "Sites Krama is signed in to as you." },
     "welcome": {
       "title": "Krama · Interactive tutorials recorded from real UI actions",
       "description": "Tell Krama what you want to learn; it does the task on the real website, checks every step and turns it into an interactive tutorial."

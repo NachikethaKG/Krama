@@ -1,0 +1,20 @@
+{
+  "title": "Your sign-ins",
+  "intro": "Sites where Krama acts in your own account. Sign in once by hand; Krama keeps the session encrypted and never shows it.",
+  "form": {
+    "url": "Sign in to a site",
+    "terms": "I confirm this site's terms allow me to use automation with my account.",
+    "refused": "Banking, payment, government ID and health sites aren't supported.",
+    "signIn": "Open the site to sign in",
+    "opening": "Opening…",
+    "sensitive": "Krama doesn't work on banking, payment, government ID or health sites.",
+    "failed": "Couldn't start the sign-in."
+  },
+  "list": {
+    "title": "Signed in",
+    "loading": "Loading…",
+    "empty": "Krama isn't signed in to any site as you yet.",
+    "forget": "Forget",
+    "forgetFailed": "Couldn't forget that sign-in."
+  }
+}
