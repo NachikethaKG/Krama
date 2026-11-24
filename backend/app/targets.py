@@ -18,7 +18,7 @@ from urllib.parse import quote, urljoin, urlsplit, urlunsplit
 
 from playwright.async_api import Page
 
-from app.agent import SessionConfig
+from app.agent import SessionConfig, start_path
 from app.agent.gitea_create_repo import login_steps
 from app.agent.runlog import ScriptedStep
 from app.agent.stored_session import (
@@ -83,6 +83,9 @@ class TargetSetup:
     verify_timeout_s: float | None = None
     """How long to keep re-checking a step's expected state (None: the run's default). GitHub's dialogs take
     3+ s to close and list what they created (#89)."""
+    anonymous_ok: bool = False
+    """Any other site (ADR 0012): a run uses the user's stored session if there is one, else runs signed out
+    (public pages). False (Gitea, GitHub): "Do it for me" needs the user's own session (ADR 0007)."""
 
     def browser_config(self, config: SessionConfig) -> SessionConfig:
         """`config` with this target's signed-in session and timeouts (the run's and planner's browser)."""
@@ -110,7 +113,25 @@ def target_setup(target_url: str, settings: Settings) -> TargetSetup:
         )
     if _same_origin(target_url, settings.github_url):
         return _github_setup(settings)
-    return TargetSetup()
+    if not target_url.lower().startswith(("http://", "https://")):
+        return TargetSetup()
+    # Any other site (ADR 0012): keyed by its origin; a sign-in starts on the page the user named.
+    return TargetSetup(site=origin_of(target_url), login_path=start_path(target_url), anonymous_ok=True)
+
+
+def origin_of(url: str) -> str:
+    """`scheme://host[:port]`, lower case: the key of a site's stored session (ADR 0012)."""
+    parts = urlsplit(url)
+    return f"{parts.scheme}://{parts.netloc}".lower()
+
+
+def site_key(url: str, settings: Settings) -> str:
+    """The stored-session key for `url`: gitea or github for those two (ADR 0007), else the origin."""
+    if _same_origin(url, settings.gitea_url) or _same_origin(origin_of(url), settings.gitea_url):
+        return "gitea"
+    if _same_origin(url, settings.github_url) or _same_origin(origin_of(url), settings.github_url):
+        return "github"
+    return origin_of(url)
 
 
 def _github_setup(settings: Settings) -> TargetSetup:
