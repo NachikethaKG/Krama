@@ -3,21 +3,46 @@
 
 from __future__ import annotations
 
-from typing import Annotated
+from typing import Annotated, Literal
 
-from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
+from pydantic import AnyUrl, AwareDatetime, BaseModel, ConfigDict, Field
+
+type SignInHost = Annotated[str, Field(min_length=1)]
 
 
 class SiteProfile(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
     )
-    site: Annotated[str, Field(description="The site key, e.g. github or gitea.", min_length=1)]
+    site: Annotated[
+        str,
+        Field(
+            description="The site key: github or gitea, or the site's origin for any other site, e.g. https://www.openstreetmap.org (ADR 0012).",
+            min_length=1,
+        ),
+    ]
     account: Annotated[str, Field(description="The account name the user signed in as.", min_length=1)]
     captured_at: AwareDatetime
     expires_at: Annotated[
         AwareDatetime | None, Field(description="When the session's sign-in cookie expires, if known.")
     ] = None
+    sign_in_hosts: Annotated[
+        list[SignInHost] | None,
+        Field(
+            description="Other hosts (host[:port]) the owner opened while signing in, e.g. an identity provider. Later takeovers on this site may open them too (ADR 0012)."
+        ),
+    ] = None
+
+
+class SiteSignInRequest(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+    url: Annotated[AnyUrl, Field(description="Any page of the site; its origin is the site.")]
+    terms_ok: Annotated[
+        Literal[True],
+        Field(description="The owner confirms the site's terms allow automated use of their account."),
+    ]
 
 
 class SiteProfileList(BaseModel):

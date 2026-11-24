@@ -998,7 +998,7 @@ export interface ShareLinkList {
 }
 export interface SiteProfile {
   /**
-   * The site key, e.g. github or gitea.
+   * The site key: github or gitea, or the site's origin for any other site, e.g. https://www.openstreetmap.org (ADR 0012).
    */
   site: string;
   /**
@@ -1010,6 +1010,26 @@ export interface SiteProfile {
    * When the session's sign-in cookie expires, if known.
    */
   expires_at?: string | null;
+  /**
+   * Other hosts (host[:port]) the owner opened while signing in, e.g. an identity provider. Later takeovers on this site may open them too (ADR 0012).
+   */
+  sign_in_hosts?: string[];
+}
+/**
+ * POST /sites/sign-in: sign in by hand to any public site, in a takeover (ADR 0012).
+ *
+ * This interface was referenced by `SiteProfile`'s JSON-Schema
+ * via the `definition` "SiteSignInRequest".
+ */
+export interface SiteSignInRequest {
+  /**
+   * Any page of the site; its origin is the site.
+   */
+  url: string;
+  /**
+   * The owner confirms the site's terms allow automated use of their account.
+   */
+  terms_ok: true;
 }
 /**
  * This interface was referenced by `SiteProfile`'s JSON-Schema
