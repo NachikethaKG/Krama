@@ -12,6 +12,7 @@ from app.db import PlanRow, RunRow, TaskRow, WorkflowStepRow
 from app.planner.stepwise import DecidedTarget, Decision, LLMDecision, StepContext, to_step
 from app.runs import InProcessExecutor, RunStore
 from app.runs.reverify import create_reverify_run
+from app.verifier.task_check import TaskVerdict
 from tests.runs.test_executor import Sessions, environment, events, finished, run_to_end, until_paused
 
 pytestmark = [pytest.mark.anyio, pytest.mark.usefixtures("stop_runs")]
@@ -153,3 +154,33 @@ async def test_a_step_mode_workflow_replays_without_a_decider(
     assert got[-1]["type"] == "run.completed", got[-1]
     assert [e["type"] for e in got].count("step.verified") == 3
     assert "step.decided" not in [e["type"] for e in got]
+
+
+class DoneCheck:
+    """A task check that answers `done` and counts how often it was asked."""
+
+    def __init__(self, done: bool) -> None:
+        self.done, self.asked = done, 0
+
+    async def check(self, task: str, steps: Any, final_path: str, final_page: str) -> TaskVerdict:
+        self.asked += 1
+        return TaskVerdict(done=self.done, missing="" if self.done else "the rest", attempts=[])
+
+
+async def test_waiting_after_the_work_asks_the_task_check(
+    sessions: Sessions, site: str, tmp_path: Path
+) -> None:
+    # OSM on qwen2.5: the search had worked, then the model kept waiting instead of answering done.
+    decider = ScriptedDecider(("click", "link", "New item", None), *[("wait", None, None, None)] * 4)
+    check = DoneCheck(done=True)
+    env = environment(tmp_path, decider=decider, task_check=check)
+    executor = InProcessExecutor(RunStore(sessions), env)
+    run_id = await step_mode_run(sessions, site)
+
+    await run_to_end(executor, run_id)
+
+    got = await events(sessions, run_id)
+    assert got[-1]["type"] == "run.completed", got[-1]
+    assert [e["type"] for e in got].count("step.verified") == 1
+    assert "step.started" not in [e["type"] for e in got if e.get("step_seq") == 2]  # the wait never ran
+    assert check.asked >= 1
