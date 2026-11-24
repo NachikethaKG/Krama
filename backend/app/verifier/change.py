@@ -20,9 +20,8 @@ MAX_ABSENT = 2
 # Roles that make a good proof, best first: a dialog or a heading says where you are, a status what happened.
 _PROOF_ROLES = (
     "dialog", "alertdialog", "heading", "alert", "status", "tab", "listitem", "row", "link", "button",
-    "checkbox", "menuitem", "option", "textbox", "searchbox", "combobox",
+    "checkbox", "menuitem", "option", "textbox", "searchbox", "combobox", "listbox",
 )  # fmt: skip
-_FIELDS = frozenset({"textbox", "searchbox", "combobox", "spinbutton"})
 _CHECKABLE = frozenset({"checkbox", "radio", "switch", "menuitemcheckbox", "menuitemradio"})
 
 
@@ -89,7 +88,9 @@ def _ranked(keys: Iterable[tuple[str, str]]) -> list[tuple[str, str]]:
 
 def _appeared(old: list[AriaNode], new: list[AriaNode]) -> list[ElementRef]:
     before, after = _named(old), _named(new)
-    fresh = _ranked(k for k in after if k not in before and k[0] not in _FIELDS)
+    # A field counts too: keys are role + name, so only a field that wasn't on the page before is new (MDN's
+    # search dialog opens a combobox "Search").
+    fresh = _ranked(k for k in after if k not in before)
     return [ElementRef(role=r, name=n) for r, n in fresh[:MAX_VISIBLE]]
 
 
