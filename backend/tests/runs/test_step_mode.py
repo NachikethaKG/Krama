@@ -3,12 +3,12 @@ the decisions come from a script instead of an LLM."""
 
 from pathlib import Path
 from typing import Any
-from uuid import UUID
+from uuid import UUID, uuid4
 
 import pytest
 from sqlalchemy import select
 
-from app.db import PlanRow, RunRow, TaskRow, WorkflowStepRow
+from app.db import PlanRow, RunRow, TaskRow, UserRow, WorkflowStepRow
 from app.planner.stepwise import DecidedTarget, Decision, LLMDecision, StepContext, to_step
 from app.runs import InProcessExecutor, RunStore
 from app.runs.reverify import create_reverify_run
@@ -35,9 +35,11 @@ class ScriptedDecider:
         )
 
 
-async def step_mode_run(sessions: Sessions, site: str) -> UUID:
+async def step_mode_run(sessions: Sessions, site: str, user_id: UUID | None = None) -> UUID:
     async with sessions.begin() as s:
-        task = TaskRow(prompt="Create an item called demo-item", target_url=site, status="planned")
+        task = TaskRow(
+            prompt="Create an item called demo-item", target_url=site, status="planned", user_id=user_id
+        )
         s.add(task)
         await s.flush()
         plan = PlanRow(
@@ -184,3 +186,31 @@ async def test_waiting_after_the_work_asks_the_task_check(
     assert [e["type"] for e in got].count("step.verified") == 1
     assert "step.started" not in [e["type"] for e in got if e.get("step_seq") == 2]  # the wait never ran
     assert check.asked >= 1
+
+
+async def test_a_second_run_on_the_site_gets_notes_from_the_first(
+    sessions: Sessions, site: str, tmp_path: Path
+) -> None:
+    # #480: what the first verified run used on this site helps the next task there.
+    first = ScriptedDecider(
+        ("click", "link", "New item", None),
+        ("fill", "textbox", "Item name *", "demo-item"),
+        ("click", "button", "Create item", None),
+    )
+    async with sessions.begin() as s:
+        user = UserRow(email=f"notes-{uuid4().hex[:8]}@krama.test", password_hash="x", display_name="n")
+        s.add(user)
+    run_id = await step_mode_run(sessions, site, user_id=user.id)
+    await run_to_end(InProcessExecutor(RunStore(sessions), environment(tmp_path, decider=first)), run_id)
+
+    second = ScriptedDecider(("click", "link", "New item", None))
+    run_2 = await step_mode_run(sessions, site, user_id=user.id)
+    await run_to_end(
+        InProcessExecutor(RunStore(sessions), environment(tmp_path / "2", decider=second)), run_2
+    )
+
+    notes = second.seen[0].site_notes
+    assert notes is not None
+    assert '/form: textbox "Item name *" (fill), button "Create item" (click)' in notes
+    assert "demo-item" not in notes  # no typed values
+    assert first.seen[0].site_notes is None  # nothing verified there before
