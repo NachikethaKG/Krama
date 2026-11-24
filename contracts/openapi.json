@@ -1763,6 +1763,10 @@
         "title": "ShareLinkList",
         "type": "object"
       },
+      "SignInHost": {
+        "minLength": 1,
+        "type": "string"
+      },
       "SiteProfile": {
         "additionalProperties": false,
         "properties": {
@@ -1790,8 +1794,23 @@
             "description": "When the session's sign-in cookie expires, if known.",
             "title": "Expires At"
           },
+          "sign_in_hosts": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/SignInHost"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Other hosts (host[:port]) the owner opened while signing in, e.g. an identity provider. Later takeovers on this site may open them too (ADR 0012).",
+            "title": "Sign In Hosts"
+          },
           "site": {
-            "description": "The site key, e.g. github or gitea.",
+            "description": "The site key: github or gitea, or the site's origin for any other site, e.g. https://www.openstreetmap.org (ADR 0012).",
             "minLength": 1,
             "title": "Site",
             "type": "string"
