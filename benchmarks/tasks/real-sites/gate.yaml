@@ -1,0 +1,146 @@
+# Phase 7 exit gate (#481, #482): 12 public sites x 2 tasks, held out from development (the spike used Wikipedia,
+# OpenStreetMap, TodoMVC, the Python docs and MDN). `account: own` sites need the owner's own free account: sign in
+# once on /sites before the run. No banking, payment or other sensitive sites (AGENTS.md §4).
+#
+# success: what the final page of a verified run must show. url_matches is a regex on path?query (#463);
+# title_contains on the page title. A task without `success` counts on the run's own verification.
+# Tasks on the same site run in file order (a card goes on the board the task before created).
+
+tasks:
+  # --- no account ---------------------------------------------------------------------------------------------
+  - name: gutenberg-search
+    site: Project Gutenberg
+    target: https://www.gutenberg.org
+    prompt: Search Project Gutenberg for Pride and Prejudice and open the book's page
+    success: { url_matches: "^/ebooks/\\d+" }
+  - name: gutenberg-top
+    site: Project Gutenberg
+    target: https://www.gutenberg.org
+    prompt: Open the list of the most downloaded books
+    success: { url_matches: "^/browse/scores/top" }
+
+  - name: pypi-search
+    site: PyPI
+    target: https://pypi.org
+    prompt: Search PyPI for the requests package and open its project page
+    success: { url_matches: "^/project/requests/?$" }
+  - name: pypi-history
+    site: PyPI
+    target: https://pypi.org
+    prompt: Find the flask package on PyPI and open its release history
+    success: { url_matches: "^/project/flask/" }
+
+  - name: npm-search
+    site: npm
+    target: https://www.npmjs.com
+    prompt: Search npm for the lodash package and open its page
+    success: { url_matches: "^/package/lodash" }
+  - name: npm-versions
+    site: npm
+    target: https://www.npmjs.com
+    prompt: Open the list of published versions of the express package
+    success: { url_matches: "^/package/express.*versions" }
+
+  - name: wiktionary-word
+    site: Wiktionary
+    target: https://en.wiktionary.org
+    prompt: Look up the word serendipity on Wiktionary
+    success: { url_matches: "^/wiki/serendipity" }
+  - name: wiktionary-word-of-the-day
+    site: Wiktionary
+    target: https://en.wiktionary.org
+    prompt: Open Wiktionary's Word of the day page
+    success: { url_matches: "Word_of_the_day" }
+
+  - name: httpbin-order
+    site: httpbin.org test form
+    target: https://httpbin.org/forms/post
+    prompt: Fill in the pizza order form for the customer Asha, size Medium, topping Bacon, then submit it
+    success: { url_matches: "^/post" }
+  - name: httpbin-delivery
+    site: httpbin.org test form
+    target: https://httpbin.org/forms/post
+    prompt: Fill in the pizza order form for the customer Ravi with delivery time 11:30 and the comment Ring the bell, then submit it
+    success: { url_matches: "^/post" }
+
+  - name: herokuapp-checkboxes
+    site: the-internet (test playground)
+    target: https://the-internet.herokuapp.com
+    prompt: Open the Checkboxes example and tick the first checkbox
+    success: { url_matches: "^/checkboxes" }
+  - name: herokuapp-dropdown
+    site: the-internet (test playground)
+    target: https://the-internet.herokuapp.com
+    prompt: Open the Dropdown example and choose Option 2
+    success: { url_matches: "^/dropdown" }
+
+  - name: timeanddate-tokyo
+    site: timeanddate.com
+    target: https://www.timeanddate.com
+    prompt: Find the current local time in Tokyo
+    success: { url_matches: "tokyo" }
+  - name: timeanddate-calendar
+    site: timeanddate.com
+    target: https://www.timeanddate.com
+    prompt: Open the calendar for the year 2027
+    success: { url_matches: "calendar.*2027" }
+
+  - name: archive-search
+    site: Internet Archive
+    target: https://archive.org
+    prompt: Search the Internet Archive for Apollo 11 and open the first result
+    success: { url_matches: "^/details/" }
+  - name: archive-wayback
+    site: Internet Archive
+    target: https://web.archive.org
+    prompt: Look up example.com in the Wayback Machine
+    success: { url_matches: "example\\.com" }
+
+  # --- the owner's own free account (sign in on /sites first) ----------------------------------------------------
+  - name: trello-board
+    site: Trello
+    target: https://trello.com
+    account: own
+    prompt: Create a board named Reading list
+  - name: trello-card
+    site: Trello
+    target: https://trello.com
+    account: own
+    prompt: Add a card called Buy milk to the first list of the Reading list board
+
+  - name: todoist-add
+    site: Todoist
+    target: https://app.todoist.com
+    account: own
+    prompt: Add a task Water the plants due tomorrow
+  - name: todoist-complete
+    site: Todoist
+    target: https://app.todoist.com
+    account: own
+    prompt: Mark the task Water the plants as complete
+
+  - name: codeberg-repo
+    site: Codeberg
+    target: https://codeberg.org
+    account: own
+    prompt: Create a new repository named notes-demo
+    success: { url_matches: "/notes-demo" }
+  - name: codeberg-issue
+    site: Codeberg
+    target: https://codeberg.org
+    account: own
+    prompt: Open an issue titled Fix typo in README in the repository notes-demo
+    success: { url_matches: "/issues/\\d+" }
+
+  - name: gitlab-project
+    site: GitLab.com
+    target: https://gitlab.com
+    account: own
+    prompt: Create a blank project named notes-demo
+    success: { url_matches: "/notes-demo" }
+  - name: gitlab-issue
+    site: GitLab.com
+    target: https://gitlab.com
+    account: own
+    prompt: Create an issue titled Fix typo in README in the project notes-demo
+    success: { url_matches: "/-/issues/\\d+" }
