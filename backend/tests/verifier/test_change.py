@@ -111,3 +111,22 @@ def test_the_recorded_state_verifies_the_page_it_came_from() -> None:
     assert RuleVerifier().verify(change, after).verified
     assert not RuleVerifier().verify(change, state("/search", TODO_TYPED)).verified
     assert isinstance(change, ExpectedState)
+
+
+def test_a_dialog_with_a_new_field_is_a_change() -> None:
+    # MDN: "Search the site" opens a dialog whose only named element is a combobox (Phase 7, #470).
+    before = state("/en-US/", '- banner:\n  - button "Search the site"\n- main:\n  - heading "MDN"')
+    after = state(
+        "/en-US/",
+        before.aria_excerpt + '\n- dialog:\n  - combobox "Search"\n  - status\n  - listbox "Search results"',
+    )
+
+    change = observed_change(
+        before, after, Action(type="click"), Target(role="button", name="Search the site")
+    )
+
+    assert change is not None and change.visible is not None
+    assert {(v.role, v.name) for v in change.visible} == {
+        ("combobox", "Search"),
+        ("listbox", "Search results"),
+    }

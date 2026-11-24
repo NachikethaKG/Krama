@@ -41,3 +41,31 @@ async def test_a_target_under_a_path_starts_there_not_at_the_site_root() -> None
 
         assert urlsplit(session.page.url).path == "/todomvc"
         assert await session.page.title() == "Todos"
+
+
+async def test_twin_search_boxes_take_the_first() -> None:
+    # The Python docs show "Quick search" in the header and the sidebar; without vision the fill failed as
+    # ambiguous (Phase 7, #470). Two same-named search boxes do the same thing.
+    from app.agent import ActionExecutor
+    from app.contracts_gen.common_schema import Action, Target
+
+    page_html = """<title>Docs</title><header><input type="search" aria-label="Quick search"></header>
+        <main><h1>Docs</h1></main><aside><input type="search" aria-label="Quick search"></aside>"""
+
+    async def serve(route: Route) -> None:
+        await route.fulfill(status=200, content_type="text/html", body=page_html)
+
+    async with PlaywrightSession(SessionConfig(base_url=FAKE_SITE)) as session:
+        await session.context.route(f"{FAKE_SITE}/**", serve)
+        await session.page.goto("/")
+        executor = ActionExecutor(session.page)
+
+        result = await executor.execute(
+            Action(type="fill", value="asyncio.gather"), Target(role="searchbox", name="Quick search")
+        )
+
+        assert result.ok, result.error
+        values = await session.page.get_by_role("searchbox", name="Quick search").evaluate_all(
+            "els => els.map(e => e.value)"
+        )
+        assert values == ["asyncio.gather", ""]
