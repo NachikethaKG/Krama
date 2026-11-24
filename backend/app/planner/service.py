@@ -29,6 +29,7 @@ from app.llm import LLMError, LLMRateLimitedError
 from app.planner.planner import InvalidPlanError, NeedsClarificationError, Planner, PlanRequest
 from app.ports.models import ObservedState
 from app.ports.policy import Policy
+from app.runs.site_notes import site_notes
 from app.targets import PrepareError, TargetSetup
 
 logger = logging.getLogger(__name__)
@@ -89,7 +90,7 @@ class PlanningService:
             task = await s.get(TaskRow, task_id)
             if task is None or task.status != "planning":
                 return
-            prompt, target_url = task.prompt, task.target_url
+            prompt, target_url, owner = task.prompt, task.target_url, task.user_id
         setup = self._target(target_url)
         if setup.sign_in_problem is not None:
             error = _error("internal", setup.sign_in_problem, "sign_in_required")
@@ -133,6 +134,7 @@ class PlanningService:
                 site=setup.site,
                 signed_in_as=setup.signed_in_as,
                 practice_repo=setup.practice_repo,
+                site_notes=await self._notes(owner, target_url),
                 example_suffix=f"{secrets.randbelow(9000) + 1000}",
             )
 
@@ -170,6 +172,11 @@ class PlanningService:
             task_row = await s.get(TaskRow, task_id)
             assert task_row is not None
             task_row.status, task_row.clarification_question, task_row.error = "planned", None, None
+
+    async def _notes(self, owner: UUID | None, target_url: str) -> str | None:
+        """The owner's site notes (#480), masked like other page text."""
+        notes = await site_notes(self._sessions, owner, target_url)
+        return self._mask(notes) if notes else None
 
     def _mask(self, text: str) -> str:
         """Page-derived text (snapshot, URL path) through the policy's mask before the LLM sees it."""
