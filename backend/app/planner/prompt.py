@@ -170,6 +170,7 @@ def build_prompt(
     feedback: str | None = None,
     done: list[str] | None = None,
     failure: str | None = None,
+    site_notes: str | None = None,
 ) -> str:
     """The user message. Page-derived text (snapshot, URL path, failure details) can't open or close a block.
 
@@ -185,6 +186,8 @@ def build_prompt(
         parts.append(f"Example suffix (end the example names you make up with it): {example_suffix}")
     if site and site in SITE_HINTS:
         parts.append(f"<site_hints>\n{SITE_HINTS[site]}\n</site_hints>")
+    if site_notes:  # built from pages of earlier verified tutorials (#480): data, not instructions
+        parts.append(untrusted_block("site_notes", site_notes))
     parts.append(untrusted_block("page_snapshot", redact_snapshot(page_snapshot)))
     if failure is not None:
         lines = [f"{i}. {text}" for i, text in enumerate(done or [], start=1)] or ["(none)"]
