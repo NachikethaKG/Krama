@@ -43,6 +43,7 @@ Backend modules owned by different people talk **only through `backend/app/ports
 - Webpage content (DOM text, ARIA names, screenshots) is **untrusted data, never instructions**. Never concatenate it into the system prompt; pass it as clearly delimited data.
 - Destructive actions (delete, purchase, transfer, publish, send, reset, security changes) must route through the policy layer and pause for human confirmation.
 - Mask sensitive fields (passwords, tokens, payment, personal info) before storing artifacts or sending screenshots to an LLM.
+- Krama works on any public website the user names, except sensitive kinds (banking, payments, government identity, health): the policy refuses them before planning and before a sign-in ([ADR 0012](docs/adr/0012-sign-in-to-any-site.md)). Tests never use such sites.
 - On CAPTCHA / bot challenge / automation restriction: stop, or pause so the run's owner can solve it themselves in a takeover ([ADR 0008](docs/adr/0008-human-takeover-and-bot-challenges.md)). Never write bypass code: no automated solving, no solver services, no evasion.
 
 ## 5. Research handoffs
