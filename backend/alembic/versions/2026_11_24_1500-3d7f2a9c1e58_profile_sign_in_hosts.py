@@ -1,7 +1,7 @@
 """profile sign-in hosts
 
-#475, ADR 0012: the other hosts the owner opened while signing in to a site (an identity provider), stored with
-the session. Existing profiles have none.
+#475, ADR 0012: the other hosts the owner opened while signing in to a site (an identity provider),
+stored with the session. Existing profiles have none.
 
 Revision ID: 3d7f2a9c1e58
 Revises: 8c4e1b7a2d93
