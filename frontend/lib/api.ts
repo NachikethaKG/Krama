@@ -34,6 +34,8 @@ import type {
   Language,
   Translation,
   TakeoverInput,
+  SiteProfile,
+  SiteProfileList,
 } from "@krama/contracts-ts";
 import { compileWorkflow, type TutorialSpec } from "@krama/tutorial-compiler";
 
@@ -397,6 +399,15 @@ export interface ApiClient {
   runWorkflow(workflowId: string, revision: number, inputs: Record<string, string>): Promise<Run>;
   /** POST /sites/{site}/sign-in → 202 Run (kind sign_in): sign in by hand in a takeover (ADR 0007). */
   startSignIn(site: string): Promise<Run>;
+  /**
+   * POST /sites/sign-in → 202 Run (kind sign_in): sign in by hand to any public site (ADR 0012). `terms_ok` is the
+   * owner's confirmation that the site's terms allow automated use. 422 `details.reason = "sensitive_site"`.
+   */
+  startSignInAt(url: string): Promise<Run>;
+  /** GET /sites/profiles: the sites Krama is signed in to as this user (never the sessions). */
+  listSiteProfiles(): Promise<SiteProfileList>;
+  /** DELETE /sites/profile?site=: forget the stored session for any site key, an origin included. */
+  forgetSiteProfile(site: string): Promise<void>;
   /** POST /runs/{id}/takeover: take control of the paused run's live page (ADR 0008). 409 when none is possible. */
   startTakeover(runId: string): Promise<Run>;
   /** POST /runs/{id}/handback: end the takeover and say what was done (barrier | step | rest). */
@@ -674,6 +685,7 @@ export class HttpApiClient implements ApiClient {
       );
     }
 
+    if (response.status === 204) return undefined as T; // No Content (DELETE /sites/profile)
     return (await response.json()) as T;
   }
 
@@ -992,6 +1004,18 @@ export class HttpApiClient implements ApiClient {
 
   startSignIn(site: string): Promise<Run> {
     return this.request<Run>(`/sites/${encodeURIComponent(site)}/sign-in`, this.json("POST"));
+  }
+
+  startSignInAt(url: string): Promise<Run> {
+    return this.request<Run>("/sites/sign-in", this.json("POST", { url, terms_ok: true }));
+  }
+
+  listSiteProfiles(): Promise<SiteProfileList> {
+    return this.request<SiteProfileList>("/sites/profiles");
+  }
+
+  async forgetSiteProfile(site: string): Promise<void> {
+    await this.request<unknown>(`/sites/profile?site=${encodeURIComponent(site)}`, this.json("DELETE"));
   }
 
   handBack(runId: string, stepSeq: number, done: HandBackDone): Promise<Run> {
@@ -1863,6 +1887,25 @@ export class MockApiClient implements ApiClient {
       throw mockError(429, "rate_limited", "Daily AI fix quota reached (5/day). Please regenerate the workflow or retry tomorrow.");
     }
     return { success: true, status: "checking" };
+  }
+
+  private mockProfiles: SiteProfile[] = [
+    { site: "github", account: "octo-demo", captured_at: nowTs(), expires_at: null, sign_in_hosts: [] },
+  ];
+
+  async startSignInAt(url: string): Promise<Run> {
+    if (/paypal|bank/i.test(url)) {
+      throw mockError(422, "validation_error", "Krama doesn't work on banking sites.", { reason: "sensitive_site" });
+    }
+    return this.startSignIn(new URL(url).origin);
+  }
+
+  async listSiteProfiles(): Promise<SiteProfileList> {
+    return { items: [...this.mockProfiles] };
+  }
+
+  async forgetSiteProfile(site: string): Promise<void> {
+    this.mockProfiles = this.mockProfiles.filter((p) => p.site !== site);
   }
 
   async startSignIn(site: string): Promise<Run> {
