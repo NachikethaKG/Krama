@@ -6,6 +6,7 @@ returned by the API or sent to an LLM.
 """
 
 import json
+from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from uuid import UUID
@@ -29,6 +30,7 @@ class Profile:
     state: StorageState
     captured_at: datetime
     expires_at: datetime | None
+    sign_in_hosts: tuple[str, ...] = ()
 
 
 class ProfileStore:
@@ -53,8 +55,9 @@ class ProfileStore:
         state: StorageState,
         *,
         session_cookie: str | None = None,
+        sign_in_hosts: Iterable[str] = (),
     ) -> None:
-        """Store (or replace) the user's session on `site`."""
+        """Store (or replace) the user's session on `site`, with the other hosts its sign-in used."""
         token = self._key().encrypt(json.dumps(state).encode("utf-8"))
         expires = cookie_expiry(state, session_cookie) if session_cookie else None
         async with self._sessions.begin() as s:
@@ -68,6 +71,7 @@ class ProfileStore:
                 s.add(row)
             row.account, row.state = account, token
             row.captured_at, row.expires_at = datetime.now(UTC), expires
+            row.sign_in_hosts = sorted({h.lower() for h in sign_in_hosts if h})
 
     async def load(self, user_id: UUID, site: str) -> Profile | None:
         """The user's session on `site`, or None (none stored, expired, or unreadable with the current
@@ -84,7 +88,8 @@ class ProfileStore:
             state: StorageState = json.loads(self._key().decrypt(row.state))
         except (InvalidToken, ProfileError):
             return None
-        return Profile(row.site, row.account, state, row.captured_at, row.expires_at)
+        hosts = tuple(row.sign_in_hosts or ())
+        return Profile(row.site, row.account, state, row.captured_at, row.expires_at, hosts)
 
     async def list(self, user_id: UUID) -> list[BrowserProfileRow]:
         """The user's stored sessions (rows only: callers never get the decrypted state)."""
