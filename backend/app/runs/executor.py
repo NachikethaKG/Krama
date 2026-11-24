@@ -621,6 +621,8 @@ class InProcessExecutor:
         calls = stalled = 0
         max_steps, max_calls = env.max_steps, env.max_step_llm_calls
         suffix = f"{secrets.randbelow(9000) + 1000}"
+        notes = await store.site_notes(job)
+        notes = self._mask(notes) if notes else None
         self._paused_s[job.run_id] = 0.0
         t0 = time.perf_counter()
         seq = 1
@@ -647,6 +649,7 @@ class InProcessExecutor:
                 page_snapshot=await self._masked_snapshot(page),
                 example_suffix=suffix,
                 last_action=last_action,
+                site_notes=notes,
             )
             try:
                 decision = await env.decider.decide(ctx, seq=seq)
