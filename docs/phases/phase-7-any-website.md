@@ -95,8 +95,8 @@ On a 16 GB CPU-only laptop, free tiers only, real Gemini; CI uses fakes.
 ### Running the gate (#481, #482)
 
 The 24 tasks are in [`benchmarks/tasks/real-sites/gate.yaml`](../../benchmarks/tasks/real-sites/gate.yaml): 8 public
-sites and 4 where the owner signs in with their own free account (Trello, Todoist, Codeberg, GitLab.com, chosen
-2026-11-24).
+sites and 4 where the owner signs in with their own free account (Trello, Habitica, Codeberg, GitLab.com, chosen
+2026-11-24; Habitica replaced Todoist, whose invisible CAPTCHA rejects Krama's browser with nothing to solve).
 
 1. `just up`, then the API with `LLM_PROVIDER=gemini` and the frontend.
 2. Sign in once to each account site on `/sites` (by hand, in the takeover).
