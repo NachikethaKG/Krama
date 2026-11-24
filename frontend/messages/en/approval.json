@@ -28,9 +28,9 @@
         "description": "github.com repository (uses encrypted browser session)"
       },
       "custom": {
-        "name": "Custom Target",
-        "badge": "Custom",
-        "description": "Arbitrary Git server or enterprise web endpoint"
+        "name": "Any website",
+        "badge": "Any",
+        "description": "Any public website. Banking, payment, government ID and health sites aren't supported."
       }
     },
     "customLabel": "Custom Target Base URL",
@@ -40,7 +40,8 @@
       "protocol": "URL must use http:// or https:// protocol (e.g. https://github.example.com).",
       "host": "URL must include a valid host name.",
       "invalid": "Please enter a valid URL (e.g. https://github.example.com)."
-    }
+    },
+    "signInFirst": "Needs your account? Sign in to this site first"
   },
   "taskInput": {
     "examples": {

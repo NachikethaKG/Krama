@@ -45,6 +45,7 @@ export const NAMESPACES = [
   "runs",
   "execution",
   "approval",
+  "sites",
   "safety",
   "reviews",
   "export",
