@@ -24,6 +24,7 @@ from app.db.repositories import (
     runs_with_status,
     transition_run,
 )
+from app.runs.site_notes import site_notes
 from app.runs.states import ACTIVE, RunStatus, event_type, sources
 from app.runs.step_diff import step_diff
 
@@ -107,6 +108,10 @@ class RunStore:
                 mode=plan.mode,
                 outline=[OutlineItem.model_validate(o) for o in plan.outline or []],
             )
+
+    async def site_notes(self, job: RunJob) -> str | None:
+        """Pages and elements from the owner's earlier verified tutorials on the run's site (#480)."""
+        return await site_notes(self._sessions, job.user_id, job.target_url)
 
     async def status(self, run_id: UUID) -> RunStatus:
         async with self._sessions() as s:
