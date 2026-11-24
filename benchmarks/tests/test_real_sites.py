@@ -14,7 +14,8 @@ def test_the_gate_file_has_12_sites_with_2_tasks_each() -> None:
     assert len({t.name for t in tasks}) == 24
     assert set(Counter(t.site for t in tasks).values()) == {2}
     own = {t.site for t in tasks if t.account == "own"}
-    assert own == {"Trello", "Todoist", "Codeberg", "GitLab.com"}  # chosen by Vishwas, 2026-11-24
+    # Chosen by Vishwas, 2026-11-24; Habitica replaced Todoist (an invisible CAPTCHA blocks Krama's browser).
+    assert own == {"Trello", "Habitica", "Codeberg", "GitLab.com"}
     assert {t.account for t in tasks} == {"none", "own"}
 
 
