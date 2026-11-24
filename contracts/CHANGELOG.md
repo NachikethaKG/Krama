@@ -2,6 +2,16 @@
 
 Every change to `contracts/` is listed here. Additive change = minor version bump; breaking change = major bump + ADR.
 
+## 1.22 (#474)
+
+Sign in to any site (ADR 0012). Additive.
+
+- `site.schema.json` v1.1: `SiteProfile.site` may be an origin (`https://host`), not only `github` or `gitea`;
+  `SiteProfile.sign_in_hosts`; `SiteSignInRequest` (`url`, `terms_ok: true`).
+- `docs/api-contract.md`: `POST /sites/sign-in` with a `SiteSignInRequest`; `DELETE /sites/profile?site=` for any
+  site key. A sensitive site (banking, payments, government identity, health) is refused with
+  `422 validation_error`, `details.reason: sensitive_site`, by `POST /tasks` and the sign-in endpoints.
+
 ## 1.21 (#466)
 
 Look before each step (ADR 0011). Additive, plus one relaxation.
