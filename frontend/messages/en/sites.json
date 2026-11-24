@@ -8,7 +8,8 @@
     "signIn": "Open the site to sign in",
     "opening": "Opening…",
     "sensitive": "Krama doesn't work on banking, payment, government ID or health sites.",
-    "failed": "Couldn't start the sign-in."
+    "failed": "Couldn't start the sign-in.",
+    "placeholder": "https://example.com/login"
   },
   "list": {
     "title": "Signed in",

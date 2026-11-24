@@ -101,7 +101,7 @@ export function SiteSignIns({ initialUrl = "", client }: SiteSignInsProps) {
           inputMode="url"
           value={url}
           onChange={(e) => setUrl(e.target.value)}
-          placeholder="https://example.com/login"
+          placeholder={t("form.placeholder")}
           className="rounded-xl border border-white/15 bg-ink-850 px-3 py-2 text-sm text-white"
         />
         <label htmlFor={termsId} className="flex items-start gap-2 text-xs leading-relaxed text-ink-300">
