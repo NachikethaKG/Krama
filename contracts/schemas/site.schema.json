@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "site.schema.json",
   "title": "SiteProfile",
-  "$comment": "v1.0. A user's own signed-in session on a site (ADR 0007): GET /sites/profiles. The session itself is a secret and never leaves the server.",
+  "$comment": "v1.1. A user's own signed-in session on a site (ADR 0007, ADR 0012): GET /sites/profiles. The session itself is a secret and never leaves the server.",
   "type": "object",
   "required": [
     "site",
@@ -14,7 +14,7 @@
     "site": {
       "type": "string",
       "minLength": 1,
-      "description": "The site key, e.g. github or gitea."
+      "description": "The site key: github or gitea, or the site's origin for any other site, e.g. https://www.openstreetmap.org (ADR 0012)."
     },
     "account": {
       "type": "string",
@@ -32,9 +32,28 @@
       ],
       "format": "date-time",
       "description": "When the session's sign-in cookie expires, if known."
+    },
+    "sign_in_hosts": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "description": "Other hosts (host[:port]) the owner opened while signing in, e.g. an identity provider. Later takeovers on this site may open them too (ADR 0012)."
     }
   },
   "$defs": {
+    "SiteSignInRequest": {
+      "title": "SiteSignInRequest",
+      "type": "object",
+      "description": "POST /sites/sign-in: sign in by hand to any public site, in a takeover (ADR 0012).",
+      "required": ["url", "terms_ok"],
+      "additionalProperties": false,
+      "properties": {
+        "url": { "type": "string", "format": "uri", "minLength": 1, "description": "Any page of the site; its origin is the site." },
+        "terms_ok": {
+          "const": true,
+          "description": "The owner confirms the site's terms allow automated use of their account."
+        }
+      }
+    },
     "SiteProfileList": {
       "title": "SiteProfileList",
       "type": "object",
