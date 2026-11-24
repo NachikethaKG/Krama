@@ -39,7 +39,7 @@ from app.db.base import literal_values
 from app.llm import LLMError, LLMRateLimitedError
 from app.planner.instructions import tutorial_text
 from app.planner.planner import Planner, PlannerError, PlanRequest
-from app.planner.stepwise import StepContext, StepDecider
+from app.planner.stepwise import StepContext, StepDecider, action_key
 from app.ports.artifacts import ArtifactStore
 from app.ports.models import (
     InvalidArtifactKeyError,
@@ -606,6 +606,7 @@ class InProcessExecutor:
             return None
         rows: list[WorkflowStepRow] = []
         done: list[str] = []
+        last_action: str | None = None
         calls = stalled = 0
         max_steps, max_calls = env.max_steps, env.max_step_llm_calls
         suffix = f"{secrets.randbelow(9000) + 1000}"
@@ -634,6 +635,7 @@ class InProcessExecutor:
                 path=self._mask(urlsplit(page.url).path or "/"),
                 page_snapshot=await self._masked_snapshot(page),
                 example_suffix=suffix,
+                last_action=last_action,
             )
             try:
                 decision = await env.decider.decide(ctx, seq=seq)
@@ -668,6 +670,7 @@ class InProcessExecutor:
             }
             if not await store.event(job.run_id, "step.decided", decided):
                 return None
+            last_action = action_key(step.action, step.target)
             attempt = await self._attempt_decided(job, step, executor, observer, page, verify_timeout_s)
             if attempt is None:
                 return None  # stopped by the policy, or cancelled
