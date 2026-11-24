@@ -100,6 +100,15 @@ PAGES: dict[str, str] = {
         </form></main>""",
     "/members": """<!doctype html><title>Members</title><main><h1>Members</h1>
         <a href="/form">New item</a></main>""",
+    # Any-site sign-in (ADR 0012): a plain sign-in form; /account sets a session cookie, like most sites.
+    "/signin": """<!doctype html><title>Sign in</title><main><h1>Sign in</h1>
+        <form action="/account" method="get">
+          <label>Email <input name="email"></label>
+          <label>Password <input name="pw" type="password"></label>
+          <button type="submit">Sign in</button>
+        </form></main>""",
+    "/account": """<!doctype html><title>Your account</title><main><h1>Your account</h1>
+        <a href="/form">New item</a></main>""",
     # Navigates on its own after 600 ms: verification must wait for it instead of failing at once.
     "/slow": """<!doctype html><title>Slow</title><main><h1>Slow</h1>
         <script>setTimeout(() => { location.href = "/done" }, 600)</script></main>""",
@@ -127,9 +136,12 @@ BAIT_HITS: list[str] = []
 
 class _Handler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:
-        body = PAGES.get(urlsplit(self.path).path)
+        path = urlsplit(self.path).path
+        body = PAGES.get(path)
         self.send_response(200 if body else 404)
         self.send_header("Content-Type", "text/html; charset=utf-8")
+        if path == "/account":
+            self.send_header("Set-Cookie", "sessionid=signed-in-by-hand; Path=/; HttpOnly")
         self.end_headers()
         self.wfile.write((body or "<title>Not found</title>").encode())
 
