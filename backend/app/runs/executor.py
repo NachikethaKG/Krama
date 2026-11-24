@@ -52,6 +52,7 @@ from app.ports.observer import Observer
 from app.ports.policy import Policy
 from app.runs.profiles import ProfileStore
 from app.runs.reverify import failure_details
+from app.runs.sign_in import cookie_names, generic_account_of
 from app.runs.states import RunStatus
 from app.runs.steps import StepOutcome, act_and_record, act_and_verify, step_ref
 from app.runs.store import RunJob, RunNotFoundError, RunStore
@@ -164,6 +165,8 @@ class _Pausable:
     page: Page
     step_seq: int
     hosts: tuple[str, ...]
+    open_sign_in: bool = False
+    """A sign-in run's pause (ADR 0012): its takeover may open other public hosts."""
 
 
 class InProcessExecutor:
@@ -182,6 +185,8 @@ class InProcessExecutor:
         """Steps a reverify run healed (#112): their outcomes, in step order."""
         self._takeover_pages: dict[UUID, _Pausable] = {}
         """Paused runs whose owner may take over the page (ADR 0008)."""
+        self._visited: dict[UUID, set[str]] = {}
+        """Other hosts the owner opened in a sign-in run's takeovers: stored with the session (ADR 0012)."""
         self._takeovers: dict[UUID, TakeoverSession] = {}
         """Active takeovers: one controller per run."""
         self._handbacks: dict[UUID, str] = {}
@@ -260,6 +265,8 @@ class InProcessExecutor:
         session = TakeoverSession(
             pausable.page,
             allowed_hosts=pausable.hosts,
+            open_sign_in=pausable.open_sign_in,
+            on_visit=lambda host: self._visited.setdefault(run_id, set()).add(host),
             on_end=ended,
             on_blocked=on_blocked,
             idle_s=self._env.takeover_idle_s,
@@ -365,17 +372,21 @@ class InProcessExecutor:
             await self._sign_in(job, target)
             return
         profile = None
-        if job.kind == "do_it" and target.login_path is not None and env.profiles is not None:
-            # The user's own account (ADR 0007): their session, never the shared test account's.
+        own_account = job.kind == "do_it" or (job.kind == "task" and target.anonymous_ok)
+        if own_account and target.login_path is not None and env.profiles is not None:
+            # The user's own account (ADR 0007): their session, never the shared test account's. On any other
+            # site (ADR 0012) a run without a stored session runs signed out: most pages are public.
             profile = await env.profiles.load(job.user_id, target.site or "") if job.user_id else None
-            if profile is None:
+            if profile is None and not target.anonymous_ok:
                 await self._fail_sign_in(
                     run_id, f"Sign in to {target.site} first: Krama acts in your own account."
                 )
                 return
+        if profile is not None:
             target = replace(
-                target, storage_state=profile.state, sign_in_problem=None, signed_in_as=profile.account
-            )
+                target, storage_state=profile.state, sign_in_problem=None, signed_in_as=profile.account,
+                sign_in_hosts=(*target.sign_in_hosts, *profile.sign_in_hosts),
+            )  # fmt: skip
         job = replace(job, recorded_as=target.signed_in_as)
         if target.sign_in_problem is not None:
             await self._fail_sign_in(run_id, target.sign_in_problem)
@@ -954,7 +965,8 @@ class InProcessExecutor:
         in by hand in a takeover. Each hand-back, Krama asks the site who is signed in; once someone is, it
         stores the session for this user and site and completes. No recording: passwords are typed here."""
         env, store = self._env, self._store
-        if target.login_path is None or target.account_of is None or target.site is None:
+        generic = target.account_of is None and target.anonymous_ok
+        if target.login_path is None or (target.account_of is None and not generic) or target.site is None:
             await store.fail(
                 job.run_id,
                 from_=RunStatus.RUNNING,
@@ -983,6 +995,10 @@ class InProcessExecutor:
                     reason="site_unreachable",
                 )
                 return
+            account_of = target.account_of
+            if account_of is None:  # any other site (ADR 0012): new session cookies, no password field
+                before = cookie_names(await page.context.storage_state())
+                account_of = generic_account_of(before, host_of(job.target_url))
             message = f"Sign in to {target.site} yourself: take over the page, sign in, then hand it back."
             # Step 1 starts like any step: without it the run paused with no current step, and "allow" or
             # "deny" on the pause answered 409 (#431 gate).
@@ -996,11 +1012,12 @@ class InProcessExecutor:
                     return
                 self._handbacks.pop(job.run_id, None)
                 state = await page.context.storage_state()
-                account = await target.account_of(page, dict(state))
+                account = await account_of(page, dict(state))
                 if account:
                     await env.profiles.save(
-                        job.user_id, target.site, account, dict(state), session_cookie=target.session_cookie
-                    )
+                        job.user_id, target.site, account, dict(state), session_cookie=target.session_cookie,
+                        sign_in_hosts=self._visited.pop(job.run_id, set()),
+                    )  # fmt: skip
                     # The step is done (by the owner) and checked (the site names the account): without
                     # this the finished run showed its one step as "Pending" (#451).
                     verified = {"step_seq": 1, "method": ["dom"], "confidence": 0.7, "performed_by": "human"}
@@ -1146,7 +1163,9 @@ class InProcessExecutor:
                 paused["plan_id"] = str(plan_id)
             if page is not None and reason in TAKEOVER_REASONS:
                 hosts = (host_of(job.target_url), *self._env.target(job).sign_in_hosts)
-                self._takeover_pages[job.run_id] = _Pausable(page, step_seq, hosts)
+                self._takeover_pages[job.run_id] = _Pausable(
+                    page, step_seq, hosts, open_sign_in=job.kind == "sign_in"
+                )
                 paused["takeover_available"] = True
             if not await self._store.transition(
                 job.run_id, RunStatus.PAUSED, paused, from_=RunStatus.RUNNING
