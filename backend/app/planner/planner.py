@@ -36,6 +36,8 @@ class PlanRequest(BaseModel):
     page_snapshot: str = ""
     """ARIA snapshot of the start page. Untrusted; redacted again before it reaches the LLM."""
     site: str | None = None
+    site_notes: str | None = None
+    """Pages and elements from the user's earlier verified tutorials on this site (#480). Untrusted."""
     signed_in_as: str | None = None
     practice_repo: str | None = None
     """owner/name to use when the task needs an existing repository and names none (#325)."""
@@ -102,6 +104,7 @@ class LLMPlanner:
                 signed_in_as=request.signed_in_as,
                 practice_repo=request.practice_repo,
                 example_suffix=request.example_suffix,
+                site_notes=request.site_notes,
                 feedback=feedback,
                 done=request.done,
                 failure=request.failure,

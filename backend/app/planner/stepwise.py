@@ -153,6 +153,7 @@ class OutlinePlanner:
             signed_in_as=request.signed_in_as,
             practice_repo=request.practice_repo,
             example_suffix=request.example_suffix,
+            site_notes=request.site_notes,
         )
         result = await self._llm.generate(system=OUTLINE_SYSTEM, prompt=prompt, schema=LLMOutline)
         draft = result.value
