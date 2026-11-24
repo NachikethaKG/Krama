@@ -161,3 +161,17 @@ def test_press_without_a_target_still_runs() -> None:
     step = to_step(decision("press", None, None), 2)
     assert step is not None and step.action.value == "Enter" and step.target.role is None
     assert step.instruction_text == "Press “Enter”."
+
+
+def test_waits_and_repeats_are_asked_again() -> None:
+    # OSM on qwen2.5: after the search worked it waited and clicked Go again instead of answering done.
+    wait = LLMDecision(thought="t", action="wait", target=None)
+    assert "never wait" in check_decision(wait)[0]
+
+    go = LLMDecision(thought="t", action="click", target=DecidedTarget(role="button", name="Go"))
+    assert "you just did exactly this" in check_decision(go, last_action="click button Go")[0]
+    assert check_decision(go, last_action="fill textbox Search Bengaluru") == []
+    assert (
+        check_decision(LLMDecision(thought="t", action="done", target=None), last_action="click button Go")
+        == []
+    )
