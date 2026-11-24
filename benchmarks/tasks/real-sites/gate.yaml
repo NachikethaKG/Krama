@@ -108,16 +108,18 @@ tasks:
     account: own
     prompt: Add a card called Buy milk to the first list of the Reading list board
 
-  - name: todoist-add
-    site: Todoist
-    target: https://app.todoist.com
+  # Habitica replaced Todoist (2026-11-24): Todoist's sign-in runs an invisible CAPTCHA that rejects Krama's
+  # browser, with nothing for the owner to solve; Krama never gets around bot checks (AGENTS.md §4).
+  - name: habitica-add
+    site: Habitica
+    target: https://habitica.com
     account: own
-    prompt: Add a task Water the plants due tomorrow
-  - name: todoist-complete
-    site: Todoist
-    target: https://app.todoist.com
+    prompt: Add a to-do called Water the plants
+  - name: habitica-complete
+    site: Habitica
+    target: https://habitica.com
     account: own
-    prompt: Mark the task Water the plants as complete
+    prompt: Mark the to-do Water the plants as done
 
   - name: codeberg-repo
     site: Codeberg
