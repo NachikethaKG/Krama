@@ -6,12 +6,18 @@ the page may only navigate to the target and its sign-in hosts (the server's bro
 into its network), new tabs are closed, and 5 minutes without input end it. Frames live only in memory: they
 are never stored, logged or sent to an LLM (T12).
 
+During a sign-in run (ADR 0012) the owner may also open other public hosts, such as an identity provider:
+they are reported (`on_visit`) and stored with the session. Private, loopback and link-local addresses stay
+blocked, whether given as an IP or reached through a name, and a popup opens in the same tab instead.
+
 What the owner did is checked on hand-back (#409); the API and the screen WebSocket are #408.
 """
 
 import asyncio
 import contextlib
+import ipaddress
 import logging
+import socket
 import time
 from collections.abc import Awaitable, Callable, Iterable
 from datetime import UTC, datetime
@@ -97,6 +103,27 @@ def host_of(url: str) -> str:
     return urlsplit(url).netloc.lower()
 
 
+_LOCAL_NAMES = ("localhost", ".localhost", ".local", ".internal", ".lan", ".home", ".corp")
+
+
+async def is_public_host(hostname: str, *, timeout_s: float = 3.0) -> bool:
+    """True if `hostname` is on the public internet: not a local name, and every address it is or resolves to
+    is global. A name that can't be resolved in time is not public."""
+    name = hostname.lower().rstrip(".")
+    if not name or name == "localhost" or name.endswith(_LOCAL_NAMES):
+        return False
+    try:
+        return ipaddress.ip_address(name.strip("[]")).is_global
+    except ValueError:
+        pass
+    try:
+        infos = await asyncio.wait_for(asyncio.to_thread(socket.getaddrinfo, name, None), timeout_s)
+    except (OSError, TimeoutError):
+        return False
+    addresses = {str(info[4][0]) for info in infos}
+    return bool(addresses) and all(ipaddress.ip_address(a.split("%")[0]).is_global for a in addresses)
+
+
 class TakeoverSession:
     """One owner's control of one paused page. `end` is idempotent and calls `on_end(reason)` once."""
 
@@ -111,9 +138,16 @@ class TakeoverSession:
         idle_s: float = IDLE_S,
         clock: Callable[[], float] = time.monotonic,
         step_seq: int = 1,
+        open_sign_in: bool = False,
+        on_visit: Callable[[str], None] | None = None,
     ) -> None:
+        """`open_sign_in`: a sign-in run's takeover (ADR 0012): any public host may be opened too, and each
+        one is reported to `on_visit`; popups open in the same tab."""
         self._page = page
         self._allowed = {h.lower() for h in allowed_hosts if h}
+        self._open_sign_in = open_sign_in
+        self._on_visit = on_visit
+        self._public: dict[str, bool] = {}
         self._on_end = on_end
         self._on_blocked = on_blocked
         self._min_gap = 1.0 / max_fps
@@ -135,6 +169,21 @@ class TakeoverSession:
         private address included) are refused."""
         parts = urlsplit(url)
         return parts.scheme in ("http", "https") and parts.netloc.lower() in self._allowed
+
+    async def permitted(self, url: str) -> bool:
+        """`allowed`, or, in a sign-in takeover, any http(s) page on a public host (reported to
+        `on_visit`)."""
+        if self.allowed(url):
+            return True
+        parts = urlsplit(url)
+        if not self._open_sign_in or parts.scheme not in ("http", "https") or not parts.hostname:
+            return False
+        host = parts.netloc.lower()
+        if host not in self._public:
+            self._public[host] = await is_public_host(parts.hostname)
+        if self._public[host] and self._on_visit is not None:
+            self._on_visit(host)
+        return self._public[host]
 
     async def start(self, on_frame: FrameSink) -> None:
         """Begin streaming to `on_frame` and guarding navigation."""
@@ -207,7 +256,7 @@ class TakeoverSession:
         if (
             request.is_navigation_request()
             and request.frame == self._page.main_frame
-            and not self.allowed(request.url)
+            and not await self.permitted(request.url)
         ):
             await route.abort("aborted")  # a cancelled navigation: no error page, the owner stays put
             if self._on_blocked is not None:
@@ -216,9 +265,25 @@ class TakeoverSession:
         await route.fallback()
 
     async def _close_popup(self, popup: Page) -> None:
-        await popup.close()
+        if not self._open_sign_in:
+            await popup.close()
+            if self._on_blocked is not None:
+                await self._on_blocked("New tabs and windows are closed during a takeover.")
+            return
+        # Sign-in (ADR 0012): "Sign in with ..." often opens a popup. Open its page in this tab instead.
+        url = popup.url
+        with contextlib.suppress(PlaywrightError):
+            if url in ("", "about:blank"):
+                await popup.wait_for_url(lambda u: u not in ("", "about:blank"), timeout=5000)
+                url = popup.url
+        with contextlib.suppress(PlaywrightError):
+            await popup.close()
+        if url and url != "about:blank" and await self.permitted(url):
+            with contextlib.suppress(PlaywrightError):
+                await self._page.goto(url)
+            return
         if self._on_blocked is not None:
-            await self._on_blocked("New tabs and windows are closed during a takeover.")
+            await self._on_blocked("That window couldn't be opened here.")
 
     async def _idle_watch(self) -> None:
         while self.ended is None:
