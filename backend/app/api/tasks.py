@@ -12,6 +12,7 @@ from app.api.convert import task_out
 from app.api.errors import ApiException
 from app.api.owner import owned_task
 from app.api.services import ServicesDep
+from app.api.sites import refuse_sensitive
 from app.contracts_gen.common_schema import ErrorResponse
 from app.contracts_gen.task_schema import Task, TaskClarifyRequest, TaskCreateRequest
 from app.db import PlanRow, TaskRow
@@ -25,7 +26,8 @@ _404: Responses = {404: {"model": ErrorResponse, "description": "No task with th
 @router.post("/tasks", status_code=202)
 async def create_task(body: TaskCreateRequest, user: CurrentUser, services: ServicesDep) -> Task:
     """Starts planning in the background. Poll GET /tasks/{id} until it is planned, needs clarification or
-    failed."""
+    failed. A banking, payment, government identity or health site is refused (ADR 0012)."""
+    refuse_sensitive(str(body.target_url))
     async with services.sessions.begin() as s:
         task = TaskRow(
             user_id=user.id,
