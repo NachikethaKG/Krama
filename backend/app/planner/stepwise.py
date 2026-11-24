@@ -123,6 +123,8 @@ class StepContext(BaseModel):
     example_suffix: str | None = None
     site_notes: str | None = None
     """Notes about the site from earlier verified workflows (#480). Built from pages: untrusted."""
+    last_action: str | None = None
+    """The previous step's action, target and value (`action_key`), to catch a model repeating itself."""
 
 
 class Decision(BaseModel):
@@ -193,7 +195,7 @@ class StepDecider:
             result = await self._llm.generate(system=DECIDE_SYSTEM, prompt=prompt, schema=LLMDecision)
             attempts += result.attempts
             model, raw = result.model, normalize(result.value)
-            problems = check_decision(raw)
+            problems = check_decision(raw, last_action=ctx.last_action)
             if not problems:
                 break
             prompt = (
@@ -211,9 +213,28 @@ class StepDecider:
         )
 
 
-def check_decision(raw: LLMDecision) -> list[str]:
-    """What makes a (normalized) decision impossible to run."""
+def action_key(action: Action, target: Target | None) -> str:
+    """One line naming an action, to compare two steps: "click button Go"."""
+    who = f"{target.role} {target.name}" if target is not None and target.role else ""
+    return " ".join(p for p in (action.type, who, action.value or "") if p)
+
+
+def check_decision(raw: LLMDecision, *, last_action: str | None = None) -> list[str]:
+    """What makes a (normalized) decision impossible or pointless to run."""
     problems: list[str] = []
+    if raw.action == "wait":
+        # Batch B check on qwen2.5: "wait for the map" three times after the search had worked (OSM).
+        problems.append("never wait: Krama already waits for every page. If the task is done, answer done")
+    target = Target(role=raw.target.role, name=raw.target.name) if raw.target else None
+    if (
+        last_action is not None
+        and raw.action != "done"
+        and action_key(Action(type=raw.action if raw.action != "check" else "click", value=raw.value), target)
+        == last_action
+    ):
+        problems.append(
+            "you just did exactly this. If the task is done, answer done; otherwise do something else"
+        )
     has_target = raw.target is not None and bool(raw.target.role.strip()) and bool(raw.target.name.strip())
     if raw.action in ("click", "fill", "select") and not has_target:
         problems.append(f"{raw.action} needs a target: role and name of an element in the snapshot")
