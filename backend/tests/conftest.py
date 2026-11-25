@@ -137,11 +137,16 @@ BAIT_HITS: list[str] = []
 class _Handler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:
         path = urlsplit(self.path).path
-        body = PAGES.get(path)
-        self.send_response(200 if body else 404)
+        body = PAGES.get(path) or ("" if path == "/dashboard" else None)
+        self.send_response(200 if body is not None else 404)
         self.send_header("Content-Type", "text/html; charset=utf-8")
         if path == "/account":
             self.send_header("Set-Cookie", "sessionid=signed-in-by-hand; Path=/; HttpOnly")
+        if path == "/dashboard":
+            # Like a real site's home page: what it shows depends on the session cookie.
+            signed_in = "sessionid=" in (self.headers.get("Cookie") or "")
+            heading = "Your boards" if signed_in else "Log in to see your boards"
+            body = f"<!doctype html><title>Dashboard</title><main><h1>{heading}</h1></main>"
         self.end_headers()
         self.wfile.write((body or "<title>Not found</title>").encode())
 
