@@ -61,6 +61,20 @@ async def test_an_unclear_task_asks_a_question() -> None:
         await OutlinePlanner(llm).plan(request)
 
 
+async def test_a_signed_in_owner_is_never_asked_to_sign_in() -> None:
+    # #482: Trello opened a signed-in owner on its onboarding screen behind a cookie notice, and Gemini asked
+    # them to log in. The prompt says who is signed in; the rules say to trust it and get past such screens.
+    llm = FakeProvider([outline_reply()])
+    request = PlanRequest(task_id=uuid4(), task="Create a board", signed_in_as="your account on trello.com")
+
+    await OutlinePlanner(llm).plan(request)
+
+    system, prompt, _ = llm.calls[0]
+    assert "Signed in as: your account on trello.com" in prompt
+    assert "never ask them to sign in" in system
+    assert "onboarding" in DECIDE_SYSTEM and "Only necessary" in DECIDE_SYSTEM
+
+
 async def test_the_decider_returns_one_step_with_an_empty_expected_state() -> None:
     decision = {
         "thought": "The search box is empty.",

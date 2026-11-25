@@ -44,6 +44,8 @@ OUTLINE_SYSTEM = "\n".join(
         "  Made-up example names end with the example suffix you are given.",
         "- Ask in clarification_question (with no outline) only when WHAT to do is unclear or impossible on",
         "  this site.",
+        '- "Signed in as" means the user is signed in: never ask them to sign in or sign up. A cookie',
+        "  notice, a welcome or an onboarding screen may cover the first page; outline the task anyway.",
         UNTRUSTED_DATA_RULE,
     ]
 )
@@ -62,6 +64,8 @@ DECIDE_SYSTEM = "\n".join(
         "  Enter), navigate (value = a URL path starting with /, only when no link or button gets there),",
         "  wait.",
         "- If the whole task is already complete on this page, answer done.",
+        "- A cookie notice, welcome or onboarding screen in the way: close or skip it first (for cookies,",
+        '  the choice that shares least, e.g. "Only necessary" or "Reject all").',
         "- thought: one short sentence: what the page shows and why this action.",
         "- outline_seq: the outline item this action works on.",
         "- risk: low for looking, typing and navigating; medium for creating something; high for deleting,",
