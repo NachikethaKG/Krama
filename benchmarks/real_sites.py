@@ -14,7 +14,11 @@ the run.
 Run from the repo root (the API on :8000, `LLM_PROVIDER=gemini` for the gate):
 
     uv run --project backend python -m benchmarks.real_sites [--only NAME ...] [--account none|own|all]
-        [--interactive] [--out benchmarks/results/real-sites]
+        [--interactive] [--out benchmarks/results/real-sites] [--fresh] [--daily-calls 40] [--per-task 15]
+
+Gemini's free tier allows 20 requests per model per day, about 3 tasks (#494). So the gate runs over several
+days: each run resumes from `gate.json`, skips tasks that have a verdict, and stops before a task that today's
+quota can't finish. A task the quota stopped halfway is marked `quota` and runs again on a later day.
 """
 
 from __future__ import annotations
@@ -54,7 +58,8 @@ class SiteResult:
     name: str
     site: str
     outcome: str = "not_run"
-    """verified, wrong_page, failed, paused, needs_sign_in, planning_<status>, error."""
+    """verified, wrong_page, failed, paused, needs_sign_in, planning_<status>, error; `quota` when it didn't
+    pass and the LLM's daily quota ran out during it (#494): not a verdict on Krama, so it runs again."""
     why: str | None = None
     seconds: float = 0.0
     takeovers: int = 0
@@ -113,8 +118,11 @@ class RealSiteRunner:
         except Exception as e:  # one broken site must not stop the gate
             result.outcome, result.why = "error", f"{type(e).__name__}: {e}"[:300]
         result.seconds = round(time.time() - t0, 1)
-        calls, latencies = llm_usage(started, datetime.now(UTC))
+        calls, latencies, refused = llm_usage(started, datetime.now(UTC))
         result.llm_calls, result.decision_ms = calls, latencies
+        if refused and not result.passed:
+            result.why = f"{result.outcome}: {result.why or ''}"[:300]
+            result.outcome = "quota"
         return result
 
     def _run(self, task: SiteTask, result: SiteResult) -> None:
@@ -201,7 +209,7 @@ class RealSiteRunner:
             run = self.api._call("POST", f"/workflows/{wid}/reverify")
         followed = self._follow(run["id"], SiteResult(result.name, result.site))
         result.replay = "verified" if followed is not None and followed["status"] == "verified" else "failed"
-        calls, _ = llm_usage(started, datetime.now(UTC))
+        calls, _, _ = llm_usage(started, datetime.now(UTC))
         result.replay_llm_calls = calls
 
     def _signed_in(self, target: str) -> bool:
@@ -249,19 +257,41 @@ def _db(query: Any) -> Any:
     return asyncio.run(go())
 
 
-def llm_usage(since: datetime, until: datetime) -> tuple[int, list[int]]:
-    """LLM calls (one per call, not per attempt) and step-decision latencies between two times."""
+QUOTA_REFUSED = "quota_exhausted"
+"""`llm_calls.status` of an attempt the provider refused for quota (HTTP 429)."""
+
+
+def llm_usage(since: datetime, until: datetime) -> tuple[int, list[int], bool]:
+    """LLM calls (one per call, not per attempt), step-decision latencies, and whether any attempt was refused
+    for quota, between two times."""
     from sqlalchemy import select
 
     from app.db import LLMCallRow
 
-    async def q(s: Any) -> tuple[int, list[int]]:
+    async def q(s: Any) -> tuple[int, list[int], bool]:
         rows = list(await s.scalars(select(LLMCallRow).where(LLMCallRow.created_at.between(since, until))))
         calls = len({r.call_id for r in rows})
         decisions = [r.latency_ms for r in rows if r.job == "LLMDecision" and r.status == "ok"]
-        return calls, decisions
+        return calls, decisions, any(r.status == QUOTA_REFUSED for r in rows)
 
-    result: tuple[int, list[int]] = _db(q)
+    result: tuple[int, list[int], bool] = _db(q)
+    return result
+
+
+def requests_today(provider: str = "gemini") -> int:
+    """The provider's requests so far on its quota day (midnight to midnight, Pacific time, like Gemini's
+    free tier). Requests it refused for quota don't count against the quota."""
+    from sqlalchemy import text
+
+    sql = text(
+        "select count(*) from llm_calls where provider = :provider and status <> :refused and created_at >= "
+        "(date_trunc('day', now() at time zone 'America/Los_Angeles') at time zone 'America/Los_Angeles')"
+    )
+
+    async def q(s: Any) -> int:
+        return int((await s.execute(sql, {"provider": provider, "refused": QUOTA_REFUSED})).scalar_one())
+
+    result: int = _db(q)
     return result
 
 
@@ -280,8 +310,12 @@ def events_of(run_id: str) -> list[dict[str, Any]]:
 # --- report -------------------------------------------------------------------------------------------
 
 
+RUN_AGAIN = ("not_run", "quota", "needs_sign_in")
+"""Outcomes that aren't a verdict: a resumed gate runs these tasks again."""
+
+
 def summary(results: list[SiteResult]) -> dict[str, Any]:
-    ran = [r for r in results if r.outcome not in ("needs_sign_in", "not_run")]
+    ran = [r for r in results if r.outcome not in RUN_AGAIN]
     calls = [r.llm_calls for r in ran]
     decisions = [ms for r in ran for ms in r.decision_ms]
     return {
@@ -292,6 +326,7 @@ def summary(results: list[SiteResult]) -> dict[str, Any]:
         "replays_verified": sum(r.replay == "verified" for r in results),
         "replays_with_llm_calls": sum(bool(r.replay_llm_calls) for r in results),
         "needs_sign_in": [r.name for r in results if r.outcome == "needs_sign_in"],
+        "still_to_run": [r.name for r in results if r.outcome in ("not_run", "quota")],
         "median_llm_calls": statistics.median(calls) if calls else None,
         "decision_p50_ms": statistics.median(decisions) if decisions else None,
     }
@@ -318,6 +353,28 @@ def markdown(results: list[SiteResult]) -> str:
     return "\n".join(lines)
 
 
+# --- several days on a free tier (#494) ---------------------------------------------------------------
+
+
+def load_saved(path: Path) -> dict[str, SiteResult]:
+    """The gate's results so far, by task name (empty when there are none)."""
+    if not path.exists():
+        return {}
+    data = json.loads(path.read_text(encoding="utf-8"))
+    return {r["name"]: SiteResult(**r) for r in data.get("results", [])}
+
+
+def still_to_run(tasks: list[SiteTask], saved: dict[str, SiteResult]) -> list[SiteTask]:
+    """The tasks without a verdict yet: never run, stopped by the quota, or waiting for a sign-in."""
+    return [t for t in tasks if t.name not in saved or saved[t.name].outcome in RUN_AGAIN]
+
+
+def quota_allows(used: int, daily: int, per_task: int) -> bool:
+    """Is there room today for one more task? A task that runs out halfway proves nothing and wastes the
+    calls it did make."""
+    return daily - used >= per_task
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="benchmarks.real_sites", description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)  # fmt: skip
@@ -328,29 +385,51 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--api-url", default="http://127.0.0.1:8000/api/v1")
     parser.add_argument("--out", type=Path, default=Path("benchmarks/results/real-sites"))
+    parser.add_argument(
+        "--fresh", action="store_true", help="start over (default: resume, skip tasks with a verdict)"
+    )
+    parser.add_argument(
+        "--daily-calls", type=int, default=40, help="LLM requests per day (Gemini free tier: 20 x 2 models)"
+    )
+    parser.add_argument(
+        "--per-task", type=int, default=15, help="requests one task needs; none starts with fewer left"
+    )
     args = parser.parse_args(argv)
 
-    tasks = [t for t in load_tasks() if (not args.only or t.name in args.only)
-             and (args.account == "all" or t.account == args.account)]  # fmt: skip
+    args.out.mkdir(parents=True, exist_ok=True)
+    gate_file = args.out / "gate.json"
+    saved = {} if args.fresh else load_saved(gate_file)
+    chosen = [t for t in load_tasks() if (not args.only or t.name in args.only)
+              and (args.account == "all" or t.account == args.account)]  # fmt: skip
+    tasks = still_to_run(chosen, saved)
+    if saved:
+        print(f"Resuming: {len(chosen) - len(tasks)} of {len(chosen)} tasks already have a verdict.")
     runner = RealSiteRunner(args.api_url, interactive=args.interactive)
-    results = []
     for task in tasks:
+        used = requests_today()
+        if not quota_allows(used, args.daily_calls, args.per_task):
+            print(f"Stopping: {used} of {args.daily_calls} LLM requests used today (Pacific time); a task "
+                  f"needs about {args.per_task}. Run again after midnight Pacific to resume.")  # fmt: skip
+            break
         print(f"== {task.name}: {task.prompt}", flush=True)
         r = runner.run(task)
-        results.append(r)
+        saved[task.name] = r
         print(
             f"   -> {r.outcome} in {r.seconds} s, {r.llm_calls} LLM calls, replay {r.replay}: {r.why or ''}",
             flush=True,
         )
-    args.out.mkdir(parents=True, exist_ok=True)
-    stamp = datetime.now(UTC).strftime("%Y%m%d-%H%M%S")
-    (args.out / f"{stamp}.json").write_text(
-        json.dumps({"summary": summary(results), "results": [asdict(r) for r in results]}, indent=1),
-        encoding="utf-8",
-    )
-    (args.out / f"{stamp}.md").write_text(markdown(results) + "\n", encoding="utf-8")
+        write_results(args.out, gate_file, [saved[t.name] for t in load_tasks() if t.name in saved])
+    results = [saved.get(t.name) or SiteResult(t.name, t.site) for t in load_tasks()]
+    write_results(args.out, gate_file, results)
     print("\n" + markdown(results))
     return 0
+
+
+def write_results(out: Path, gate_file: Path, results: list[SiteResult]) -> None:
+    """After every task, so a stopped run keeps what it did."""
+    data = {"summary": summary(results), "results": [asdict(r) for r in results]}
+    gate_file.write_text(json.dumps(data, indent=1), encoding="utf-8")
+    (out / "gate.md").write_text(markdown(results) + "\n", encoding="utf-8")
 
 
 if __name__ == "__main__":
