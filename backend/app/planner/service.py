@@ -9,6 +9,7 @@ import asyncio
 import logging
 import secrets
 from collections.abc import Callable
+from dataclasses import replace
 from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
@@ -29,6 +30,7 @@ from app.llm import LLMError, LLMRateLimitedError
 from app.planner.planner import InvalidPlanError, NeedsClarificationError, Planner, PlanRequest
 from app.ports.models import ObservedState
 from app.ports.policy import Policy
+from app.runs.profiles import ProfileStore
 from app.runs.site_notes import site_notes
 from app.targets import PrepareError, TargetSetup
 
@@ -47,11 +49,14 @@ class PlanningService:
         session_config: Callable[[str], SessionConfig] = lambda url: SessionConfig(base_url=url),
         max_concurrent: int = 1,
         policy: Policy | None = None,
+        profiles: ProfileStore | None = None,
     ) -> None:
-        """`policy` masks secrets in the page snapshot before it goes to the LLM (#63)."""
+        """`policy` masks secrets in the page snapshot before it goes to the LLM (#63). `profiles`: the
+        owner's stored sign-ins (ADR 0012), so the planner sees the same signed-in page the run will."""
         self._sessions = sessions
         self._planner = planner
         self._target = target
+        self._profiles = profiles
         self._session_config = session_config
         self._policy = policy
         self._slots = asyncio.Semaphore(max_concurrent)
@@ -92,6 +97,12 @@ class PlanningService:
                 return
             prompt, target_url, owner = task.prompt, task.target_url, task.user_id
         setup = self._target(target_url)
+        if setup.anonymous_ok and self._profiles is not None and owner is not None:
+            # Any other site (ADR 0012): plan on the page as the owner sees it, signed in when they stored a
+            # sign-in, like the run's executor does. Signed out otherwise: most pages are public.
+            profile = await self._profiles.load(owner, setup.site or "")
+            if profile is not None:
+                setup = replace(setup, storage_state=profile.state, signed_in_as=profile.account)
         if setup.sign_in_problem is not None:
             error = _error("internal", setup.sign_in_problem, "sign_in_required")
             await self._finish(task_id, "failed", error=error)

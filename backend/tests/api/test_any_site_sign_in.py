@@ -11,6 +11,9 @@ from app.config import Settings
 from app.contracts_gen.run_schema import Run
 from app.contracts_gen.site_schema import SiteProfileList
 from app.contracts_gen.takeover_schema import TakeoverKey, TakeoverText
+from app.contracts_gen.task_schema import Task
+from app.planner.planner import NeedsClarificationError, PlanRequest, PlanResult
+from app.planner.service import PlanningService
 from app.runs import InProcessExecutor
 from app.runs.profiles import ProfileStore
 from app.targets import target_setup
@@ -80,6 +83,50 @@ async def test_without_a_session_cookie_it_is_not_signed_in(
         await api.client.post(f"/runs/{run_id}/cancel")
 
     assert again.status == "paused" and profiles.items == []
+
+
+class AskingPlanner:
+    """Keeps what the planner was given, then asks a question (the task ends needs_clarification)."""
+
+    def __init__(self) -> None:
+        self.requests: list[PlanRequest] = []
+
+    async def plan(self, request: PlanRequest) -> PlanResult:
+        self.requests.append(request)
+        raise NeedsClarificationError("seen")
+
+
+@pytest.mark.parametrize("stored", [True, False])
+async def test_planning_sees_the_page_with_the_owners_sign_in(
+    sessions: Sessions, tmp_path: Path, site: str, stored: bool
+) -> None:
+    # #482: the planner saw Trello signed out and asked to log in, though the owner had signed in on /sites.
+    svc = any_site_services(sessions, tmp_path)
+    planner = AskingPlanner()
+    svc.planning = PlanningService(
+        sessions, planner, lambda url: target_setup(url, SETTINGS), profiles=svc.profiles
+    )
+    async with Api(svc) as api:
+        assert api.user is not None
+        if stored:
+            host = site.removeprefix("http://").split(":")[0]
+            cookie = {"name": "sessionid", "value": "x", "domain": host, "path": "/", "expires": -1,
+                      "httpOnly": True, "secure": False, "sameSite": "Lax"}  # fmt: skip
+            state = {"cookies": [cookie], "origins": []}
+            await svc.profiles.save(api.user.id, site, "your account", state)
+        created = await api.client.post(
+            "/tasks", json={"prompt": "Create a board", "target_url": f"{site}/dashboard"}
+        )
+        assert created.status_code == 202, created.text
+        await svc.planning.wait(Task.model_validate(created.json()).id)
+
+    [request] = planner.requests
+    if stored:
+        assert "Your boards" in request.page_snapshot
+        assert request.signed_in_as == "your account"
+    else:
+        assert "Log in to see your boards" in request.page_snapshot
+        assert request.signed_in_as is None
 
 
 @pytest.mark.parametrize("url", ["https://www.paypal.com/signin", "https://netbanking.example-bank.com/"])
