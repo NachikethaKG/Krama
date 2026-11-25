@@ -1,3 +1,4 @@
+from contextlib import suppress
 from dataclasses import dataclass
 from types import TracebackType
 from typing import Any, Self
@@ -143,13 +144,24 @@ def start_path(target_url: str) -> str:
     return f"{path}?{parts.query}" if parts.query else path
 
 
+START_SETTLE_MS = 10_000
+"""How long the start page may keep loading after its HTML: an app page (Trello) shows only a spinner until
+its data arrives, and may then move to another URL."""
+
+
 async def open_start_page(page: Page, path: str = "/") -> bool:
     """Open the site's start page, trying twice: a real site sometimes drops one load (github.com timed out
-    once in the Phase 3 benchmark). False if it can't be reached, so the run says so instead of crashing."""
+    once in the Phase 3 benchmark). False if it can't be reached, so the run says so instead of crashing.
+
+    Then wait (at most `START_SETTLE_MS`) for the network to go quiet, so the planner and the first step see
+    the page, not its loading spinner (#482: Trello's spinner read as signed out). A page that never goes
+    quiet (polling, live updates) is used as it is after the wait."""
     for _ in range(2):
         try:
             await page.goto(path, wait_until="domcontentloaded")
-            return True
         except PlaywrightError:
             continue
+        with suppress(PlaywrightError):
+            await page.wait_for_load_state("networkidle", timeout=START_SETTLE_MS)
+        return True
     return False
