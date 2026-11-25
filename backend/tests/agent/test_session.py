@@ -1,11 +1,12 @@
 """The browser session's start page (#462)."""
 
+import asyncio
 from urllib.parse import urlsplit
 
 import pytest
 from playwright.async_api import Route
 
-from app.agent import PlaywrightSession, SessionConfig, open_start_page, start_path
+from app.agent import PlaywrightSession, SessionConfig, open_start_page, page_snapshot, start_path
 from tests.agent.conftest import FAKE_SITE
 
 pytestmark = pytest.mark.anyio
@@ -41,6 +42,28 @@ async def test_a_target_under_a_path_starts_there_not_at_the_site_root() -> None
 
         assert urlsplit(session.page.url).path == "/todomvc"
         assert await session.page.title() == "Todos"
+
+
+async def test_the_start_page_is_read_after_its_data_arrives() -> None:
+    # #482: Trello's start page is a spinner until its data loads; the planner saw only "- img" and asked
+    # the signed-in owner to log in.
+    app_html = """<title>App</title><main><img alt="Loading"></main>
+        <script>fetch("/data").then(r => r.text()).then(t => {
+          document.querySelector("main").innerHTML = "<h1>" + t + "</h1>" })</script>"""
+
+    async def serve(route: Route) -> None:
+        if urlsplit(route.request.url).path == "/data":
+            await asyncio.sleep(1.5)
+            await route.fulfill(status=200, content_type="text/plain", body="Your inbox")
+        else:
+            await route.fulfill(status=200, content_type="text/html", body=app_html)
+
+    async with PlaywrightSession(SessionConfig(base_url=FAKE_SITE)) as session:
+        await session.context.route(f"{FAKE_SITE}/**", serve)
+
+        assert await open_start_page(session.page)
+
+        assert "Your inbox" in await page_snapshot(session.page)
 
 
 async def test_twin_search_boxes_take_the_first() -> None:
