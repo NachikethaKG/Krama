@@ -29,6 +29,7 @@ from app.agent import (
     page_snapshot,
     start_path,
 )
+from app.agent.consent import clear_consent
 from app.agent.healer import HealBudget, HealChooser, HealOutcome, heal, stored_element
 from app.agent.runlog import MASK, ScriptedStep, looks_sensitive, mask_expected, run_script
 from app.agent.vision import VisionLocator, masked_screenshot
@@ -1038,7 +1039,9 @@ class InProcessExecutor:
         await self._store.fail(run_id, from_=RunStatus.RUNNING, message=message, reason="sign_in_required")
 
     async def _masked_snapshot(self, page: Page) -> str:
-        """The page's ARIA snapshot with secrets masked by the policy (#63) before it goes to an LLM."""
+        """The page's ARIA snapshot with secrets masked by the policy (#63) before it goes to an LLM. A
+        cookie banner that appeared since is answered first (#493), so it never becomes a step."""
+        await clear_consent(page)
         return self._mask(await page_snapshot(page))
 
     def _mask(self, text: str) -> str:

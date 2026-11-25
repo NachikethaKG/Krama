@@ -7,6 +7,7 @@ from urllib.parse import urlsplit
 from playwright.async_api import Browser, BrowserContext, Page, Playwright, async_playwright
 from playwright.async_api import Error as PlaywrightError
 
+from app.agent.consent import clear_consent
 from app.agent.page_text import PAGE_BUDGET_CHARS, trim_snapshot
 
 
@@ -163,5 +164,6 @@ async def open_start_page(page: Page, path: str = "/") -> bool:
             continue
         with suppress(PlaywrightError):
             await page.wait_for_load_state("networkidle", timeout=START_SETTLE_MS)
+        await clear_consent(page)
         return True
     return False
