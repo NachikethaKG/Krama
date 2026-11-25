@@ -182,7 +182,11 @@ def build_services(settings: Settings) -> Services:
         store=store,
         executor=executor,
         planning=PlanningService(
-            sessions, plan_maker(settings, llm), lambda url: target_setup(url, settings), policy=policy
+            sessions,
+            plan_maker(settings, llm),
+            lambda url: target_setup(url, settings),
+            policy=policy,
+            profiles=profiles,
         ),
         engine=engine,
         target=lambda url: target_setup(url, settings),
