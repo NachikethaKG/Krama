@@ -101,5 +101,8 @@ sites and 4 where the owner signs in with their own free account (Trello, Habiti
 1. `just up`, then the API with `LLM_PROVIDER=gemini` and the frontend.
 2. Sign in once to each account site on `/sites` (by hand, in the takeover).
 3. `uv run --project backend python -m benchmarks.real_sites --interactive` (or `--only <task>`, `--account none`).
-   The Gemini free tier won't take all 24 in one day: run a few sites a day; `just llm-usage` shows what is used.
-4. Results (JSON and a Markdown table) land in `benchmarks/results/real-sites/`.
+   Gemini's free tier allows 20 requests per model per day, about 3 tasks (#494). Run the same command once a
+   day: it resumes, skips tasks that have a verdict, and stops before a task today's quota can't finish
+   (`--fresh` starts over). `just llm-usage` shows what is used.
+4. Results land in `benchmarks/results/real-sites/`: `gate.json` and `gate.md`, a Markdown table, updated after
+   every task.
