@@ -102,11 +102,13 @@ tasks:
     target: https://trello.com
     account: own
     prompt: Create a board named Reading list
-  - name: trello-card
+  # Was "Add a card called Buy milk to the first list of the Reading list board" (#482, 2026-11-26): a new
+  # Trello board starts with no lists, so that card had nowhere to go. Adding a list works on an empty board.
+  - name: trello-list
     site: Trello
     target: https://trello.com
     account: own
-    prompt: Add a card called Buy milk to the first list of the Reading list board
+    prompt: Add a list called To read to the Reading list board
 
   # Habitica replaced Todoist (2026-11-24): Todoist's sign-in runs an invisible CAPTCHA that rejects Krama's
   # browser, with nothing for the owner to solve; Krama never gets around bot checks (AGENTS.md §4).
