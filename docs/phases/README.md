@@ -154,6 +154,7 @@ Each sprint ends with an integration PR merged to `main` and a demo **run on Nac
 | [5: Video export](phase-5-video-export.md) | MP4 export with narration | ✅ completed (tag: `v1.2.1`; `v1.2` was broken) |
 | [6: Do it for me, takeover, search, languages](phase-6-assist.md) | Run a task for the user, hand a run to a human, search workflows, more languages | ✅ completed (tag: `v1.3`) |
 | [7: Krama on any website](phase-7-any-website.md) | Any public site: outline, then look before each step; sign in to any site; site notes | 🚧 in progress (tag: `v1.4`) |
+| [8: Sketch guides](phase-8-sketch-guides.md) | Screens Krama can't open (TV, phone, desktop apps): drawn approximate screens from official guides, with a confidence level | 💡 idea (after v1.4) |
 | [Later](phase-6-later.md) | Backlog: browser extension, RBAC/teams/audit log, public API | — |
 
 ### Phase 5: Video Export — Exit Gate (#128)
