@@ -48,10 +48,40 @@ def _url(before: ObservedState, after: ObservedState) -> str | None:
     """The new address, anchored. The query counts only when the path stayed the same (a search on the same
     page): a new page's query often holds volatile parts such as a session or a timestamp."""
     if after.url != before.url:
-        return f"^{re.escape(after.url)}$"
+        return f"^{_path_regex(before.url, after.url)}$"
     if after.query != before.query and after.query:
         return f"^{re.escape(_shown(after))}$"
     return None
+
+
+_NUMBER = re.compile(r"\d+")
+_TOKEN = re.compile(r"(?=[A-Za-z0-9_]*\d)(?=[A-Za-z0-9_]*[A-Za-z])[A-Za-z0-9_]{6,}")
+"""An ID a site made up: letters and digits mixed, 6 or more (Trello's board ff6N6zDd)."""
+
+
+def _path_regex(before: str, after: str) -> str:
+    """The new path, escaped, with what the site makes up per run left open (#482): a replay that creates
+    something gets a new ID, so the recorded one can't be required. Trello opened /b/ff6N6zDd/reading-list
+    after "Create"; its replay made /b/W9yq3rpz/reading-list-r606.
+
+    - A segment that is new on this page (not the same segment of the page before) and looks like an ID, all
+      digits or `_TOKEN`, may be any ID. Segments that didn't change stay exact, like the docs' /3/.
+    - After such an ID, a slug with a hyphen (the item's name, reading-list) may be any slug."""
+    old = before.split("/")
+    parts, after_id = [], False
+    for i, segment in enumerate(after.split("/")):
+        new = i >= len(old) or old[i] != segment
+        if new and _NUMBER.fullmatch(segment):
+            parts.append(r"\d+")
+            after_id = True
+        elif new and _TOKEN.fullmatch(segment):
+            parts.append(r"[^/]+")
+            after_id = True
+        elif new and after_id and "-" in segment and "." not in segment:
+            parts.append(r"[^/]+")
+        else:
+            parts.append(re.escape(segment))
+    return "/".join(parts)
 
 
 def _fields(action: Action, target: Target | None, new: list[AriaNode]) -> list[FieldValue] | None:

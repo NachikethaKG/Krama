@@ -1,6 +1,9 @@
 """The expected state of a step, from what its action changed (#469)."""
 
+import re
 from datetime import UTC, datetime
+
+import pytest
 
 from app.contracts_gen.common_schema import Action, ExpectedState, Target
 from app.ports.models import ObservedState
@@ -93,6 +96,38 @@ def test_a_search_on_the_same_path_records_the_query() -> None:
     )
 
     assert change is not None and change.url_matches == r"^/search\?query=Bengaluru$"
+
+
+@pytest.mark.parametrize(
+    ("before", "after", "expected", "replayed"),
+    [
+        # #482: Trello's new board; the replay made another board with another ID and name.
+        (
+            "/u/someone/boards",
+            "/b/ff6N6zDd/reading-list",
+            r"^/b/[^/]+/[^/]+$",
+            "/b/W9yq3rpz/reading-list-r606",
+        ),
+        # A new issue gets the next number.
+        ("/o/r/issues/new", "/o/r/issues/2", r"^/o/r/issues/\d+$", "/o/r/issues/3"),
+        # Segments that didn't change stay exact: the docs' version, a page's own name.
+        ("/3/", "/3/library/asyncio.html", r"^/3/library/asyncio\.html$", None),
+        ("/", "/wiki/Alan_Turing", r"^/wiki/Alan_Turing$", None),
+        ("/", "/package/express", r"^/package/express$", None),
+    ],
+)
+def test_ids_a_site_makes_up_are_left_open(
+    before: str, after: str, expected: str, replayed: str | None
+) -> None:
+    change = observed_change(
+        state(before, '- heading "Before"'), state(after, '- heading "After"'), Action(type="click"),
+        Target(role="button", name="Create"),
+    )  # fmt: skip
+
+    assert change is not None and change.url_matches == expected
+    assert re.search(expected, after)
+    if replayed is not None:
+        assert re.search(expected, replayed)
 
 
 def test_nothing_changed_gives_none() -> None:
