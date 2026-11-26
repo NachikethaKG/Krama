@@ -15,6 +15,21 @@ can't reach:
 
 Even the live sign-in (ADR 0012) can't help there: there is no web page to open. Today Krama can only refuse.
 
+### Also: websites the user won't sign in to
+Added by Vishwas, 2026-11-26. On a website, the signed-in part needs the user to sign in through Krama's live view
+(ADR 0012). Many people won't hand a tool their account, even for a moment, and today they get no tutorial. A sketch
+guide gives them one without signing in:
+
+- **Hybrid:** Krama still records the public part for real, verified as usual, up to the sign-in wall. Sketch screens
+  of the signed-in part continue from there. The tutorial marks clearly where the real recording ends and the sketch
+  begins.
+- **Good sources:** web apps document their features well ("Create a board" on Trello's help site, often with
+  screenshots), so these guides would often reach **High** confidence.
+- **Offered, not pushed:** "Sign in to make a verified tutorial" stays the first choice. "Continue without signing in
+  (sketch guide)" is the alternative next to it.
+- The sensitive-site rule still applies: banking, payments, government identity and health are refused before any
+  guide, sketch or not.
+
 ## The idea
 For those tasks Krama **draws** the screens instead of recording them. It makes a simplified, approximate version of
 each screen the user will see (white background, sketched boxes, icons and menu labels), and plays the usual
