@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 from benchmarks.real_sites import (
+    REFUSED,
     SiteResult,
     SiteTask,
     load_saved,
@@ -151,3 +152,12 @@ def test_a_run_that_verified_despite_a_503_keeps_its_verdict() -> None:
     assert with_trouble(survived, "llm_down").outcome == "verified"
     assert with_trouble(stopped, "llm_down").outcome == "llm_down"
     assert stopped.why == "failed: The LLM couldn't decide the next step"
+
+
+def test_a_model_that_refused_today_has_nothing_left() -> None:
+    # 2026-11-27: both working models started refusing (429) at 19 answers, and 3.8-flash answered nothing
+    # (only 503s) but still counted as 20 left, so the guard let four more tasks start.
+    answered = {"gemini-2.5-flash": REFUSED, "gemini-3.5-flash": REFUSED}
+
+    assert requests_left(answered, MODELS, per_model=20) == 20
+    assert not quota_allows(requests_left({m: REFUSED for m in MODELS}, MODELS, per_model=20), per_task=15)
