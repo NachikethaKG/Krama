@@ -17,6 +17,7 @@ from benchmarks.real_sites import (
     still_to_run,
     summary,
     trouble_of,
+    with_trouble,
     write_results,
 )
 
@@ -139,3 +140,14 @@ def test_a_provider_problem_is_no_verdict(statuses: list[str], outcome: str | No
     assert trouble_of(statuses) == outcome
     if outcome is not None:
         assert summary([SiteResult("a", "A", outcome=outcome)])["still_to_run"] == ["a"]
+
+
+def test_a_run_that_verified_despite_a_503_keeps_its_verdict() -> None:
+    # trello-list, 2026-11-27: one model answered 503, another took over and the run verified; then the no-LLM
+    # replay failed. That replay failure is a finding, not provider trouble.
+    survived = SiteResult("t", "T", outcome="verified", replay="failed", replay_llm_calls=0)
+    stopped = SiteResult("s", "S", outcome="failed", why="The LLM couldn't decide the next step")
+
+    assert with_trouble(survived, "llm_down").outcome == "verified"
+    assert with_trouble(stopped, "llm_down").outcome == "llm_down"
+    assert stopped.why == "failed: The LLM couldn't decide the next step"
