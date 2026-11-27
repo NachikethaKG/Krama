@@ -19,7 +19,7 @@ from app.agent import ActionExecutor, ActionResult
 from app.contracts_gen.plan_schema import PlannedStep
 from app.ports.models import ObservedState, StepRef
 from app.ports.observer import Observer
-from app.verifier import NetworkCall, StepEvidence, StepVerifier, VerificationOutcome
+from app.verifier import NetworkCall, RuleVerifier, StepEvidence, StepVerifier, VerificationOutcome
 from app.verifier.change import observed_change
 
 _DATA_REQUESTS = frozenset({"document", "xhr", "fetch"})
@@ -189,6 +189,24 @@ async def act_and_record(
         network=list(network.calls),
         focus_screenshot=focus[0] if focus else None,
     )
+
+
+def already_done(step: PlannedStep, out: StepOutcome) -> bool:
+    """A replayed step that has nothing left to do (#482): it closed a one-time popup (Habitica's "New Stuff
+    by Bailey", a tip, "what's new"), and the popup isn't there now. True only when all three hold:
+
+    - its element isn't on the page (not found; an ambiguous element is still there, so it doesn't count);
+    - its expected state is only "these are gone" (`absent`), which is all closing a popup records;
+    - each of those is already gone on the page as it is.
+
+    A step expected to reach a URL, fill a field or make something appear is never "already done"."""
+    error = out.result.error
+    expected = step.expected_state
+    if error is None or error.code != "target_not_found" or not expected.absent:
+        return False
+    if expected.model_dump(exclude_none=True, exclude={"absent"}):
+        return False
+    return RuleVerifier().verify(expected, out.observed).verified
 
 
 def step_ref(step: PlannedStep) -> StepRef:

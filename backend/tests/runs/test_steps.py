@@ -64,3 +64,55 @@ async def test_an_unclear_step_gets_one_vision_look_with_a_masked_screenshot(
     system, prompt, _schema = llm.calls[0]
     assert "UNTRUSTED" in system and "Click New item." in prompt and "title contains 'item'" in prompt
     assert llm.images[0] is not None and llm.images[0].startswith(b"\x89PNG")
+
+
+# --- a replayed step with nothing left to do (#482) ------------------------------------------------------
+
+BAILEY = '- heading "New Stuff by Bailey" [level=2]\n- button "Dismiss This Alert"'
+TASKS = '- heading "Tasks" [level=1]\n- textbox "Add a To Do"'
+
+
+def replayed(expected: dict[str, Any], page: str, error: str | None) -> tuple[PlannedStep, StepOutcome]:
+    from datetime import UTC, datetime
+
+    from app.agent.executor import ActionError, ActionResult
+    from app.ports.models import ObservedState
+
+    planned = PlannedStep.model_validate(
+        step(1, {"type": "click"}, {"role": "button", "name": "Dismiss This Alert"}, "Close it.", expected)
+    )
+    result = ActionResult(
+        action="click", ok=error is None, started_at=datetime.now(UTC), duration_ms=1, url_after="/",
+        error=ActionError(code=error, message="no") if error else None,
+    )  # fmt: skip
+    observed = ObservedState(url="/", title="Habitica", aria_excerpt=page, captured_at=datetime.now(UTC))
+    return planned, StepOutcome(
+        result=result, before=None, observed=observed, verification=None, verify_attempts=0
+    )
+
+
+GONE = {"absent": [{"role": "heading", "name": "New Stuff by Bailey"}]}
+
+
+@pytest.mark.parametrize(
+    ("expected", "page", "error", "done"),
+    [
+        # Habitica's news popup, closed when the workflow was made; this time it never showed.
+        (GONE, TASKS, "target_not_found", True),
+        # The popup is there but its button wasn't found: something else is wrong.
+        (GONE, BAILEY, "target_not_found", False),
+        # Several matching elements: the page changed, not a popup that went away.
+        (GONE, TASKS, "ambiguous_target", False),
+        # A step that must make something appear is never "already done".
+        ({**GONE, "visible": [{"role": "heading", "name": "Tasks"}]}, TASKS, "target_not_found", False),
+        ({"url_matches": "^/$"}, TASKS, "target_not_found", False),
+        # The action ran: nothing to skip.
+        (GONE, TASKS, None, False),
+    ],
+)
+def test_a_popup_that_isnt_there_is_already_done(
+    expected: dict[str, Any], page: str, error: str | None, done: bool
+) -> None:
+    from app.runs.steps import already_done
+
+    assert already_done(*replayed(expected, page, error)) is done
