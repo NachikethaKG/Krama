@@ -55,7 +55,7 @@ from app.runs.profiles import ProfileStore
 from app.runs.reverify import failure_details
 from app.runs.sign_in import cookie_names, generic_account_of
 from app.runs.states import RunStatus
-from app.runs.steps import StepOutcome, act_and_record, act_and_verify, step_ref
+from app.runs.steps import StepOutcome, act_and_record, act_and_verify, already_done, step_ref
 from app.runs.store import RunJob, RunNotFoundError, RunStore
 from app.runs.takeover import (
     TAKEOVER_REASONS,
@@ -551,6 +551,11 @@ class InProcessExecutor:
                 i += 1
                 continue
 
+            if job.kind in ("do_it", "reverify") and already_done(step, out):
+                # It closed a one-time popup that isn't there this time (#482): nothing to do, go on.
+                logger.info("run %s step %s: already done (what it closed isn't there)", job.run_id, step.seq)
+                i += 1
+                continue
             move, why = budget.after_failure(step, out)
             if move == "retry":
                 continue  # same step again; budget.retry_count already counts it
