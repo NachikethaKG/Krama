@@ -14,8 +14,9 @@ from pydantic import BaseModel, ValidationError
 from app.llm.base import LLMAttempt, LLMError, LLMRateLimitedError, LLMResult, LLMUnavailableError
 
 # Tried in this order (docs/research/phase-0-vishwas-gemini-structured-output.md). Each model has its own
-# free-tier quota (5 requests/min, 20/day per project), so the chain also triples the daily budget.
-DEFAULT_MODELS: tuple[str, ...] = ("gemini-3.8-flash", "gemini-3.5-flash", "gemini-2.5-flash")
+# free-tier quota (5 requests/min, 20/day per project), so the chain also adds up the daily budget.
+# gemini-3.8-flash left the list in the Phase 7 gate (#482): only 503s for days (see config.py).
+DEFAULT_MODELS: tuple[str, ...] = ("gemini-3.5-flash", "gemini-2.5-flash")
 
 _SERVER_ERRORS = frozenset({500, 502, 503, 504})
 _DELAY = re.compile(r"^(\d+(?:\.\d+)?)s$")

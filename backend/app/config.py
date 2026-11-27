@@ -33,10 +33,12 @@ class Settings(BaseSettings):
     llm_provider: Literal["fake", "gemini", "ollama"] = "fake"
     gemini_api_key: str = ""
     # Tried in order; each model has its own free-tier quota (docs/research/phase-0-vishwas-gemini-*).
-    gemini_models: str = "gemini-3.8-flash,gemini-3.5-flash,gemini-2.5-flash"
+    # gemini-3.8-flash left the default list in the Phase 7 gate (#482): it answered only 503 for days, and
+    # every plan waited for it to fail first. Add it back with GEMINI_MODELS once Google serves it reliably.
+    gemini_models: str = "gemini-3.5-flash,gemini-2.5-flash"
     # The per-step decisions of step mode (ADR 0011, Q1): many small calls, so the model that answered fastest
     # and most reliably in the Phase 7 spike goes first.
-    gemini_models_step: str = "gemini-2.5-flash,gemini-3.5-flash,gemini-3.8-flash"
+    gemini_models_step: str = "gemini-2.5-flash,gemini-3.5-flash"
     # upfront: plan every step before the run (until v1.4). steps: an outline, then one decision per step.
     planner_mode: Literal["upfront", "steps"] = "steps"
     # 127.0.0.1, not localhost: IPv6 localhost first costs a timeout on Windows.
