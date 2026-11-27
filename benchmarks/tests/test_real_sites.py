@@ -13,8 +13,10 @@ from benchmarks.real_sites import (
     markdown,
     matches,
     quota_allows,
+    requests_left,
     still_to_run,
     summary,
+    trouble_of,
     write_results,
 )
 
@@ -103,6 +105,37 @@ def test_a_resumed_gate_runs_only_the_tasks_without_a_verdict(tmp_path: Path) ->
     assert "**1/4 passed**" in (tmp_path / "gate.md").read_text(encoding="utf-8")
 
 
-@pytest.mark.parametrize(("used", "ok"), [(0, True), (25, True), (26, False), (40, False)])
-def test_no_task_starts_without_room_for_it_today(used: int, ok: bool) -> None:
-    assert quota_allows(used, daily=40, per_task=15) is ok
+MODELS = ["gemini-3.8-flash", "gemini-3.5-flash", "gemini-2.5-flash"]
+
+
+@pytest.mark.parametrize(
+    ("answered", "left"),
+    [
+        ({}, 60),
+        # 2026-11-26: 2.5-flash went over its 20 (it was over by 2), the others answered nothing (503s).
+        ({"gemini-2.5-flash": 22}, 40),
+        ({"gemini-2.5-flash": 20, "gemini-3.5-flash": 12}, 28),
+        ({m: 20 for m in MODELS}, 0),
+    ],
+)
+def test_each_model_has_its_own_quota(answered: dict[str, int], left: int) -> None:
+    assert requests_left(answered, MODELS, per_model=20) == left
+
+
+@pytest.mark.parametrize(("left", "ok"), [(60, True), (15, True), (14, False), (0, False)])
+def test_no_task_starts_without_room_for_it_today(left: int, ok: bool) -> None:
+    assert quota_allows(left, per_task=15) is ok
+
+
+@pytest.mark.parametrize(
+    ("statuses", "outcome"),
+    [
+        (["ok", "quota_exhausted", "unavailable"], "quota"),
+        (["ok", "unavailable"], "llm_down"),
+        (["ok", "ok"], None),
+    ],
+)
+def test_a_provider_problem_is_no_verdict(statuses: list[str], outcome: str | None) -> None:
+    assert trouble_of(statuses) == outcome
+    if outcome is not None:
+        assert summary([SiteResult("a", "A", outcome=outcome)])["still_to_run"] == ["a"]

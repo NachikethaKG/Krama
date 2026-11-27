@@ -14,11 +14,13 @@ the run.
 Run from the repo root (the API on :8000, `LLM_PROVIDER=gemini` for the gate):
 
     uv run --project backend python -m benchmarks.real_sites [--only NAME ...] [--account none|own|all]
-        [--interactive] [--out benchmarks/results/real-sites] [--fresh] [--daily-calls 40] [--per-task 15]
+        [--interactive] [--out benchmarks/results/real-sites] [--fresh] [--per-model 20] [--per-task 15]
 
-Gemini's free tier allows 20 requests per model per day, about 3 tasks (#494). So the gate runs over several
-days: each run resumes from `gate.json`, skips tasks that have a verdict, and stops before a task that today's
-quota can't finish. A task the quota stopped halfway is marked `quota` and runs again on a later day.
+Gemini's free tier allows 20 requests per model per day (#494). So the gate runs over several days: each run
+resumes from `gate.json`, skips tasks that have a verdict, and stops before a task that today's quota can't
+finish, counting each fallback model's successful requests against its own 20. A task that didn't pass while
+the provider refused (429, `quota`) or was overloaded (503, `llm_down`) runs again later. `--only NAME` runs
+that task again even if it has a verdict.
 """
 
 from __future__ import annotations
@@ -58,8 +60,9 @@ class SiteResult:
     name: str
     site: str
     outcome: str = "not_run"
-    """verified, wrong_page, failed, paused, needs_sign_in, planning_<status>, error; `quota` when it didn't
-    pass and the LLM's daily quota ran out during it (#494): not a verdict on Krama, so it runs again."""
+    """verified, wrong_page, failed, paused, needs_sign_in, planning_<status>, error; `quota` or `llm_down`
+    when it didn't pass and the LLM refused (429) or was overloaded (503) during it (#494): not a verdict on
+    Krama, so it runs again."""
     why: str | None = None
     seconds: float = 0.0
     takeovers: int = 0
@@ -118,11 +121,11 @@ class RealSiteRunner:
         except Exception as e:  # one broken site must not stop the gate
             result.outcome, result.why = "error", f"{type(e).__name__}: {e}"[:300]
         result.seconds = round(time.time() - t0, 1)
-        calls, latencies, refused = llm_usage(started, datetime.now(UTC))
+        calls, latencies, trouble = llm_usage(started, datetime.now(UTC))
         result.llm_calls, result.decision_ms = calls, latencies
-        if refused and not result.passed:
+        if trouble is not None and not result.passed:
             result.why = f"{result.outcome}: {result.why or ''}"[:300]
-            result.outcome = "quota"
+            result.outcome = trouble
         return result
 
     def _run(self, task: SiteTask, result: SiteResult) -> None:
@@ -257,42 +260,61 @@ def _db(query: Any) -> Any:
     return asyncio.run(go())
 
 
-QUOTA_REFUSED = "quota_exhausted"
-"""`llm_calls.status` of an attempt the provider refused for quota (HTTP 429)."""
+LLM_TROUBLE = {"quota_exhausted": "quota", "unavailable": "llm_down"}
+"""`llm_calls.status` of an attempt the provider refused (429: out of quota; 503: overloaded), and the outcome
+a task gets when it didn't pass while that happened: no verdict on Krama, so it runs again (#494)."""
 
 
-def llm_usage(since: datetime, until: datetime) -> tuple[int, list[int], bool]:
-    """LLM calls (one per call, not per attempt), step-decision latencies, and whether any attempt was refused
-    for quota, between two times."""
+def trouble_of(statuses: list[str]) -> str | None:
+    """The outcome for a task that saw these attempt statuses and didn't pass; quota wins over overload."""
+    for status in ("quota_exhausted", "unavailable"):
+        if status in statuses:
+            return LLM_TROUBLE[status]
+    return None
+
+
+def llm_usage(since: datetime, until: datetime) -> tuple[int, list[int], str | None]:
+    """LLM calls (one per call, not per attempt), step-decision latencies, and the provider trouble seen
+    (`trouble_of`), between two times."""
     from sqlalchemy import select
 
     from app.db import LLMCallRow
 
-    async def q(s: Any) -> tuple[int, list[int], bool]:
+    async def q(s: Any) -> tuple[int, list[int], str | None]:
         rows = list(await s.scalars(select(LLMCallRow).where(LLMCallRow.created_at.between(since, until))))
         calls = len({r.call_id for r in rows})
         decisions = [r.latency_ms for r in rows if r.job == "LLMDecision" and r.status == "ok"]
-        return calls, decisions, any(r.status == QUOTA_REFUSED for r in rows)
+        return calls, decisions, trouble_of([r.status for r in rows])
 
-    result: tuple[int, list[int], bool] = _db(q)
+    result: tuple[int, list[int], str | None] = _db(q)
     return result
 
 
-def requests_today(provider: str = "gemini") -> int:
-    """The provider's requests so far on its quota day (midnight to midnight, Pacific time, like Gemini's
-    free tier). Requests it refused for quota don't count against the quota."""
+def answers_today(provider: str = "gemini") -> dict[str, int]:
+    """Successful requests per model so far on the provider's quota day (midnight to midnight, Pacific time,
+    like Gemini's free tier). Refused (429) and overloaded (503) attempts don't use the quota."""
     from sqlalchemy import text
 
     sql = text(
-        "select count(*) from llm_calls where provider = :provider and status <> :refused and created_at >= "
-        "(date_trunc('day', now() at time zone 'America/Los_Angeles') at time zone 'America/Los_Angeles')"
+        "select model, count(*) from llm_calls where provider = :provider and status = 'ok' "
+        "and created_at >= "
+        "(date_trunc('day', now() at time zone 'America/Los_Angeles') at time zone 'America/Los_Angeles') "
+        "group by model"
     )
 
-    async def q(s: Any) -> int:
-        return int((await s.execute(sql, {"provider": provider, "refused": QUOTA_REFUSED})).scalar_one())
+    async def q(s: Any) -> dict[str, int]:
+        return {m: int(n) for m, n in (await s.execute(sql, {"provider": provider})).all()}
 
-    result: int = _db(q)
+    result: dict[str, int] = _db(q)
     return result
+
+
+def gemini_models() -> list[str]:
+    """Every model Krama may fall back to (planning and step lists), from the API's settings."""
+    from app.config import Settings
+
+    settings = Settings()
+    return list(dict.fromkeys([*settings.gemini_model_list, *settings.gemini_step_model_list]))
 
 
 def events_of(run_id: str) -> list[dict[str, Any]]:
@@ -310,7 +332,7 @@ def events_of(run_id: str) -> list[dict[str, Any]]:
 # --- report -------------------------------------------------------------------------------------------
 
 
-RUN_AGAIN = ("not_run", "quota", "needs_sign_in")
+RUN_AGAIN = ("not_run", "quota", "llm_down", "needs_sign_in")
 """Outcomes that aren't a verdict: a resumed gate runs these tasks again."""
 
 
@@ -326,7 +348,7 @@ def summary(results: list[SiteResult]) -> dict[str, Any]:
         "replays_verified": sum(r.replay == "verified" for r in results),
         "replays_with_llm_calls": sum(bool(r.replay_llm_calls) for r in results),
         "needs_sign_in": [r.name for r in results if r.outcome == "needs_sign_in"],
-        "still_to_run": [r.name for r in results if r.outcome in ("not_run", "quota")],
+        "still_to_run": [r.name for r in results if r.outcome in ("not_run", "quota", "llm_down")],
         "median_llm_calls": statistics.median(calls) if calls else None,
         "decision_p50_ms": statistics.median(decisions) if decisions else None,
     }
@@ -369,10 +391,15 @@ def still_to_run(tasks: list[SiteTask], saved: dict[str, SiteResult]) -> list[Si
     return [t for t in tasks if t.name not in saved or saved[t.name].outcome in RUN_AGAIN]
 
 
-def quota_allows(used: int, daily: int, per_task: int) -> bool:
+def requests_left(answered: dict[str, int], models: list[str], per_model: int) -> int:
+    """Requests left today: each model has its own free-tier quota (Gemini: 20 a day per model)."""
+    return sum(max(0, per_model - answered.get(m, 0)) for m in models)
+
+
+def quota_allows(left: int, per_task: int) -> bool:
     """Is there room today for one more task? A task that runs out halfway proves nothing and wastes the
     calls it did make."""
-    return daily - used >= per_task
+    return left >= per_task
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -389,7 +416,7 @@ def main(argv: list[str] | None = None) -> int:
         "--fresh", action="store_true", help="start over (default: resume, skip tasks with a verdict)"
     )
     parser.add_argument(
-        "--daily-calls", type=int, default=40, help="LLM requests per day (Gemini free tier: 20 x 2 models)"
+        "--per-model", type=int, default=20, help="requests per model per day (Gemini free tier: 20)"
     )
     parser.add_argument(
         "--per-task", type=int, default=15, help="requests one task needs; none starts with fewer left"
@@ -401,15 +428,19 @@ def main(argv: list[str] | None = None) -> int:
     saved = {} if args.fresh else load_saved(gate_file)
     chosen = [t for t in load_tasks() if (not args.only or t.name in args.only)
               and (args.account == "all" or t.account == args.account)]  # fmt: skip
-    tasks = still_to_run(chosen, saved)
-    if saved:
+    # Named with --only: run again even with a verdict (e.g. after a fix). Otherwise resume.
+    tasks = chosen if args.only else still_to_run(chosen, saved)
+    if saved and not args.only:
         print(f"Resuming: {len(chosen) - len(tasks)} of {len(chosen)} tasks already have a verdict.")
     runner = RealSiteRunner(args.api_url, interactive=args.interactive)
+    models = gemini_models()
     for task in tasks:
-        used = requests_today()
-        if not quota_allows(used, args.daily_calls, args.per_task):
-            print(f"Stopping: {used} of {args.daily_calls} LLM requests used today (Pacific time); a task "
-                  f"needs about {args.per_task}. Run again after midnight Pacific to resume.")  # fmt: skip
+        answered = answers_today()
+        left = requests_left(answered, models, args.per_model)
+        if not quota_allows(left, args.per_task):
+            used = ", ".join(f"{m} {answered.get(m, 0)}/{args.per_model}" for m in models)
+            print(f"Stopping: {left} LLM requests left today ({used}, Pacific day); a task needs about "
+                  f"{args.per_task}. Run again after midnight Pacific to resume.")  # fmt: skip
             break
         print(f"== {task.name}: {task.prompt}", flush=True)
         r = runner.run(task)
