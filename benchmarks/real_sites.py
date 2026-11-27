@@ -123,10 +123,7 @@ class RealSiteRunner:
         result.seconds = round(time.time() - t0, 1)
         calls, latencies, trouble = llm_usage(started, datetime.now(UTC))
         result.llm_calls, result.decision_ms = calls, latencies
-        if trouble is not None and not result.passed:
-            result.why = f"{result.outcome}: {result.why or ''}"[:300]
-            result.outcome = trouble
-        return result
+        return with_trouble(result, trouble)
 
     def _run(self, task: SiteTask, result: SiteResult) -> None:
         api = self.api
@@ -271,6 +268,15 @@ def trouble_of(statuses: list[str]) -> str | None:
         if status in statuses:
             return LLM_TROUBLE[status]
     return None
+
+
+def with_trouble(result: SiteResult, trouble: str | None) -> SiteResult:
+    """Only a run the provider stopped is no verdict. One that verified got past the trouble (another model
+    answered), so what failed after it, such as the no-LLM replay, is a real finding (trello-list, #482)."""
+    if trouble is not None and result.outcome != "verified":
+        result.why = f"{result.outcome}: {result.why or ''}"[:300]
+        result.outcome = trouble
+    return result
 
 
 def llm_usage(since: datetime, until: datetime) -> tuple[int, list[int], str | None]:
