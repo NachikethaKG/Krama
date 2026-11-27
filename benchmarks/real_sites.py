@@ -298,21 +298,30 @@ def llm_usage(since: datetime, until: datetime) -> tuple[int, list[int], str | N
 
 def answers_today(provider: str = "gemini") -> dict[str, int]:
     """Successful requests per model so far on the provider's quota day (midnight to midnight, Pacific time,
-    like Gemini's free tier). Refused (429) and overloaded (503) attempts don't use the quota."""
+    like Gemini's free tier). Overloaded (503) attempts don't use the quota.
+
+    A model that refused for quota (429) today is out, whatever the count says: Gemini started refusing at
+    19 answers on 2026-11-27. It is reported as `REFUSED` answers, which no quota is above."""
     from sqlalchemy import text
 
     sql = text(
-        "select model, count(*) from llm_calls where provider = :provider and status = 'ok' "
+        "select model, count(*) filter (where status = 'ok'), "
+        "count(*) filter (where status = 'quota_exhausted') from llm_calls where provider = :provider "
         "and created_at >= "
         "(date_trunc('day', now() at time zone 'America/Los_Angeles') at time zone 'America/Los_Angeles') "
         "group by model"
     )
 
     async def q(s: Any) -> dict[str, int]:
-        return {m: int(n) for m, n in (await s.execute(sql, {"provider": provider})).all()}
+        rows = (await s.execute(sql, {"provider": provider})).all()
+        return {m: REFUSED if int(refused) else int(ok) for m, ok, refused in rows}
 
     result: dict[str, int] = _db(q)
     return result
+
+
+REFUSED = 10**6
+"""`answers_today` for a model that refused for quota today: no requests left on it."""
 
 
 def gemini_models() -> list[str]:
@@ -444,7 +453,10 @@ def main(argv: list[str] | None = None) -> int:
         answered = answers_today()
         left = requests_left(answered, models, args.per_model)
         if not quota_allows(left, args.per_task):
-            used = ", ".join(f"{m} {answered.get(m, 0)}/{args.per_model}" for m in models)
+            used = ", ".join(
+                f"{m} {'out' if answered.get(m, 0) >= REFUSED else answered.get(m, 0)}/{args.per_model}"
+                for m in models
+            )
             print(f"Stopping: {left} LLM requests left today ({used}, Pacific day); a task needs about "
                   f"{args.per_task}. Run again after midnight Pacific to resume.")  # fmt: skip
             break
@@ -456,6 +468,10 @@ def main(argv: list[str] | None = None) -> int:
             flush=True,
         )
         write_results(args.out, gate_file, [saved[t.name] for t in load_tasks() if t.name in saved])
+        if r.outcome == "quota":
+            print("Stopping: the provider refused for quota during that task. Run again after midnight "
+                  "Pacific to resume.")  # fmt: skip
+            break
     results = [saved.get(t.name) or SiteResult(t.name, t.site) for t in load_tasks()]
     write_results(args.out, gate_file, results)
     print("\n" + markdown(results))
