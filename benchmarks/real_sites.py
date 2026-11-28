@@ -111,6 +111,8 @@ class RealSiteRunner:
         self.web_url = api_url.split("/api/")[0].replace(":8000", ":3000")
         self.interactive = interactive
         self.timeout = timeout
+        self.models: list[str] | None = None
+        """The provider's text models (`provider_models`); None counts every model."""
 
     def run(self, task: SiteTask) -> SiteResult:
         result = SiteResult(task.name, task.site)
@@ -121,7 +123,7 @@ class RealSiteRunner:
         except Exception as e:  # one broken site must not stop the gate
             result.outcome, result.why = "error", f"{type(e).__name__}: {e}"[:300]
         result.seconds = round(time.time() - t0, 1)
-        calls, latencies, trouble = llm_usage(started, datetime.now(UTC))
+        calls, latencies, trouble = llm_usage(started, datetime.now(UTC), self.models)
         result.llm_calls, result.decision_ms = calls, latencies
         return with_trouble(result, trouble)
 
@@ -279,9 +281,12 @@ def with_trouble(result: SiteResult, trouble: str | None) -> SiteResult:
     return result
 
 
-def llm_usage(since: datetime, until: datetime) -> tuple[int, list[int], str | None]:
+def llm_usage(
+    since: datetime, until: datetime, models: list[str] | None = None
+) -> tuple[int, list[int], str | None]:
     """LLM calls (one per call, not per attempt), step-decision latencies, and the provider trouble seen
-    (`trouble_of`), between two times."""
+    (`trouble_of`), between two times. Only `models` (the text models under test) count for trouble: with
+    groq, Gemini's own quota running out on an image call is not Groq's (#482)."""
     from sqlalchemy import select
 
     from app.db import LLMCallRow
@@ -290,7 +295,8 @@ def llm_usage(since: datetime, until: datetime) -> tuple[int, list[int], str | N
         rows = list(await s.scalars(select(LLMCallRow).where(LLMCallRow.created_at.between(since, until))))
         calls = len({r.call_id for r in rows})
         decisions = [r.latency_ms for r in rows if r.job == "LLMDecision" and r.status == "ok"]
-        return calls, decisions, trouble_of([r.status for r in rows])
+        statuses = [r.status for r in rows if models is None or r.model in models]
+        return calls, decisions, trouble_of(statuses)
 
     result: tuple[int, list[int], str | None] = _db(q)
     return result
@@ -456,6 +462,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"Resuming: {len(chosen) - len(tasks)} of {len(chosen)} tasks already have a verdict.")
     runner = RealSiteRunner(args.api_url, interactive=args.interactive)
     provider, models = provider_models()
+    runner.models = models
     per_model = args.per_model or FREE_PER_MODEL[provider]
     for task in tasks:
         answered = answers_today(provider)
