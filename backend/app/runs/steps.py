@@ -16,6 +16,7 @@ from urllib.parse import urlsplit
 from playwright.async_api import Page, Request, Response
 
 from app.agent import ActionExecutor, ActionResult
+from app.contracts_gen.common_schema import ExpectedState
 from app.contracts_gen.plan_schema import PlannedStep
 from app.ports.models import ObservedState, StepRef
 from app.ports.observer import Observer
@@ -193,20 +194,28 @@ async def act_and_record(
 
 def already_done(step: PlannedStep, out: StepOutcome) -> bool:
     """A replayed step that has nothing left to do (#482): it closed a one-time popup (Habitica's "New Stuff
-    by Bailey", a tip, "what's new"), and the popup isn't there now. True only when all three hold:
+    by Bailey", a daily "Check-In Prize", a tip), and the popup isn't there now. True only when all hold:
 
     - its element isn't on the page (not found; an ambiguous element is still there, so it doesn't count);
-    - its expected state is only "these are gone" (`absent`), which is all closing a popup records;
-    - each of those is already gone on the page as it is.
+    - its expected state is only "these are gone" (`absent`), plus at most other dialogs that appeared
+      (closing one popup can open the next: "You have received Standard Backgrounds");
+    - each of those is gone on the page as it is: the closed popup, and the dialogs it led to.
 
-    A step expected to reach a URL, fill a field or make something appear is never "already done"."""
+    A step expected to reach a URL, fill a field, or show anything but a dialog is never "already done"."""
     error = out.result.error
     expected = step.expected_state
     if error is None or error.code != "target_not_found" or not expected.absent:
         return False
-    if expected.model_dump(exclude_none=True, exclude={"absent"}):
+    if expected.model_dump(exclude_none=True, exclude={"absent", "visible"}):
         return False
-    return RuleVerifier().verify(expected, out.observed).verified
+    chained = expected.visible or []
+    if any(ref.role not in _DIALOGS for ref in chained):
+        return False
+    gone = ExpectedState(absent=[*expected.absent, *chained])
+    return RuleVerifier().verify(gone, out.observed).verified
+
+
+_DIALOGS = frozenset({"dialog", "alertdialog"})
 
 
 def step_ref(step: PlannedStep) -> StepRef:
