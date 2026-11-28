@@ -140,6 +140,7 @@ def build_run_environment(
         target=lambda job: target_setup(job.target_url, settings),
         run_timeout_s=settings.run_timeout_seconds,
         max_replans_per_run=settings.max_replans_per_run,
+        page_budget_chars=settings.page_budget,
         # One LLM call after the last step: did the steps do the whole task (#274)? Gemini only, like vision.
         # Text only, so the local development model can answer it too (ADR 0010); step mode leans on it.
         task_check=GeminiTaskChecker(llm) if settings.llm_provider in ("gemini", "ollama", "groq") else None,
@@ -190,6 +191,7 @@ def build_services(settings: Settings) -> Services:
             lambda url: target_setup(url, settings),
             policy=policy,
             profiles=profiles,
+            page_budget_chars=settings.page_budget,
         ),
         engine=engine,
         target=lambda url: target_setup(url, settings),

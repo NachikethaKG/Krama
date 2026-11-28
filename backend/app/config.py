@@ -54,6 +54,9 @@ class Settings(BaseSettings):
     groq_url: str = "https://api.groq.com/openai/v1"
     # Tried in order; each has its own limits (1,000 requests a day, 8,000 tokens a minute on the free tier).
     groq_models: str = "openai/gpt-oss-120b,qwen/qwen3.8-27b,openai/gpt-oss-20b"
+    # The page snapshot an LLM sees, in characters. Unset: 24,000 (about 6,000 tokens), or 14,000 with groq,
+    # whose free tier caps one request at 8,000 tokens (ADR 0014; the Internet Archive asked 9,000+, #482).
+    page_budget_chars: int | None = None
 
     # Local-only demo account on the test Gitea (`just seed`).
     gitea_url: str = "http://localhost:3001"
@@ -115,6 +118,12 @@ class Settings(BaseSettings):
     @property
     def gemini_model_list(self) -> list[str]:
         return [m.strip() for m in self.gemini_models.split(",") if m.strip()]
+
+    @property
+    def page_budget(self) -> int:
+        if self.page_budget_chars:
+            return self.page_budget_chars
+        return 14_000 if self.llm_provider == "groq" else 24_000
 
     @property
     def groq_model_list(self) -> list[str]:

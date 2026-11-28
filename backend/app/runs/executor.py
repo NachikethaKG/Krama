@@ -31,6 +31,7 @@ from app.agent import (
 )
 from app.agent.consent import clear_consent
 from app.agent.healer import HealBudget, HealChooser, HealOutcome, heal, stored_element
+from app.agent.page_text import PAGE_BUDGET_CHARS
 from app.agent.runlog import MASK, ScriptedStep, looks_sensitive, mask_expected, run_script
 from app.agent.vision import VisionLocator, masked_screenshot
 from app.contracts_gen.events_schema import PauseReason
@@ -127,6 +128,8 @@ class RunEnvironment:
     run_timeout_s: float = 600.0
     """Time a run may spend running (pauses don't count). Then it fails."""
     max_replans_per_run: int = 3
+    page_budget_chars: int = PAGE_BUDGET_CHARS
+    """How much of a page an LLM sees (characters): smaller for providers with small requests (ADR 0014)."""
     task_check: TaskChecker | None = None
     """Asked once after the last step whether the steps did the whole task (#274). None: not checked."""
     heal_chooser: HealChooser | None = None
@@ -1047,7 +1050,7 @@ class InProcessExecutor:
         """The page's ARIA snapshot with secrets masked by the policy (#63) before it goes to an LLM. A
         cookie banner that appeared since is answered first (#493), so it never becomes a step."""
         await clear_consent(page)
-        return self._mask(await page_snapshot(page))
+        return self._mask(await page_snapshot(page, self._env.page_budget_chars))
 
     def _mask(self, text: str) -> str:
         """Page-derived text (snapshot, URL path, failure details) through the policy's mask, before any LLM
