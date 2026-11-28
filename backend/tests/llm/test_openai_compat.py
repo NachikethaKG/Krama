@@ -154,3 +154,21 @@ async def test_images_go_to_the_vision_provider() -> None:
     assert seen == [b"png"]
     with pytest.raises(LLMError, match="vision"):
         await SplitProvider(text, None).generate(system="s", prompt="p", schema=Answer, image=b"png")
+
+
+async def test_a_big_page_waits_for_the_per_minute_budget_more_than_once() -> None:
+    # Wiktionary, 2026-11-28: a 6,000-token page made every model 429 twice in a row; one wait wasn't enough.
+    busy = [limited(PER_MINUTE), limited(PER_MINUTE)]
+    llm, _ = provider(*busy, *busy, *busy, reply('{"ok": true}'))
+
+    result = await ask(llm)
+
+    assert llm.slept == [2.5, 2.5, 2.5] and result.value.ok
+
+
+async def test_it_gives_up_after_the_wait_budget() -> None:
+    llm, _ = provider(*[limited(PER_MINUTE)] * 60)
+
+    with pytest.raises(LLMUnavailableError):
+        await ask(llm)
+    assert sum(llm.slept) <= 60

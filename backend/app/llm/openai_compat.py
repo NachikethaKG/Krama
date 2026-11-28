@@ -42,9 +42,9 @@ class OpenAICompatProvider:
       in the system prompt (remembered per model)
     - a reply that doesn't validate: one more try on the same model, then the next model
     - per-day 429 (requests or tokens per day): the next model; the attempt is `quota_exhausted`
-    - per-minute 429 (Groq: 8,000 tokens a minute per model): the next model; after all of them, one wait of
-      the shortest "try again in" (at most `max_rate_wait_s`) and one more round. Recorded as `rate_limited`,
-      so a benchmark never counts it as the day's quota.
+    - per-minute 429 (Groq: 8,000 tokens a minute per model): the next model; after all of them, a wait of
+      the shortest "try again in" and another round, until `max_rate_wait_s` in all. Recorded as
+      `rate_limited`, so a benchmark never counts it as the day's quota.
     - 5xx, a timeout or a dropped connection: the next model
     - any other error (bad key, bad request): raise at once
     - text only: an image raises `LLMError` (`SplitProvider` sends images elsewhere)
@@ -58,7 +58,7 @@ class OpenAICompatProvider:
         *,
         name: str = "groq",
         timeout_s: float = 60.0,
-        max_rate_wait_s: float = 30.0,
+        max_rate_wait_s: float = 60.0,
         client: httpx.AsyncClient | None = None,
         sleep: Sleep = asyncio.sleep,
     ) -> None:
@@ -83,16 +83,22 @@ class OpenAICompatProvider:
             raise LLMError(f"{self._name} is used for text only here; vision calls go to Gemini")
         attempts: list[LLMAttempt] = []
         waits: list[float] = []
-        for round_ in range(2):
+        waited = 0.0
+        while True:
             for model in self._models:
                 value = await self._try_model(model, system, prompt, schema, attempts, waits)
                 if value is not None:
                     return LLMResult[M](value=value, model=model, attempts=attempts)
-            if round_ == 0 and waits and min(waits) <= self._max_rate_wait_s:
-                await self._sleep(min(waits))
-                waits.clear()
-                continue
-            break
+            # Every model is over its per-minute tokens (a big page, a few decisions in a row): wait for the
+            # first to free up, then try them all again, within `max_rate_wait_s` in total (gate, #482).
+            if not waits:
+                break
+            wait = max(min(waits), 1.0)
+            if waited + wait > self._max_rate_wait_s:
+                break
+            await self._sleep(wait)
+            waited += wait
+            waits.clear()
         if attempts and all(a.status == "quota_exhausted" for a in attempts):
             raise LLMRateLimitedError(f"Every {self._name} model is out of its daily quota", attempts)
         raise LLMUnavailableError(f"No {self._name} model gave a valid reply", attempts)
