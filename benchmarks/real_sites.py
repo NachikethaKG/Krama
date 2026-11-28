@@ -111,6 +111,8 @@ class RealSiteRunner:
         self.web_url = api_url.split("/api/")[0].replace(":8000", ":3000")
         self.interactive = interactive
         self.timeout = timeout
+        self.models: list[str] | None = None
+        """The provider's text models (`provider_models`); None counts every model."""
 
     def run(self, task: SiteTask) -> SiteResult:
         result = SiteResult(task.name, task.site)
@@ -121,7 +123,7 @@ class RealSiteRunner:
         except Exception as e:  # one broken site must not stop the gate
             result.outcome, result.why = "error", f"{type(e).__name__}: {e}"[:300]
         result.seconds = round(time.time() - t0, 1)
-        calls, latencies, trouble = llm_usage(started, datetime.now(UTC))
+        calls, latencies, trouble = llm_usage(started, datetime.now(UTC), self.models)
         result.llm_calls, result.decision_ms = calls, latencies
         return with_trouble(result, trouble)
 
@@ -279,9 +281,12 @@ def with_trouble(result: SiteResult, trouble: str | None) -> SiteResult:
     return result
 
 
-def llm_usage(since: datetime, until: datetime) -> tuple[int, list[int], str | None]:
+def llm_usage(
+    since: datetime, until: datetime, models: list[str] | None = None
+) -> tuple[int, list[int], str | None]:
     """LLM calls (one per call, not per attempt), step-decision latencies, and the provider trouble seen
-    (`trouble_of`), between two times."""
+    (`trouble_of`), between two times. Only `models` (the text models under test) count for trouble: with
+    groq, Gemini's own quota running out on an image call is not Groq's (#482)."""
     from sqlalchemy import select
 
     from app.db import LLMCallRow
@@ -290,7 +295,8 @@ def llm_usage(since: datetime, until: datetime) -> tuple[int, list[int], str | N
         rows = list(await s.scalars(select(LLMCallRow).where(LLMCallRow.created_at.between(since, until))))
         calls = len({r.call_id for r in rows})
         decisions = [r.latency_ms for r in rows if r.job == "LLMDecision" and r.status == "ok"]
-        return calls, decisions, trouble_of([r.status for r in rows])
+        statuses = [r.status for r in rows if models is None or r.model in models]
+        return calls, decisions, trouble_of(statuses)
 
     result: tuple[int, list[int], str | None] = _db(q)
     return result
@@ -324,12 +330,19 @@ REFUSED = 10**6
 """`answers_today` for a model that refused for quota today: no requests left on it."""
 
 
-def gemini_models() -> list[str]:
-    """Every model Krama may fall back to (planning and step lists), from the API's settings."""
+FREE_PER_MODEL = {"gemini": 20, "groq": 1000}
+"""Free-tier requests per model per day: Gemini (#494), Groq (its rate-limit headers, 2026-11-28)."""
+
+
+def provider_models() -> tuple[str, list[str]]:
+    """The LLM provider the API runs with (`LLM_PROVIDER`; run the benchmark with the same environment) and
+    every text model it may fall back to. With groq, images still go to Gemini: a few calls, not counted."""
     from app.config import Settings
 
     settings = Settings()
-    return list(dict.fromkeys([*settings.gemini_model_list, *settings.gemini_step_model_list]))
+    if settings.llm_provider == "groq":
+        return "groq", settings.groq_model_list
+    return "gemini", list(dict.fromkeys([*settings.gemini_model_list, *settings.gemini_step_model_list]))
 
 
 def events_of(run_id: str) -> list[dict[str, Any]]:
@@ -431,7 +444,7 @@ def main(argv: list[str] | None = None) -> int:
         "--fresh", action="store_true", help="start over (default: resume, skip tasks with a verdict)"
     )
     parser.add_argument(
-        "--per-model", type=int, default=20, help="requests per model per day (Gemini free tier: 20)"
+        "--per-model", type=int, default=None, help="requests per model per day (default: the free tier's)"
     )
     parser.add_argument(
         "--per-task", type=int, default=15, help="requests one task needs; none starts with fewer left"
@@ -448,13 +461,15 @@ def main(argv: list[str] | None = None) -> int:
     if saved and not args.only:
         print(f"Resuming: {len(chosen) - len(tasks)} of {len(chosen)} tasks already have a verdict.")
     runner = RealSiteRunner(args.api_url, interactive=args.interactive)
-    models = gemini_models()
+    provider, models = provider_models()
+    runner.models = models
+    per_model = args.per_model or FREE_PER_MODEL[provider]
     for task in tasks:
-        answered = answers_today()
-        left = requests_left(answered, models, args.per_model)
+        answered = answers_today(provider)
+        left = requests_left(answered, models, per_model)
         if not quota_allows(left, args.per_task):
             used = ", ".join(
-                f"{m} {'out' if answered.get(m, 0) >= REFUSED else answered.get(m, 0)}/{args.per_model}"
+                f"{m} {'out' if answered.get(m, 0) >= REFUSED else answered.get(m, 0)}/{per_model}"
                 for m in models
             )
             print(f"Stopping: {left} LLM requests left today ({used}, Pacific day); a task needs about "

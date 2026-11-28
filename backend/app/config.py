@@ -30,7 +30,9 @@ class Settings(BaseSettings):
     run_executor: Literal["inprocess", "arq"] = "inprocess"
 
     # ollama: a local model, opt-in for development only (ADR 0010); text jobs only, no vision.
-    llm_provider: Literal["fake", "gemini", "ollama"] = "fake"
+    # groq: text jobs on Groq's free tier (1,000 requests a day per model), images still on Gemini. A spike
+    # for the Phase 7 gate (#482), opt-in until an ADR decides.
+    llm_provider: Literal["fake", "gemini", "ollama", "groq"] = "fake"
     gemini_api_key: str = ""
     # Tried in order; each model has its own free-tier quota (docs/research/phase-0-vishwas-gemini-*).
     # gemini-3.8-flash left the default list in the Phase 7 gate (#482): it answered only 503 for days, and
@@ -48,6 +50,13 @@ class Settings(BaseSettings):
     ollama_timeout_s: float = 180.0
     # Ollama's default (4096 tokens) silently cuts long planner prompts.
     ollama_num_ctx: int = 8192
+    groq_api_key: str = ""
+    groq_url: str = "https://api.groq.com/openai/v1"
+    # Tried in order; each has its own limits (1,000 requests a day, 8,000 tokens a minute on the free tier).
+    groq_models: str = "openai/gpt-oss-120b,qwen/qwen3.8-27b,openai/gpt-oss-20b"
+    # The page snapshot an LLM sees, in characters. Unset: 24,000 (about 6,000 tokens), or 14,000 with groq,
+    # whose free tier caps one request at 8,000 tokens (ADR 0014; the Internet Archive asked 9,000+, #482).
+    page_budget_chars: int | None = None
 
     # Local-only demo account on the test Gitea (`just seed`).
     gitea_url: str = "http://localhost:3001"
@@ -109,6 +118,16 @@ class Settings(BaseSettings):
     @property
     def gemini_model_list(self) -> list[str]:
         return [m.strip() for m in self.gemini_models.split(",") if m.strip()]
+
+    @property
+    def page_budget(self) -> int:
+        if self.page_budget_chars:
+            return self.page_budget_chars
+        return 14_000 if self.llm_provider == "groq" else 24_000
+
+    @property
+    def groq_model_list(self) -> list[str]:
+        return [m.strip() for m in self.groq_models.split(",") if m.strip()]
 
     @property
     def gemini_step_model_list(self) -> list[str]:

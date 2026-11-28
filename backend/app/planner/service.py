@@ -24,6 +24,7 @@ from app.agent import (
     page_snapshot,
     start_path,
 )
+from app.agent.page_text import PAGE_BUDGET_CHARS
 from app.agent.runlog import run_script
 from app.db import PlanRow, TaskRow
 from app.llm import LLMError, LLMRateLimitedError
@@ -50,6 +51,7 @@ class PlanningService:
         max_concurrent: int = 1,
         policy: Policy | None = None,
         profiles: ProfileStore | None = None,
+        page_budget_chars: int = PAGE_BUDGET_CHARS,
     ) -> None:
         """`policy` masks secrets in the page snapshot before it goes to the LLM (#63). `profiles`: the
         owner's stored sign-ins (ADR 0012), so the planner sees the same signed-in page the run will."""
@@ -57,6 +59,7 @@ class PlanningService:
         self._planner = planner
         self._target = target
         self._profiles = profiles
+        self._page_budget = page_budget_chars
         self._session_config = session_config
         self._policy = policy
         self._slots = asyncio.Semaphore(max_concurrent)
@@ -141,7 +144,7 @@ class PlanningService:
                 task_id=task_id,
                 task=prompt,
                 start_path=self._mask(executor.current_path()),
-                page_snapshot=self._mask(await page_snapshot(page)),
+                page_snapshot=self._mask(await page_snapshot(page, self._page_budget)),
                 site=setup.site,
                 signed_in_as=setup.signed_in_as,
                 practice_repo=setup.practice_repo,
