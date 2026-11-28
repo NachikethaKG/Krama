@@ -108,6 +108,13 @@ def test_a_search_on_the_same_path_records_the_query() -> None:
             r"^/b/[^/]+/[^/]+$",
             "/b/W9yq3rpz/reading-list-r606",
         ),
+        # MusicBrainz names things by UUID (#482): another album, another UUID.
+        (
+            "/search",
+            "/release-group/b1392450-e666-3926-a536-22c65f834433",
+            r"^/release\-group/[^/]+$",
+            "/release-group/0f6e8b9a-1234-4cde-9abc-0123456789ab",
+        ),
         # A new issue gets the next number.
         ("/o/r/issues/new", "/o/r/issues/2", r"^/o/r/issues/\d+$", "/o/r/issues/3"),
         # Segments that didn't change stay exact: the docs' version, a page's own name.
