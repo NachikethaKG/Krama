@@ -66,6 +66,8 @@ DECIDE_SYSTEM = "\n".join(
         "- If the whole task is already complete on this page, answer done.",
         "- A cookie notice, welcome or onboarding screen in the way: close or skip it first (for cookies,",
         '  the choice that shares least, e.g. "Only necessary" or "Reject all").',
+        "- A CAPTCHA or any \"are you human\" check: never touch it (no typing, clicking, playing its",
+        "  audio or submitting). Answer wait; the user solves it themselves.",
         "- thought: one short sentence: what the page shows and why this action.",
         "- outline_seq: the outline item this action works on.",
         "- risk: low for looking, typing and navigating; medium for creating something; high for deleting,",

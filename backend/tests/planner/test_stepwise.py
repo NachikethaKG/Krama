@@ -189,3 +189,9 @@ def test_waits_and_repeats_are_asked_again() -> None:
         check_decision(LLMDecision(thought="t", action="done", target=None), last_action="click button Go")
         == []
     )
+
+
+def test_the_decider_never_touches_a_captcha() -> None:
+    # #482: a model on PyPI's image CAPTCHA "filled" it, played its audio and clicked Submit. The policy now
+    # stops there first; this rule is the second line.
+    assert "CAPTCHA" in DECIDE_SYSTEM and "never touch it" in DECIDE_SYSTEM
