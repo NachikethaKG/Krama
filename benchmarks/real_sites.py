@@ -324,12 +324,19 @@ REFUSED = 10**6
 """`answers_today` for a model that refused for quota today: no requests left on it."""
 
 
-def gemini_models() -> list[str]:
-    """Every model Krama may fall back to (planning and step lists), from the API's settings."""
+FREE_PER_MODEL = {"gemini": 20, "groq": 1000}
+"""Free-tier requests per model per day: Gemini (#494), Groq (its rate-limit headers, 2026-11-28)."""
+
+
+def provider_models() -> tuple[str, list[str]]:
+    """The LLM provider the API runs with (`LLM_PROVIDER`; run the benchmark with the same environment) and
+    every text model it may fall back to. With groq, images still go to Gemini: a few calls, not counted."""
     from app.config import Settings
 
     settings = Settings()
-    return list(dict.fromkeys([*settings.gemini_model_list, *settings.gemini_step_model_list]))
+    if settings.llm_provider == "groq":
+        return "groq", settings.groq_model_list
+    return "gemini", list(dict.fromkeys([*settings.gemini_model_list, *settings.gemini_step_model_list]))
 
 
 def events_of(run_id: str) -> list[dict[str, Any]]:
@@ -431,7 +438,7 @@ def main(argv: list[str] | None = None) -> int:
         "--fresh", action="store_true", help="start over (default: resume, skip tasks with a verdict)"
     )
     parser.add_argument(
-        "--per-model", type=int, default=20, help="requests per model per day (Gemini free tier: 20)"
+        "--per-model", type=int, default=None, help="requests per model per day (default: the free tier's)"
     )
     parser.add_argument(
         "--per-task", type=int, default=15, help="requests one task needs; none starts with fewer left"
@@ -448,13 +455,14 @@ def main(argv: list[str] | None = None) -> int:
     if saved and not args.only:
         print(f"Resuming: {len(chosen) - len(tasks)} of {len(chosen)} tasks already have a verdict.")
     runner = RealSiteRunner(args.api_url, interactive=args.interactive)
-    models = gemini_models()
+    provider, models = provider_models()
+    per_model = args.per_model or FREE_PER_MODEL[provider]
     for task in tasks:
-        answered = answers_today()
-        left = requests_left(answered, models, args.per_model)
+        answered = answers_today(provider)
+        left = requests_left(answered, models, per_model)
         if not quota_allows(left, args.per_task):
             used = ", ".join(
-                f"{m} {'out' if answered.get(m, 0) >= REFUSED else answered.get(m, 0)}/{args.per_model}"
+                f"{m} {'out' if answered.get(m, 0) >= REFUSED else answered.get(m, 0)}/{per_model}"
                 for m in models
             )
             print(f"Stopping: {left} LLM requests left today ({used}, Pacific day); a task needs about "
