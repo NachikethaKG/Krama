@@ -19,27 +19,31 @@ tasks:
     prompt: Open the list of the most downloaded books
     success: { url_matches: "^/browse/scores/top" }
 
-  - name: pypi-search
-    site: PyPI
-    target: https://pypi.org
-    prompt: Search PyPI for the requests package and open its project page
-    success: { url_matches: "^/project/requests/?$" }
-  - name: pypi-history
-    site: PyPI
-    target: https://pypi.org
-    prompt: Find the flask package on PyPI and open its release history
-    success: { url_matches: "^/project/flask/" }
+  # RubyGems, crates.io and MusicBrainz replaced PyPI, npm and timeanddate.com (2026-11-28, #482): those three
+  # show every headless browser a CAPTCHA (Fastly's "Client Challenge" on PyPI), so no model could do their
+  # tasks and Krama rightly pauses; it never gets past a bot check (AGENTS.md §4). The new ones were checked
+  # with Krama's headless browser and the policy's barrier check first.
+  - name: rubygems-search
+    site: RubyGems
+    target: https://rubygems.org
+    prompt: Search RubyGems for the rails gem and open its page
+    success: { url_matches: "^/gems/rails/?$" }
+  - name: rubygems-versions
+    site: RubyGems
+    target: https://rubygems.org
+    prompt: Open the list of versions of the rack gem
+    success: { url_matches: "^/gems/rack/versions" }
 
-  - name: npm-search
-    site: npm
-    target: https://www.npmjs.com
-    prompt: Search npm for the lodash package and open its page
-    success: { url_matches: "^/package/lodash" }
-  - name: npm-versions
-    site: npm
-    target: https://www.npmjs.com
-    prompt: Open the list of published versions of the express package
-    success: { url_matches: "^/package/express.*versions" }
+  - name: crates-search
+    site: crates.io
+    target: https://crates.io
+    prompt: Search crates.io for the serde crate and open its page
+    success: { url_matches: "^/crates/serde/?$" }
+  - name: crates-versions
+    site: crates.io
+    target: https://crates.io
+    prompt: Open the list of published versions of the tokio crate
+    success: { url_matches: "^/crates/tokio/versions" }
 
   - name: wiktionary-word
     site: Wiktionary
@@ -74,16 +78,16 @@ tasks:
     prompt: Open the Dropdown example and choose Option 2
     success: { url_matches: "^/dropdown" }
 
-  - name: timeanddate-tokyo
-    site: timeanddate.com
-    target: https://www.timeanddate.com
-    prompt: Find the current local time in Tokyo
-    success: { url_matches: "tokyo" }
-  - name: timeanddate-calendar
-    site: timeanddate.com
-    target: https://www.timeanddate.com
-    prompt: Open the calendar for the year 2027
-    success: { url_matches: "calendar.*2027" }
+  - name: musicbrainz-artist
+    site: MusicBrainz
+    target: https://musicbrainz.org
+    prompt: Search MusicBrainz for the artist Radiohead and open the artist's page
+    success: { url_matches: "^/artist/[0-9a-f-]{36}" }
+  - name: musicbrainz-album
+    site: MusicBrainz
+    target: https://musicbrainz.org
+    prompt: Find the album OK Computer by Radiohead on MusicBrainz and open its page
+    success: { url_matches: "^/(release-group|release)/[0-9a-f-]{36}" }
 
   - name: archive-search
     site: Internet Archive
