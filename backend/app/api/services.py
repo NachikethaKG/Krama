@@ -117,7 +117,10 @@ def build_run_environment(
     """What a run needs (verifier, observer, policy, planner for replans, ...), the same in the API process
     and in the worker (#95). With `sessions`, every LLM request is recorded (#464)."""
     llm = create_provider(settings) if sessions is None else recorded_provider(settings, sessions)
-    gemini = settings.llm_provider == "gemini"
+    # Vision needs Gemini: the gemini provider, or groq with a Gemini key for its images (SplitProvider).
+    gemini = settings.llm_provider == "gemini" or (
+        settings.llm_provider == "groq" and bool(settings.gemini_api_key)
+    )
     policy = PolicyService(classifier=LLMClassifier(llm))
     store_ = LocalFsStore(settings.artifacts_dir)
     return RunEnvironment(
@@ -139,7 +142,7 @@ def build_run_environment(
         max_replans_per_run=settings.max_replans_per_run,
         # One LLM call after the last step: did the steps do the whole task (#274)? Gemini only, like vision.
         # Text only, so the local development model can answer it too (ADR 0010); step mode leans on it.
-        task_check=GeminiTaskChecker(llm) if settings.llm_provider in ("gemini", "ollama") else None,
+        task_check=GeminiTaskChecker(llm) if settings.llm_provider in ("gemini", "ollama", "groq") else None,
         # Self-healing (#112): Gemini chooses among the candidates only when scoring can't decide, within a
         # daily budget shared through Redis (D12).
         heal_chooser=GeminiHealChooser(llm) if gemini else None,
