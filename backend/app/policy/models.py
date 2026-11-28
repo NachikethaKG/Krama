@@ -24,6 +24,8 @@ class BarrierType(StrEnum):
     CLOUDFLARE_CHALLENGE = "cloudflare_challenge"
     RECAPTCHA = "recaptcha"
     HCAPTCHA = "hcaptcha"
+    # Any other CAPTCHA its page names in the accessibility tree (Fastly's "Client Challenge" on PyPI, #482)
+    NAMED_CAPTCHA = "named_captcha"
     AUTH_WALL = "auth_wall"
 
     # GitHub-specific (Phase 3)

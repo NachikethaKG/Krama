@@ -161,6 +161,23 @@ _ARIA_HCAPTCHA_WIDGET: Final[re.Pattern[str]] = re.compile(
     re.IGNORECASE,
 )
 
+# A CAPTCHA the page itself names: an image, field, button or group whose accessible name says "captcha"
+# (Fastly's "Client Challenge" on PyPI: img "CAPTCHA image challenge", group "Audio CAPTCHA controls", #482).
+# Only a named control counts, never the word in page text (an issue titled "captcha" is not a challenge).
+_ARIA_NAMED_CAPTCHA: Final[re.Pattern[str]] = re.compile(
+    r'(?:img|textbox|button|group|iframe|figure|dialog)\s+"[^"]*captcha[^"]*"', re.IGNORECASE
+)
+_CHALLENGE_TITLES: Final[tuple[str, ...]] = ("client challenge",)
+"""Titles of challenge pages that aren't Cloudflare's (Fastly's bot check)."""
+
+
+def _detect_named_captcha(title: str, aria_excerpt: str) -> str | None:
+    if title.strip().lower() in _CHALLENGE_TITLES:
+        return f"Bot challenge page detected by title: '{title}'"
+    if _ARIA_NAMED_CAPTCHA.search(aria_excerpt):
+        return "A CAPTCHA control is named in the page ARIA snapshot"
+    return None
+
 
 def _detect_cloudflare(html: str, title: str, aria_excerpt: str, status_code: int | None) -> str | None:
     low_title = title.strip().lower()
@@ -307,6 +324,15 @@ def check_barrier(
             should_stop=True,
             barrier_type=BarrierType.HCAPTCHA,
             reason=hcaptcha_reason,
+        )
+
+    # 3b. Any other CAPTCHA the page names (image or audio challenges)
+    named_reason = _detect_named_captcha(current_title, excerpt)
+    if named_reason:
+        return BarrierCheckResult(
+            should_stop=True,
+            barrier_type=BarrierType.NAMED_CAPTCHA,
+            reason=named_reason,
         )
 
     # 4. Auth-walls / Login barriers
