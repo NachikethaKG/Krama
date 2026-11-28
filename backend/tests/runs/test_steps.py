@@ -108,6 +108,21 @@ GONE = {"absent": [{"role": "heading", "name": "New Stuff by Bailey"}]}
         ({"url_matches": "^/$"}, TASKS, "target_not_found", False),
         # The action ran: nothing to skip.
         (GONE, TASKS, None, False),
+        # A popup that led to the next one (Habitica's daily prize, then "You have received ..."): neither
+        # is there this time.
+        (
+            {**GONE, "visible": [{"role": "dialog", "name": "You have received Standard Backgrounds"}]},
+            TASKS,
+            "target_not_found",
+            True,
+        ),
+        # The next popup is there: the chain did happen, so the step isn't skipped.
+        (
+            {**GONE, "visible": [{"role": "dialog", "name": "Tasks"}]},
+            TASKS.replace("heading", "dialog", 1),
+            "target_not_found",
+            False,
+        ),
     ],
 )
 def test_a_popup_that_isnt_there_is_already_done(
