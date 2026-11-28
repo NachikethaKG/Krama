@@ -284,3 +284,49 @@ async def test_strong_captcha_signals_stop_through_page_state(
     decision = await PolicyService().check_action(_register_step(), page)
     assert decision.verdict == "pause"  # the owner may solve it in a takeover (ADR 0008), never code
     assert decision.reason == "captcha"
+
+
+# --- a CAPTCHA the page names in its accessibility tree (#482) --------------------------------------------
+
+# What Krama's browser saw on https://pypi.org/search/?q=requests on 2026-11-28 (Fastly's bot check).
+FASTLY_CHALLENGE = """- img "Fastly Logo"
+- paragraph: "Enter the characters seen in the image below:"
+- img "CAPTCHA image challenge"
+- group "Audio CAPTCHA controls":
+  - button "Play audio CAPTCHA"
+  - text: Download audio CAPTCHA
+- text: Answer
+- 'textbox "Enter the characters seen in the image below: Answer"'
+- button "Submit\""""
+
+
+@pytest.mark.parametrize("title", ["Client Challenge", "PyPI"])
+def test_an_image_captcha_named_in_the_aria_tree_stops(title: str) -> None:
+    result = check_barrier("", url="https://pypi.org/search/", title=title, aria_excerpt=FASTLY_CHALLENGE)
+
+    assert result.should_stop is True
+    assert result.barrier_type == BarrierType.NAMED_CAPTCHA
+
+
+@pytest.mark.parametrize(
+    "aria",
+    [
+        '- heading "Fix reCAPTCHA on the login page" [level=1]\n- paragraph: The captcha fails on Safari.',
+        '- link "captcha-solver-research"\n- text: captcha',
+    ],
+)
+def test_the_word_captcha_in_ordinary_page_text_does_not_stop(aria: str) -> None:
+    result = check_barrier("", url="https://github.com/o/r/issues/1", title="Issue", aria_excerpt=aria)
+
+    assert result.should_stop is False
+
+
+@pytest.mark.anyio
+async def test_the_policy_pauses_for_the_owner_on_a_named_captcha() -> None:
+    page = PageState(url="/search/", title="Client Challenge", aria_excerpt=FASTLY_CHALLENGE)
+    step = StepRef(seq=2, action=Action(type="click"), target=Target(role="button", name="Submit"),
+                   instruction_text="Click Submit.")  # fmt: skip
+
+    decision = await PolicyService().check_action(step, page)
+
+    assert (decision.verdict, decision.reason) == ("pause", "captcha")
