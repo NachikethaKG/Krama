@@ -57,6 +57,8 @@ def _url(before: ObservedState, after: ObservedState) -> str | None:
 _NUMBER = re.compile(r"\d+")
 _TOKEN = re.compile(r"(?=[A-Za-z0-9_]*\d)(?=[A-Za-z0-9_]*[A-Za-z])[A-Za-z0-9_]{6,}")
 """An ID a site made up: letters and digits mixed, 6 or more (Trello's board ff6N6zDd)."""
+_UUID = re.compile(r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}")
+"""A UUID, hyphens and all (MusicBrainz's /release-group/b1392450-e666-3926-a536-22c65f834433, #482)."""
 
 
 def _path_regex(before: str, after: str) -> str:
@@ -74,7 +76,7 @@ def _path_regex(before: str, after: str) -> str:
         if new and _NUMBER.fullmatch(segment):
             parts.append(r"\d+")
             after_id = True
-        elif new and _TOKEN.fullmatch(segment):
+        elif new and (_TOKEN.fullmatch(segment) or _UUID.fullmatch(segment)):
             parts.append(r"[^/]+")
             after_id = True
         elif new and after_id and "-" in segment and "." not in segment:
