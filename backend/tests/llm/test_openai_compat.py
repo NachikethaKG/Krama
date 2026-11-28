@@ -172,3 +172,12 @@ async def test_it_gives_up_after_the_wait_budget() -> None:
     with pytest.raises(LLMUnavailableError):
         await ask(llm)
     assert sum(llm.slept) <= 60
+
+
+def test_groq_sees_a_smaller_page() -> None:
+    # Groq's free tier caps one request at 8,000 tokens; the Internet Archive's page made 9,000+ (#482).
+    from app.config import Settings
+
+    assert Settings(_env_file=None, llm_provider="groq").page_budget == 14_000
+    assert Settings(_env_file=None, llm_provider="gemini").page_budget == 24_000
+    assert Settings(_env_file=None, llm_provider="groq", page_budget_chars=9_000).page_budget == 9_000
